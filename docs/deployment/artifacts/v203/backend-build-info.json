@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
+  "sha256": "0f95a84703638f119228312fece80e7d1c6f3f970e5cede7168054de0f039bb7",
+  "sizeBytes": 12492960,
+  "toolchain": "go1.27.1",
+  "GOOS": "linux",
+  "GOARCH": "amd64",
+  "CGO_ENABLED": 0
+}

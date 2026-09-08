@@ -1,6 +1,6 @@
 # 部署与维护手册
 
-基于 2026-09-08 的发布记录及实际部署脚本整理。本次未登录服务器重新核验状态、未运行部署命令。发布事实以 [2.0.0](deuterium-2.0.0-live.md)、[2.0.1](deuterium-2.0.1-live.md)、[2.0.2](deuterium-2.0.2-live.md) 为准；下方流程用于后续有授权的部署。
+已按 2026-09-09 的 [2.0.3 部署记录](deuterium-2.0.3-live.md) 更新；App/Go 发布已完成，其他组件沿用 2.0.0 的安装组合。发布事实以 [2.0.0](deuterium-2.0.0-live.md)、[2.0.1](deuterium-2.0.1-live.md)、[2.0.2](deuterium-2.0.2-live.md) 为准；下方流程用于后续有授权的部署。
 
 ## 拓扑和路径
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | 公网入口 | `https://47.103.99.34`，443，同源 API；域名在当时仍等待备案 |
 | Go | systemd `deuterium.service`，`/opt/deuterium/current/deuterium`，监听 `127.0.0.1:8080` |
-| Go 发布目录 | `/opt/deuterium/releases/cache-2.0.1-1b5d9d1c63f8`；`current` 指向已验证版本 |
+| Go 发布目录 | `/opt/deuterium/releases/app-2.0.3-15bb45dc6625`；`current` 指向已验证版本 |
 | 配置 | `/etc/deuterium/config.json`、`backend.env`、`releases.json`；AI 配置与提示词由环境中的文件路径指定 |
 | 后端库 | MariaDB `deuterium_backend`，独立账号；禁止复用游戏经济数据库身份 |
 | Nginx | 现有宝塔路径 `/www/server/panel/vhost/nginx/deuterium-test.conf`；80 ACME webroot `/var/www/deuterium-acme` |

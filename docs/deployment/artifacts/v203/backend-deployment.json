@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
+  "releaseDirectory": "/opt/deuterium/releases/app-2.0.3-15bb45dc6625",
+  "backupDirectory": "/var/backups/deuterium/app-2.0.3-20260909-20300",
+  "previousRelease": "/opt/deuterium/releases/cache-2.0.1-1b5d9d1c63f8",
+  "existingMigrationHashesMatched": 14,
+  "beforeRecordCounts": "COMMISSION\t3\nORDER\t6",
+  "backupSha256": "464cba0cfe1a4881ffd296e13b0668bc6104156018cd8914968586bbc5c53243",
+  "backupBytes": 148931,
+  "migration019Sha256": "82a9a915b14078e91d8f6a09b33c002d7a16a4fd5f002575c81a5d4123ae3c7a",
+  "service": "active",
+  "sha256": "0f95a84703638f119228312fece80e7d1c6f3f970e5cede7168054de0f039bb7",
+  "afterRecordCounts": "COMMISSION\t3\nORDER\t6",
+  "hiddenPreferencesBeforeAppRelease": 0,
+  "deployedAt": "2026-09-08T17:04:19Z",
+  "health": {
+    "status": "ready"
+  },
+  "unauthenticatedRouteStatus": {
+    "/api/v1/chat/messages": "401",
+    "/api/v1/orders/unowned/hide": "401",
+    "/api/v1/commissions/unowned/hide": "401",
+    "/api/v1/market/listings/unowned/hide": "401"
+  }
+}
