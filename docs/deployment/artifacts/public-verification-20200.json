@@ -1,0 +1,14 @@
+{
+  "published": true,
+  "version": "2.0.2 (20200)",
+  "checks": {
+    "20005": "update to 20200",
+    "20100": "update to 20200",
+    "20101": "update to 20200",
+    "20200": "latest"
+  },
+  "publicApkBytes": 23160566,
+  "sha256": "88059466f6cd548a888832342099177ebc1bc6194db5e14f513b356ecdfdba51",
+  "accountUpdateNotice": true,
+  "credentialScan": "PASS"
+}

@@ -1,0 +1,37 @@
+{
+  "commit": "215d9f2a687177c1591d10ce81ae369599801a92",
+  "parentCommit": "ff0dcc393a4bb0284fcdd4889249b0eee34201d0",
+  "scope": "Final read-only QA instrumentation and evidence after Go 00fbdac deployment; no app APK or production source change.",
+  "files": [
+    {
+      "path": "android-app/ui-lab/src/androidTest/java/com/deuterium/app/uilab/LiveBackendInstrumentation.kt",
+      "sha256": "6b01581b87aaa225a3e35ad6522af01f701d9eab7224499ea176224811afed32",
+      "sizeBytes": 11976
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08.md",
+      "sha256": "3fdd913668d841fe77452c4a58e0acbf72cacbe53a9ab21b34fa74260b6cd6a7",
+      "sizeBytes": 10716
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20003-final-financial-lists-instrumentation.txt",
+      "sha256": "cf2a3aec4b0264e68d10bf852ee009b74a54a7ca2558840a3c73bb4414eec2c3",
+      "sizeBytes": 691
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20003-final-financial-lists.json",
+      "sha256": "d08dc396ea4e7dda12a3691b0a76f8348482098cc53229228899538d667bb2f5",
+      "sizeBytes": 1778
+    }
+  ],
+  "installedApkSha256": "894b523b83aa2c9e2f9f2f7b8cec6ca601f3d00ac00572b30cd258c5cda556ad",
+  "businessWrites": 0,
+  "serverReturnedCounts": {
+    "orders": 0,
+    "commissions": 0,
+    "commissions/me": 0,
+    "store/products": 0,
+    "market/listings": 0,
+    "market/me/listings": 0
+  }
+}

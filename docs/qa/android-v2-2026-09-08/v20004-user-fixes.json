@@ -1,0 +1,14 @@
+{
+  "listingId": "listing_378cb6100aa41668e7dcecc4dcf8a207",
+  "photoAssetId": "asset_8ba24c018918f32b2f284b7b96430f9c",
+  "photoWidth": 512,
+  "photoHeight": 288,
+  "avatarAssetId": "asset_30d54af3effda0b441634945a1753d06",
+  "avatarWidth": 640,
+  "avatarHeight": 640,
+  "transferId": "transfer_732103cd41d23562ef51c6ebae75edfde4995431",
+  "operationId": "coreop_0b2834feb9000263f3e29c84f4d96c13bff272da",
+  "pendingCleared": true,
+  "newTransferUnlocked": true,
+  "businessWrites": 0
+}

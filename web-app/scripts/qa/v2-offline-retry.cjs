@@ -1,0 +1,5 @@
+async(page)=>{
+ const nodes=await page.request.get('http://127.0.0.1:5182/api/v1/admin/core/nodes');if(!(await nodes.json()).data.nodes.some(n=>n.online))throw new Error('Core simulator not connected');
+ const content=await page.evaluate(()=>window.testOfflineContent);await page.locator('.pc-message').filter({hasText:content}).getByRole('button',{name:'使用原消息重试'}).click();await page.locator('.pc-message').filter({hasText:content}).locator('.message-delivery').filter({hasText:'已发送'}).waitFor();
+ const sameId=await page.evaluate(()=>window.testSentIds.length===2&&window.testSentIds[0]===window.testSentIds[1]);const once=await page.locator('.pc-message .bubble').filter({hasText:content}).count()===1;const cleared=await page.getByRole('textbox',{name:'消息内容'}).inputValue()==='';await page.evaluate(()=>WebSocket.prototype.send=window.originalSocketSend);if(!sameId||!once||!cleared)throw new Error('Retry identity, deduplication or composer recovery failed');return {sameClientMessageId:sameId,oneMessage:once,composerCleared:cleared};
+}

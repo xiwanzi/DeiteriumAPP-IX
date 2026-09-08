@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "baseUrl": "https://api.deepseek.com",
+  "apiKey": "",
+  "model": "deepseek-v4-flash",
+  "freeQuota": 20,
+  "windowHours": 24,
+  "adminQuotaExempt": true,
+  "webSearch": true,
+  "paidPlansEnabled": false
+}

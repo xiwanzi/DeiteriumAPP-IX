@@ -1,0 +1,7 @@
+{
+  "listen": "127.0.0.1:8080",
+  "publicOrigin": "https://community.example.invalid",
+  "development": false,
+  "trustedProxyCidrs": ["127.0.0.1/32"],
+  "nodes": []
+}

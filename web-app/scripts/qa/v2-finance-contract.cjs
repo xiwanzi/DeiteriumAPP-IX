@@ -1,0 +1,76 @@
+async (page) => {
+  const origin = "http://127.0.0.1:5219", passed = [], errors = [], posts = [], quoteKeys = [], operations = new Map();
+  const check = (value, label) => { if (!value) throw new Error(label); passed.push(label); };
+  page.on("pageerror", (error) => errors.push(error.message)); await page.unroute("**/api/v1/**");
+  await page.evaluate(() => { for (const key of Object.keys(sessionStorage)) if (key.startsWith("deuterium-business:")) sessionStorage.removeItem(key); });
+  let role = "buyer", order = null, commission = null, bought = false, quoted = 0;
+  const now = "2026-09-08T03:00:00Z", party = (name) => ({ kind: "PLAYER", playerRef: `player-${name}`, storeId: null, displayName: name, contactQq: "100001" });
+  const op = (operationId, kind, resourceType, resourceId, clientRequestId, amount, status = "UNKNOWN") => ({ operationId, kind, resourceType, resourceId, clientRequestId, amount, status, errorCode: null, retryAfterSeconds: 1, createdAt: now, updatedAt: now });
+  const product = { productId: "product-one", storeId: "store-one", version: 5, content: { title: "授权测试商品", subtitle: "接口契约响应", description: "只用于本机前端验证", price: "12.50", limitPerOrder: 5 }, availableStock: 5, visibility: "ACTIVE", images: [] };
+  const json = (route, data, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify({ data, serverTime: now, page: { nextCursor: null, hasMore: false } }) });
+  const orderView = () => order && { ...order, availableActions: order.pendingOperationId ? ["CONFIRM_RECEIPT"] : order.refund?.status === "REQUESTED" ? role === "seller" ? ["RESOLVE_REFUND"] : ["WITHDRAW_REFUND"] : order.refundAttemptsUsed ? [] : ["REQUEST_REFUND"] };
+  const commissionView = () => commission && { ...commission, availableActions: commission.status === "OPEN" ? role === "worker" ? ["ACCEPT"] : ["CANCEL"] : commission.status === "ACTIVE" && role === "worker" ? ["COMPLETE"] : commission.status === "COMPLETED" && role === "buyer" ? ["CONFIRM"] : [] };
+  await page.route("**/api/v1/**", async (route) => {
+    const request = route.request(), full = request.url(), path = "/api/v1" + full.split("/api/v1")[1].split("?")[0], body = request.method() !== "GET" ? request.postDataJSON() : null;
+    if (request.method() === "POST") posts.push({ path, body });
+    if (path === "/api/v1/web/session") return json(route, { user: { userId: role, playerRef: `player-${role}`, gameId: role, qq: "100001", permissions: [] }, csrfToken: "finance-csrf", expiresAt: "2030-01-01T00:00:00Z" });
+    if (path === "/api/v1/store/products") return json(route, [product]);
+    if (path === "/api/v1/store/products/product-one") return json(route, product);
+    if (path === "/api/v1/checkout/quotes") { quoteKeys.push(request.headers()["idempotency-key"]); return json(route, { quoteId: `quote-${++quoted}`, channel: "OFFICIAL_STORE", version: 1, totalAmount: "25.00", currency: "CREDIT", expiresAt: "2030-01-01T00:00:00Z", items: [{ title: product.content.title, quantity: 2 }], delivery: { method: "MAILBOX" }, warnings: [] }); }
+    if (path === "/api/v1/store/orders") {
+      check(request.headers()["x-csrf-token"] === "finance-csrf", "payment request carries the current CSRF token");
+      order = { orderId: "order-one", orderNo: "D-ONE", channel: "OFFICIAL_STORE", status: "PAYMENT_PROCESSING", fundsStatus: "UNKNOWN", pendingOperationId: "purchase-operation", interventionCaseId: null, buyer: party("buyer"), seller: party("seller"), items: [{ productId: "product-one", title: product.content.title, description: "成交快照", quantity: 2, unitPrice: "12.50" }], amount: "25.00", createdAt: now, version: 2, refund: null, refundAttemptsUsed: 0, pausedRemainingSeconds: null };
+      operations.set("purchase-operation", op("purchase-operation", "STORE_PURCHASE", "ORDER", "order-one", body.clientRequestId, "25.00"));
+      if (!bought) { bought = true; return route.abort("connectionfailed"); }
+      return json(route, { operation: operations.get("purchase-operation"), order: orderView() }, 202);
+    }
+    if (path.startsWith("/api/v1/operations/")) {
+      const value = path.endsWith("by-client-request") ? [...operations.values()].find((value) => full.includes(encodeURIComponent(value.clientRequestId))) : operations.get(path.split("/").at(-1));
+      if (value) return json(route, value); return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: { code: "NOT_FOUND", message: "未找到请求" } }) });
+    }
+    if (path === "/api/v1/orders") return json(route, order ? [orderView()] : []);
+    if (path === "/api/v1/orders/order-one") return json(route, orderView());
+    if (path === "/api/v1/orders/order-one/refunds") { order = { ...order, version: 9, refundAttemptsUsed: 1, refund: { refundId: "refund-one", version: 3, status: "REQUESTED", amount: "25.00", reason: body.description, rejectionReason: "" } }; return json(route, orderView()); }
+    if (path === "/api/v1/orders/order-one/refunds/refund-one/withdraw") { order = { ...order, version: 10, refund: { ...order.refund, version: 4, status: "WITHDRAWN" } }; return json(route, orderView()); }
+    if (path === "/api/v1/orders/order-one/refunds/refund-one/resolve") { order = { ...order, version: 51, refund: { ...order.refund, version: 8, status: "REJECTED", rejectionReason: body.reason } }; return json(route, orderView()); }
+    if (path === "/api/v1/assets/uploads") return json(route, { status: "READY", asset: { assetId: "commission-cover", url: origin + "/media/app-icon.svg", altText: "封面" } });
+    if (path === "/api/v1/commissions" && request.method() === "POST") {
+      commission = { commissionId: "commission-one", owner: party("buyer"), worker: null, content: body.content, cover: { assetId: "commission-cover", url: origin + "/media/app-icon.svg" }, status: "FUNDING", fundsStatus: "UNKNOWN", pendingOperationId: "commission-funding", interventionCaseId: null, refund: null, refundAttemptsUsed: 0, version: 1, createdAt: now, pausedRemainingSeconds: null };
+      operations.set("commission-funding", op("commission-funding", "COMMISSION_PUBLISH", "COMMISSION", "commission-one", body.clientRequestId, body.content.reward)); return json(route, { operation: operations.get("commission-funding"), commission: commissionView() }, 202);
+    }
+    if (path === "/api/v1/commissions") return json(route, commission?.status === "OPEN" && commission.fundsStatus === "HELD" ? [commissionView()] : []);
+    if (path === "/api/v1/commissions/me") return json(route, commission ? [commissionView()] : []);
+    if (path === "/api/v1/commissions/commission-one") return json(route, commissionView());
+    if (path === "/api/v1/commissions/commission-one/accept") { commission = { ...commission, worker: party("worker"), status: "ACTIVE", fundsStatus: "UNKNOWN", pendingOperationId: "commission-accept", version: 3 }; operations.set("commission-accept", op("commission-accept", "COMMISSION_ACCEPT", "COMMISSION", "commission-one", body.clientRequestId, commission.content.reward)); return json(route, commissionView()); }
+    if (path === "/api/v1/commissions/commission-one/complete") { commission = { ...commission, status: "COMPLETED", version: 5, acceptanceDueAt: "2030-01-01T00:00:00Z" }; return json(route, commissionView()); }
+    if (path === "/api/v1/commissions/commission-one/confirm") { commission = { ...commission, fundsStatus: "SETTLING", pendingOperationId: "commission-settle", version: 6 }; operations.set("commission-settle", op("commission-settle", "SETTLEMENT", "COMMISSION", "commission-one", body.clientRequestId, commission.content.reward)); return json(route, { operation: operations.get("commission-settle"), commission: commissionView() }, 202); }
+    return json(route, {}, 404);
+  });
+  await page.goto(origin + "/"); await page.getByRole("button", { name: /授权测试商品/ }).click(); await page.getByRole("spinbutton", { name: "购买数量", exact: true }).fill("2"); await page.getByRole("button", { name: "立即购买", exact: true }).click(); await page.getByRole("button", { name: "查看最终报价", exact: true }).click();
+  check(posts.filter((entry) => entry.path === "/api/v1/store/orders").length === 0, "quote review does not execute payment"); check(Boolean(quoteKeys[0]), "each quote intention sends an HTTP idempotency key");
+  await page.getByRole("button", { name: "确认付款", exact: true }).click(); await page.getByRole("heading", { name: "正在核对处理结果", exact: true }).waitFor();
+  check(await page.getByRole("heading", { name: "付款已确认", exact: true }).count() === 0, "lost payment response never shows a completed payment");
+  const payment = posts.find((entry) => entry.path === "/api/v1/store/orders"); check(JSON.stringify(Object.keys(payment.body).sort()) === '["clientRequestId","expectedQuoteVersion","quoteId"]', "order creation cannot set amount, buyer or seller in its body");
+  order = { ...order, fundsStatus: "HELD", pendingOperationId: null, status: "AWAITING_CLAIM" }; operations.get("purchase-operation").status = "COMPLETED";
+  await page.goto(origin + "/orders"); await page.getByRole("button", { name: "查看第 1 笔", exact: true }).click(); await page.getByRole("heading", { name: "付款已确认", exact: true }).waitFor();
+  check(posts.filter((entry) => entry.path === "/api/v1/store/orders").length === 1, "reload recovery performs only original-operation reads, not another payment");
+  await page.getByRole("button", { name: "查看订单", exact: true }).click(); await page.getByRole("button", { name: "申请退款", exact: true }).click(); await page.getByRole("dialog").last().getByRole("textbox", { name: "详细说明", exact: true }).fill("退款申请测试说明"); await page.getByRole("dialog").last().getByRole("button", { name: "确认提交", exact: true }).click();
+  await page.getByRole("button", { name: "撤回退款", exact: true }).waitFor(); check(posts.find((entry) => entry.path.endsWith("/refunds")).body.expectedVersion === 2, "refund creation uses the parent order version");
+  await page.getByRole("button", { name: "撤回退款", exact: true }).click(); await page.getByRole("dialog").last().getByRole("button", { name: "确认提交", exact: true }).click();
+  await page.getByRole("dialog").getByText("退款 · 已撤回", { exact: true }).waitFor(); check(posts.find((entry) => entry.path.endsWith("/withdraw")).body.expectedVersion === 3, "refund withdrawal uses the nested refund version"); check(await page.getByRole("button", { name: "申请退款", exact: true }).count() === 0, "withdrawal does not restore a consumed refund opportunity");
+  role = "seller"; order = { ...order, version: 50, refund: { ...order.refund, version: 7, status: "REQUESTED" } }; await page.goto(origin + "/orders?order=order-one"); await page.getByRole("button", { name: "处理退款", exact: true }).click(); await page.getByRole("combobox", { name: "处理决定", exact: true }).selectOption("REJECT"); await page.getByRole("textbox", { name: "处理说明", exact: true }).fill("按约定已经完成交付"); await page.getByRole("dialog").last().getByRole("button", { name: "确认提交", exact: true }).click();
+  check(posts.find((entry) => entry.path.endsWith("/resolve")).body.expectedVersion === 7, "seller resolution also uses the nested refund version");
+  role = "buyer"; await page.goto(origin + "/orders?order=order-one"); await page.getByText("拒绝原因：按约定已经完成交付", { exact: true }).waitFor(); check(true, "the buyer sees the server's rejection reason");
+  await page.goto(origin + "/commissions"); await page.getByRole("button", { name: "发布委托", exact: true }).click(); const form = page.getByRole("dialog"); await form.getByRole("textbox", { name: "委托标题", exact: true }).fill("合约任务测试"); await form.getByRole("textbox", { name: "委托说明", exact: true }).fill("这是一项仅本机契约验证任务"); await form.getByRole("textbox", { name: "地点", exact: true }).fill("主城测试点"); await form.getByRole("textbox", { name: "报酬（信用点）", exact: true }).fill("200.00"); await form.locator("input[type=file]").setInputFiles("C:/DeuteriumAPP/.worktrees/web-player-v1/web-app/output/sql-browser/fixture.png"); await form.getByRole("button", { name: "下一步", exact: true }).click();
+  check(posts.filter((entry) => entry.path === "/api/v1/commissions").length === 0, "commission form review does not prepay before explicit confirmation"); await page.getByRole("button", { name: "确认预付并发布", exact: true }).click(); await page.getByRole("heading", { name: "正在核对处理结果", exact: true }).waitFor();
+  check(await page.getByRole("heading", { name: "付款已确认", exact: true }).count() === 0, "unknown commission funding does not look published or paid");
+  commission = { ...commission, status: "OPEN", fundsStatus: "HELD", pendingOperationId: null, version: 2 }; operations.get("commission-funding").status = "COMPLETED"; await page.getByRole("button", { name: "刷新处理结果", exact: true }).click(); await page.getByRole("heading", { name: "付款已确认", exact: true }).waitFor();
+  role = "worker"; await page.goto(origin + "/commissions"); await page.getByRole("button", { name: /合约任务测试/ }).click(); await page.getByRole("button", { name: "接取委托", exact: true }).click(); await page.getByRole("dialog").last().getByRole("button", { name: "确认提交", exact: true }).click(); await page.getByText("正在确认接取", { exact: true }).waitFor();
+  check(await page.getByRole("button", { name: "提交完成", exact: true }).isDisabled(), "ACTIVE plus UNKNOWN cannot complete work before the Core binding is confirmed");
+  commission = { ...commission, fundsStatus: "HELD", pendingOperationId: null, version: 4 }; operations.get("commission-accept").status = "COMPLETED"; await page.getByRole("dialog").getByRole("button", { name: "刷新", exact: true }).click(); await page.getByRole("button", { name: "提交完成", exact: true }).click(); await page.getByRole("textbox", { name: "完成说明", exact: true }).fill("已按要求完成工作"); await page.getByRole("dialog").last().getByRole("button", { name: "确认提交", exact: true }).click(); await page.getByText("等待验收", { exact: true }).first().waitFor();
+  check(true, "work completion remains awaiting owner acceptance"); role = "buyer"; await page.goto(origin + "/commissions?commission=commission-one"); await page.getByRole("button", { name: "确认完成", exact: true }).click(); await page.getByRole("dialog").last().getByRole("button", { name: "确认提交", exact: true }).click(); await page.getByRole("dialog").getByText("结算中", { exact: true }).waitFor();
+  check(await page.getByRole("dialog").getByText("已完成", { exact: true }).count() === 0, "unknown settlement is not shown as completed"); commission = { ...commission, status: "CONFIRMED", fundsStatus: "SETTLED", pendingOperationId: null, version: 7 }; operations.get("commission-settle").status = "COMPLETED"; await page.getByRole("dialog").getByRole("button", { name: "刷新", exact: true }).click(); await page.getByRole("dialog").getByText("已结算", { exact: true }).waitFor(); check(true, "only a confirmed settlement becomes settled in the UI");
+  for (const width of [390, 1440]) { await page.setViewportSize({ width, height: 900 }); check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `financial detail fits ${width}px`); }
+  check(errors.length === 0, "financial contract browser flows have no JavaScript exceptions");
+  return { mode: "isolated 013 finance contract responses; no actual money movements", count: passed.length, passed, errors };
+}

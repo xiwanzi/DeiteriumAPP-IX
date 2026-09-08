@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "baselineDate": "2026-09-08",
+  "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
+  "components": [
+    {
+      "name": "android",
+      "path": "android-app/ui-lab",
+      "version": "2.0.2",
+      "versionCode": 20200,
+      "sourceCommit": "4299ce37d0bf1c184278aaab80ea5312b168e2ff",
+      "publishedSha256": "88059466f6cd548a888832342099177ebc1bc6194db5e14f513b356ecdfdba51"
+    },
+    {
+      "name": "web",
+      "path": "web-app",
+      "version": "2.0.0",
+      "sourceCommit": "2455abb6c2ef43f3957ca5ac0a0e3106aeca3496",
+      "publishedSourceCommit": "4de1ee7a6aabdc6c8a5c1f44a16b69db406f4e8f"
+    },
+    {
+      "name": "go-backend",
+      "path": "backend-next",
+      "sourceCommit": "f07f69e3e8f370f740874dcf707585a815e52b8c",
+      "publishedSourceCommit": "1b5d9d1c63f8af670409060f54a43aa2f981c163",
+      "publishedSha256": "b1d3564ad0b99d346151816c090821aa35c501ecbaa21af5f4b352e5e3b8ce25"
+    },
+    {
+      "name": "core",
+      "path": "deuterium-core",
+      "version": "1.0.0",
+      "sourceCommit": "f07f69e3e8f370f740874dcf707585a815e52b8c",
+      "developmentSourceCommit": "5ae67062921a683bf4417ffd6de0c539d0f564f1",
+      "publishedSha256": "6be8b022e6a360b11455100150d59f1032087edd34c6d75fa8e4b81adf9c5137"
+    },
+    {
+      "name": "xconomy-extension",
+      "path": "adapters/xconomy",
+      "version": "2.26.3-deuterium.1",
+      "sourceCommit": "f07f69e3e8f370f740874dcf707585a815e52b8c",
+      "upstreamSource": "third_party/XConomy-2.26.3",
+      "inputSha256": "0e3695f75f9d8769bb365d6c60fe48d169baf162b0bed423b456acef0a53584f",
+      "publishedSha256": "880e9d5fa6b36c074e72df9ac250bc118bb80a62c949bbdadb203240228b6344"
+    },
+    {
+      "name": "mail",
+      "repository": "https://github.com/Deuterium-IX/Deuterium-Mail",
+      "commit": "164efb13eefa7d53f769bf80fbbf078fe189cb98",
+      "pullRequest": 1,
+      "version": "0.6.1",
+      "apiVersion": 2,
+      "bridgeVersion": "0.6.0",
+      "uiVersion": "0.6.0",
+      "publishedSha256": "9c8b4585799812e7874094d023e057acd059f9a0716210ac1b476ca009249cfa"
+    },
+    {
+      "name": "youermodsync",
+      "repository": "https://github.com/Deuterium-IX/YouerModSync-Patches",
+      "commit": "1144679a96ec2e04bb3dfe703ee8c8b84363b598",
+      "pullRequest": 1,
+      "path": "core-integration",
+      "version": "0.7-deuterium.3",
+      "inputSha256": "14fc3674b38153ec3db2c56fa8ee70a9662e854e7f8e5fdec9c962fb5dc059f4",
+      "publishedSha256": "376411646a903bcdb53808b68d94673f9a7f5ea9e47fde4e15957395517a9151"
+    }
+  ]
+}

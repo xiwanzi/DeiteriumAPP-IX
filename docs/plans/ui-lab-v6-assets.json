@@ -1,0 +1,48 @@
+[
+  {
+    "file": "product_rtx5090_1.jpg",
+    "url": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/graphic-cards/50-series/rtx-5090/geforce-rtx-5090-af360-p@2x.jpg"
+  },
+  {
+    "file": "product_rtx5090_2.jpg",
+    "url": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/graphic-cards/50-series/rtx-5090/geforce-rtx-5090-bm-xl770-l.jpg"
+  },
+  {
+    "file": "product_rtx5080_1.jpg",
+    "url": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/graphic-cards/50-series/rtx-5080/geforce-rtx-5080-af360-p@2x.jpg"
+  },
+  {
+    "file": "product_rtx5080_2.jpg",
+    "url": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/graphic-cards/50-series/rtx-5080/geforce-rtx-5080-bm-xl770-l.jpg"
+  },
+  {
+    "file": "product_macmini_1.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-mac-mini-202609?wid=800&hei=1000&fmt=webp&qlt=90&.v=MjhMcWJ2MGZwbXEwdnBkcUN6ZnhyejZjVlVyTm9aMTIzM2ZlTDJiaTlnRDZXYXJlRUd1cTBYTnRnbTNlazIvMzl4VGJTa0Z6K25XajlIZ3dxUWxxaFVyemZ6RkRPaG5jU2paRVdtZHhabXc&traceId=1"
+  },
+  {
+    "file": "product_macstudio_1.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-mac-studio-202609?wid=800&hei=1000&fmt=webp&qlt=90&.v=MjhMcWJ2MGZwbXEwdnBkcUN6ZnhyeU9aVHlIUTN0TDFoV3YrODdyNm1Ucm45S05qekNUdVUwMVFyK1pKaERUd3lPWjFvdU5EZVdwUnRCZ2RHSDBFS3R0bEJITXZrbjRjcGpoK0NsSlhQUCtWZWZKZEpnTUg2bTJtOU9qU1hvcWw&traceId=1"
+  },
+  {
+    "file": "product_ryzen9950_1.png",
+    "url": "https://cdn11.bigcommerce.com/s-3wzspkde5p/images/stencil/1280x1280/products/166/468/Ryzen_9_9000X3D__86102.1741368250.png?c=1"
+  },
+  {
+    "file": "product_ryzen9950_2.png",
+    "url": "https://cdn11.bigcommerce.com/s-3wzspkde5p/images/stencil/1280x1280/products/166/467/Ryzen_9_9000X3D_Thumbnail__48675.1741368250.png?c=1"
+  },
+  {
+    "file": "product_ryzen9800_1.png",
+    "url": "https://cdn11.bigcommerce.com/s-7g81zn9sor/images/stencil/1280x1280/products/169/480/Ryzen_7_9800X3D__66590.1744293889.png?c=1"
+  },
+  {
+    "file": "product_ryzen9800_2.png",
+    "url": "https://cdn11.bigcommerce.com/s-7g81zn9sor/images/stencil/1280x1280/products/169/479/Ryzen_7_9800X3D_Thumbnail__94734.1744293889.png?c=1"
+  },
+  {
+    "file": "deuterium_brand.png",
+    "source": "C:/Mod/DeuteriumIX/work/gm1/output/d9-emblem/deuterium-ix-exact-embedded.svg",
+    "description": "用户提供的 SVG 内嵌 PNG，无损解码，未改变图像内容",
+    "sha256": "ec172a734ae949a84fe93a4c25958d74652319a8c2d6c640f2e25b26f62ab4db"
+  }
+]

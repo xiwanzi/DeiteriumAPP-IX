@@ -1,0 +1,7 @@
+INSTRUMENTATION_RESULT: account=PASS
+INSTRUMENTATION_RESULT: original_pending_transfer_recovers_and_unlocks=PASS
+INSTRUMENTATION_RESULT: public_chat_history_and_socket=PASS
+INSTRUMENTATION_RESULT: real_listing_and_recipient_avatar_decode=PASS
+INSTRUMENTATION_RESULT: stream=Live backend checks passed; no balances or secrets logged.
+
+INSTRUMENTATION_CODE: -1

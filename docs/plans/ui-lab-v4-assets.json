@@ -1,0 +1,56 @@
+[
+  {
+    "file": "store_iphone.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-iphone-17-pro-202509?wid=800&hei=1000&fmt=webp&qlt=90&.v=UzBXQnlhUWdraTNvNU1Kb3pEQlpXQjVOVStZaG1ncWFjNXVUZkZ4anVIYlNab1lJcUZwSFVRK1htYlNmZUtPTFJ2R3NEUGt3Q2tTUTNWU09neHFkdWRBR0JWVHBRN0NKVm11SFZzeU45T2VCTXFJbjVIbEFUN05pTHFFYldZYzg&traceId=1",
+    "bytes": 60080
+  },
+  {
+    "file": "store_macbook.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-macbook-air-202603?wid=800&hei=1000&fmt=webp&qlt=90&.v=MjhMcWJ2MGZwbXEwdnBkcUN6ZnhyNW1zWVJKOElDbC9ldmpiZzRNOFRtcHFTRjNxbmh1UnU2R29ibGdpZUFXc25ZdDMremx3N21EQS9OQlBTRXgxeUZoQVg5ZFhuVFQxdWN0SHZTRUU0bXAxWnZFQ2ozaVJXS3R0eUNrSXRjUEo&traceId=1",
+    "bytes": 37760
+  },
+  {
+    "file": "store_airpods.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-airpods-max-202409_GEO_US?wid=800&hei=1000&fmt=webp&qlt=90&.v=WlczMnlkejNQakk5eW14MEJjQmdLd0hoakxSaUU2WUtGRGZ1cmhVSERsSFUvdWo0OXUzR2x0Z0haVDFBUVBIV2g1MCt4d0ZhbjJwNTZXbDFSKzZRbW9NOXZzRTZINDRkbkRYb3NSVDRmRjFpZmNYV2ZGcUQ4by8rbTNjSFBvNDE&traceId=1",
+    "bytes": 34270
+  },
+  {
+    "file": "store_ipad.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-ipad-air-202603?wid=800&hei=1000&fmt=webp&qlt=90&.v=UzBXQnlhUWdraTNvNU1Kb3pEQlpXR2xoVkNFSUF6ZStKWSsvQnNnYVZ3WDZXYXJlRUd1cTBYTnRnbTNlazIvMzl4VGJTa0Z6K25XajlIZ3dxUWxxaFlFUGJwZm43VDFqaDNOeEwxNHE3N1E&traceId=1",
+    "bytes": 33042
+  },
+  {
+    "file": "store_watch.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-watch-s11-202509?wid=800&hei=1000&fmt=webp&qlt=90&.v=QWhYaUFuRS9hTUliZ3N5RWVCV09vdjl0SUx3WU51YXRxeHB6bWVJK2RrWDkvamYzRzRvcFlnajNacmhEOC9BeEZXZzlzM2cwVmJseGdsS3RYT09za2hwNWRPNWF1Mm83OEFlanlxWkZGemwrYWpGdS9XeFgvbS9ITnNYOEhYaG4&traceId=1",
+    "bytes": 24296
+  },
+  {
+    "file": "store_iphoneair.webp",
+    "url": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/store-card-40-iphone-air-202509?wid=800&hei=1000&fmt=webp&qlt=90&.v=UzBXQnlhUWdraTNvNU1Kb3pEQlpXT0lGL3JSRk9QTHUvdlNaQzlmZ3M4Ym45S05qekNUdVUwMVFyK1pKaERUd3lPWjFvdU5EZVdwUnRCZ2RHSDBFS2tsVU5yYWhNQlZNeWo2SGZrN292cVlVRk5BYjU4dkMrYjBKSjFqVXFOVGg&traceId=1",
+    "bytes": 6152
+  },
+  {
+    "file": "mastercard_checkout.mp3",
+    "source_document": "https://docs.halodot.io/docs/documentations/sdk/branding-guidelines/mastercard/android-sdk/android-reference-app",
+    "download": "https://docs.halodot.io/assets/files/sonic-app-android-1.5.0-4af6a768a87a359d38da93ab5fd5c10c.zip",
+    "archive_entry": "sonic-app-android/app/libs/sonic-sdk-release-1-5-0.aar",
+    "sha256": "5479836c93d326dcdb202ebc23f5c8ba8207ffaaff0426ed5d8c07078ee5e53f",
+    "description": "SDK 1.5.0 内置 Checkout 原始资源，按原时序离线播放；未引入 SDK 网络和分析代码。"
+  },
+  {
+    "file": "mastercard_frames.json",
+    "source_document": "https://docs.halodot.io/docs/documentations/sdk/branding-guidelines/mastercard/android-sdk/android-reference-app",
+    "download": "https://docs.halodot.io/assets/files/sonic-app-android-1.5.0-4af6a768a87a359d38da93ab5fd5c10c.zip",
+    "archive_entry": "sonic-app-android/app/libs/sonic-sdk-release-1-5-0.aar",
+    "sha256": "565c537407010d7b59fddce3b9c2f07f6d35137c44a7a3bf424eda21cb7671c0",
+    "description": "SDK 1.5.0 内置 Checkout 原始资源，按原时序离线播放；未引入 SDK 网络和分析代码。"
+  },
+  {
+    "file": "mastercard_timing.json",
+    "source_document": "https://docs.halodot.io/docs/documentations/sdk/branding-guidelines/mastercard/android-sdk/android-reference-app",
+    "download": "https://docs.halodot.io/assets/files/sonic-app-android-1.5.0-4af6a768a87a359d38da93ab5fd5c10c.zip",
+    "archive_entry": "sonic-app-android/app/libs/sonic-sdk-release-1-5-0.aar",
+    "sha256": "142d7761c3797eb318f7250b4fadc5518281a9b8f9e1e50195a03e6bd3a9d03d",
+    "description": "SDK 1.5.0 内置 Checkout 原始资源，按原时序离线播放；未引入 SDK 网络和分析代码。"
+  }
+]

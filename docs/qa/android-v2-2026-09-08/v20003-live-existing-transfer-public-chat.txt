@@ -1,0 +1,8 @@
+INSTRUMENTATION_RESULT: account=PASS
+INSTRUMENTATION_RESULT: authorized_existing_public_message=PASS
+INSTRUMENTATION_RESULT: authorized_existing_transfer_read=PASS
+INSTRUMENTATION_RESULT: public_chat_history_and_socket=PASS
+INSTRUMENTATION_RESULT: stream=Live backend checks passed; no balances or secrets logged.
+
+INSTRUMENTATION_RESULT: wallet_read_and_recipient_resolution=PASS
+INSTRUMENTATION_CODE: -1

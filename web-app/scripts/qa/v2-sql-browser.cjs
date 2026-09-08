@@ -1,0 +1,67 @@
+async (page) => {
+  const origin = "http://127.0.0.1:5221", fixture = "C:/DeuteriumAPP/.worktrees/web-player-v1/web-app/output/sql-browser/", passed = [], errors = [];
+  const check = (value, label) => { if (!value) throw new Error(label); passed.push(label); };
+  const routeMedia = async (context) => context.route(/^https:\/\/[^/]*\.example\.invalid\//, (route) => route.fulfill({ path: fixture + "fixture.png", contentType: "image/png" }));
+  page.on("pageerror", (error) => errors.push(error.message)); await routeMedia(page.context());
+  const bobContext = await page.context().browser().newContext({ storageState: fixture + "Bob-state.json" }); await routeMedia(bobContext); const bob = await bobContext.newPage(); bob.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(origin + "/information"); await page.getByText("实时连接正常", { exact: true }).waitFor();
+    const publicMessage = page.locator(".pc-message").filter({ hasText: "本机浏览器公共引用验证" }).first();
+    await publicMessage.getByRole("button", { name: /^回复消息/ }).click();
+    await page.getByRole("textbox", { name: "消息内容" }).fill("公开引用验证"); await page.getByRole("button", { name: "发送", exact: true }).click();
+    await page.locator(".pc-message .bubble").filter({ hasText: "公开引用验证" }).waitFor();
+    const history = await (await page.request.get(origin + "/api/v1/chat/messages")).json();
+    check(history.data.messages.some((m) => m.content === "公开引用验证" && m.reply?.content === "本机浏览器公共引用验证"), "public reply entered real SQL with its authoritative source snapshot");
+    await page.getByRole("button", { name: "发起私聊", exact: true }).click(); await page.getByRole("dialog").getByRole("button", { name: "Bob", exact: true }).click();
+    await page.getByRole("heading", { name: "Bob", level: 2 }).waitFor(); await page.getByRole("textbox", { name: "消息内容" }).fill("私聊同步验证"); await page.getByRole("button", { name: "发送", exact: true }).click();
+    await page.locator(".pc-message .bubble").filter({ hasText: "私聊同步验证" }).waitFor();
+    await bob.goto(origin + "/information"); await bob.locator(".pc-contact").filter({ hasText: "Alice" }).click();
+    await bob.locator(".pc-message .bubble").filter({ hasText: "私聊同步验证" }).waitFor();
+    check(true, "a separate browser identity receives the same private SQL message");
+    await bob.locator(".pc-message").filter({ hasText: "私聊同步验证" }).getByRole("button", { name: /^回复消息/ }).click();
+    await bob.getByRole("textbox", { name: "消息内容" }).fill("私聊回复验证"); await bob.getByRole("button", { name: "发送", exact: true }).click();
+    await page.bringToFront(); await page.locator(".pc-message .bubble").filter({ hasText: "私聊回复验证" }).waitFor();
+    check(true, "private reply and source snapshot sync back to the first browser");
+    await page.locator(".pc-message").filter({ hasText: "私聊同步验证" }).first().getByRole("button", { name: /^转发消息/ }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Carol", exact: true }).click(); await page.getByRole("heading", { name: "Carol", level: 2 }).waitFor();
+    await page.locator(".pc-message blockquote").filter({ hasText: "转发自 Alice" }).waitFor();
+    check(true, "private forwarding creates a server-authorised message in another conversation");
+    const conversations = await (await bob.request.get(origin + "/api/v1/chat/conversations")).json();
+    check(conversations.data.length === 1 && conversations.data[0].otherPlayer.gameId === "Alice", "second account cannot list the unrelated Alice–Carol conversation");
+    await page.goto(origin + "/me"); await page.getByRole("button", { name: "编辑简介", exact: true }).click();
+    await page.getByRole("dialog").getByRole("textbox", { name: "个人简介", exact: true }).fill("仅本机 SQL 浏览器验收"); await page.getByRole("dialog").getByRole("button", { name: "保存", exact: true }).click();
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    const profile = await (await bob.request.get(origin + "/api/v1/players/player_Alice")).json(); check(profile.data.bio === "仅本机 SQL 浏览器验收", "profile update is visible to another authenticated browser");
+    await page.locator("input[type=file]").setInputFiles(fixture + "fixture.png"); await page.locator("img.avatar").waitFor();
+    check((await (await page.request.get(origin + "/api/v1/players/player_Alice")).json()).data.avatar?.assetId, "avatar attaches only after the verified media response and profile transaction");
+    await page.goto(origin + "/admin"); await page.getByRole("button", { name: "公告管理", exact: true }).click(); await page.getByRole("button", { name: "新建公告", exact: true }).click();
+    await page.getByRole("dialog").getByRole("textbox", { name: "标题", exact: true }).fill("本机公告旧标题"); await page.getByRole("dialog").getByRole("textbox", { name: "摘要", exact: true }).fill("只存在于临时测试数据库"); await page.getByRole("dialog").getByRole("textbox", { name: "段落内容", exact: true }).fill("受控公告正文");
+    await page.getByRole("dialog").locator("input[type=file]").first().setInputFiles(fixture + "fixture.png"); await page.getByRole("dialog").getByRole("button", { name: "保存草稿", exact: true }).click();
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    check((await (await bob.request.get(origin + "/api/v1/announcements")).json()).data.length === 0, "saving an announcement draft does not publish it");
+    await page.locator(".announcement-admin-list article").filter({ hasText: "本机公告旧标题" }).getByRole("button", { name: "发布", exact: true }).click();
+    await page.locator(".announcement-admin-list article").filter({ hasText: "本机公告旧标题" }).getByText("已发布", { exact: true }).waitFor();
+    await bob.goto(origin + "/announcements"); await bob.getByRole("button", { name: /本机公告旧标题/ }).waitFor(); check(true, "published announcement reaches the other browser through the live API");
+    await page.locator(".announcement-admin-list article").filter({ hasText: "本机公告旧标题" }).getByRole("button", { name: "编辑", exact: true }).click(); await page.getByRole("dialog").getByRole("textbox", { name: "标题", exact: true }).fill("本机公告新标题"); await page.getByRole("dialog").getByRole("button", { name: "保存草稿", exact: true }).click(); await page.getByRole("dialog").waitFor({ state: "hidden" });
+    check((await (await bob.request.get(origin + "/api/v1/announcements")).json()).data[0].title === "本机公告旧标题", "editing a published announcement retains its prior public snapshot");
+    await page.locator(".announcement-admin-list article").filter({ hasText: "本机公告新标题" }).getByRole("button", { name: "发布更新", exact: true }).click();
+    await page.locator(".announcement-admin-list article").filter({ hasText: "本机公告新标题" }).getByText("有未发布修改", { exact: true }).waitFor({ state: "hidden" });
+    await bob.reload(); await bob.getByRole("button", { name: /本机公告新标题/ }).waitFor(); check(true, "explicit publish replaces the public snapshot across accounts");
+    await page.goto(origin + "/market"); await page.getByRole("button", { name: "发布商品", exact: true }).click();
+    const listing = page.getByRole("dialog"); await listing.getByRole("textbox", { name: "商品标题", exact: true }).fill("仅本机市场验证"); await listing.getByRole("textbox", { name: "一句话简介", exact: true }).fill("临时数据库里的测试发布"); await listing.getByRole("textbox", { name: "详细介绍", exact: true }).fill("测试完成自动删除临时数据库"); await listing.getByRole("textbox", { name: "售价（信用点）", exact: true }).fill("1.25"); await listing.getByRole("textbox", { name: "自取地点", exact: true }).fill("本机测试地点"); await listing.locator("input[type=file]").setInputFiles(fixture + "fixture.png"); await listing.getByRole("button", { name: "发布商品", exact: true }).click(); await listing.waitFor({ state: "hidden" });
+    await bob.goto(origin + "/market"); await bob.getByRole("button", { name: /仅本机市场验证/ }).waitFor(); check(true, "player publishing uses the real owner-bound asset and SQL listing API");
+    await page.getByRole("button", { name: "我的发布", exact: true }).click(); await page.getByRole("button", { name: /仅本机市场验证/ }).click(); await page.getByRole("dialog").getByRole("button", { name: "下架", exact: true }).click(); await page.getByRole("dialog").getByRole("button", { name: "确认下架", exact: true }).click(); await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await bob.reload(); await bob.getByRole("heading", { name: "还没有在售商品", exact: true }).waitFor(); check(true, "unlisting removes a product from another player's public catalogue");
+    await page.getByRole("button", { name: /仅本机市场验证/ }).click(); await page.getByRole("dialog").getByRole("button", { name: "重新上架", exact: true }).click(); await page.getByRole("dialog").getByRole("button", { name: "重新上架", exact: true }).click(); await page.getByRole("dialog").waitFor({ state: "hidden" }); await bob.reload(); await bob.getByRole("button", { name: /仅本机市场验证/ }).waitFor(); check(true, "republish preserves content and validates the current server version");
+    await page.goto(origin + "/merchant"); await page.getByRole("button", { name: "创建商店", exact: true }).click(); await page.getByRole("dialog").getByRole("textbox", { name: "商店名称", exact: true }).fill("仅本机商店"); await page.getByRole("dialog").getByRole("button", { name: "保存商店", exact: true }).click(); await page.getByRole("dialog").waitFor({ state: "hidden" }); await page.getByRole("heading", { name: "仅本机商店", exact: true }).waitFor(); check(true, "platform administrator creates a real store through the official API");
+    for (const [button, value] of [["新增品牌", "本机品牌"], ["新增分类", "本机分类"]]) { await page.getByRole("button", { name: button, exact: true }).click(); await page.getByRole("dialog").getByRole("textbox", { name: "名称", exact: true }).fill(value); await page.getByRole("dialog").getByRole("button", { name: "保存", exact: true }).click(); await page.getByRole("dialog").waitFor({ state: "hidden" }); }
+    await page.getByRole("button", { name: "新增商品", exact: true }).click(); check(await page.getByRole("dialog").getByRole("option", { name: "本机品牌", exact: true }).count() === 1 && await page.getByRole("dialog").getByRole("option", { name: "本机分类", exact: true }).count() === 1, "product editor reads real store classifications");
+    check(await page.getByRole("dialog").getByText("当前商店尚未配置可用的游戏内邮箱交付模板。", { exact: true }).count() === 1, "missing game delivery templates are explicit and never fabricated"); await page.getByRole("button", { name: "关闭弹窗", exact: true }).click();
+    await page.goto(origin + "/notification-settings"); const preference = page.getByRole("switch").nth(1); await preference.waitFor(); const before = await preference.isChecked(); await preference.click(); await page.getByRole("switch").nth(1).isEnabled();
+    await page.reload(); await page.getByRole("switch").nth(1).waitFor(); check(await page.getByRole("switch").nth(1).isChecked() !== before, "notification preferences persist in real SQL across browser reloads");
+    await bob.goto(origin + "/notifications"); await bob.locator(".foundation-card").first().click(); await bob.getByRole("dialog").waitFor(); check(true, "the notified account can open and mark its own notification read");
+    await page.goto(origin + "/information"); await page.getByText("实时连接正常", { exact: true }).waitFor(); await page.screenshot({ path: "output/playwright/v2-sql-chat.png", animations: "disabled" });
+    check(errors.length === 0, "SQL-backed browser flows have no JavaScript runtime exceptions");
+    return { mode: "real loopback Go/MariaDB and two independent browser sessions; preverified local media fixture; no production writes or real economy effects", count: passed.length, passed, errors };
+  } finally { await bobContext.close(); }
+}

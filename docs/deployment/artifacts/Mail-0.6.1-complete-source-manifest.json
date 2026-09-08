@@ -1,0 +1,233 @@
+{
+  "base": "Existing Mail 0.6.0 integration baseline BEFORE JDBC isolation; NOT the repository Git HEAD. JDBC preimages independently matched the saved pre-JDBC files.",
+  "target": "Mail 0.6.1: JDBC driver isolation + missing-delivery cancellation + positive committed-save proof recovery",
+  "preferredPatch": "Mail-0.6.1-complete-after-v0.6-baseline.patch",
+  "patchSha256": "0ecd5abf492d0a8880fa247b8029fe91e313582e12a3d418e4a27f4bb37d3919",
+  "fileCount": 29,
+  "newFiles": 12,
+  "modifiedFiles": 17,
+  "finalJarSha256": "9c8b4585799812e7874094d023e057acd059f9a0716210ac1b476ca009249cfa",
+  "componentOrder": [
+    {
+      "patch": "Mail-0.6.0-jdbc-isolation.patch",
+      "sha256": "4bd4c863ed611dc48ed3dbd4f7512e8f13e0e0b328c3fd64140bc44ec0bbc68b"
+    },
+    {
+      "patch": "Mail-0.6.1-api-v2-after-jdbc.patch",
+      "sha256": "02f4535b2098c23dfa2e2777c8861cb0c331c25c7d4837fb7502fe47b6407fda"
+    }
+  ],
+  "verification": [
+    "original API-v2 manifest preimage and postimage checks",
+    "three JDBC preimages match saved pre-JDBC source",
+    "component chain applies in memory to exact current postimages",
+    "combined forward and reverse patches match exact normalized trees",
+    "source hashes, source git status and index unchanged"
+  ],
+  "verificationMode": "In-memory exact unified-diff application; no temporary source trees or server operations created in this check.",
+  "files": [
+    {
+      "path": "README.md",
+      "change": "M",
+      "beforeSha256Lf": "23a4ae34af696792c8449576b01e7c263b5086f90eb968663dcfcda831f1d438",
+      "afterSha256Lf": "dd752facadb815d95213fda6b7a67d0e4c7f45584bcc77c8b3691b9df133c662",
+      "actualFileSha256": "705ba96a028965a7b58e2a3f70e53442359fe748b06d063267fb18f8f1cbf5d0"
+    },
+    {
+      "path": "docs/mailbox-cancellation-v2.md",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "9f5ef98bccb61a3f275cbae5b27fda9fd75d51906771f51f365db52ccb80b36f",
+      "actualFileSha256": "9f5ef98bccb61a3f275cbae5b27fda9fd75d51906771f51f365db52ccb80b36f"
+    },
+    {
+      "path": "docs/mailbox-integration-implementation.md",
+      "change": "M",
+      "beforeSha256Lf": "55b9df90daa661880069642932186065b1a9e0b02027fa6c9cfa57294e6f679b",
+      "afterSha256Lf": "5bc1602622fdf1857ed578b4371c77f0d691e1fe2747fabb67c229da08b7888e",
+      "actualFileSha256": "5bc1602622fdf1857ed578b4371c77f0d691e1fe2747fabb67c229da08b7888e"
+    },
+    {
+      "path": "docs/mailbox-integration-v1.md",
+      "change": "M",
+      "beforeSha256Lf": "a28f20ef3d638ea8e5e77a7861be737c604c299f7cdbe4dd0eff730e2787fba0",
+      "afterSha256Lf": "59aa26b8f9241df6812a10bde6f3b9796be2e0f7ab70aed0ec57d1a8991205a4",
+      "actualFileSha256": "59aa26b8f9241df6812a10bde6f3b9796be2e0f7ab70aed0ec57d1a8991205a4"
+    },
+    {
+      "path": "docs/mailbox-save-proof-recovery-v2.md",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "54b8e7d73ed6473b18108d32b28472c868e906b274cbef159c1fd617f368ddab",
+      "actualFileSha256": "54b8e7d73ed6473b18108d32b28472c868e906b274cbef159c1fd617f368ddab"
+    },
+    {
+      "path": "docs/qa/mailbox-cancellation-v2-2026-09-08.md",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "82c6391e949212eff90fc2544a26e51f577763f3d7289700e47d348de28fc6a1",
+      "actualFileSha256": "82c6391e949212eff90fc2544a26e51f577763f3d7289700e47d348de28fc6a1"
+    },
+    {
+      "path": "docs/qa/mailbox-save-proof-recovery-2026-09-08.md",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "8d0907a2967b23f6ef10e9e76711cd5511a75b1419e36654763a0de11720c1b0",
+      "actualFileSha256": "8d0907a2967b23f6ef10e9e76711cd5511a75b1419e36654763a0de11720c1b0"
+    },
+    {
+      "path": "mail-bridge/pom.xml",
+      "change": "M",
+      "beforeSha256Lf": "ec4f79ffcac06eacf172b2632aaab8aa1f27eb7fd787b44e57f53b2cc0ac2111",
+      "afterSha256Lf": "d44b26ea9c3df52709e2f46a0c5df01accb093c0bf307a1afcbd796867b6811a",
+      "actualFileSha256": "c23cb4515950a40e3984cc428e4fdcb234bab8e638c14d2841d912fab7471b14"
+    },
+    {
+      "path": "mail-plugin/README.md",
+      "change": "M",
+      "beforeSha256Lf": "9f8de72dffd48ec56911e32be0ffd2568bbb0535b521ae0f41f67867e0974a6b",
+      "afterSha256Lf": "3873013a8a17f7dcaee0976bc79930b19a33d54c356e1221ed9d27134f6f8caf",
+      "actualFileSha256": "2dc3715520ceda483df135f501c80524d68f7117abad0f1cf677d78cb0277f9d"
+    },
+    {
+      "path": "mail-plugin/pom.xml",
+      "change": "M",
+      "beforeSha256Lf": "e5b1bc340fd1579bb87bc6e1a3c8730a4e5e54a9b9e64141640b7689888eadb9",
+      "afterSha256Lf": "54588048fa764fb01873b7ad729d960338addf7eac2143a7e2cd51f3f3ccf267",
+      "actualFileSha256": "a5475e5ac9335b5606f10b164595e0336e87e5f66e08d11f12c5a557083f6eda"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/api/MailPlayerDataBarrier.java",
+      "change": "M",
+      "beforeSha256Lf": "880c27cdf7b8362f639b80009243d36f74b6c875d5232df906e3b7cc080576d0",
+      "afterSha256Lf": "ec750af85e6809a3115e545a4d8c80acd9342043694112c10c288627fb3ee2de",
+      "actualFileSha256": "ec750af85e6809a3115e545a4d8c80acd9342043694112c10c288627fb3ee2de"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/api/MailboxIntegration.java",
+      "change": "M",
+      "beforeSha256Lf": "ad64d93cacdeead6d6d7498e841eacf14823c04697d27f5ada80efc9c6af62b6",
+      "afterSha256Lf": "2b5e15f767b1d9204d004eb5bad0b732c4a9f1ae00bc52a7db3cb696f25829fc",
+      "actualFileSha256": "2b5e15f767b1d9204d004eb5bad0b732c4a9f1ae00bc52a7db3cb696f25829fc"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/CancellationValidation.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "1e80d1fb1b79d1ba8b2fd5261e7682bbefb06b6e8ed9b18ebc1a85e81f49da76",
+      "actualFileSha256": "1e80d1fb1b79d1ba8b2fd5261e7682bbefb06b6e8ed9b18ebc1a85e81f49da76"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/ClaimOperationAuthority.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "e09b4dc8470e47756234e10b029b830a6881dee5fb5d8510b5bfb3af27119770",
+      "actualFileSha256": "e09b4dc8470e47756234e10b029b830a6881dee5fb5d8510b5bfb3af27119770"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/DeliveryCancellations.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "589cbd32df5f9899770d261fb8900144ae6964991c3a001381898de67aeac010",
+      "actualFileSha256": "589cbd32df5f9899770d261fb8900144ae6964991c3a001381898de67aeac010"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/DeliveryClaimRecovery.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "f992210840aed72e64b8bc439778bf9ed9c0ff605009dcfb23d29d93a20dcc33",
+      "actualFileSha256": "f992210840aed72e64b8bc439778bf9ed9c0ff605009dcfb23d29d93a20dcc33"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/DeliveryClaims.java",
+      "change": "M",
+      "beforeSha256Lf": "886f2d3bbf8fd12b165a076714a3e0388591162f2f4ae1322b1c5162892ca082",
+      "afterSha256Lf": "6fc8311cbc79e3047214989cbeda2ff47a3015dc595470d9083a35f440fbffbc",
+      "actualFileSha256": "6fc8311cbc79e3047214989cbeda2ff47a3015dc595470d9083a35f440fbffbc"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/DeliveryCommands.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "f6f478635b4621ac0a505f06b4ca3070c4c5140945632dcde454d78376dec40b",
+      "actualFileSha256": "f6f478635b4621ac0a505f06b4ca3070c4c5140945632dcde454d78376dec40b"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/DeliveryStore.java",
+      "change": "M",
+      "beforeSha256Lf": "22f2f3b4d63f6f799c9255bfdb0c7221aa75d8a3ef3eef0596d0264dd1638658",
+      "afterSha256Lf": "afbbf6f35bdbad78db932ff944562193ac5fdfb0002c4c19a119a0e7c511949c",
+      "actualFileSha256": "afbbf6f35bdbad78db932ff944562193ac5fdfb0002c4c19a119a0e7c511949c"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/DeliveryValidation.java",
+      "change": "M",
+      "beforeSha256Lf": "3f9a5afdefda67154fa2fe1386357ccc7043dd5505ea5aadaf55735c1aa847aa",
+      "afterSha256Lf": "cec0d5118c4b7ffed6cf090bd627d8915453b1365c240b09db57245a2ef681e0",
+      "actualFileSha256": "cec0d5118c4b7ffed6cf090bd627d8915453b1365c240b09db57245a2ef681e0"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/MailboxIntegrationService.java",
+      "change": "M",
+      "beforeSha256Lf": "9478cbd3c8b6c717fdd1ed93cf05e9e8fedbeb8ad69e9cff598b67ed13082041",
+      "afterSha256Lf": "ca1ea5882e53e4a158dadc6c6887915a3d573322f8ba49c4c574dcd0a470a1eb",
+      "actualFileSha256": "ca1ea5882e53e4a158dadc6c6887915a3d573322f8ba49c4c574dcd0a470a1eb"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/integration/OrderClaimService.java",
+      "change": "M",
+      "beforeSha256Lf": "dbebd0beeaa23409b35a91265e8201ceb08ef0ee76a39969bf3f20e84e44fd3f",
+      "afterSha256Lf": "f2b978bba77f7013d58cebd5fe5be04a63e9d1efc66a1b496a5183b888576047",
+      "actualFileSha256": "f2b978bba77f7013d58cebd5fe5be04a63e9d1efc66a1b496a5183b888576047"
+    },
+    {
+      "path": "mail-plugin/src/main/java/cafe/deuterium/mail/storage/StorageOptions.java",
+      "change": "M",
+      "beforeSha256Lf": "7fa8ef0e30aba8d227f94c9fbacd2acedc416e40444c4e3d5f718cbdba4db947",
+      "afterSha256Lf": "bc2a0e923f675969c415d005ca3915f73574005fd8b74d2b28ffc2b72263935c",
+      "actualFileSha256": "bc2a0e923f675969c415d005ca3915f73574005fd8b74d2b28ffc2b72263935c"
+    },
+    {
+      "path": "mail-plugin/src/main/resources/plugin.yml",
+      "change": "M",
+      "beforeSha256Lf": "7b03e54dce3570cf2f5843896b4a71c1d0d90da22331197eacab17a40725724e",
+      "afterSha256Lf": "9b891ed86fa3cc44f60337115042b8fdd1e5dd4b99847cc03b7ea481a5189f44",
+      "actualFileSha256": "fddec33b1e8e83c758ed0658c0dab3a5828f0ea00796c8acb4e550775bd6aacc"
+    },
+    {
+      "path": "mail-plugin/src/test/java/cafe/deuterium/mail/integration/CancellationRaceWorker.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "454f21e8c49ba20b89a77776b31d81fb6bceff7c9bd6065ff533ba5edc49cbec",
+      "actualFileSha256": "454f21e8c49ba20b89a77776b31d81fb6bceff7c9bd6065ff533ba5edc49cbec"
+    },
+    {
+      "path": "mail-plugin/src/test/java/cafe/deuterium/mail/integration/DeliveryCancellationTest.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "fcf61b71a05a6fd7a4669076eb600b5a986015a420bb04d6932f18f47048a9ec",
+      "actualFileSha256": "fcf61b71a05a6fd7a4669076eb600b5a986015a420bb04d6932f18f47048a9ec"
+    },
+    {
+      "path": "mail-plugin/src/test/java/cafe/deuterium/mail/integration/DeliveryClaimRecoveryTest.java",
+      "change": "A",
+      "beforeSha256Lf": null,
+      "afterSha256Lf": "0e5a99917f29661fc6bb86c013a3d05822b8ceeb39b532a88533c6a22367c3fa",
+      "actualFileSha256": "0e5a99917f29661fc6bb86c013a3d05822b8ceeb39b532a88533c6a22367c3fa"
+    },
+    {
+      "path": "mail-plugin/src/test/java/cafe/deuterium/mail/integration/IntegrationFixture.java",
+      "change": "M",
+      "beforeSha256Lf": "baf5aaf1374bd2286c8cf5532f029232755218941497f3941f658bbd099b446a",
+      "afterSha256Lf": "4a8905f33fda1121957a4dd4c0e676a7bf7d87b9e423f91314169743420b4d61",
+      "actualFileSha256": "4a8905f33fda1121957a4dd4c0e676a7bf7d87b9e423f91314169743420b4d61"
+    },
+    {
+      "path": "mail-plugin/src/test/java/cafe/deuterium/mail/integration/OrderClaimServiceTest.java",
+      "change": "M",
+      "beforeSha256Lf": "cbd3b3a479d1dd60d5711adc2b46ea83af934e4fe672d714c2044f272339b253",
+      "afterSha256Lf": "3a20dd28f1dc00bcdc93a2d2a07105c3e2cdffbb7d16704659154508639a4ff2",
+      "actualFileSha256": "3a20dd28f1dc00bcdc93a2d2a07105c3e2cdffbb7d16704659154508639a4ff2"
+    }
+  ]
+}

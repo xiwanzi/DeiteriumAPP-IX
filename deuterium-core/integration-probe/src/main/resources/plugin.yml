@@ -1,0 +1,11 @@
+name: DeuteriumCoreProbe
+version: '1.0.0'
+main: cafe.deuterium.probe.CoreProbe
+api-version: '1.21'
+depend: [DeuteriumCore, XConomy, Vault]
+commands:
+  dcprobe:
+    description: Isolated Core integration probe, never install in production
+    permission: deuterium.probe
+permissions:
+  deuterium.probe: {default: op}

@@ -1,0 +1,1132 @@
+{
+  "commit": "ff0dcc393a4bb0284fcdd4889249b0eee34201d0",
+  "branch": "codex/ui-motion-lab",
+  "parentCommit": "bf81890751adef37addeb358ef9fd509a30fc1b8",
+  "pushed": false,
+  "scope": "Complete previously-untracked ui-lab module based on the accepted version 09 UI, its Gradle include, this task QA document and selected evidence only.",
+  "fileCount": 137,
+  "moduleFiles": 108,
+  "qaEvidenceFiles": 27,
+  "verification": {
+    "unitTests": 91,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "lintErrors": 0,
+    "lintWarnings": 25,
+    "installedApk": "Deuterium-2.0.0-20003-test.apk",
+    "installedApkSha256": "894b523b83aa2c9e2f9f2f7b8cec6ca601f3d00ac00572b30cd258c5cda556ad",
+    "postBuildChanges": "Whitespace-only EOF and captured terminal line-ending cleanup for git diff --check; no semantic changes."
+  },
+  "excluded": [
+    "APKs and AABs",
+    "SDKs and build output",
+    "local.properties",
+    "QA session fixtures and tokens",
+    "keys and server credentials",
+    "other-task AGENTS, CONTEXT, product/contracts and historical document changes",
+    "redundant intermediate QA screenshots"
+  ],
+  "files": [
+    {
+      "path": "android-app/settings.gradle.kts",
+      "mode": "100644",
+      "gitBlobId": "d05295fa675b22155b3fd578d10f55d5a831331e",
+      "sizeBytes": 1333,
+      "change": "M",
+      "sha256": "ed230711dfd281cfe5dfcf07792aadd398f8e18e347742b31efced448209c39b"
+    },
+    {
+      "path": "android-app/ui-lab/README.md",
+      "mode": "100644",
+      "gitBlobId": "f3b9a5a9371c9270f153a1001488171ef261388a",
+      "sizeBytes": 3646,
+      "change": "A",
+      "sha256": "50507c52005cd8516b5248e2a0b5c48c224e3416f43ed34033b83429b1b5c54c"
+    },
+    {
+      "path": "android-app/ui-lab/build.gradle.kts",
+      "mode": "100644",
+      "gitBlobId": "4511ecaabc3e8bc558434dc7015b393270d8208b",
+      "sizeBytes": 1865,
+      "change": "A",
+      "sha256": "9bb3bfb6fbea578406187f2ee17666a8af2642993609dbf68fc31762f5eef8d0"
+    },
+    {
+      "path": "android-app/ui-lab/src/androidTest/java/com/deuterium/app/uilab/LiveBackendInstrumentation.kt",
+      "mode": "100644",
+      "gitBlobId": "568f4754c4149c874d8bf8dde4ba0eee14aa64ca",
+      "sizeBytes": 10158,
+      "change": "A",
+      "sha256": "495391c209e3f8d3e9e14c0ea18b2769c52547415e487cf4cf7d0d9cc113bd8e"
+    },
+    {
+      "path": "android-app/ui-lab/src/debug/res/xml/update_network_security.xml",
+      "mode": "100644",
+      "gitBlobId": "a1d0d1dc71718dfe2f6d97d77e7e078c41552e2f",
+      "sizeBytes": 419,
+      "change": "A",
+      "sha256": "68a0d77c252fd14172259ee42cde58aeceadf53f8abfed4a41a1e01af96e9efd"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/AndroidManifest.xml",
+      "mode": "100644",
+      "gitBlobId": "a470b5cb5882ccd975df815f7005b34b7e4e6a03",
+      "sizeBytes": 1590,
+      "change": "A",
+      "sha256": "9a8da22f2961b6551029ca8f6d2a67b148a90b1b9cf899e362cf63846ac67e75"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppIdentity.kt",
+      "mode": "100644",
+      "gitBlobId": "7a4e0c430df2ba6c297fd17a7f195f66ba483979",
+      "sizeBytes": 2047,
+      "change": "A",
+      "sha256": "08ebca3be30f6eec62ba49f8d2d887bc85b91d4b95a21af67bd000c3b62c7b2b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppLaunchOverlay.kt",
+      "mode": "100644",
+      "gitBlobId": "01653e07108914af254b7000012e389d5906adee",
+      "sizeBytes": 4224,
+      "change": "A",
+      "sha256": "d7daeaa2ffe09dea2ce6c5811deb4405e9518d86b268ce556784a98626d7591a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppUpdates.kt",
+      "mode": "100644",
+      "gitBlobId": "94af8df3579125cf17d364de67b1d49fbc3ccc05",
+      "sizeBytes": 18308,
+      "change": "A",
+      "sha256": "ad68ea84826bd6d88cca07f6b993e4f39dc28c8d0974709e0f4e02297df1655e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AuthPages.kt",
+      "mode": "100644",
+      "gitBlobId": "eff5b9d4d7d2ef7991f915b34a2b1ed2d0ed2bac",
+      "sizeBytes": 12739,
+      "change": "A",
+      "sha256": "d228d82e9cab4d1650bca9aea01883da5218b28e1740339134248e2110b8a8ed"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AvatarCropper.kt",
+      "mode": "100644",
+      "gitBlobId": "3fb639cc93155fc4c6a044208860d1d6f6b2e21d",
+      "sizeBytes": 8150,
+      "change": "A",
+      "sha256": "a6c029ca6298957d11bda7ddfd62b3a1cab361d8249dcc1da9c9070d86356db2"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendAI.kt",
+      "mode": "100644",
+      "gitBlobId": "50a2da0c907bfe73d1fbcac8fedcd461dc7d45d2",
+      "sizeBytes": 12449,
+      "change": "A",
+      "sha256": "632da412546cf7cde1ec260e825b9e72f9c585b19db8cdce3150998593434b3a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendApi.kt",
+      "mode": "100644",
+      "gitBlobId": "08c7ab4503c81e8ee072aea21b022477c5b1432d",
+      "sizeBytes": 11382,
+      "change": "A",
+      "sha256": "8186d4c1c402c43e92f6ba4d96b51febb9f848fb38b3ae74e91df7726e43304e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendAssets.kt",
+      "mode": "100644",
+      "gitBlobId": "8882a33ba647ab40c256e3744232c75fa9654066",
+      "sizeBytes": 8095,
+      "change": "A",
+      "sha256": "9884a21e67ec8125f10451f3c7c1c0096fc24e8f297079ed91f343fa1e80bb41"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendCatalog.kt",
+      "mode": "100644",
+      "gitBlobId": "8b9f550a6c7282564bb1cb393798d94b7eaeb795",
+      "sizeBytes": 18294,
+      "change": "A",
+      "sha256": "3a1eb18cbab94930cd768be2d7c1c504cda25b8add8cb7f7a8e84d6fa84afd78"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendChat.kt",
+      "mode": "100644",
+      "gitBlobId": "1554a1e7815c54a5a8ca594a7cd5ef313fe3f6d1",
+      "sizeBytes": 3861,
+      "change": "A",
+      "sha256": "5f34d9a8f075a4591c3a7ee9a3b17574f22a9e6b201426d9a1e2292ea0424bde"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendCommissions.kt",
+      "mode": "100644",
+      "gitBlobId": "8eb6e58b3b373500feab8a7b2025e3a6f0942a2b",
+      "sizeBytes": 8951,
+      "change": "A",
+      "sha256": "f21cc210c145f9faa517ecc32489914023edb8067facc73c478b0afcb0c78e18"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendInterventions.kt",
+      "mode": "100644",
+      "gitBlobId": "cb452300f8d2628fcda4f3ede3780dc3af6e9056",
+      "sizeBytes": 5816,
+      "change": "A",
+      "sha256": "bfbfd083382e8dbb48cd03c2a66108bdea22b6a21862ed057e6383a130c1bbd6"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BillHistoryPage.kt",
+      "mode": "100644",
+      "gitBlobId": "e328fbc84be5403ad5426c68d2e0f8ae30d26fa3",
+      "sizeBytes": 4014,
+      "change": "A",
+      "sha256": "2a6ab775e86902013e4c411c8c026359a00c2b48364a7bbb2f5923a9747ed03d"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CalendarRangeSheet.kt",
+      "mode": "100644",
+      "gitBlobId": "0c3430ce2f76e4afcb15f5cf93fac98a31758c04",
+      "sizeBytes": 3998,
+      "change": "A",
+      "sha256": "db12b8128647ecf32f3ebb6fe227ac5a452e7c5fe9d512a87f015d4ab051c6f7"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ChatInteractions.kt",
+      "mode": "100644",
+      "gitBlobId": "ca6eff3c2ab24ab8be4dfea85073109ff13f8064",
+      "sizeBytes": 3094,
+      "change": "A",
+      "sha256": "c0d70608f0e4f39344d8bbdd6bd2b13b57ea3baec4a99786924c7bb67baa03a3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CollapsingChrome.kt",
+      "mode": "100644",
+      "gitBlobId": "6a10c023b217fc2e96d9f575825b006b3e0bea2d",
+      "sizeBytes": 4288,
+      "change": "A",
+      "sha256": "de893d088a20a32871b13a74bdf578c54b6bad93e8120c246aec2a46c1d35cc4"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommerceBook.kt",
+      "mode": "100644",
+      "gitBlobId": "b4ce3647c0a7510a5cba896bff6566394784344c",
+      "sizeBytes": 24464,
+      "change": "A",
+      "sha256": "7a5a3b1d656c7d25b651657d9ab17e695ad089fcd0092686c583a9b8662cb5d4"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommissionBook.kt",
+      "mode": "100644",
+      "gitBlobId": "898800736d91c1b35fae565227bc72dc747e2c96",
+      "sizeBytes": 15838,
+      "change": "A",
+      "sha256": "c79f696fed9f07631d16ed6b750dcbe2e22010138a3eb83d9895dc5d8750625e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommissionPages.kt",
+      "mode": "100644",
+      "gitBlobId": "0a5dc1c916b82d4107009fb4b8985a93efb3ae85",
+      "sizeBytes": 20837,
+      "change": "A",
+      "sha256": "8474026527f0ac88cc7cf38708d3efd1863e1f7728572635ce12e6adc30269e0"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ConversationPages.kt",
+      "mode": "100644",
+      "gitBlobId": "be7a5c9fb809555d0ebc15f4b4f3e02e92512cc9",
+      "sizeBytes": 13006,
+      "change": "A",
+      "sha256": "6962004e938c78e54f580d10503a22c19beb2ed179bf875e0beb4196d1246298"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DemoPlayers.kt",
+      "mode": "100644",
+      "gitBlobId": "4ecc7cb16db6415fc3d745d33627096075e3793c",
+      "sizeBytes": 1108,
+      "change": "A",
+      "sha256": "58a67073019428f73d96d52914c3a9d5672cdf45dbe936ab6ef3868ea6b9db2e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumIcons.kt",
+      "mode": "100644",
+      "gitBlobId": "4e4da51ec1f0114170eb07e47ad88be3ba83b9f3",
+      "sizeBytes": 2720,
+      "change": "A",
+      "sha256": "f7e0951e8540392557121523072a7640e81e3fecd49132eb4304c45a84f70a14"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeviceTilt.kt",
+      "mode": "100644",
+      "gitBlobId": "32817a97ffde016ade57f69ff8802cc6fe4d0e46",
+      "sizeBytes": 2606,
+      "change": "A",
+      "sha256": "75164eea7be7cb4f4e995ffb8837f236331d08fd469dbcc89aa616b74bc89706"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/EventPages.kt",
+      "mode": "100644",
+      "gitBlobId": "a65fdc736d30ade4afb4cbe1349f60ac3578ca11",
+      "sizeBytes": 5240,
+      "change": "A",
+      "sha256": "9d9b0a0c5db00027d62db3af89fed38dd852ef72ec1ac41bae576667a3b740ba"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/FacePayAssets.kt",
+      "mode": "100644",
+      "gitBlobId": "987c1956e1b31bac28a463e4a87021d8af409e36",
+      "sizeBytes": 4012,
+      "change": "A",
+      "sha256": "46d747959b12e607ef783bdf954d1d6ff9c436c94c1f3d3a368f638051519cc0"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassParameters.kt",
+      "mode": "100644",
+      "gitBlobId": "1854723b89eef76c554fa335567174859011ca74",
+      "sizeBytes": 781,
+      "change": "A",
+      "sha256": "dd922f3b7bcfa0b8f761e9331b37a167ce06c1896ee60cb0e74bd11f17aa6e34"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassSettingsStore.kt",
+      "mode": "100644",
+      "gitBlobId": "594999d094280fcbb3789334f19be22e4eeb3a06",
+      "sizeBytes": 1901,
+      "change": "A",
+      "sha256": "cb1aa5ac211ab3073bca782b4578c59e2f1bde974e8e00fb2a14032a86388d2e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassTuner.kt",
+      "mode": "100644",
+      "gitBlobId": "20d19bb13512c3a72ab7818050998e4dcf9c5e50",
+      "sizeBytes": 4730,
+      "change": "A",
+      "sha256": "3ad971273ab89ca0daaa92186a4f654f469bebfeca131ffea9b93a4f4560f0b2"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GradientGlassHeader.kt",
+      "mode": "100644",
+      "gitBlobId": "3ffbd68bc33ed87fb53aba0d221a20a84c136ea8",
+      "sizeBytes": 2114,
+      "change": "A",
+      "sha256": "9ca3e2df9ef9aa5a724b753131f6252ff91992aacc760cf7a3ee1516a625fd14"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InformationPages.kt",
+      "mode": "100644",
+      "gitBlobId": "12438fee512d8443d670bd77a51b898a7b435d2f",
+      "sizeBytes": 14562,
+      "change": "A",
+      "sha256": "46da7dd156a19cc57be67c57c81ac0c9ad33082aa1884db7528ec892037f26ed"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InterventionCase.kt",
+      "mode": "100644",
+      "gitBlobId": "6a8c614c86d5c1f0fcd504e4fc308834af824a4b",
+      "sizeBytes": 3468,
+      "change": "A",
+      "sha256": "bab278fa21769ce9af9b1e168ca71dcdad610e36f1d067c03caf90092ef6d321"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InterventionPages.kt",
+      "mode": "100644",
+      "gitBlobId": "864c364ec0ed0853d2fe0685be82e130bb24d0f3",
+      "sizeBytes": 11107,
+      "change": "A",
+      "sha256": "08817de7984c6254eff9c7059cfefc86c07321f1d47ea5dd95c1c1e138c32eac"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosControls.kt",
+      "mode": "100644",
+      "gitBlobId": "43d5d859c40be08eff1f4cdc7d7ca181b6feaee5",
+      "sizeBytes": 8151,
+      "change": "A",
+      "sha256": "71890a17049a551d40885a4146a1fc2715a5684c26f4024d0e4802308ee4a0ff"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosOverlayHost.kt",
+      "mode": "100644",
+      "gitBlobId": "cdeb50c3adbcee648f7bb4ef4002683e44005e5c",
+      "sizeBytes": 1033,
+      "change": "A",
+      "sha256": "1700b14bb25c1345ed2ec59ce05e3ce3761a86e9b272bed73a5d021412623016"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabNotifications.kt",
+      "mode": "100644",
+      "gitBlobId": "e10e4a677a7595502a48054b3b7b397395288f4c",
+      "sizeBytes": 2770,
+      "change": "A",
+      "sha256": "c193019b98cbaa82d9034ecc59ba131413300103215cdb97ccc310b07b93944e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabSession.kt",
+      "mode": "100644",
+      "gitBlobId": "dd065e5c302fe58dfef711cafb26dc2793d114d2",
+      "sizeBytes": 1639,
+      "change": "A",
+      "sha256": "2059623b5ea9441182452bff5405c9089bcf71bf9b5729feb952beb14dd6cfef"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabState.kt",
+      "mode": "100644",
+      "gitBlobId": "95e3d1553bb0128f16ecb6f607410f823fb6dd89",
+      "sizeBytes": 30196,
+      "change": "A",
+      "sha256": "68f4137541280652233f8dd0648075945f788378438ed575c4df5628b0b31cd3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabTheme.kt",
+      "mode": "100644",
+      "gitBlobId": "7856c7daaec5459e404a7aba2f6edee13414164e",
+      "sizeBytes": 5450,
+      "change": "A",
+      "sha256": "1bdfcd0913353557536ab778fc8990c47b2c619ff50db026eadedb6f6dfdfcfd"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LiquidGlass.kt",
+      "mode": "100644",
+      "gitBlobId": "17ae25e036de63bae6736c7893738999b7689bb7",
+      "sizeBytes": 7686,
+      "change": "A",
+      "sha256": "08a3c1b184e061da5ce92bed90d4ad9d40a69ceb6293a5d065bb8a9881c0efde"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ListingPhotoEditor.kt",
+      "mode": "100644",
+      "gitBlobId": "7cea41bb2260f2cef5faac372dcde44f29a662f6",
+      "sizeBytes": 5555,
+      "change": "A",
+      "sha256": "e7583a233400c1582063e4f63be549c2f63cfaad70b219e4c66d53af76363514"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LocalAvatar.kt",
+      "mode": "100644",
+      "gitBlobId": "4304ee6724096632020a1e652b6bcc31e8e595fd",
+      "sizeBytes": 2954,
+      "change": "A",
+      "sha256": "d6dd7bf647bff2bc055df8bc033a9277360aad11fb971aecef8e596d6cff1905"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MainActivity.kt",
+      "mode": "100644",
+      "gitBlobId": "e44a7fbec1bb7a677263e899935eacb38c1d9b64",
+      "sizeBytes": 28859,
+      "change": "A",
+      "sha256": "861bd2c73f93f7f241f32aed1af77b4194dffaa070bdb391ffcbfe83b4beaa21"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarketCategories.kt",
+      "mode": "100644",
+      "gitBlobId": "2ab9421b747ea8cee797cad94e3c8d30922cea1d",
+      "sizeBytes": 3515,
+      "change": "A",
+      "sha256": "a49e8fadca244da1858510cda62050ce052b2d48ef7f27fdd501cc2c26c5da95"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarketplacePages.kt",
+      "mode": "100644",
+      "gitBlobId": "6c58213d87e8e047f5147d941fd64039a9b9ea30",
+      "sizeBytes": 18788,
+      "change": "A",
+      "sha256": "4309045a714c7ba4b45d1f42a3f1da84896fb4167d58b2e03ff215799feb0407"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MastercardPlayback.kt",
+      "mode": "100644",
+      "gitBlobId": "cd4c13a9a2dc0d076f9d96b10bf3290981c14da7",
+      "sizeBytes": 4904,
+      "change": "A",
+      "sha256": "9d87596b2ab41e4f504a3e96560423557194d971be52f07e46d1535fc53c2478"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MessageActions.kt",
+      "mode": "100644",
+      "gitBlobId": "83665fa79c2400b5bae07165d1a5cbc4502a15d2",
+      "sizeBytes": 5190,
+      "change": "A",
+      "sha256": "762e13acf48385c159da306213ca8519df2977c81e8d8d7a79cd76b9187f3945"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MessageComposer.kt",
+      "mode": "100644",
+      "gitBlobId": "499b0659dc2c6ab18734354e2e052927bb804a34",
+      "sizeBytes": 2499,
+      "change": "A",
+      "sha256": "b8d8824418f760012c935a53510e1e2f29eb147642a42aa8303c44c3c6b409f1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MovingGlassNav.kt",
+      "mode": "100644",
+      "gitBlobId": "509b12fc741cb847f513194c006ccae9b3bf5d65",
+      "sizeBytes": 3844,
+      "change": "A",
+      "sha256": "07baa2ef07e81ce195a5a021b8155d8075db23af6873fdb81997dfa8dbd1ac50"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/NotificationPage.kt",
+      "mode": "100644",
+      "gitBlobId": "8fe8dac398e190ba3c2aff74f1fee7c33c43bcbe",
+      "sizeBytes": 2795,
+      "change": "A",
+      "sha256": "31fd11ca6272c97b96bb7b36b6ab3ae09a46bc5d2fe11a5cc6ac326a6732fbc5"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/NotificationPreferences.kt",
+      "mode": "100644",
+      "gitBlobId": "8ee30a3527127cb2b2f03346ae2089e8a668573b",
+      "sizeBytes": 2566,
+      "change": "A",
+      "sha256": "1fb7ec06ba6e3c4512aac910b39a587198203f5352923ab71f6741d07cab01f5"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/OrderPages.kt",
+      "mode": "100644",
+      "gitBlobId": "498c8f5f319b6ad523f3e8b1831b6e83df7e0af6",
+      "sizeBytes": 21026,
+      "change": "A",
+      "sha256": "aea5c1c2c82af3cbd26824c7d9f19da18924d8a2080ec6e73dfe6f0d287ff9ed"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentConfirmation.kt",
+      "mode": "100644",
+      "gitBlobId": "5741c4f0a6dcd1bf7af06c525df3ef37b6fe6779",
+      "sizeBytes": 3410,
+      "change": "A",
+      "sha256": "ac73cd079854b0e23fc0898de7891841f1e3e17d3451a0462c29bdfc1aab220a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentExperience.kt",
+      "mode": "100644",
+      "gitBlobId": "12acdd0f11c9bb1514182c46258ba294003ca534",
+      "sizeBytes": 4167,
+      "change": "A",
+      "sha256": "39d38f4ff0f0fa24e32920fc66fa86dedd89d6f93509b6c6be8c06e76f02f961"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PendingOperationRecovery.kt",
+      "mode": "100644",
+      "gitBlobId": "e8e404b1d30bf2a66659e869887b530b70f3fba4",
+      "sizeBytes": 2793,
+      "change": "A",
+      "sha256": "3535b836c329d43c9b4ea11d8b0feab54dc4fc3e13b7a96a09a30b09dad65a44"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PlayerProfilePage.kt",
+      "mode": "100644",
+      "gitBlobId": "b53838995ee7e5214e25d5fbd7e0a0c3b97a3b04",
+      "sizeBytes": 5038,
+      "change": "A",
+      "sha256": "a79f6ef996e6f2e1ac30e43c1dfc9115757e37f25b5586ec07cea7227a04b9f3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProductMedia.kt",
+      "mode": "100644",
+      "gitBlobId": "85f18e0c65462e544eae7167b635e8822bc39d75",
+      "sizeBytes": 4470,
+      "change": "A",
+      "sha256": "9d06b9cbf184e6d9f153b99547b8d890ae950d79438c9a62546268676ed8173e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProfilePage.kt",
+      "mode": "100644",
+      "gitBlobId": "670c336b3b3077abbd4f3d98f5f22ce1ceacd83d",
+      "sizeBytes": 10279,
+      "change": "A",
+      "sha256": "9eacf511c5531e0f933433a652ca49f50d104c50a2b193794385ecc85c621b6d"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RefinedField.kt",
+      "mode": "100644",
+      "gitBlobId": "235531959dd9a09f333426d16927577e1a48ffcc",
+      "sizeBytes": 4062,
+      "change": "A",
+      "sha256": "a417a3ae32c87c849efb4019652c9f4295bf1e7265ed5c62724a056ff781a986"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RefundPages.kt",
+      "mode": "100644",
+      "gitBlobId": "42e16e9ffb3968659b687097775cbb4ebf90aaaf",
+      "sizeBytes": 9982,
+      "change": "A",
+      "sha256": "ac2d7944399bb9707aa04a92755642778c43f1b709df7ed0b3e9a00044ac2977"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SearchPage.kt",
+      "mode": "100644",
+      "gitBlobId": "115e1ac8a3bee9cfdfe49d2ffd879007c7356c68",
+      "sizeBytes": 6085,
+      "change": "A",
+      "sha256": "85caf45d2a375ccd7974e195f7f3f2d2452e36216f5c5dec2dc233145584847d"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ShopPage.kt",
+      "mode": "100644",
+      "gitBlobId": "8c972d3b7f1e7ce823b94a6913f4cc020043edd7",
+      "sizeBytes": 4677,
+      "change": "A",
+      "sha256": "db07488b992a1e9c0e9c285788f96b40a1266e1b41eca8ea2125a92fd9dd2b2c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SoftGlassSurface.kt",
+      "mode": "100644",
+      "gitBlobId": "b63861215bfbafc1020104663adbb81149a4e12f",
+      "sizeBytes": 765,
+      "change": "A",
+      "sha256": "633c9a425075878615000c5ca7687fb870be73c65c824eaec92b47964b0246eb"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/Storefront.kt",
+      "mode": "100644",
+      "gitBlobId": "c7e29ed225badb642c5a60fe4b48a663d213a3b4",
+      "sizeBytes": 15641,
+      "change": "A",
+      "sha256": "42231f865b992dcc3a401c28d22f78f57c3b51dfc57c115707f78cf7a183ca57"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/TransactionDetails.kt",
+      "mode": "100644",
+      "gitBlobId": "ef3d9c2253062a0a83698bc45f8f3e60c571118d",
+      "sizeBytes": 4848,
+      "change": "A",
+      "sha256": "c73ecda98219542bcd6a3c90511ca3f51c6c8eb1f283809e9663e1088020ce69"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/TransferFlow.kt",
+      "mode": "100644",
+      "gitBlobId": "b99c0b1ca566ae4e42d68b449e58fb1d4ca98147",
+      "sizeBytes": 7188,
+      "change": "A",
+      "sha256": "2623dadeb3b575ccf2b34216816e454a4b438017bb1d6f638a7a2d9b0d3b8fa0"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/UpdateFiles.kt",
+      "mode": "100644",
+      "gitBlobId": "f123882d5b7806e7abdd301c2504fdd5e4b6d25d",
+      "sizeBytes": 3903,
+      "change": "A",
+      "sha256": "291ee3e3d12a1364f65a364c666e2708940ce2ecb61c34eecfd1f159fe975887"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/UpdatePage.kt",
+      "mode": "100644",
+      "gitBlobId": "3e89fb306b76bf6d0c4633d161fc53a4963df370",
+      "sizeBytes": 8735,
+      "change": "A",
+      "sha256": "add4c2425525bdf558853b39c8defab9af57887884c28438b61b678113146fb9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/WalletPage.kt",
+      "mode": "100644",
+      "gitBlobId": "f87f0dbd0e4a6748358b79d1d9529cbf4d81f7da",
+      "sizeBytes": 10078,
+      "change": "A",
+      "sha256": "c8b25f241a8ee9bc430a254b20b70a9df24e0071ef247d2e38befac2f877c7a6"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/anim/overlay_enter.xml",
+      "mode": "100644",
+      "gitBlobId": "15e9d3793668d04b52de8bbeb080cbc5b123b1f9",
+      "sizeBytes": 243,
+      "change": "A",
+      "sha256": "baeaabc69fb36d237a2ffdadaf3d68e799d97abadd1d3c46aa045cfcc4b9e249"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/anim/overlay_exit.xml",
+      "mode": "100644",
+      "gitBlobId": "03f794190e6c56061bce2df86ca9f1d5140483c3",
+      "sizeBytes": 243,
+      "change": "A",
+      "sha256": "39dafb8a25ae33395afa294ba96b67932222dff652c53ba9aa231062b99e4070"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/deuterium_brand.png",
+      "mode": "100644",
+      "gitBlobId": "b610a757b98b1b247b369be9abb07f7fe975c5ee",
+      "sizeBytes": 1819447,
+      "change": "A",
+      "sha256": "ec172a734ae949a84fe93a4c25958d74652319a8c2d6c640f2e25b26f62ab4db"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/face_pay_atlas.png",
+      "mode": "100644",
+      "gitBlobId": "78fd7a19cbb8eabd0f9f1eaa6f5c8bd6c62eab06",
+      "sizeBytes": 610922,
+      "change": "A",
+      "sha256": "f3543679fe15e2d713918c72216ebf8966348756543e9da73df9ab1c35762957"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/xiaoxiang_avatar.png",
+      "mode": "100644",
+      "gitBlobId": "480aa6ff344a1e019c99d4fdeea1e88a285e8e72",
+      "sizeBytes": 296037,
+      "change": "A",
+      "sha256": "135267b1b12b53de9050104374c22ff805f2bd8700b8c4b72676f87abe1a0fbf"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_background.xml",
+      "mode": "100644",
+      "gitBlobId": "5912048e16ce4960301211d8e39c3befd31f8c0c",
+      "sizeBytes": 205,
+      "change": "A",
+      "sha256": "fb90e5af5c7d4dc20d3a88ecc783cf821d9841eaf880a8e9e5e943b006670c75"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_foreground.xml",
+      "mode": "100644",
+      "gitBlobId": "6ef0e29950f91fb240ffd2ce0b19aaed7dc453bc",
+      "sizeBytes": 505,
+      "change": "A",
+      "sha256": "744c4ef596dbad83dd2ec7c156f31350de7bc56162f47ad12b2966e8dee3fe01"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_notification.xml",
+      "mode": "100644",
+      "gitBlobId": "0ddf983701c6e5e9f166bbec17e7a211cad02608",
+      "sizeBytes": 379,
+      "change": "A",
+      "sha256": "142f578281edd5984e3f0e3c598329913a5a55fbbee6abe51ec15d966726feba"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/version_launch_mark.xml",
+      "mode": "100644",
+      "gitBlobId": "f981f1843f10ff5c785e123cbf8366adfe9b7b72",
+      "sizeBytes": 273,
+      "change": "A",
+      "sha256": "736122d22b2cdbe328e4bdf522d5f70a80c890c5fb878f0323da58e916323d1c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "mode": "100644",
+      "gitBlobId": "6b78462d615bfe7003b31d0534dcad416b75ad25",
+      "sizeBytes": 273,
+      "change": "A",
+      "sha256": "1c832bf194d8eecd439a92bcced0df144c9f566b934b3d7865e983d8ee8dbdeb"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "mode": "100644",
+      "gitBlobId": "6b78462d615bfe7003b31d0534dcad416b75ad25",
+      "sizeBytes": 273,
+      "change": "A",
+      "sha256": "1c832bf194d8eecd439a92bcced0df144c9f566b934b3d7865e983d8ee8dbdeb"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/face_pay_frames.json",
+      "mode": "100644",
+      "gitBlobId": "969992fa9bae3541cca7297e0d9d1475ce9b43e1",
+      "sizeBytes": 1786,
+      "change": "A",
+      "sha256": "b578d213917e25ad431d2eefed65bbd009bd118f1d73927b2c364636756f7d2b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/face_pay_success.wav",
+      "mode": "100644",
+      "gitBlobId": "f48ff4cfd9fcca7a8db3ff314fced2b3f98df472",
+      "sizeBytes": 74958,
+      "change": "A",
+      "sha256": "3c6bcea5e73910e36100f266cd8c3fd8afe60f592329e2757cfcb2bc49f90c25"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/mastercard_checkout.mp3",
+      "mode": "100644",
+      "gitBlobId": "f390173981d0d05743f5196b139af707d496ac80",
+      "sizeBytes": 62528,
+      "change": "A",
+      "sha256": "5479836c93d326dcdb202ebc23f5c8ba8207ffaaff0426ed5d8c07078ee5e53f"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/mastercard_frames.json",
+      "mode": "100644",
+      "gitBlobId": "80796872d5cf0432ad891ff036f99360e0cbc67f",
+      "sizeBytes": 114406,
+      "change": "A",
+      "sha256": "95b3bffade7028f701edbcb406515140cdd3c1d8a9768733ee4022faa01e0cd3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/mastercard_timing.json",
+      "mode": "100644",
+      "gitBlobId": "e03dd48929905fd34354b2c7cbd23e761effce1f",
+      "sizeBytes": 1372,
+      "change": "A",
+      "sha256": "090817c1856afef3bf760eac94b2bfe99ecaffabde659dcea99bb23611d7b464"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values-night/launch.xml",
+      "mode": "100644",
+      "gitBlobId": "979b337b5caa43b279a3130c38a473cb54b2f710",
+      "sizeBytes": 153,
+      "change": "A",
+      "sha256": "0c77eabd4a6fe0c1738eda793a2ff7eb75cf43f92166499b72e6158fde875fd1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values-v31/launch.xml",
+      "mode": "100644",
+      "gitBlobId": "dc1c6ce7ad35a1da1c51bfffdf517d074f35388e",
+      "sizeBytes": 597,
+      "change": "A",
+      "sha256": "8199e47be31133eef67c5ecab4814cb9e8a7c14a8f4f57f6a01f9134a23d40fa"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/colors.xml",
+      "mode": "100644",
+      "gitBlobId": "f42ada656ee26e30d170aaa67989f0f15c1a300b",
+      "sizeBytes": 121,
+      "change": "A",
+      "sha256": "7329e8882cce1b0c898bffb626264a7e90c943558508fcf00f912d7f53cdaf2a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/launch.xml",
+      "mode": "100644",
+      "gitBlobId": "650fbf51a6c85f7d0519a569ad725b77651fe49a",
+      "sizeBytes": 481,
+      "change": "A",
+      "sha256": "301b820c0a40d54e0ccec337a31ec05728665004c4d33ee62c60731a2feed3e8"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/styles.xml",
+      "mode": "100644",
+      "gitBlobId": "9e6d45c5ce0f7eba03f38184ba5b51bf7d608977",
+      "sizeBytes": 737,
+      "change": "A",
+      "sha256": "e2360ad89457080ebdb449f0cb6cde624803e6cf73aa54e9616dc717a7bcfd30"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/update_config.xml",
+      "mode": "100644",
+      "gitBlobId": "d92084ad63816f0bed8bf7df2093eaa9b61ef1d2",
+      "sizeBytes": 128,
+      "change": "A",
+      "sha256": "9051daf8573b8d6a634b924ca4180664cfd5385a578ae8549c718f2f518a22ff"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/xml/data_extraction_rules.xml",
+      "mode": "100644",
+      "gitBlobId": "33422567799de88daa73c248ec90195a4fd14343",
+      "sizeBytes": 356,
+      "change": "A",
+      "sha256": "67a9d5f4554700519bc889df5af2382e839bc31daf74a2323314c770ed10e751"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/xml/update_file_paths.xml",
+      "mode": "100644",
+      "gitBlobId": "7994d9ce1283e3d381210f8a7a7dd4d2168944e3",
+      "sizeBytes": 119,
+      "change": "A",
+      "sha256": "c2b98ee3c1b5600f249fc6fdde85c5929c8e10ced8f08894506f5f684a12537b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/xml/update_network_security.xml",
+      "mode": "100644",
+      "gitBlobId": "7d9ff67d778cd317c689dcf9a8d683d340702f67",
+      "sizeBytes": 140,
+      "change": "A",
+      "sha256": "c18bc32d74fa29482a66e1c58c7d25a897c6e7ccabafafe5715e6cff959921e4"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/AiStreamTest.kt",
+      "mode": "100644",
+      "gitBlobId": "c9cff627144d294ce41de23e36b360284f46415c",
+      "sizeBytes": 1677,
+      "change": "A",
+      "sha256": "fe61e2a0228163f693855cd53d9c84d69cb800980ebcaf60568bb2990b000f24"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/BackendChatTest.kt",
+      "mode": "100644",
+      "gitBlobId": "1c1618ddd7d04b0b9633f01c9daccef69220765a",
+      "sizeBytes": 4058,
+      "change": "A",
+      "sha256": "38fffd66996944e6b2e9f5f9a55debb403865c0f4faae0d70d6e9438505e5127"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/CommerceBookTest.kt",
+      "mode": "100644",
+      "gitBlobId": "069091c3dfd8d38cf4cbe1306fe4f78e56d3e65c",
+      "sizeBytes": 5811,
+      "change": "A",
+      "sha256": "a2eccbc338d6305d1f17e277f258e9dc98f7b8ae12123af60a133ef311bbf034"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/CommerceCompletionTest.kt",
+      "mode": "100644",
+      "gitBlobId": "f617af73f1ecf655745a6a890a1f827d00daa940",
+      "sizeBytes": 2150,
+      "change": "A",
+      "sha256": "ca03dbdd116d4cb70bd3447562ad973087369f9a503bec0b371cfbef8a458595"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/CommerceTimingTest.kt",
+      "mode": "100644",
+      "gitBlobId": "bd85b628cdddd4d81d089220de0bc3dca8504a93",
+      "sizeBytes": 6596,
+      "change": "A",
+      "sha256": "7aa6780fc1120489421ae043c7cc0c4fd4d761ecaa0d97cafb51f789534e649d"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/CommissionBookTest.kt",
+      "mode": "100644",
+      "gitBlobId": "ec3f1e575d2627fc0083e32dd110e0a3967f163c",
+      "sizeBytes": 6656,
+      "change": "A",
+      "sha256": "885da8353acca62d4d6097d27dfeffe37f0d3f9f6bf377ddb1aef29d54840881"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/InterventionBookTest.kt",
+      "mode": "100644",
+      "gitBlobId": "b912ab67c1e7a9c9a5b6647958ccd9ea129f606e",
+      "sizeBytes": 9457,
+      "change": "A",
+      "sha256": "68a8be04214d0bf3d3a7672afcd61b1eb01fc6823caa36514a649083af1799c0"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/LiveBusinessBoundaryTest.kt",
+      "mode": "100644",
+      "gitBlobId": "8685700f7150c5d812ba6c740a77500b19c246dc",
+      "sizeBytes": 2096,
+      "change": "A",
+      "sha256": "d1d014e2deda1486ba66ca631987f606c301899c0f458dbd1ece5e4c7b7e708e"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/PendingOperationRecoveryTest.kt",
+      "mode": "100644",
+      "gitBlobId": "e9ba0555c9d5c568fa857958876e0061dd79697d",
+      "sizeBytes": 6801,
+      "change": "A",
+      "sha256": "12fa94a9b0c8cbebe40eed1d0b48a7297d2a5791705fcce25e5207352358934e"
+    },
+    {
+      "path": "android-app/ui-lab/src/test/java/com/deuterium/app/uilab/UpdateFilesTest.kt",
+      "mode": "100644",
+      "gitBlobId": "c2bae49a46a1cb2e3462b969590c9e07f2f3ecea",
+      "sizeBytes": 3495,
+      "change": "A",
+      "sha256": "8b79f7e153d29a949385cdeec526ea4e3458ad93ae6d7aa6d3e7aa5d10a1c1c3"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08.md",
+      "mode": "100644",
+      "gitBlobId": "612f962eb68e9997e6352986afd5765cb98a6315",
+      "sizeBytes": 9218,
+      "change": "A",
+      "sha256": "98d89131c594c8390382bb782c18b622ad9ffa7155628716480acf2078ee6a17"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-0.8.png",
+      "mode": "100644",
+      "gitBlobId": "39d9b249f4e0356841a717b8bb5b410efec350f6",
+      "sizeBytes": 294155,
+      "change": "A",
+      "sha256": "46376d93085f6b44ae405963002ce49ea6f06eca25742af3fcfc16baf1ad949f"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-1.1.png",
+      "mode": "100644",
+      "gitBlobId": "ceca4908194f6aff0be0588d7a8e27d033947ff5",
+      "sizeBytes": 286834,
+      "change": "A",
+      "sha256": "62eefce1aba0c943996bc023e75eb8034f869362b90946774a34b7e7a7daec0b"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-1.4.png",
+      "mode": "100644",
+      "gitBlobId": "ceca4908194f6aff0be0588d7a8e27d033947ff5",
+      "sizeBytes": 286834,
+      "change": "A",
+      "sha256": "62eefce1aba0c943996bc023e75eb8034f869362b90946774a34b7e7a7daec0b"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-1.8.png",
+      "mode": "100644",
+      "gitBlobId": "dcb2d946a79a05832b91eff9a447e88d1153b01e",
+      "sizeBytes": 286862,
+      "change": "A",
+      "sha256": "5a1ca1092ad09070f5f7249dd90d77daa2801dc1b8fae78c11593caae5efb6bc"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-2.2.png",
+      "mode": "100644",
+      "gitBlobId": "dcb2d946a79a05832b91eff9a447e88d1153b01e",
+      "sizeBytes": 286862,
+      "change": "A",
+      "sha256": "5a1ca1092ad09070f5f7249dd90d77daa2801dc1b8fae78c11593caae5efb6bc"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-2.7.png",
+      "mode": "100644",
+      "gitBlobId": "75f30f4bcedb5c2f95565b130eaac1c75ffd01c4",
+      "sizeBytes": 286841,
+      "change": "A",
+      "sha256": "ee45ef3e5e73c22611e61fc6655fa5f0f29d8852eb34e00d18a21b8841eda0cf"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-dark-1.2.png",
+      "mode": "100644",
+      "gitBlobId": "1fc4c26ece945f535dd76428546cad4867698b26",
+      "sizeBytes": 292300,
+      "change": "A",
+      "sha256": "03affa2782dc5880af9085bbc610131adad27c0bf475f0c82ec91a39fc32a2b2"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-launch-dark.mp4",
+      "mode": "100644",
+      "gitBlobId": "dbb89d862e698e919bc82480940e854df588ca76",
+      "sizeBytes": 2705688,
+      "change": "A",
+      "sha256": "41351e0ebbdd95cdaf6262e9a54cad80b6ed97a3050c6eb0326c9646d2bad06d"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/cold-launch.mp4",
+      "mode": "100644",
+      "gitBlobId": "9a462465759825e47e3234449cd076b16b14bbdd",
+      "sizeBytes": 2144438,
+      "change": "A",
+      "sha256": "45ad1e054f4c7036e1e324e5d17f45129c9720f29055fc1b1e9593d721a50ba2"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/dark-appearance.png",
+      "mode": "100644",
+      "gitBlobId": "63e7d26f0fe2ac2af2b52868a1a2a8befdcb4aeb",
+      "sizeBytes": 267140,
+      "change": "A",
+      "sha256": "d4c285acf544e87dfbc1ca7d40a295bd4e582404283dc593ab9164dac017a33e"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/invalid-login.png",
+      "mode": "100644",
+      "gitBlobId": "8a81f8e09a81ba8065272043b5a3cde6826455ee",
+      "sizeBytes": 293912,
+      "change": "A",
+      "sha256": "dc1f92b00903cf146c05d12a605f2c7aa4482e2154bdbd7cb7a88b81f7001fbb"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/invalid-login.xml",
+      "mode": "100644",
+      "gitBlobId": "f6ea7f728b256c3bd3ab77644289ca2330730b9d",
+      "sizeBytes": 12887,
+      "change": "A",
+      "sha256": "6c310d9e24dfd30b1a39ae2cd3fa4064143516d56bbb9445dd9c476f9ddc4b37"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-ai-instrumentation.txt",
+      "mode": "100644",
+      "gitBlobId": "7f7a00a886858897734243bf710931c0858e5ad1",
+      "sizeBytes": 59,
+      "change": "A",
+      "sha256": "e0f598546c7a374bce7f4dbdd73bdc378325148b48f16a4a2b88c401f29d3258"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-ai.json",
+      "mode": "100644",
+      "gitBlobId": "6ac4aea00a28d3b7e340644c228ba6bd16e4638b",
+      "sizeBytes": 626,
+      "change": "A",
+      "sha256": "10f81622ff506af0139cb8dc28a25ef9d41570b0aa82a216a3601bdba4cf13e8"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-existing-transfer-public-chat-instrumentation.txt",
+      "mode": "100644",
+      "gitBlobId": "8f10943a17ba382e2d8d3fcf981a51737c58f774",
+      "sizeBytes": 406,
+      "change": "A",
+      "sha256": "2cf6e17f1615987aeafc25474eff5d627588b2eb2da730fc532967ad072f62e7"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-existing-transfer.json",
+      "mode": "100644",
+      "gitBlobId": "826941d85241dfc3d8d519f0cc69eb5cb5e55d90",
+      "sizeBytes": 666,
+      "change": "A",
+      "sha256": "540d2de489d6c24715f790eaa5ddb45bb91d946bfdc630227065da9c9361b87f"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-foundation-instrumentation.txt",
+      "mode": "100644",
+      "gitBlobId": "7f7a00a886858897734243bf710931c0858e5ad1",
+      "sizeBytes": 59,
+      "change": "A",
+      "sha256": "e0f598546c7a374bce7f4dbdd73bdc378325148b48f16a4a2b88c401f29d3258"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-reduced-motion.png",
+      "mode": "100644",
+      "gitBlobId": "9bc1135c53030038b16a37e1f6e656b595f1dd3c",
+      "sizeBytes": 283882,
+      "change": "A",
+      "sha256": "3409f10d37c6f2f8a7a98de6c0584b9aed8b150a0a73266a6ebd33d5f7315093"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/live-social-catalog-assets.json",
+      "mode": "100644",
+      "gitBlobId": "817dced00ea4c28d1043df7873bd29a5caa389cf",
+      "sizeBytes": 350,
+      "change": "A",
+      "sha256": "f7f59c7f16c8aa759b7a85faf1f5812e5048290330037e4e8d721a38818c2e73"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/login-ready.png",
+      "mode": "100644",
+      "gitBlobId": "b92fe7f7a5eb6681a4a06c2debc911e529809217",
+      "sizeBytes": 284763,
+      "change": "A",
+      "sha256": "1659eab2d99009f83cda2c34fc9941dcea7a6eabe358a569bc5b6b54dc30e970"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20002-ai-history.png",
+      "mode": "100644",
+      "gitBlobId": "c999c43197b9ae5b67ef0603a6badbe727cd110b",
+      "sizeBytes": 366799,
+      "change": "A",
+      "sha256": "72dc6bd8b200cd60181f57de3e9adaadc41f52857055cff48725471cd7e6b7f5"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20002-ai-history.xml",
+      "mode": "100644",
+      "gitBlobId": "3d3184eaaa4d035d8e93b6c780cb99fa5edd30ed",
+      "sizeBytes": 10183,
+      "change": "A",
+      "sha256": "8c28d3d16e727556c262edfe555a378843c7b3ff48821cf4006aa79ba07d6a2d"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20002-ai-plans.png",
+      "mode": "100644",
+      "gitBlobId": "4b16b86222c8a20f1db0f60c966038a15a5d9f6d",
+      "sizeBytes": 281501,
+      "change": "A",
+      "sha256": "55b0d250565df3a81c80297b147f341345d901d35821f5591dab78642577a07b"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20002-ai-plans.xml",
+      "mode": "100644",
+      "gitBlobId": "b3bd97026a2b44c7c4eea808f57aec0effd827c2",
+      "sizeBytes": 8178,
+      "change": "A",
+      "sha256": "5ebf51d24d01d79836b0590b3037ad3f915087ec2af17f7c569ccda9b58d5dd4"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20002-wallet-record.png",
+      "mode": "100644",
+      "gitBlobId": "3076be34021f25cdf09781b38163f3bdee7c3347",
+      "sizeBytes": 258336,
+      "change": "A",
+      "sha256": "5aa2159af8bd977f9786d21a9b80abc586492f23b0e8b6f18c1c3d706b129b2b"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20002-wallet-record.xml",
+      "mode": "100644",
+      "gitBlobId": "3e78b6188ef7d960b18bd72965c71da6dfa3f240",
+      "sizeBytes": 17038,
+      "change": "A",
+      "sha256": "2690493902f32e8eb74ad7fde69712c83634b8cdd75b237212ec915be61c6a9a"
+    },
+    {
+      "path": "docs/qa/android-v2-2026-09-08/v20003-live-existing-transfer-public-chat.txt",
+      "mode": "100644",
+      "gitBlobId": "8f10943a17ba382e2d8d3fcf981a51737c58f774",
+      "sizeBytes": 406,
+      "change": "A",
+      "sha256": "2cf6e17f1615987aeafc25474eff5d627588b2eb2da730fc532967ad072f62e7"
+    }
+  ],
+  "currentFinalSourceCommit": "a0aa7e4e70c6b3fb1100d8e03f83690d46373c34",
+  "currentVersionCode": 20004,
+  "currentApkSha256": "bb48ece21019d8ba25e554e2e6b13f94876545bf9019de5874afc127a2c5f7a3",
+  "fileListSnapshotCommit": "ff0dcc393a4bb0284fcdd4889249b0eee34201d0"
+}

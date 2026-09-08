@@ -1,0 +1,5 @@
+/bin/
+/local/
+*.exe
+*.test
+coverage.out

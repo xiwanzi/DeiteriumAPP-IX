@@ -1,0 +1,28 @@
+{
+  "sampleCount": 230,
+  "errors": [],
+  "openapiVersion": "3.0.3",
+  "openapiStructureValid": true,
+  "operationCount": 153,
+  "schemaCount": 235,
+  "validationDate": "2026-09-08",
+  "contractRevision": "2026-09-08-oss-direct-appearance-visibility",
+  "visibilityChecks": {
+    "commissionHallOpenOnly": true,
+    "publicExamplesMatchVisibility": true,
+    "objectAuthorizationDocumented": true
+  },
+  "appearanceChecks": {
+    "independentMaterialGroups": true,
+    "partialGroupUpdateExample": true,
+    "adminPermissionRequired": true,
+    "versionedExamples": true
+  },
+  "ossDirectChecks": {
+    "proxyUploadRemoved": true,
+    "businessRequestsJsonOnly": true,
+    "authorizationMatchesMetadata": true,
+    "verificationRequiredBeforeBusinessBinding": true,
+    "clientCannotChooseVerificationObject": true
+  }
+}

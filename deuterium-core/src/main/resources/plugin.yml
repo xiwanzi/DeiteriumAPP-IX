@@ -1,0 +1,31 @@
+name: DeuteriumCore
+version: '1.0.0'
+main: cafe.deuterium.core.DeuteriumCorePlugin
+api-version: '1.21'
+authors: [Deuterium]
+description: Item library, cluster bridge and controlled game integration for Deuterium.
+softdepend: [DeuteriumMail, TrChat, Vault, XConomy]
+commands:
+  dc:
+    description: Deuterium Core 物品库与管理
+    usage: /dc help
+permissions:
+  deuterium.core.admin:
+    default: op
+    children:
+      deuterium.core.items.read: true
+      deuterium.core.items.save: true
+      deuterium.core.items.give: true
+      deuterium.core.items.manage: true
+      deuterium.core.status: true
+      deuterium.core.reload: true
+      deuterium.core.mail: true
+      deuterium.core.economy: true
+  deuterium.core.items.read: {default: op}
+  deuterium.core.items.save: {default: op}
+  deuterium.core.items.give: {default: op}
+  deuterium.core.items.manage: {default: op}
+  deuterium.core.status: {default: op}
+  deuterium.core.reload: {default: op}
+  deuterium.core.mail: {default: op}
+  deuterium.core.economy: {default: op}

@@ -1,0 +1,97 @@
+{
+  "ok": true,
+  "at": "2026-09-08T06:16:04Z",
+  "sql": {
+    "file": "mysql-three-schemas.sql.gz",
+    "bytes": 159579,
+    "sha256": "30eec7feff4554df32b7db4a3ef33df364dec9efcc7470f4e82b28758d9ee93b",
+    "uncompressedBytes": 1253971,
+    "uncompressedSha256": "74ca4c68c250f8f47101d5a40466762558f45672ec98d16d0f8b8a493fc35379",
+    "schemas": [
+      "minecraft",
+      "deuterium_core_v2_test",
+      "deuterium_mail_v2_test"
+    ],
+    "engines": [
+      {
+        "engine": "InnoDB",
+        "schema": "minecraft",
+        "tables": 34
+      },
+      {
+        "engine": "InnoDB",
+        "schema": "deuterium_mail_v2_test",
+        "tables": 22
+      },
+      {
+        "engine": "InnoDB",
+        "schema": "deuterium_core_v2_test",
+        "tables": 8
+      }
+    ],
+    "gzipCRCVerified": true
+  },
+  "archives": [
+    {
+      "node": "login",
+      "file": "login-files.zip",
+      "files": 37,
+      "worldDirectoryPresence": {
+        "playerdata": "directory",
+        "data": "directory",
+        "advancements": "directory",
+        "stats": "directory"
+      },
+      "sourceBytes": 18950978,
+      "bytes": 18495474,
+      "sha256": "f8cd5dccaaf7d5f19342acf4c38733a6b0f125508dcfbda4be5720de4acca75d",
+      "crcAndEveryFileSha256Verified": true
+    },
+    {
+      "node": "amiya",
+      "file": "amiya-files.zip",
+      "files": 34,
+      "worldDirectoryPresence": {
+        "playerdata": "directory",
+        "data": "directory",
+        "advancements": "directory",
+        "stats": "directory"
+      },
+      "sourceBytes": 18926653,
+      "bytes": 18491797,
+      "sha256": "c8bf29bb78ba5061b14b83279cc950896510644c590f0e5484a1f7ef291b14b4",
+      "crcAndEveryFileSha256Verified": true
+    },
+    {
+      "node": "odyssey",
+      "file": "odyssey-files.zip",
+      "files": 28,
+      "worldDirectoryPresence": {
+        "playerdata": "directory",
+        "data": "directory",
+        "advancements": "directory",
+        "stats": "directory"
+      },
+      "sourceBytes": 18909315,
+      "bytes": 18480028,
+      "sha256": "2185791e363d731e50b6ea2d0a2578435003f1143c8af32a728561c347851a73",
+      "crcAndEveryFileSha256Verified": true
+    },
+    {
+      "node": "mek",
+      "file": "mek-files.zip",
+      "files": 17,
+      "worldDirectoryPresence": {
+        "playerdata": "directory",
+        "data": "directory",
+        "advancements": "absent",
+        "stats": "absent"
+      },
+      "sourceBytes": 18877419,
+      "bytes": 18457999,
+      "sha256": "f7a0356b06fd329229b9874b27ed6bd35a5b3f8d99b8e30282b2cd11000ae1cc",
+      "crcAndEveryFileSha256Verified": true
+    }
+  ],
+  "allBackupsComplete": true
+}

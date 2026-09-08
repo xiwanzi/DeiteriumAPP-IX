@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launch_background">#F2F2F7</color>
+    <bool name="launch_light_bars">true</bool>
+    <style name="Theme.DeuteriumLab" parent="Theme.DeuteriumLab.Base" />
+    <style name="Animation.DeuteriumOverlay" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@anim/overlay_enter</item>
+        <item name="android:windowExitAnimation">@anim/overlay_exit</item>
+    </style>
+</resources>

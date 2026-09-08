@@ -1,0 +1,90 @@
+{
+  "version": "0.8.0-ui-lab (8)",
+  "payment": {
+    "sourceType": "user_provided_reference_video",
+    "sourceUrl": "https://www.bilibili.com/video/BV1RK4y1r7Yz/",
+    "title": "一小时 Apple Pay 支付声 叮一声",
+    "isOfficialSdkAsset": false,
+    "animation": {
+      "sourceSize": [
+        852,
+        480
+      ],
+      "sourceFps": 30,
+      "crop": [
+        300,
+        114,
+        252,
+        252
+      ],
+      "frames": 30,
+      "output": "android-app/ui-lab/src/main/res/raw/face_pay_frames.json",
+      "sha256": "b578d213917e25ad431d2eefed65bbd009bd118f1d73927b2c364636756f7d2b",
+      "method": "Transparent reference-video frames retain the original turning-ring gradients; the settled circle and tick use fitted native contours. No video backdrop or extra symbol plate.",
+      "atlasOutput": "android-app/ui-lab/src/main/res/drawable-nodpi/face_pay_atlas.png",
+      "atlasSha256": "f3543679fe15e2d713918c72216ebf8966348756543e9da73df9ab1c35762957"
+    },
+    "sound": {
+      "sourceIntervalSeconds": [
+        1.025,
+        1.805
+      ],
+      "durationSeconds": 0.78,
+      "gain": 1.7,
+      "edgeFadeSeconds": [
+        0.004,
+        0.08
+      ],
+      "sampleRate": 48000,
+      "channels": 1,
+      "output": "android-app/ui-lab/src/main/res/raw/face_pay_success.wav",
+      "sha256": "3c6bcea5e73910e36100f266cd8c3fd8afe60f592329e2757cfcb2bc49f90c25"
+    }
+  },
+  "officialResourcesAudit": {
+    "result": "No standalone Android-reusable confirmation animation and audio found in the inspected public official resources",
+    "pages": [
+      "https://developer.apple.com/apple-pay/resources/",
+      "https://developer.apple.com/design/resources/",
+      "https://developer.apple.com/documentation/passkit/offering-apple-pay-in-your-app",
+      "https://developer.apple.com/documentation/localauthentication/logging-a-user-into-your-app-with-face-id-or-touch-id"
+    ],
+    "webSdk": "https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js",
+    "archives": [
+      {
+        "file": "logging-a-user-into-your-app-with-face-id-or-touch-id.zip",
+        "sha256": "8d6087102109f134c46bc961cad1a42627050c1a5f9e423284d411294655f1a3",
+        "fileCount": 65,
+        "animationOrAudioFiles": []
+      },
+      {
+        "file": "offering-apple-pay-in-your-app.zip",
+        "sha256": "5bc0630d6df307e01b0e70b6338dc4a9caa4d5827c052ab3a1f3a38ebe14dc2d",
+        "fileCount": 108,
+        "animationOrAudioFiles": []
+      }
+    ]
+  },
+  "identity": {
+    "startupAndAbout": "Installed application launcher icon from applicationInfo.loadIcon; system splash uses @mipmap/ic_launcher",
+    "loginOnly": "User-provided version badge; original source tracked by ui-lab-v6-assets.json"
+  },
+  "materialDefaults": {
+    "bottomBar": {
+      "blurDp": 4,
+      "opacity": 0.12,
+      "refraction": 24,
+      "highlight": 0.3
+    },
+    "overlay": {
+      "blurDp": 36,
+      "opacity": 0.65,
+      "refraction": 24,
+      "highlight": 0.3
+    },
+    "header": {
+      "blurDp": 18,
+      "fadeDp": 32
+    }
+  }
+}
