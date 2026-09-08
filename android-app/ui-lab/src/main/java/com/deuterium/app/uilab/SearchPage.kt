@@ -41,13 +41,13 @@ fun SearchPage(area:String,state:LabState,onClose:()->Unit,onOpen:(String)->Unit
         LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=16.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             if(query.isBlank()) {
                 item{Text("搜索${when(area){"Shop"->"商城";"Market"->"市场";"Info"->"联系人";else->"设置"}}",style=MaterialTheme.typography.headlineSmall)}
-                item{Text(if(area=="Info")"输入玩家 ID 或 QQ，搜索全部玩家" else "试试这些关键词",Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-                val suggestions=when(area){"Shop"->listOf("Apple","NVIDIA","AMD","iPhone");"Market"->listOf("建筑服务","石材","工具","附魔");"Info"->recentContacts(Players,state.followed.toSet(),state.directChats).take(3).map{it.person.name};else->listOf("外观","个人简介","订单","通知")}
+                item{Text(if(area=="Info")"输入玩家 ID 或 QQ，搜索全部玩家" else if(area=="Shop"&&ShopCatalog.isEmpty())"输入商品名称或分类" else "试试这些关键词",Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                val suggestions=when(area){"Shop"->shopSearchSuggestions(ShopCatalog);"Market"->listOf("建筑服务","石材","工具","附魔");"Info"->recentContacts(Players,state.followed.toSet(),state.directChats).take(3).map{it.person.name};else->listOf("外观","个人简介","订单","通知")}
                 item{FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){suggestions.forEach{ChoiceChip(false,{query=it},{Text(it)})}}}
             } else when(area) {
                 "Shop"->{val products=ShopCatalog.filter{it.name.contains(query,true)||it.category.contains(query,true)||it.brand.contains(query,true)}
                     if(products.isEmpty())item{SearchEmpty()}
-                    items(products,key={it.id}){product->SearchResult(product.name,"${product.brand} · ${credit(product.price)} 信用点",{OrderThumbnail(OrderLine(product.id,product.name,product.subtitle,product.price,1,product.image),Modifier.size(63.dp,73.dp))}){open("product:${product.id}")}}
+                    items(products,key={it.id}){product->SearchResult(product.name,"${product.brand} · ${credit(product.price)} 信用点",{OrderThumbnail(OrderLine(product.id,product.name,product.subtitle,product.price,1,product.image,imageUri=product.photos.firstOrNull(),imageUris=product.photos),Modifier.size(63.dp,73.dp))}){open("product:${product.id}")}}
                 }
                 "Market"->{val listings=state.commerce.listings.filter{it.active&&(it.title.contains(query,true)||it.category.contains(query,true)||it.seller.contains(query,true))}
                     if(listings.isEmpty())item{SearchEmpty()}

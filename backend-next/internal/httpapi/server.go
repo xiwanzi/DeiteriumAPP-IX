@@ -74,6 +74,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/web/session", s.webSession)
 	mux.HandleFunc("DELETE /api/v1/web/session", s.logout)
 	mux.HandleFunc("GET /api/v1/chat/messages", s.messages)
+	mux.HandleFunc("POST /api/v1/chat/messages", s.publicSendHTTPV203)
 	mux.HandleFunc("GET /api/v1/chat/ws", s.appSocket)
 	mux.HandleFunc("GET /bridge/v1/connect", s.coreSocket)
 	mux.HandleFunc("GET /api/v1/admin/core/nodes", s.nodes)

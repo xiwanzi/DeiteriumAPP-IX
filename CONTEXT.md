@@ -1,6 +1,6 @@
 # Deuterium IX 项目上下文
 
-2026-09-08。面向 Deuterium IX 玩家，提供原生 Android、同源网站和统一后端。当前已连接真实账号、信用点、公共聊天、商城、市场与委托；完整现状见 [项目状态](docs/project-status.md)。
+2026-09-09，当前 App 2.0.3 (20300)，Go 同批记录显示/公共消息增量已部署，见 [2.0.3](docs/deployment/deuterium-2.0.3-live.md)。面向 Deuterium IX 玩家，提供原生 Android、同源网站和统一后端。当前已连接真实账号、信用点、公共聊天、商城、市场与委托；完整现状见 [项目状态](docs/project-status.md)。
 
 ## 架构
 

@@ -1,3 +1,5 @@
+> 当前发布：App 2.0.3 (20300)，源码 15bb45dc6625。更新、修复和验收见 [部署记录](../../docs/deployment/deuterium-2.0.3-live.md)。下方早期版本说明保留其历史适用范围。
+
 # Deuterium Android 2.0.0
 
 版本 `2.0.0 (20004)`，包名 `com.deuterium.app.uilab`，Android 8.0+。保留既有安装身份及 debug 签名，可覆盖 09 版。本页描述本轮测试交付与真实接入代码；全量部署验收以主任务和 [本次 QA](../../docs/qa/android-v2-2026-09-08.md) 为准。

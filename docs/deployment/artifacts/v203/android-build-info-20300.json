@@ -1,0 +1,13 @@
+{
+  "packageName": "com.deuterium.app.uilab",
+  "versionCode": 20300,
+  "versionName": "2.0.3",
+  "sizeBytes": 23319247,
+  "sha256": "9ccfe155cb49e74964f7ff7f44fb39cad9585cb3140fab14b703825063e0ce51",
+  "signingCertificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "minSdk": 26,
+  "targetSdk": 35,
+  "artifact": "Deuterium-2.0.3-20300-test.apk",
+  "sourceBranch": "fix/release-v203",
+  "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc"
+}

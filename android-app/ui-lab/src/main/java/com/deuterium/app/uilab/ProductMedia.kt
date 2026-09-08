@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
@@ -32,6 +33,17 @@ fun ServerAssetImage(source:String?,description:String,modifier:Modifier=Modifie
     Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.3f)),contentAlignment=Alignment.Center){
         source?.takeIf{it.isNotBlank()}?.let{CachedPhoto(it,description,Modifier.fillMaxSize(),scale)}
     }
+}
+
+@Composable
+fun ShoppingBagFlight(product:ShopProduct,start:Offset,end:Offset,progress:Float) {
+    ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(72.dp).graphicsLayer{
+        val t=progress.coerceIn(0f,1f)
+        val arc=kotlin.math.sin(t*Math.PI).toFloat()
+        val current=start+(end-start)*t+Offset(-90f*arc,-100f*arc)
+        translationX=current.x-size.width/2;translationY=current.y-size.height/2
+        scaleX=1f-.78f*t;scaleY=scaleX;alpha=1f-.4f*t
+    }.clip(RoundedCornerShape(16.dp)),scale=ContentScale.Crop)
 }
 @Composable
 fun ProductGallery(product:ShopProduct,modifier:Modifier=Modifier) {

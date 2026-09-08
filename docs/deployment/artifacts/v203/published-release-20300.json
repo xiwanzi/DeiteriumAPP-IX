@@ -1,0 +1,16 @@
+{
+  "releaseId": "deuterium-2.0.3-20300-test",
+  "kind": "APK",
+  "versionName": "2.0.3",
+  "versionCode": 20300,
+  "resourceVersion": 0,
+  "packageName": "com.deuterium.app.uilab",
+  "releaseNotes": "修复新商品加入购物袋闪退和搜索缩略图；付款确认更简洁；已结束订单、委托及下架商品记录可删除；新增联系人未读红点；公告和AI支持Markdown；优化公共聊天发送。",
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.3-20300-test.apk",
+  "sizeBytes": 23319247,
+  "sha256": "9ccfe155cb49e74964f7ff7f44fb39cad9585cb3140fab14b703825063e0ce51",
+  "minAppVersionCode": 1,
+  "maxAppVersionCode": 20299,
+  "channel": "stable",
+  "publishedAt": "2026-09-08T17:08:11Z"
+}

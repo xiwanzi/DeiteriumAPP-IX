@@ -14,6 +14,9 @@ import (
 )
 
 func (s *Server) registerCommerceV2(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v1/orders/{orderId}/hide", s.hideRecordV203("ORDER", "orderId"))
+	mux.HandleFunc("POST /api/v1/commissions/{commissionId}/hide", s.hideRecordV203("COMMISSION", "commissionId"))
+	mux.HandleFunc("POST /api/v1/market/listings/{listingId}/hide", s.hideRecordV203("LISTING", "listingId"))
 	mux.HandleFunc("POST /api/v1/store/orders", s.commerceCreateOrderV2("OFFICIAL_STORE"))
 	mux.HandleFunc("POST /api/v1/market/orders", s.commerceCreateOrderV2("PLAYER_MARKET"))
 	mux.HandleFunc("GET /api/v1/orders", s.commerceListHTTPV2("ORDER", false, false))

@@ -1,0 +1,22 @@
+{
+  "version": "2.0.3",
+  "versionCode": 20300,
+  "publishedAt": "2026-09-08T17:08:11Z",
+  "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
+  "checks": {
+    "20005": "update to 20300",
+    "20100": "update to 20300",
+    "20101": "update to 20300",
+    "20200": "update to 20300",
+    "20300": "latest"
+  },
+  "publicApkBytes": 23319247,
+  "sha256": "9ccfe155cb49e74964f7ff7f44fb39cad9585cb3140fab14b703825063e0ce51",
+  "accountUpdateNotice": {
+    "recipient": "xiwanzi",
+    "eventKey": "app.release:20300",
+    "count": 1
+  },
+  "backendSha256": "0f95a84703638f119228312fece80e7d1c6f3f970e5cede7168054de0f039bb7",
+  "credentialScan": "PASS"
+}

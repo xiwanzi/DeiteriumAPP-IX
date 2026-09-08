@@ -1,14 +1,18 @@
 # 当前项目状态
 
-基准：2026-09-08 已发布记录。本次只整理源码与文档并同步仓库，未重新部署或操作生产数据。
+基准：2026-09-09。App 2.0.3 (20300) 与配套 Go 已发布，账号更新提醒已推送；本次新增显示偏好表，保留真实业务数据。
 
 | 部分 | 当前状态 | 依据 |
 | --- | --- | --- |
-| App | 2.0.2 (20200)，真实服务、图片缓存、最近私聊联系人、付款请求与模拟识别并行 | [2.0.2](deployment/deuterium-2.0.2-live.md)、[2.0.1](deployment/deuterium-2.0.1-live.md) |
+| App | 2.0.3 (20300)，修复加购/搜索，简洁付款确认、历史删除、未读红点、Markdown 和公共发送优化 | [2.0.3](deployment/deuterium-2.0.3-live.md) |
 | 网站 | 2.0.0 静态 React/Vite，玩家、商家、平台管理及只读审计 | [网页部署](../web-app/docs/deployment-v2.md) |
-| 后端 | Go `1b5d9d1c63f8`，统一身份、商城/市场/委托、聊天、图片、AI、更新、Core RPC | [2.0.0](deployment/deuterium-2.0.0-live.md)、[2.0.1](deployment/deuterium-2.0.1-live.md) |
+| 后端 | Go `15bb45dc6625`，新增账号级隐藏与公共消息 HTTP 入口，既有完整业务保留 | [2.0.0](deployment/deuterium-2.0.0-live.md)、[2.0.1](deployment/deuterium-2.0.1-live.md) |
 | Core / Mail / Sync / XConomy | 四服安装同批配套；三常驻服已启动验证，MEK 停止禁领 | [插件记录](deployment/deuterium-2.0.0-live.md) |
 | 源码维护 | 新主仓库汇总 App/Web/Go/Core/XConomy；Mail、Sync 独立 PR | [归档交接](repository-handoff.md) |
+
+## 本次验证与历史证据
+
+2.0.3：Android 119 项单测、Lint 0 错误，模拟器交互/Markdown 浅深色/付款时序通过；Go 122 项 race/integration 通过（既有人工夹具跳过），两个实际响应通过契约校验。公网 APK 摘要、更新检查、账号提醒、生产只读接口和三常驻节点在线均已核对。见 [本次 QA](qa/app-v203-2026-09-09.md)。
 
 ## 已有验证和仍需验收
 

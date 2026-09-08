@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-08",
+  "baselineDate": "2026-09-09",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.2",
-      "versionCode": 20200,
-      "sourceCommit": "4299ce37d0bf1c184278aaab80ea5312b168e2ff",
-      "publishedSha256": "88059466f6cd548a888832342099177ebc1bc6194db5e14f513b356ecdfdba51"
+      "version": "2.0.3",
+      "versionCode": 20300,
+      "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
+      "publishedSha256": "9ccfe155cb49e74964f7ff7f44fb39cad9585cb3140fab14b703825063e0ce51"
     },
     {
       "name": "web",
@@ -21,9 +21,9 @@
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "f07f69e3e8f370f740874dcf707585a815e52b8c",
-      "publishedSourceCommit": "1b5d9d1c63f8af670409060f54a43aa2f981c163",
-      "publishedSha256": "b1d3564ad0b99d346151816c090821aa35c501ecbaa21af5f4b352e5e3b8ce25"
+      "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
+      "publishedSourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
+      "publishedSha256": "0f95a84703638f119228312fece80e7d1c6f3f970e5cede7168054de0f039bb7"
     },
     {
       "name": "core",

@@ -313,7 +313,7 @@ func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte)
 	id, err := s.Store.ExistingAppChatV2(ctx, v.User.ID, in.ClientMessageID, content, in.ReplyToMessageID, in.MentionedPlayerRefs)
 	if err == nil {
 		_ = s.Store.PublicSocialNotificationsV2(ctx, "app:"+v.User.ID, in.ClientMessageID)
-		return map[string]any{"clientMessageId": in.ClientMessageID, "status": "accepted", "messageId": id}
+		return s.acceptedChatV203(ctx, in.ClientMessageID, id)
 	}
 	if errors.Is(err, store.ErrConflict) {
 		return failed("IDEMPOTENCY_CONFLICT", "相同消息标识对应不同内容。")
@@ -349,5 +349,5 @@ func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte)
 	}
 	_ = s.Store.PublicSocialNotificationsV2(ctx, "app:"+v.User.ID, in.ClientMessageID)
 	s.Hub.Wake()
-	return map[string]any{"clientMessageId": in.ClientMessageID, "status": "accepted", "messageId": id}
+	return s.acceptedChatV203(ctx, in.ClientMessageID, id)
 }

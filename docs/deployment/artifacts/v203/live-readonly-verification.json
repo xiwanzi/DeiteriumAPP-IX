@@ -1,0 +1,44 @@
+{
+  "/orders?limit=100": {
+    "count": 6,
+    "deletable": 6
+  },
+  "/commissions?limit=100": {
+    "count": 0,
+    "deletable": 0
+  },
+  "/commissions/me?limit=100": {
+    "count": 3,
+    "deletable": 3
+  },
+  "/market/me/listings?limit=100": {
+    "count": 1,
+    "deletable": 1
+  },
+  "/store/products?limit=100": {
+    "count": 1
+  },
+  "/chat/conversations?limit=100": {
+    "count": 2
+  },
+  "publicHistory": "PASS",
+  "temporarySessionRevoked": true,
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ]
+}

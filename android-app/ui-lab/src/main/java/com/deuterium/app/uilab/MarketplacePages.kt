@@ -29,9 +29,10 @@ import org.json.JSONObject
 
 @Composable
 fun MarketPage(book:CommerceBook,query:String,topInset:Dp,onProduct:(String)->Unit,ownOnly:Boolean=false,onPublish:()->Unit={}) {
+    var deleting by remember{mutableStateOf<MarketListing?>(null)}
     var category by rememberSaveable{mutableStateOf("全部")}
     LaunchedEffect(Unit){book.network?.refreshMarket()}
-    val listings=book.listings.filter{(if(ownOnly)it.seller==book.userName else it.active)&&marketCategoryMatches(it.category,category)&&(query.isBlank()||it.title.contains(query,true)||it.category.contains(query,true)||it.seller.contains(query,true))}
+    val listings=book.listings.filter{(if(ownOnly)it.seller==book.userName else it.active&&it.stock>0)&&marketCategoryMatches(it.category,category)&&(query.isBlank()||it.title.contains(query,true)||it.category.contains(query,true)||it.seller.contains(query,true))}
     LazyVerticalGrid(columns=GridCells.Fixed(2),contentPadding=PaddingValues(start=14.dp,end=14.dp,top=topInset,bottom=115.dp),horizontalArrangement=Arrangement.spacedBy(10.dp),verticalArrangement=Arrangement.spacedBy(13.dp)) {
         item(span={GridItemSpan(2)}){MarketCategoryBar(category,{category=it})}
         if(category.contains(" · "))item(span={GridItemSpan(2)}){Text(category,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
@@ -43,9 +44,11 @@ fun MarketPage(book:CommerceBook,query:String,topInset:Dp,onProduct:(String)->Un
                 Text(listing.title,style=MaterialTheme.typography.bodyMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
                 Text(credit(listing.price),Modifier.padding(top=5.dp),fontSize=18.sp,lineHeight=25.sp,fontWeight=androidx.compose.ui.text.font.FontWeight.SemiBold,color=MaterialTheme.colorScheme.primary)
                 Row(Modifier.padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){PlayerAvatar(listing.seller,Modifier.size(21.dp));Text(listing.seller,Modifier.weight(1f).padding(start=6.dp),style=MaterialTheme.typography.bodySmall,maxLines=1);Text(if(!listing.active)"已下架" else if(listing.stock==0)"售罄" else "余${listing.stock}",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                if(ownOnly&&listing.canHideRecord)PlainButton({deleting=listing},Modifier.align(Alignment.End)){Text("删除记录",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             }
         }}}
     }
+    deleting?.let{listing->DeleteRecordDialog(listing.title,{deleting=null}){book.network?.hideListing(listing.id)==true}}
 }
 
 @Composable
@@ -91,7 +94,7 @@ fun MarketProductPage(book:CommerceBook,listingId:String,topInset:Dp,onChat:(Str
         }
         if(!own)Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){Row(Modifier.navigationBarsPadding().padding(18.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)){
             Column(Modifier.weight(1f)){Text(credit(listing.price*quantity),style=MaterialTheme.typography.titleLarge);Text("信用点",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-            MotionButton({error=when{method==null->"请选择交付方式";listing.construction&&project.isBlank()->"请填写建筑项目";location.isBlank()->"请填写交付地点";listing.price*quantity>book.availableBalance->"余额不足";else->null};if(error!=null)scope.launch{list.animateScrollToItem(4)}else if(!quoting)scope.launch{quoting=true;val quote=book.network?.quoteMarket(listing,quantity,method!!,location,project,quoteKey);if(quote!=null){quoteText=quote.toString();key=UUID.randomUUID().toString();if(quote.optJSONArray("warnings")?.length()!=0||apiCents(quote.getString("totalAmount"))!=listing.price*quantity)confirmQuote=true else pending=true}else error=book.network?.error;quoting=false}},Modifier.height(50.dp),enabled=listing.active&&listing.stock>0&&!quoting){Text(if(listing.stock<=0)"已售罄" else if(listing.construction)"预约服务" else "立即购买")}
+            MotionButton({error=when{method==null->"请选择交付方式";listing.construction&&project.isBlank()->"请填写建筑项目";location.isBlank()->"请填写交付地点";listing.price*quantity>book.availableBalance->"余额不足";else->null};if(error!=null)scope.launch{list.animateScrollToItem(4)}else if(!quoting)scope.launch{quoting=true;val quote=book.network?.quoteMarket(listing,quantity,method!!,location,project,quoteKey);if(quote!=null){quoteText=quote.toString();key=UUID.randomUUID().toString();confirmQuote=true}else error=book.network?.error;quoting=false}},Modifier.height(50.dp),enabled=listing.active&&listing.stock>0&&!quoting){Text(if(listing.stock<=0)"已售罄" else if(quoting)"正在准备订单…" else if(listing.construction)"预约服务" else "立即购买")}
         }}
     }
     if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false}){confirmQuote=false;pending=true}

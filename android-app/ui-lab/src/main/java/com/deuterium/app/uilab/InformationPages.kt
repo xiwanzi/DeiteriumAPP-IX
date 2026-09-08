@@ -59,7 +59,10 @@ fun InfoPage(state:LabState,topInset:Dp,query:String,onOpen:(String)->Unit) {
                         Row(verticalAlignment=Alignment.CenterVertically){Text(person.name,style=MaterialTheme.typography.titleMedium);if(person.name in state.followed)Icon(Icons.Outlined.Star,null,Modifier.padding(start=6.dp).size(13.dp),tint=MaterialTheme.colorScheme.primary)}
                         Text(entry.latest?.text ?: person.bio,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
                     }
-                    Text(entry.latest?.time ?: if(person.online)"在线" else if(person.lastSeen=="暂无记录")"—" else "离线",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(8.dp)){
+                        Text(entry.latest?.time ?: if(person.online)"在线" else if(person.lastSeen=="暂无记录")"—" else "离线",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        if((state.conversationUnread[person.name] ?: 0)>0)UnreadDot()
+                    }
                 }
                 if(index<people.lastIndex)HorizontalDivider(Modifier.padding(start=76.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.4f))
             }}
@@ -105,7 +108,7 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onProfile:(String)->Un
                 if(!line.mine){if(name=="AI 助手")Image(painterResource(R.drawable.xiaoxiang_avatar),"小祥菜单",Modifier.size(42.dp).clip(CircleShape).clickable{aiOptions=true}) else PlayerAvatar(name,Modifier.clickable{onProfile(name)});Spacer(Modifier.width(9.dp))}
                 Column(Modifier.widthIn(max=270.dp),horizontalAlignment=if(line.mine)Alignment.End else Alignment.Start) {
                     Surface(modifier=Modifier.combinedClickable(onClick={},onLongClick={selectedMessage=line}),shape=RoundedCornerShape(topStart=19.dp,topEnd=19.dp,bottomStart=if(line.mine)19.dp else 6.dp,bottomEnd=if(line.mine)6.dp else 19.dp),color=if(line.mine)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                        contentColor=if(line.mine)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface){Column(Modifier.padding(horizontal=13.dp,vertical=9.dp)){line.forwarded?.let{Text("转发自 ${it.name}",style=MaterialTheme.typography.labelSmall,color=if(line.mine)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp))};line.reply?.let{QuotedMessage(it,line.mine,Modifier.padding(bottom=7.dp))};Text(line.text,style=MaterialTheme.typography.bodyLarge.copy(fontSize=16.sp,lineHeight=23.sp))}}
+                        contentColor=if(line.mine)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface){Column(Modifier.padding(horizontal=13.dp,vertical=9.dp)){line.forwarded?.let{Text("转发自 ${it.name}",style=MaterialTheme.typography.labelSmall,color=if(line.mine)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp))};line.reply?.let{QuotedMessage(it,line.mine,Modifier.padding(bottom=7.dp))};if(name=="AI 助手"&&!line.mine)MarkdownBody(line.text,onLongClick={selectedMessage=line}) else Text(line.text,style=MaterialTheme.typography.bodyLarge.copy(fontSize=16.sp,lineHeight=23.sp))}}
                     if(line.mine&&line.id==messages.lastOrNull{it.mine}?.id)Text("已发送",Modifier.padding(4.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(name=="AI 助手"&&!line.mine){
                         if(line.aiStatus in setOf("unknown","incomplete","failed"))Text("回复未完整完成",Modifier.padding(top=5.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.error)
@@ -142,6 +145,6 @@ fun CommunityDetail(event:Boolean,state:LabState,topInset:Dp) {
     LaunchedEffect(Unit){state.loadAnnouncements()}
     LazyColumn(contentPadding=PaddingValues(start=24.dp,end=24.dp,top=topInset,bottom=48.dp),verticalArrangement=Arrangement.spacedBy(24.dp)) {
         if(state.announcements.isEmpty())item{Text(state.announcementError ?: "暂无公告",Modifier.padding(vertical=32.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        items(state.announcements,key={it.id}){entry->LabCard{Text(entry.title,style=MaterialTheme.typography.headlineSmall);Text(entry.publishedAt,Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(entry.content,Modifier.padding(top=18.dp),style=MaterialTheme.typography.bodyLarge)}}
+        items(state.announcements,key={it.id}){entry->LabCard{Text(entry.title,style=MaterialTheme.typography.headlineSmall);Text(entry.publishedAt,Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);MarkdownBody(entry.content,Modifier.padding(top=18.dp))}}
     }
 }

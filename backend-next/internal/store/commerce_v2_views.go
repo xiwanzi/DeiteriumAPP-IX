@@ -185,6 +185,7 @@ func commerceBaseViewV2(d CommerceRecordV2, viewer string, refund *CommerceRefun
 	}
 	out["refundAttemptsUsed"] = d.RefundAttempts
 	out["availableActions"] = commerceActionsV2(d, viewer, refund, caseActive)
+	out["canHideRecord"] = commerceCanHideV203(d, viewer, refund, caseActive)
 	out["createdAt"] = d.CreatedAt
 	out["automatic"] = d.Automatic
 	out["version"] = d.Version
@@ -228,6 +229,11 @@ func (s *Store) CommerceViewV2(ctx context.Context, viewer, id string, public bo
 		return nil, e
 	}
 	out := commerceBaseViewV2(d, viewer, refund, active, time.Now().UTC())
+	hidden, e := hiddenRecordV203(ctx, tx, viewer, d.Kind, d.ID)
+	if e != nil {
+		return nil, e
+	}
+	out["hiddenFromHistory"] = hidden && commerceCanHideV203(d, viewer, refund, active)
 	if e = tx.Commit(); e != nil {
 		return nil, e
 	}
@@ -380,6 +386,10 @@ func (s *Store) CommerceListV2(ctx context.Context, viewer string, f CommerceFil
 	}
 	q := commerceSelectV2 + " WHERE resource_kind=?"
 	args := []any{f.Kind}
+	if !f.Public && f.StoreID == "" {
+		q += " AND NOT ((" + commerceFinalVisibilityV203 + ") AND EXISTS (SELECT 1 FROM personal_record_visibility_v203 vh WHERE vh.user_id=? AND vh.resource_kind=commerce_resources_v2.resource_kind AND vh.resource_id=commerce_resources_v2.resource_id))"
+		args = append(args, viewer)
+	}
 	if f.Public {
 		if f.Kind != "COMMISSION" {
 			return nil, catalogInvalid()
