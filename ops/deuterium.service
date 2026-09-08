@@ -1,0 +1,28 @@
+[Unit]
+Description=Deuterium IX backend
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deuterium
+Group=deuterium
+WorkingDirectory=/opt/deuterium/current
+EnvironmentFile=/etc/deuterium/backend.env
+Environment=GOMEMLIMIT=192MiB
+ExecStart=/opt/deuterium/current/deuterium serve --config /etc/deuterium/config.json
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+LimitNOFILE=4096
+MemoryHigh=256M
+MemoryMax=384M
+
+[Install]
+WantedBy=multi-user.target

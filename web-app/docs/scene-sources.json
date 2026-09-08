@@ -1,0 +1,39 @@
+{
+  "sourceDirectory": "C:/Mod/Minecraft/Deuterium_VIII/.minecraft/screenshots",
+  "processing": "Original image files copied without pixel modification. Web display uses CSS object-fit and scale to crop letterbox bars.",
+  "assets": [
+    {
+      "file": "street-daylight.png",
+      "placement": "current hero and real-world gallery",
+      "source": "C:/Mod/Minecraft/Deuterium_VIII/.minecraft/screenshots/2025-12-22_00.54.20_2.png"
+    },
+    {
+      "file": "street-evening.png",
+      "placement": "material demonstration, real-world gallery and previous hero",
+      "source": "C:/Mod/Minecraft/Deuterium_VIII/.minecraft/screenshots/2025-12-22_00.57.38.png"
+    },
+    {
+      "file": "flower-shop.png",
+      "placement": "player life photo, left",
+      "source": "C:/Users/34545/AppData/Local/Temp/codex-clipboard-54c45a21-a437-49d5-b997-7d19bfbdb41f.png",
+      "userAttachment": 12
+    },
+    {
+      "file": "friends-group.png",
+      "placement": "player life photo, right",
+      "source": "C:/Users/34545/AppData/Local/Temp/codex-clipboard-895a15bd-9a90-4dcf-9abc-3d27077f19ec.png",
+      "userAttachment": 15
+    },
+    {
+      "file": "friends-closeup.png",
+      "placement": "community section",
+      "source": "C:/Users/34545/AppData/Local/Temp/codex-clipboard-6657697e-7e76-40d8-affe-6640eae607f3.png",
+      "userAttachment": 14
+    },
+    {
+      "file": "plaza-sunset.png",
+      "placement": "events scene and gallery",
+      "source": "C:/Mod/Minecraft/Deuterium_VIII/.minecraft/screenshots/2026-05-30_21.07.21.png"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "clientRequestId": "d38ba8ae-c8cd-4435-a463-b411bac10bef",
+  "assistantMessageId": "aim_63e3df95f17ea23b25116a00e2336453",
+  "searchUsed": true,
+  "contentChars": 380,
+  "sources": [
+    {
+      "title": "api-docs.deepseek.com",
+      "url": "https://api-docs.deepseek.com/zh-cn/guides/responses_api/",
+      "origin": "provider_text"
+    },
+    {
+      "title": "api-docs.deepseek.com",
+      "url": "https://api-docs.deepseek.com/api/create-response/",
+      "origin": "provider_text"
+    }
+  ],
+  "sameIdReplay": true,
+  "unlimited": true,
+  "verifiedAt": "2026-09-08T03:56:57.391957+00:00",
+  "appVersionCode": 20001
+}

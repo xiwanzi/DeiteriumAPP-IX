@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Gradle APK Builder"
+  short_description: "Diagnose and build Android Gradle APKs across project shapes."
+  default_prompt: "Use this skill to inspect an Android Gradle project, choose the correct build task, build an APK when requested, and verify the output version."

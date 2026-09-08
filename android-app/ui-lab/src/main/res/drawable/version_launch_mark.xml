@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A regular transparent drawable avoids the launcher adaptive-icon mask at cold start. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/deuterium_brand" android:inset="16.7%" />

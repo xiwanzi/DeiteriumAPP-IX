@@ -1,0 +1,10 @@
+{
+  "versionName": "2.0.2",
+  "versionCode": 20200,
+  "packageName": "com.deuterium.app.uilab",
+  "sizeBytes": 23160566,
+  "sha256": "88059466f6cd548a888832342099177ebc1bc6194db5e14f513b356ecdfdba51",
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "sourceRevision": "4299ce37d0bf",
+  "buildCommand": "gradlew.bat :ui-lab:assembleDebug :ui-lab:assembleDebugAndroidTest :ui-lab:testDebugUnitTest :ui-lab:lintDebug --offline --console=plain"
+}

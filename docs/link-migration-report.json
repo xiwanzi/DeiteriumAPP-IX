@@ -1,0 +1,110 @@
+{
+  "convertedLinks": 54,
+  "unavailableReferences": [
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/routes/Routes.kt:325"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/routes/Routes.kt:301"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/routes/Routes.kt:1815"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/web/WebSupport.kt:49"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/routes/Routes.kt:622"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/bridge/WebSocketPluginBridge.kt:98"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/routes/Routes.kt:463"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/android-app/app/src/main/java/com/deuterium/app/repository/AppRepositories.kt:66"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/minecraft-plugin/src/main/java/com/deuterium/plugin/BridgeClient.java:324"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/scripts/export-public-clean.ps1:55"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/minecraft-plugin/src/main/java/com/deuterium/plugin/BridgeClient.java:397"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/minecraft-plugin/src/main/java/com/deuterium/plugin/BridgeClient.java:493"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/android-app/app/src/main/java/com/deuterium/app/repository/AppRepositories.kt:347"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/minecraft-plugin/src/main/java/com/deuterium/plugin/BridgeClient.java:359"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/android-app/app/src/main/java/com/deuterium/app/MainActivity.kt:516"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/android-app/app/src/main/java/com/deuterium/app/MainActivity.kt:560"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/Application.kt:169"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/bridge/WebSocketPluginBridge.kt:61"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/Application.kt:60"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/android-app/app/src/main/java/com/deuterium/app/network/ApiClient.kt:107"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/repository/AiRepository.kt:858"
+    },
+    {
+      "file": "docs/reviews/full-project-review-2026-09-07.md",
+      "target": "/C:/DeuteriumAPP/.worktrees/readme-consistency/backend-api/src/main/kotlin/com/deuterium/backend/routes/Routes.kt:916"
+    },
+    {
+      "file": "docs/archive/pre-consolidation/docs/project-status.md",
+      "target": "C:/DeuteriumAPP/delivery/Deuterium-2.0.0/source-handoff/Android-2.0.0-source-manifest.json"
+    },
+    {
+      "file": "docs/archive/pre-consolidation/docs/project-status.md",
+      "target": "C:/DeuteriumAPP/delivery/Deuterium-2.0.0/source-handoff/Android-2.0.0-final-readonly-qa-manifest.json"
+    },
+    {
+      "file": "docs/archive/pre-consolidation/docs/project-status.md",
+      "target": "C:/DeuteriumAPP/delivery/Deuterium-2.0.0/source-handoff/Mail-0.6.1-api-v2-source-manifest.json"
+    },
+    {
+      "file": "docs/qa/android-v2-2026-09-08/v20005-avatar-layout.md",
+      "target": "C:/DeuteriumAPP/output/avatar-layout-20005.png"
+    }
+  ],
+  "note": "Unavailable historical local artifacts are retained as labelled plain-text references, not broken hyperlinks."
+}

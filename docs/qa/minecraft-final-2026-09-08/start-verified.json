@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "at": "2026-09-08T06:18:45Z",
+  "readOnlyConfirmation": true,
+  "noRepeatedStart": true,
+  "states": {
+    "login": {
+      "node": "login",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 27824
+    },
+    "amiya": {
+      "node": "amiya",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 43688
+    },
+    "odyssey": {
+      "node": "odyssey",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 63212
+    },
+    "mek": {
+      "node": "mek",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    }
+  },
+  "minecraftStatus": [
+    {
+      "node": "login",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "amiya",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "odyssey",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "mek",
+      "online": false,
+      "error": "unreachable"
+    }
+  ],
+  "minecraftDone": {
+    "login": "[14:18:00] [Server thread/INFO]: Done (55.881s)! For help, type \"help\"",
+    "amiya": "[14:17:57] [Server thread/INFO]: Done (60.965s)! For help, type \"help\"",
+    "odyssey": "[14:17:51] [Server thread/INFO]: Done (51.238s)! For help, type \"help\""
+  },
+  "mekRemainsStopped": true,
+  "previousPollFailure": "JSONDecodeError preserved in start.failed.json"
+}

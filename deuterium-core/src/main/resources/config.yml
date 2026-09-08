@@ -1,0 +1,43 @@
+# SQLite is explicit single-node mode. Four live nodes should use their own shared Core MySQL schema.
+node:
+  id: amiya
+  cluster: deuterium-production
+  inventory-domain: survival
+  compatibility-profile: ix-main-1_21_1
+storage:
+  kind: sqlite
+  sqlite-file: core.db
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    database: deuterium_core
+    username: deuterium_core
+    password-env: ''
+    password: ''
+bridge:
+  enabled: false
+  url: wss://api.deuteriumix.com/bridge/v1/connect
+  token-env: ''
+  token: ''
+  development: false
+  max-pending-events: 10000
+items:
+  namespace: deuterium
+  max-bytes: 262144
+  max-grant-quantity: 2304
+  default-servers: [amiya]
+chat:
+  public-channels: [Normal, Global]
+  app-format: '[App] {player}: {message}'
+sync:
+  mode: provider
+mail:
+  consumer-id: deuterium-backend
+economy:
+  enabled: false
+  authority-node: amiya
+servers:
+  login: {inventory-domain: login, compatibility-profile: ix-login-1_21_1, claim-enabled: false}
+  amiya: {inventory-domain: survival, compatibility-profile: ix-main-1_21_1, claim-enabled: true}
+  odyssey: {inventory-domain: survival, compatibility-profile: ix-main-1_21_1, claim-enabled: true}
+  mek: {inventory-domain: survival, compatibility-profile: ix-mek-1_21_1, claim-enabled: false}

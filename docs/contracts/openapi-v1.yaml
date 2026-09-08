@@ -1,0 +1,1501 @@
+openapi: 3.0.3
+info:
+  title: DeuteriumAPP App Backend API
+  version: "1.0.0"
+  license:
+    name: Proprietary
+  description: |
+    DeuteriumAPP 第一阶段 Android App 与后端 HTTP API 契约。
+    WebSocket 与 Minecraft 插件桥消息详见 docs/contracts/app-backend-api-v1.md。
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: App
+    description: App 版本检查等不需要登录态的轻量能力。
+  - name: Account
+    description: 注册、登录、验证码、密码重设、退出登录和当前用户资料。
+  - name: Wallet
+    description: 信用点余额、收款方搜索、转账和基础流水。
+  - name: Chat
+    description: 最近公共聊天、服务器在线状态、玩家目录和关心玩家列表。
+  - name: AI
+    description: App AI 聊天、额度、套餐和购买。
+paths:
+  /app/update-check:
+    get:
+      tags: [App]
+      summary: 检查当前 App 版本
+      description: 后端只读取版本配置，不访问数据库。
+      security: []
+      operationId: checkAppUpdate
+      parameters:
+        - name: versionCode
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - name: versionName
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 当前版本状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUpdateCheckResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/registration-code:
+    post:
+      tags: [Account]
+      summary: 请求注册验证码
+      security: []
+      operationId: requestRegistrationCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationCodeRequest"
+      responses:
+        "200":
+          description: 验证码已通过服务器私聊发送
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationTokenResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/register:
+    post:
+      tags: [Account]
+      summary: 提交注册
+      security: []
+      operationId: registerAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: 注册成功并进入登录态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/login:
+    post:
+      tags: [Account]
+      summary: 登录
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/password-reset-code:
+    post:
+      tags: [Account]
+      summary: 请求密码重设验证码
+      security: []
+      operationId: requestPasswordResetCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetCodeRequest"
+      responses:
+        "200":
+          description: 改密验证码已通过服务器私聊发送
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationTokenResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/password-reset:
+    post:
+      tags: [Account]
+      summary: 提交新密码
+      security: []
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+      responses:
+        "200":
+          description: 密码已重设
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/logout:
+    post:
+      tags: [Account]
+      summary: 退出当前设备登录
+      operationId: logout
+      responses:
+        "200":
+          description: 当前 token 已失效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /account/me:
+    get:
+      tags: [Account]
+      summary: 获取当前用户资料
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: 当前用户资料
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /wallet/balance:
+    get:
+      tags: [Wallet]
+      summary: 获取当前已知余额
+      operationId: getWalletBalance
+      responses:
+        "200":
+          description: 当前已知余额
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletBalanceResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /wallet/balance/refresh:
+    post:
+      tags: [Wallet]
+      summary: 刷新信用点余额
+      operationId: refreshWalletBalance
+      responses:
+        "200":
+          description: 刷新后的余额
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletBalanceResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /wallet/recipients/search:
+    get:
+      tags: [Wallet]
+      summary: 搜索收款玩家
+      operationId: searchRecipients
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/RecipientSearchType"
+          description: 默认 auto
+      responses:
+        "200":
+          description: 候选收款玩家
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipientSearchResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /wallet/transfers:
+    post:
+      tags: [Wallet]
+      summary: 提交信用点转账
+      operationId: createTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferRequest"
+      responses:
+        "200":
+          description: 转账已处理或进入可查询状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+        "202":
+          description: 转账结果未知或处理中，需要后续查询
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /wallet/transfers/{transferId}:
+    get:
+      tags: [Wallet]
+      summary: 查询转账结果
+      operationId: getTransfer
+      parameters:
+        - name: transferId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 转账详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /wallet/records:
+    get:
+      tags: [Wallet]
+      summary: 获取基础信用点流水
+      operationId: listWalletRecords
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/AfterRecordId"
+      responses:
+        "200":
+          description: 基础流水
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletRecordsResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /chat/messages:
+    get:
+      tags: [Chat]
+      summary: 获取最近公共聊天
+      operationId: listChatMessages
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 公共聊天消息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessagesResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /chat/presence:
+    get:
+      tags: [Chat]
+      summary: 获取服务器在线概览
+      operationId: getChatPresence
+      responses:
+        "200":
+          description: 在线人数
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresenceResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /chat/online-players:
+    get:
+      tags: [Chat]
+      summary: 获取服务器在线玩家列表
+      operationId: listOnlinePlayers
+      responses:
+        "200":
+          description: 在线玩家列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnlinePlayersResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /chat/player-directory:
+    get:
+      tags: [Chat]
+      summary: 获取玩家目录
+      description: 服务器当前在线玩家优先，其后为已注册 App 玩家。
+      operationId: listPlayerDirectory
+      responses:
+        "200":
+          description: 玩家目录
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerDirectoryResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /chat/follows:
+    get:
+      tags: [Chat]
+      summary: 获取当前账号关心玩家
+      operationId: listFollowedPlayers
+      responses:
+        "200":
+          description: 已关心玩家
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowedPlayersResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Chat]
+      summary: 关心玩家
+      operationId: followPlayer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerFollowRequest"
+      responses:
+        "200":
+          description: 关心状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerFollowResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /chat/follows/{playerRef}:
+    delete:
+      tags: [Chat]
+      summary: 取消关心玩家
+      operationId: unfollowPlayer
+      parameters:
+        - name: playerRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 关心状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerFollowResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/me:
+    get:
+      tags: [AI]
+      summary: 获取当前 AI 状态
+      operationId: getAiMe
+      responses:
+        "200":
+          description: 当前套餐、额度和会话状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiMeResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/plans:
+    get:
+      tags: [AI]
+      summary: 获取可购买 AI 套餐
+      operationId: listAiPlans
+      responses:
+        "200":
+          description: 动态套餐列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiPlansResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/messages:
+    get:
+      tags: [AI]
+      summary: 获取当前 AI 会话消息
+      operationId: listAiMessages
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 当前会话消息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiMessagesResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/chat/stream:
+    post:
+      tags: [AI]
+      summary: 流式发送 AI 消息
+      description: >
+        返回 text/event-stream。事件包括 meta、status、sources、delta、done、error；
+        等待模型或知识库时后端可发送 SSE comment heartbeat（例如 : keep-alive），客户端必须忽略 comment。
+        clientMessageId 是 AI 私聊发送幂等键，后端记录 pending/streaming/completed/failed；
+        重复提交不得重复扣额度，completed 复放既有回复，pending/streaming 提示稍后刷新。
+        同一用户同一时间只允许一个 pending/streaming 请求。后端会审计 provider 状态码、首个正文 delta 延迟、总耗时、retry 次数和是否已发送 delta。
+      operationId: streamAiChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatStreamRequest"
+      responses:
+        "200":
+          description: SSE meta/status/sources/delta/done/error 事件流
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/conversation/reset:
+    post:
+      tags: [AI]
+      summary: 重置当前 AI 会话
+      operationId: resetAiConversation
+      responses:
+        "200":
+          description: 新会话状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiConversationResetResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/purchases:
+    post:
+      tags: [AI]
+      summary: 购买 AI 套餐
+      operationId: createAiPurchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiPurchaseRequest"
+      responses:
+        "200":
+          description: 购买成功或已有结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiPurchaseResponse"
+        "202":
+          description: 购买结果未知或处理中
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiPurchaseResponse"
+        default:
+          $ref: "#/components/responses/Error"
+  /ai/purchases/{purchaseId}:
+    get:
+      tags: [AI]
+      summary: 查询 AI 套餐购买结果
+      operationId: getAiPurchase
+      parameters:
+        - name: purchaseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 购买记录
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiPurchaseResponse"
+        "202":
+          description: 购买结果未知或处理中
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiPurchaseResponse"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+    AfterRecordId:
+      name: afterRecordId
+      in: query
+      required: false
+      description: 传入后只返回该流水之后的新流水，供离线增量同步使用。
+      schema:
+        type: string
+  responses:
+    Error:
+      description: 统一错误响应
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    RequestId:
+      type: string
+      example: req_01HV0000000000000000000000
+    ApiResponseBase:
+      type: object
+      required: [requestId]
+      properties:
+        requestId:
+          $ref: "#/components/schemas/RequestId"
+    AppUpdateCheckData:
+      type: object
+      required: [latest, message, latestVersionCode, latestVersionName]
+      properties:
+        latest:
+          type: boolean
+        message:
+          type: string
+          enum: [当前已是最新版本, 版本已过时，请更新最新版本]
+        latestVersionCode:
+          type: integer
+        latestVersionName:
+          type: string
+    AppUpdateCheckResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AppUpdateCheckData"
+    Page:
+      type: object
+      required: [nextCursor]
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [error]
+          properties:
+            error:
+              $ref: "#/components/schemas/ErrorBody"
+    ErrorBody:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_REQUEST
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - CONFLICT
+            - RATE_LIMITED
+            - SERVER_UNAVAILABLE
+            - PLUGIN_BRIDGE_UNAVAILABLE
+            - PLAYER_NOT_ONLINE
+            - PLAYER_NOT_FOUND
+            - PLAYER_IDENTITY_CONFLICT
+            - QQ_ALREADY_USED
+            - UUID_ALREADY_REGISTERED
+            - VERIFICATION_COOLDOWN
+            - VERIFICATION_INVALID
+            - VERIFICATION_EXPIRED
+            - VERIFICATION_ATTEMPTS_EXCEEDED
+            - PASSWORD_INVALID
+            - ACCOUNT_PASSWORD_INVALID
+            - LOGIN_LOCKED
+            - AMOUNT_INVALID
+            - RECIPIENT_NOT_FOUND
+            - RECIPIENT_IDENTITY_UNCONFIRMED
+            - BALANCE_INSUFFICIENT
+            - TRANSFER_DUPLICATE
+            - TRANSFER_FAILED
+            - TRANSFER_RESULT_UNKNOWN
+            - CHAT_CONNECTION_UNAVAILABLE
+            - CHAT_MESSAGE_EMPTY
+            - CHAT_MESSAGE_TOO_LONG
+            - CHAT_SEND_FAILED
+            - SENDER_IDENTITY_UNCONFIRMED
+            - AI_DISABLED
+            - AI_MESSAGE_EMPTY
+            - AI_MESSAGE_TOO_LONG
+            - AI_QUOTA_EXCEEDED
+            - AI_PROVIDER_UNAVAILABLE
+            - AI_PROVIDER_TIMEOUT
+            - AI_PROMPT_RISK_BLOCKED
+            - AI_PLAN_NOT_FOUND
+            - AI_PURCHASE_DUPLICATE
+            - AI_PURCHASE_FAILED
+            - AI_PURCHASE_RESULT_UNKNOWN
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        retryAfterSeconds:
+          type: integer
+          minimum: 0
+    RegistrationCodeRequest:
+      type: object
+      required: [gameId, qq, password]
+      properties:
+        gameId:
+          type: string
+          minLength: 1
+          maxLength: 32
+        qq:
+          type: string
+          minLength: 1
+          maxLength: 20
+        password:
+          type: string
+          minLength: 8
+          maxLength: 64
+          format: password
+    RegisterRequest:
+      type: object
+      required: [verificationToken, code, password]
+      properties:
+        verificationToken:
+          type: string
+        code:
+          type: string
+          pattern: "^\\d{6}$"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 64
+          format: password
+    LoginRequest:
+      type: object
+      required: [account, password]
+      properties:
+        account:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 8
+          maxLength: 64
+          format: password
+    PasswordResetCodeRequest:
+      type: object
+      required: [account]
+      properties:
+        account:
+          type: string
+          minLength: 1
+    PasswordResetRequest:
+      type: object
+      required: [verificationToken, code, newPassword]
+      properties:
+        verificationToken:
+          type: string
+        code:
+          type: string
+          pattern: "^\\d{6}$"
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 64
+          format: password
+    VerificationTokenData:
+      type: object
+      required: [verificationToken, expiresAt, resendAfterSeconds]
+      properties:
+        verificationToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        resendAfterSeconds:
+          type: integer
+          minimum: 0
+    VerificationTokenResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/VerificationTokenData"
+    AuthData:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+    AuthResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AuthData"
+    PasswordResetData:
+      type: object
+      required: [passwordReset]
+      properties:
+        passwordReset:
+          type: boolean
+    PasswordResetResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/PasswordResetData"
+    LogoutData:
+      type: object
+      required: [loggedOut]
+      properties:
+        loggedOut:
+          type: boolean
+    LogoutResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/LogoutData"
+    UserProfile:
+      type: object
+      required: [userId, playerRef, gameId, qq, identityStatus]
+      properties:
+        userId:
+          type: string
+        playerRef:
+          type: string
+          description: Opaque player reference returned by backend.
+        gameId:
+          type: string
+        qq:
+          type: string
+        identityStatus:
+          type: string
+          enum: [bound]
+    UserProfileData:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+    UserProfileResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/UserProfileData"
+    PlayerSummary:
+      type: object
+      required: [playerRef, gameId, online, registered, source]
+      properties:
+        playerRef:
+          type: string
+          description: Opaque player reference. Android must not parse it.
+        gameId:
+          type: string
+        qq:
+          type: string
+          nullable: true
+        online:
+          type: boolean
+        registered:
+          type: boolean
+        source:
+          type: string
+          enum: [game_id, qq, search, online_list]
+    WalletBalance:
+      type: object
+      required: [currency, amount, fresh, refreshedAt]
+      properties:
+        currency:
+          type: string
+          enum: [CREDIT]
+        amount:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+          example: "1820.50"
+        fresh:
+          type: boolean
+        refreshedAt:
+          type: string
+          format: date-time
+          nullable: true
+    WalletBalanceData:
+      type: object
+      required: [balance]
+      properties:
+        balance:
+          $ref: "#/components/schemas/WalletBalance"
+    WalletBalanceResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/WalletBalanceData"
+    RecipientSearchType:
+      type: string
+      enum: [auto, game_id, qq, search]
+      default: auto
+    RecipientSearchData:
+      type: object
+      required: [candidates]
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResolvedPlayerRef"
+    RecipientSearchResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/RecipientSearchData"
+    ResolvedPlayerRef:
+      allOf:
+        - $ref: "#/components/schemas/PlayerSummary"
+        - type: object
+          required: [confirmedAt]
+          properties:
+            confirmedAt:
+              type: string
+              format: date-time
+            expiresAt:
+              type: string
+              format: date-time
+              nullable: true
+    CreateTransferRequest:
+      type: object
+      required: [clientRequestId, recipientPlayerRef, amount]
+      properties:
+        clientRequestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        recipientPlayerRef:
+          type: string
+        amount:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+        note:
+          type: string
+          maxLength: 80
+          nullable: true
+    TransferStatus:
+      type: string
+      enum: [processing, success, failed, unknown]
+    Transfer:
+      type: object
+      required: [transferId, clientRequestId, recipient, amount, currency, status, createdAt, updatedAt]
+      properties:
+        transferId:
+          type: string
+        clientRequestId:
+          type: string
+        recipient:
+          $ref: "#/components/schemas/PlayerSummary"
+        amount:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+        currency:
+          type: string
+          enum: [CREDIT]
+        note:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/TransferStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TransferData:
+      type: object
+      required: [transfer]
+      properties:
+        transfer:
+          $ref: "#/components/schemas/Transfer"
+    TransferResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/TransferData"
+    WalletRecordDirection:
+      type: string
+      enum: [income, expense]
+    WalletRecord:
+      type: object
+      required: [recordId, direction, otherPlayer, amount, currency, status, occurredAt]
+      properties:
+        recordId:
+          type: string
+        direction:
+          $ref: "#/components/schemas/WalletRecordDirection"
+        otherPlayer:
+          $ref: "#/components/schemas/PlayerSummary"
+        amount:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+        currency:
+          type: string
+          enum: [CREDIT]
+        status:
+          $ref: "#/components/schemas/TransferStatus"
+        note:
+          type: string
+          nullable: true
+        occurredAt:
+          type: string
+          format: date-time
+    WalletRecordsData:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/WalletRecord"
+    WalletRecordsResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data, page]
+          properties:
+            data:
+              $ref: "#/components/schemas/WalletRecordsData"
+            page:
+              $ref: "#/components/schemas/Page"
+    ChatMessage:
+      type: object
+      required: [messageId, sender, content, kind, sentAt]
+      properties:
+        messageId:
+          type: string
+        sender:
+          $ref: "#/components/schemas/PlayerSummary"
+        content:
+          type: string
+          minLength: 1
+          maxLength: 256
+        kind:
+          type: string
+          enum: [public_chat]
+        sentAt:
+          type: string
+          format: date-time
+    ChatMessagesData:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+    ChatMessagesResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data, page]
+          properties:
+            data:
+              $ref: "#/components/schemas/ChatMessagesData"
+            page:
+              $ref: "#/components/schemas/Page"
+    PresenceData:
+      type: object
+      required: [onlineCount, available, updatedAt]
+      properties:
+        onlineCount:
+          type: integer
+          minimum: 0
+        available:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PresenceResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/PresenceData"
+    OnlinePlayer:
+      type: object
+      required: [playerRef, gameId, registered]
+      properties:
+        playerRef:
+          type: string
+        gameId:
+          type: string
+        qq:
+          type: string
+          nullable: true
+        registered:
+          type: boolean
+        onlineSince:
+          type: string
+          format: date-time
+          nullable: true
+    OnlinePlayersData:
+      type: object
+      required: [players]
+      properties:
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/OnlinePlayer"
+    OnlinePlayersResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/OnlinePlayersData"
+    AppStatus:
+      type: string
+      enum: [online, just_online, recent_online, recently_online, long_offline]
+    PlayerDirectoryItem:
+      type: object
+      required: [playerRef, gameId, registered, serverOnline, appStatus, followed, self]
+      properties:
+        playerRef:
+          type: string
+        gameId:
+          type: string
+        qq:
+          type: string
+          nullable: true
+        registered:
+          type: boolean
+        serverOnline:
+          type: boolean
+        appStatus:
+          $ref: "#/components/schemas/AppStatus"
+        appConnected:
+          type: boolean
+          default: false
+        appForeground:
+          type: boolean
+          default: false
+        appLastSeenAt:
+          type: string
+          format: date-time
+          nullable: true
+        onlineSince:
+          type: string
+          format: date-time
+          nullable: true
+        followed:
+          type: boolean
+        self:
+          type: boolean
+    PlayerDirectoryData:
+      type: object
+      required: [players]
+      properties:
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayerDirectoryItem"
+    PlayerDirectoryResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/PlayerDirectoryData"
+    PlayerFollowRequest:
+      type: object
+      required: [playerRef]
+      properties:
+        playerRef:
+          type: string
+    PlayerFollowData:
+      type: object
+      required: [followed]
+      properties:
+        followed:
+          type: boolean
+        player:
+          allOf:
+            - $ref: "#/components/schemas/PlayerDirectoryItem"
+          nullable: true
+    PlayerFollowResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/PlayerFollowData"
+    FollowedPlayersData:
+      type: object
+      required: [players]
+      properties:
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayerDirectoryItem"
+    FollowedPlayersResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/FollowedPlayersData"
+    AiQuota:
+      type: object
+      required: [used, limit, remaining, windowHours, resetsAt]
+      properties:
+        used:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 0
+        remaining:
+          type: integer
+          minimum: 0
+        windowHours:
+          type: integer
+          minimum: 1
+        resetsAt:
+          type: string
+          format: date-time
+    AiPlan:
+      type: object
+      required: [planId, code, name, description, price, currency, quotaPerWindow, windowHours, durationDays, modelTier, active]
+      properties:
+        planId:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+        currency:
+          type: string
+          enum: [CREDIT]
+        quotaPerWindow:
+          type: integer
+          minimum: 0
+        windowHours:
+          type: integer
+          minimum: 1
+        durationDays:
+          type: integer
+          minimum: 0
+        modelTier:
+          type: string
+        active:
+          type: boolean
+    AiConversationState:
+      type: object
+      required: [conversationId, active, startedAt, updatedAt]
+      properties:
+        conversationId:
+          type: string
+        active:
+          type: boolean
+        startedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AiMessage:
+      type: object
+      required: [messageId, conversationId, role, content, createdAt]
+      properties:
+        messageId:
+          type: string
+        conversationId:
+          type: string
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AiMeData:
+      type: object
+      required: [assistantName, plan, quota, conversation]
+      properties:
+        assistantName:
+          type: string
+        plan:
+          $ref: "#/components/schemas/AiPlan"
+        quota:
+          $ref: "#/components/schemas/AiQuota"
+        conversation:
+          $ref: "#/components/schemas/AiConversationState"
+    AiMeResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AiMeData"
+    AiPlansData:
+      type: object
+      required: [plans]
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiPlan"
+    AiPlansResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AiPlansData"
+    AiMessagesData:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiMessage"
+    AiMessagesResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AiMessagesData"
+    AiChatStreamRequest:
+      type: object
+      required: [clientMessageId, content]
+      properties:
+        clientMessageId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    AiConversationResetData:
+      type: object
+      required: [conversation]
+      properties:
+        conversation:
+          $ref: "#/components/schemas/AiConversationState"
+    AiConversationResetResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AiConversationResetData"
+    AiPurchaseRequest:
+      type: object
+      required: [clientRequestId, planId]
+      properties:
+        clientRequestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        planId:
+          type: string
+    AiPurchase:
+      type: object
+      required: [purchaseId, clientRequestId, plan, amount, currency, status, createdAt, updatedAt]
+      properties:
+        purchaseId:
+          type: string
+        clientRequestId:
+          type: string
+        plan:
+          $ref: "#/components/schemas/AiPlan"
+        amount:
+          type: string
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+        currency:
+          type: string
+          enum: [CREDIT]
+        status:
+          type: string
+          enum: [processing, success, failed, unknown]
+        failureCode:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AiPurchaseData:
+      type: object
+      required: [purchase]
+      properties:
+        purchase:
+          $ref: "#/components/schemas/AiPurchase"
+        quota:
+          allOf:
+            - $ref: "#/components/schemas/AiQuota"
+          nullable: true
+    AiPurchaseResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponseBase"
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: "#/components/schemas/AiPurchaseData"

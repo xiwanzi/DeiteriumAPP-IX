@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "5ae67062921a683bf4417ffd6de0c539d0f564f1",
+  "date": "2026-09-08",
+  "coreTests": {
+    "tests": 29,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "artifacts": {
+    "Deuterium-Core-1.0.0.jar": "6be8b022e6a360b11455100150d59f1032087edd34c6d75fa8e4b81adf9c5137",
+    "deuterium-mail-0.6.1.jar": "9c8b4585799812e7874094d023e057acd059f9a0716210ac1b476ca009249cfa",
+    "XConomy-Bukkit-2.26.3-deuterium.1.jar": "880e9d5fa6b36c074e72df9ac250bc118bb80a62c949bbdadb203240228b6344",
+    "YouerModSync-0.7-deuterium.3.jar": "376411646a903bcdb53808b68d94673f9a7f5ea9e47fde4e15957395517a9151"
+  },
+  "note": "Core includes TrChat event type guard. Sync, Mail and XConomy are independent plugins; previous finalized artifacts remain intact."
+}

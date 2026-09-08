@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-09-08T05:46:40.702677Z",
+  "versionCode": 20003,
+  "apiBaseUrl": "https://47.103.99.34",
+  "serverRevisionReported": "00fbdac",
+  "businessWrites": 0,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/orders",
+      "firstPageItems": 0,
+      "allItems": 0,
+      "page": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "parsedBy": "installed BackendApi.listAll"
+    },
+    {
+      "method": "GET",
+      "path": "/commissions",
+      "firstPageItems": 0,
+      "allItems": 0,
+      "page": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "parsedBy": "installed BackendApi.listAll"
+    },
+    {
+      "method": "GET",
+      "path": "/commissions/me",
+      "firstPageItems": 0,
+      "allItems": 0,
+      "page": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "parsedBy": "installed BackendApi.listAll"
+    },
+    {
+      "method": "GET",
+      "path": "/store/products",
+      "firstPageItems": 0,
+      "allItems": 0,
+      "page": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "parsedBy": "installed BackendApi.listAll"
+    },
+    {
+      "method": "GET",
+      "path": "/market/listings",
+      "firstPageItems": 0,
+      "allItems": 0,
+      "page": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "parsedBy": "installed BackendApi.listAll"
+    },
+    {
+      "method": "GET",
+      "path": "/market/me/listings",
+      "firstPageItems": 0,
+      "allItems": 0,
+      "page": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "parsedBy": "installed BackendApi.listAll"
+    }
+  ],
+  "installedApkSha256": "894b523b83aa2c9e2f9f2f7b8cec6ca601f3d00ac00572b30cd258c5cda556ad",
+  "qaSessionFixtureRemoved": true
+}

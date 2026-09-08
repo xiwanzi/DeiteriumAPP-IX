@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: Deuterium Web platform commerce read extension
+  version: 0.1.0
+  description: 2026-09-08 proposed read-only contract. Not implemented in Foundation
+    8db1109. Permission code commerce.audit requires backend agreement.
+servers:
+- url: /api/v1
+security:
+- webCookie: []
+- bearerAuth: []
+paths:
+  /admin/commerce/players:
+    get:
+      operationId: listPlayerSales
+      summary: List player sales and full filtered totals
+      x-implementation-status: contract_only
+      x-required-permissions:
+      - commerce.audit
+      parameters:
+      - &id003
+        name: query
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 100
+      - &id001
+        name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - &id002
+        name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - &id004
+        name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      - &id005
+        name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      responses:
+        '200':
+          description: Authorised result; private, no-store
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - data
+                - calculatedAt
+                - page
+                properties:
+                  requestId:
+                    type: string
+                  calculatedAt:
+                    type: string
+                    format: date-time
+                  data:
+                    type: object
+                    required:
+                    - players
+                    - totals
+                    properties:
+                      players:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PlayerSales'
+                      totals:
+                        $ref: '#/components/schemas/SalesSummary'
+                  page:
+                    type: object
+                    required:
+                    - nextCursor
+                    properties:
+                      nextCursor:
+                        type: string
+                        nullable: true
+        '401':
+          description: Session missing or expired
+        '403':
+          description: Insufficient platform audit permission
+        '404':
+          description: Missing or out-of-scope resource
+        '400':
+          description: Invalid query
+        '409':
+          description: Cursor no longer valid
+        '503':
+          description: Capability or authoritative ledger unavailable
+  /admin/commerce/players/{playerRef}:
+    get:
+      operationId: getPlayerSales
+      summary: Read one player sales profile
+      x-implementation-status: contract_only
+      x-required-permissions:
+      - commerce.audit
+      parameters:
+      - name: playerRef
+        in: path
+        required: true
+        schema:
+          type: string
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: Authorised result; private, no-store
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - data
+                - calculatedAt
+                properties:
+                  requestId:
+                    type: string
+                  calculatedAt:
+                    type: string
+                    format: date-time
+                  data:
+                    $ref: '#/components/schemas/PlayerSales'
+        '401':
+          description: Session missing or expired
+        '403':
+          description: Insufficient platform audit permission
+        '404':
+          description: Missing or out-of-scope resource
+        '400':
+          description: Invalid query
+        '409':
+          description: Cursor no longer valid
+        '503':
+          description: Capability or authoritative ledger unavailable
+  /admin/commerce/transactions:
+    get:
+      operationId: listPlatformTransactions
+      summary: List transactions under authorised filters
+      x-implementation-status: contract_only
+      x-required-permissions:
+      - commerce.audit
+      parameters:
+      - *id003
+      - *id001
+      - *id002
+      - *id004
+      - *id005
+      - name: playerRef
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: role
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - PAYER
+          - PAYEE
+      - name: channel
+        in: query
+        required: false
+        schema: &id006
+          type: string
+          enum:
+          - OFFICIAL_STORE
+          - PLAYER_MARKET
+          - COMMISSION
+          - TRANSFER
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Authorised result; private, no-store
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - data
+                - calculatedAt
+                - page
+                properties:
+                  requestId:
+                    type: string
+                  calculatedAt:
+                    type: string
+                    format: date-time
+                  data:
+                    type: object
+                    required:
+                    - transactions
+                    properties:
+                      transactions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Transaction'
+                  page:
+                    type: object
+                    required:
+                    - nextCursor
+                    properties:
+                      nextCursor:
+                        type: string
+                        nullable: true
+        '401':
+          description: Session missing or expired
+        '403':
+          description: Insufficient platform audit permission
+        '404':
+          description: Missing or out-of-scope resource
+        '400':
+          description: Invalid query
+        '409':
+          description: Cursor no longer valid
+        '503':
+          description: Capability or authoritative ledger unavailable
+  /admin/commerce/transactions/{transactionRef}:
+    get:
+      operationId: getPlatformTransaction
+      summary: Read transaction and immutable summary
+      x-implementation-status: contract_only
+      x-required-permissions:
+      - commerce.audit
+      parameters:
+      - name: transactionRef
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Authorised result; private, no-store
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - data
+                - calculatedAt
+                properties:
+                  requestId:
+                    type: string
+                  calculatedAt:
+                    type: string
+                    format: date-time
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/Transaction'
+                    - type: object
+                      required:
+                      - snapshot
+                      properties:
+                        snapshot:
+                          type: object
+                          required:
+                          - title
+                          - description
+                          properties:
+                            title:
+                              type: string
+                            description:
+                              type: string
+                            version:
+                              type: integer
+                              minimum: 1
+        '401':
+          description: Session missing or expired
+        '403':
+          description: Insufficient platform audit permission
+        '404':
+          description: Missing or out-of-scope resource
+        '400':
+          description: Invalid query
+        '409':
+          description: Cursor no longer valid
+        '503':
+          description: Capability or authoritative ledger unavailable
+components:
+  securitySchemes:
+    webCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-deuterium_session
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Amount:
+      type: string
+      pattern: ^\d+\.\d{2}$
+      example: '1800.00'
+    SalesSummary:
+      type: object
+      required:
+      - grossSalesAmount
+      - refundedAmount
+      - netSalesAmount
+      - settledAmount
+      - heldAmount
+      - paidOrderCount
+      - unknownOperationCount
+      properties:
+        grossSalesAmount:
+          $ref: '#/components/schemas/Amount'
+        refundedAmount:
+          $ref: '#/components/schemas/Amount'
+        netSalesAmount:
+          $ref: '#/components/schemas/Amount'
+        settledAmount:
+          $ref: '#/components/schemas/Amount'
+        heldAmount:
+          $ref: '#/components/schemas/Amount'
+        paidOrderCount:
+          type: integer
+          minimum: 0
+          format: int64
+        unknownOperationCount:
+          type: integer
+          minimum: 0
+          format: int64
+    PlayerSales:
+      type: object
+      required:
+      - playerRef
+      - gameId
+      - qq
+      - sales
+      properties:
+        playerRef:
+          type: string
+        gameId:
+          type: string
+        qq:
+          type: string
+        sales:
+          $ref: '#/components/schemas/SalesSummary'
+    Transaction:
+      type: object
+      required:
+      - transactionRef
+      - channel
+      - businessStatus
+      - resourceRef
+      - title
+      - payer
+      - payee
+      - paidAmount
+      - refundedAmount
+      - settledAmount
+      - heldAmount
+      - createdAt
+      properties:
+        transactionRef:
+          type: string
+        resourceRef:
+          type: string
+        title:
+          type: string
+        channel: *id006
+        businessStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        payer:
+          type: string
+          description: Player or official store opaque reference
+        payee:
+          type: string
+          nullable: true
+        paidAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          nullable: true
+        refundedAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          nullable: true
+        settledAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          nullable: true
+        heldAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          nullable: true

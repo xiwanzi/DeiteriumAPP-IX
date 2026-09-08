@@ -1,0 +1,16 @@
+{
+  "releaseId": "deuterium-2.0.2-20200-test",
+  "kind": "APK",
+  "versionName": "2.0.2",
+  "versionCode": 20200,
+  "resourceVersion": 0,
+  "packageName": "com.deuterium.app.uilab",
+  "releaseNotes": "付款请求在模拟识别开始时提交，移除额外等待；识别结束且真实付款成功后显示确认。转账重试沿用同一请求标识，保留防重复与未知结果恢复。",
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.2-20200-test.apk",
+  "sizeBytes": 23160566,
+  "sha256": "88059466f6cd548a888832342099177ebc1bc6194db5e14f513b356ecdfdba51",
+  "minAppVersionCode": 1,
+  "maxAppVersionCode": 20199,
+  "channel": "stable",
+  "publishedAt": "2026-09-08T14:27:51Z"
+}

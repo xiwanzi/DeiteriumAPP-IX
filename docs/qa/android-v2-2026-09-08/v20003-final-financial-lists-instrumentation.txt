@@ -1,0 +1,11 @@
+INSTRUMENTATION_RESULT: account=PASS
+INSTRUMENTATION_RESULT: authorized_existing_public_message=PASS
+INSTRUMENTATION_RESULT: authorized_existing_transfer_read=PASS
+INSTRUMENTATION_RESULT: catalog_read_contracts=PASS
+INSTRUMENTATION_RESULT: financial_list_counts={"\/orders":0,"\/commissions":0,"\/commissions\/me":0,"\/store\/products":0,"\/market\/listings":0,"\/market\/me\/listings":0}
+INSTRUMENTATION_RESULT: financial_lists_and_pagination=PASS
+INSTRUMENTATION_RESULT: public_chat_history_and_socket=PASS
+INSTRUMENTATION_RESULT: stream=Live backend checks passed; no balances or secrets logged.
+
+INSTRUMENTATION_RESULT: wallet_read_and_recipient_resolution=PASS
+INSTRUMENTATION_CODE: -1

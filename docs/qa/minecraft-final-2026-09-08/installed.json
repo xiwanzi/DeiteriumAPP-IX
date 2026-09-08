@@ -1,0 +1,146 @@
+{
+  "ok": true,
+  "timeUtc": "2026-09-08T06:18:55.649662+00:00",
+  "jarHashesVerifiedAllFour": true,
+  "newJars": {
+    "Deuterium-Core-1.0.0.jar": "6be8b022e6a360b11455100150d59f1032087edd34c6d75fa8e4b81adf9c5137",
+    "YouerModSync-0.7-deuterium.3.jar": "376411646a903bcdb53808b68d94673f9a7f5ea9e47fde4e15957395517a9151",
+    "deuterium-mail-0.6.1.jar": "9c8b4585799812e7874094d023e057acd059f9a0716210ac1b476ca009249cfa"
+  },
+  "states": {
+    "login": {
+      "node": "login",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 27824
+    },
+    "amiya": {
+      "node": "amiya",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 43688
+    },
+    "odyssey": {
+      "node": "odyssey",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 63212
+    },
+    "mek": {
+      "node": "mek",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    }
+  },
+  "startupLogs": [
+    {
+      "node": "login",
+      "pid": 27824,
+      "startup": [
+        "[14:17:41] [Server thread/INFO] [XConomy]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 XConomy v2.26.3-deuterium.1",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 DeuteriumMail v0.6.1",
+        "[14:17:42] [Server thread/INFO] [DeuteriumCore]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 DeuteriumCore v1.0.0",
+        "[14:17:42] [Server thread/INFO] [YouerModSync]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 YouerModSync v0.7-deuterium.3",
+        "[14:17:45] [Server thread/INFO] [XConomy]: \u6b63\u5728\u542f\u7528 XConomy v2.26.3-deuterium.1",
+        "[14:17:45] [Server thread/INFO] [XConomy]: UUID-Mode: Default",
+        "[14:17:45] [Server thread/INFO] [XConomy]: Language: ENGLISH",
+        "[14:17:45] [Server thread/INFO] [XConomy]: Saving method - MySQL",
+        "[14:17:45] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.HikariDataSource]: [XConomy] - Starting...",
+        "[14:17:45] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.pool.HikariPool]: [XConomy] - Added connection com.mysql.cj.jdbc.ConnectionImpl@585705c3",
+        "[14:17:45] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.HikariDataSource]: [XConomy] - Start completed.",
+        "[14:17:45] [Server thread/INFO] [XConomy]: MySQL successfully connected",
+        "[14:17:45] [Server thread/INFO] [XConomy]: Redis successfully connected",
+        "[14:17:45] [XConomyRedisSub/INFO] [XConomy]: Subscribe redis channel success, channel XConomy_Sync",
+        "[14:17:45] [Server thread/INFO] [XConomy]: XConomy successfully enabled",
+        "[14:17:45] [Server thread/INFO] [XConomy]: Found PlaceholderAPI",
+        "[14:17:45] [Server thread/INFO] [XConomy]: PlaceholderAPI successfully hooked",
+        "[14:17:45] [Server thread/INFO] [XConomy]: ===== YiC =====",
+        "[14:17:46] [Server thread/INFO] [DeuteriumMail]: \u6b63\u5728\u542f\u7528 DeuteriumMail v0.6.1",
+        "[14:17:47] [Server thread/INFO] [DeuteriumMail]: DeuteriumMail \u521d\u59cb\u5316\u5b8c\u6bd5\u3002",
+        "[14:17:47] [Server thread/INFO] [DeuteriumMail]: \u914d\u7f6e: database=plugins\\DeuteriumMail\\mail.db, offlineAllActiveDays=30, defaultDraftExpire=30d, confirmationTimeoutSeconds=30, uiToastEnabled=true, maxLoadedMails=4096, maxAttachmentTypes=32, verboseSuccess=false",
+        "[14:17:47] [Server thread/INFO] [DeuteriumMail]: \u8349\u7a3f\u76ee\u5f55: plugins\\DeuteriumMail\\drafts",
+        "[14:17:47] [Server thread/INFO] [DeuteriumMail]: MailService \u5df2\u6ce8\u518c\u5230 Bukkit Services\u3002",
+        "[14:17:47] [Server thread/INFO] [DeuteriumMail]: \u53d1\u73b0\u7ecf\u6d4e\u63d2\u4ef6 XConomy\uff0c\u5df2\u63a5\u5165\u3002",
+        "[14:17:48] [Server thread/INFO] [DeuteriumCore]: \u6b63\u5728\u542f\u7528 DeuteriumCore v1.0.0",
+        "[14:17:49] [Server thread/INFO] [DeuteriumCore]: Core \u5df2\u542f\u7528\uff1a/dc help\uff1b\u8282\u70b9 login\uff0c\u7269\u54c1\u5e93 mysql\u3002",
+        "[14:17:54] [Server thread/INFO] [YouerModSync]: \u6b63\u5728\u542f\u7528 YouerModSync v0.7-deuterium.3",
+        "[14:18:00] [ - XConomy/INFO] [XConomy]: Check update failed",
+        "[14:18:00] [Server thread/INFO]: Done (55.881s)! For help, type \"help\""
+      ]
+    },
+    {
+      "node": "amiya",
+      "pid": 43688,
+      "startup": [
+        "[14:17:34] [Server thread/INFO] [XConomy]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 XConomy v2.26.3-deuterium.1",
+        "[14:17:35] [Server thread/INFO] [DeuteriumMail]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 DeuteriumMail v0.6.1",
+        "[14:17:35] [Server thread/INFO] [DeuteriumCore]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 DeuteriumCore v1.0.0",
+        "[14:17:35] [Server thread/INFO] [YouerModSync]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 YouerModSync v0.7-deuterium.3",
+        "[14:17:38] [Server thread/INFO] [XConomy]: \u6b63\u5728\u542f\u7528 XConomy v2.26.3-deuterium.1",
+        "[14:17:38] [Server thread/INFO] [XConomy]: UUID-Mode: Default",
+        "[14:17:38] [Server thread/INFO] [XConomy]: Language: ENGLISH",
+        "[14:17:38] [Server thread/INFO] [XConomy]: Saving method - MySQL",
+        "[14:17:38] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.HikariDataSource]: [XConomy] - Starting...",
+        "[14:17:39] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.pool.HikariPool]: [XConomy] - Added connection com.mysql.cj.jdbc.ConnectionImpl@23ed6d4f",
+        "[14:17:39] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.HikariDataSource]: [XConomy] - Start completed.",
+        "[14:17:39] [Server thread/INFO] [XConomy]: MySQL successfully connected",
+        "[14:17:39] [Server thread/INFO] [XConomy]: Redis successfully connected",
+        "[14:17:39] [XConomyRedisSub/INFO] [XConomy]: Subscribe redis channel success, channel XConomy_Sync",
+        "[14:17:39] [Server thread/INFO] [XConomy]: XConomy successfully enabled",
+        "[14:17:39] [Server thread/INFO] [XConomy]: Found PlaceholderAPI",
+        "[14:17:39] [Server thread/INFO] [XConomy]: PlaceholderAPI successfully hooked",
+        "[14:17:39] [Server thread/INFO] [XConomy]: ===== YiC =====",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: \u6b63\u5728\u542f\u7528 DeuteriumMail v0.6.1",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: DeuteriumMail \u521d\u59cb\u5316\u5b8c\u6bd5\u3002",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: \u914d\u7f6e: database=plugins\\DeuteriumMail\\mail.db, offlineAllActiveDays=30, defaultDraftExpire=30d, confirmationTimeoutSeconds=30, uiToastEnabled=true, maxLoadedMails=4096, maxAttachmentTypes=32, verboseSuccess=false",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: \u8349\u7a3f\u76ee\u5f55: plugins\\DeuteriumMail\\drafts",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: MailService \u5df2\u6ce8\u518c\u5230 Bukkit Services\u3002",
+        "[14:17:41] [Server thread/INFO] [DeuteriumMail]: \u53d1\u73b0\u7ecf\u6d4e\u63d2\u4ef6 XConomy\uff0c\u5df2\u63a5\u5165\u3002",
+        "[14:17:42] [Server thread/INFO] [DeuteriumCore]: \u6b63\u5728\u542f\u7528 DeuteriumCore v1.0.0",
+        "[14:17:43] [Server thread/INFO] [DeuteriumCore]: Core \u5df2\u542f\u7528\uff1a/dc help\uff1b\u8282\u70b9 amiya\uff0c\u7269\u54c1\u5e93 mysql\u3002",
+        "[14:17:48] [Server thread/INFO] [YouerModSync]: \u6b63\u5728\u542f\u7528 YouerModSync v0.7-deuterium.3",
+        "[14:17:48] [Server thread/INFO] [YouerModSync]: Core player-data provider ready: node=amiya, domain=survival, modules=playerdata,sophisticatedbackpacks",
+        "[14:17:57] [ - XConomy/INFO] [XConomy]: Check update failed",
+        "[14:17:57] [Server thread/INFO]: Done (60.965s)! For help, type \"help\""
+      ]
+    },
+    {
+      "node": "odyssey",
+      "pid": 63212,
+      "startup": [
+        "[14:17:30] [Server thread/INFO] [XConomy]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 XConomy v2.26.3-deuterium.1",
+        "[14:17:30] [Server thread/INFO] [DeuteriumMail]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 DeuteriumMail v0.6.1",
+        "[14:17:31] [Server thread/INFO] [DeuteriumCore]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 DeuteriumCore v1.0.0",
+        "[14:17:31] [Server thread/INFO] [YouerModSync]: \u6b63\u5728\u52a0\u8f7d\u670d\u52a1\u5668\u63d2\u4ef6 YouerModSync v0.7-deuterium.3",
+        "[14:17:33] [Server thread/INFO] [XConomy]: \u6b63\u5728\u542f\u7528 XConomy v2.26.3-deuterium.1",
+        "[14:17:33] [Server thread/INFO] [XConomy]: UUID-Mode: Default",
+        "[14:17:33] [Server thread/INFO] [XConomy]: Language: ENGLISH",
+        "[14:17:33] [Server thread/INFO] [XConomy]: Saving method - MySQL",
+        "[14:17:33] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.HikariDataSource]: [XConomy] - Starting...",
+        "[14:17:34] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.pool.HikariPool]: [XConomy] - Added connection com.mysql.cj.jdbc.ConnectionImpl@2df90358",
+        "[14:17:34] [Server thread/INFO] [me.yic.xc_libs.zaxxer.hikari.HikariDataSource]: [XConomy] - Start completed.",
+        "[14:17:34] [Server thread/INFO] [XConomy]: MySQL successfully connected",
+        "[14:17:34] [Server thread/INFO] [XConomy]: Redis successfully connected",
+        "[14:17:34] [XConomyRedisSub/INFO] [XConomy]: Subscribe redis channel success, channel XConomy_Sync",
+        "[14:17:34] [Server thread/INFO] [XConomy]: XConomy successfully enabled",
+        "[14:17:34] [Server thread/INFO] [XConomy]: Found PlaceholderAPI",
+        "[14:17:34] [Server thread/INFO] [XConomy]: PlaceholderAPI successfully hooked",
+        "[14:17:34] [Server thread/INFO] [XConomy]: ===== YiC =====",
+        "[14:17:36] [Server thread/INFO] [DeuteriumMail]: \u6b63\u5728\u542f\u7528 DeuteriumMail v0.6.1",
+        "[14:17:36] [Server thread/INFO] [DeuteriumMail]: DeuteriumMail \u521d\u59cb\u5316\u5b8c\u6bd5\u3002",
+        "[14:17:36] [Server thread/INFO] [DeuteriumMail]: \u914d\u7f6e: database=plugins\\DeuteriumMail\\mail.db, offlineAllActiveDays=30, defaultDraftExpire=30d, confirmationTimeoutSeconds=30, uiToastEnabled=true, maxLoadedMails=4096, maxAttachmentTypes=32, verboseSuccess=false",
+        "[14:17:36] [Server thread/INFO] [DeuteriumMail]: \u8349\u7a3f\u76ee\u5f55: plugins\\DeuteriumMail\\drafts",
+        "[14:17:36] [Server thread/INFO] [DeuteriumMail]: MailService \u5df2\u6ce8\u518c\u5230 Bukkit Services\u3002",
+        "[14:17:36] [Server thread/INFO] [DeuteriumMail]: \u53d1\u73b0\u7ecf\u6d4e\u63d2\u4ef6 XConomy\uff0c\u5df2\u63a5\u5165\u3002",
+        "[14:17:38] [Server thread/INFO] [DeuteriumCore]: \u6b63\u5728\u542f\u7528 DeuteriumCore v1.0.0",
+        "[14:17:38] [Server thread/INFO] [DeuteriumCore]: Core \u5df2\u542f\u7528\uff1a/dc help\uff1b\u8282\u70b9 odyssey\uff0c\u7269\u54c1\u5e93 mysql\u3002",
+        "[14:17:44] [Server thread/INFO] [YouerModSync]: \u6b63\u5728\u542f\u7528 YouerModSync v0.7-deuterium.3",
+        "[14:17:44] [Server thread/INFO] [YouerModSync]: Core player-data provider ready: node=odyssey, domain=survival, modules=playerdata,sophisticatedbackpacks",
+        "[14:17:51] [Server thread/INFO]: Done (51.238s)! For help, type \"help\"",
+        "[14:17:51] [ - XConomy/INFO] [XConomy]: Check update failed"
+      ]
+    }
+  ],
+  "businessRuntimeMustBeCheckedViaBackend": true
+}

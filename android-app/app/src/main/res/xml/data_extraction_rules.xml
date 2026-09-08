@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="deuterium_app_preferences.xml" />
+        <exclude domain="database" path="deuterium_chat_history.db" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="deuterium_app_preferences.xml" />
+        <exclude domain="database" path="deuterium_chat_history.db" />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,21 @@
+{
+  "transferId": "transfer_acad3a87845dcba74310068ae5ab734d791a7de1",
+  "clientRequestId": "qa-live-transfer-20260908-01",
+  "recipient": {
+    "playerRef": "player_c917e4976d6f33d0e4cfd044bbdb93c585b173db",
+    "gameId": "luoyinwuchen1",
+    "qq": null,
+    "online": false,
+    "registered": false,
+    "source": "game_id",
+    "confirmedAt": "2026-09-08T04:46:27.520014718Z",
+    "expiresAt": null
+  },
+  "amount": "1.00",
+  "currency": "CREDIT",
+  "note": "2.0.0 联通验收",
+  "status": "success",
+  "operationId": "coreop_258c2ad398e509840323eaf64e2883f9c686d1cc",
+  "createdAt": "2026-09-08T04:17:58.281576Z",
+  "updatedAt": "2026-09-08T04:17:58.330175Z"
+}

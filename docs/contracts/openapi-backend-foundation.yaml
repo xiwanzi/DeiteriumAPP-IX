@@ -1,0 +1,185 @@
+openapi: 3.0.3
+info:
+  title: Deuterium Backend Foundation 接入增量
+  version: 0.1.0
+  description: 2026-09-08 已实现的网页会话和 Core 管理查询；共用业务模型引用 App v2。邮箱及经济命令不在本版本中。
+servers:
+  - url: /api/v1
+security:
+  - webCookie: []
+  - bearerAuth: []
+paths:
+  /web/session:
+    post:
+      operationId: createWebSession
+      summary: 登录同域网页，设置 HttpOnly Cookie
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './openapi-app-v2.yaml#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功；Cookie 为 Secure/HttpOnly/SameSite=Lax/Path=/，不返回 Bearer token
+          headers:
+            Set-Cookie:
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebSessionResponse'}
+        default: {$ref: '#/components/responses/Error'}
+    get:
+      operationId: getWebSession
+      summary: 恢复当前网页会话及 CSRF token
+      security:
+        - webCookie: []
+      responses:
+        '200':
+          description: 当前网页会话
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebSessionResponse'}
+        default: {$ref: '#/components/responses/Error'}
+    delete:
+      operationId: deleteWebSession
+      summary: 注销当前会话；Cookie 认证要求 Origin 和 CSRF
+      parameters:
+        - name: Origin
+          in: header
+          description: Cookie 认证时必须与 publicOrigin 精确一致
+          schema: {type: string}
+        - name: X-CSRF-Token
+          in: header
+          description: Cookie 认证时必填；来自 GET/POST web/session
+          schema: {type: string}
+      responses:
+        '200':
+          description: 当前会话已撤销
+          content:
+            application/json:
+              schema: {$ref: './openapi-app-v2.yaml#/components/schemas/LogoutResponse'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/core/nodes:
+    get:
+      operationId: listCoreNodes
+      summary: 查询已配置节点，要求 core.read
+      responses:
+        '200':
+          description: 配置与连接状态；claimEnabled 是配置意图，不代表独立邮箱已经就绪
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [requestId, data]
+                properties:
+                  requestId: {type: string}
+                  data:
+                    type: object
+                    required: [nodes]
+                    properties:
+                      nodes:
+                        type: array
+                        items: {$ref: '#/components/schemas/CoreNode'}
+        default: {$ref: '#/components/responses/Error'}
+  /admin/core/items:
+    get:
+      operationId: listCoreItemVersions
+      summary: 查询不可变物品版本，要求 core.read
+      parameters:
+        - name: afterItemRef
+          in: query
+          schema: {type: string, maxLength: 96}
+        - name: afterRevision
+          in: query
+          schema: {type: integer, format: int64, minimum: 0}
+      responses:
+        '200':
+          description: 每页最多 50 项，使用 data.next 的两个字段继续；无下一页时为 null
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [requestId, data]
+                properties:
+                  requestId: {type: string}
+                  data:
+                    type: object
+                    required: [items, next]
+                    properties:
+                      items:
+                        type: array
+                        maxItems: 50
+                        items: {$ref: '#/components/schemas/ItemVersion'}
+                      next:
+                        type: object
+                        nullable: true
+                        required: [afterItemRef, afterRevision]
+                        properties:
+                          afterItemRef: {type: string}
+                          afterRevision: {type: integer, format: int64}
+        default: {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    webCookie: {type: apiKey, in: cookie, name: __Host-deuterium_session}
+    bearerAuth: {type: http, scheme: bearer}
+  parameters:
+    Origin:
+      name: Origin
+      in: header
+      required: true
+      description: 必须与配置的 scheme/host/port 精确一致，不接受通配符
+      schema: {type: string}
+  responses:
+    Error:
+      description: 400 格式错误、401 会话或账密错误、403 权限/Origin/CSRF、409 冲突、429 限次、503 不可用
+      content:
+        application/json:
+          schema: {$ref: './openapi-app-v2.yaml#/components/schemas/ErrorResponse'}
+  schemas:
+    WebSessionResponse:
+      type: object
+      required: [requestId, data]
+      properties:
+        requestId: {type: string}
+        data:
+          type: object
+          required: [user, csrfToken, expiresAt]
+          properties:
+            user: {$ref: './openapi-app-v2.yaml#/components/schemas/UserProfile'}
+            csrfToken: {type: string, minLength: 43, maxLength: 43}
+            expiresAt: {type: string, format: date-time}
+    CoreNode:
+      type: object
+      required: [serverId, online, chat, itemPublisher, claimEnabled, inventoryDomain]
+      properties:
+        serverId: {type: string}
+        online: {type: boolean}
+        chat: {type: boolean}
+        itemPublisher: {type: boolean}
+        claimEnabled: {type: boolean}
+        inventoryDomain: {type: string}
+    ItemVersion:
+      type: object
+      required: [itemRef, revision, payloadSha256, displayName, description, maxQuantity, compatibleServerIds, requiredMods]
+      properties:
+        itemRef: {type: string, maxLength: 96}
+        revision: {type: integer, minimum: 1, maximum: 2147483647}
+        payloadSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        displayName: {type: string, minLength: 1, maxLength: 128}
+        description: {type: string, maxLength: 1024}
+        maxQuantity: {type: integer, minimum: 1, maximum: 1000000}
+        compatibleServerIds:
+          type: array
+          minItems: 1
+          maxItems: 32
+          uniqueItems: true
+          items: {type: string}
+        requiredMods:
+          type: array
+          nullable: true
+          maxItems: 128
+          items: {type: string}
