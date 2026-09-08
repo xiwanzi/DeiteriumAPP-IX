@@ -9,11 +9,13 @@ import java.time.ZoneId
 import java.util.UUID
 
 class BackendCommissions(private val api:BackendApi,private val state:LabState) {
+    private var visibilityRevision=0L
     var error by mutableStateOf<String?>(null);private set
     private fun fail(value:Throwable){error=value.message ?: "委托服务暂不可用";state.storageMessage=error}
     private fun date(value:JSONObject,key:String):LocalDateTime?=value.optString(key).takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).atZone(ZoneId.systemDefault()).toLocalDateTime()}
     private fun epoch(value:JSONObject,key:String):Long?=value.optString(key).takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).toEpochMilli()}
     private fun put(value:JSONObject):String{
+        if(value.optBoolean("hiddenFromHistory")){val id=value.getString("commissionId");state.commissions.entries.removeAll{it.id==id};return id}
         val c=value.getJSONObject("content");val refund=value.optJSONObject("refund")
         val actions=value.getJSONArray("availableActions");val set=(0 until actions.length()).map{actions.getString(it)}.toSet()
         val status=value.getString("status")
@@ -22,15 +24,22 @@ class BackendCommissions(private val api:BackendApi,private val state:LabState) 
         val id=value.getString("commissionId")
         val entry=Commission(id,id,value.getJSONObject("owner").getString("displayName"),draft,date(value,"createdAt")!!,stage=stage,worker=value.optJSONObject("worker")?.getString("displayName"),acceptedAt=date(value,"acceptedAt"),completedAt=date(value,"completedAt"),confirmedAt=date(value,"confirmedAt"),deadlineMillis=if(stage==CommissionStage.Completed)epoch(value,"acceptanceDueAt") else epoch(value,"workDueAt"),completionNote=value.optString("completionDescription"),
             refund=when(refund?.optString("status")){"REQUESTED","PROCESSING"->RefundState.Requested;"REJECTED"->RefundState.Rejected;"APPROVED"->RefundState.Approved;else->RefundState.None},refundAttempts=value.optInt("refundAttemptsUsed"),refundReason=refund?.optString("reason").orEmpty(),rejectionReason=refund?.optString("rejectionReason").orEmpty(),pausedMillis=if(value.isNull("pausedRemainingSeconds"))null else value.optLong("pausedRemainingSeconds")*1000,automatic=value.optBoolean("automatic"),
-            serverStatus=status,fundsStatus=value.getString("fundsStatus"),serverActions=set,version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"})
+            serverStatus=status,fundsStatus=value.getString("fundsStatus"),serverActions=set,version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"))
         val index=state.commissions.entries.indexOfFirst{it.id==id};if(index>=0)state.commissions.entries[index]=entry else state.commissions.entries.add(0,entry)
         return id
     }
-    suspend fun refresh(){runCatching{
+    suspend fun refresh(){val revision=visibilityRevision;runCatching{
         val values=api.listAll("/commissions")+api.listAll("/commissions/me")
         values.associateBy{it.getString("commissionId")}.values
-    }.onSuccess{state.commissions.entries.clear();it.forEach{value->put(value)};error=null}.onFailure(::fail)}
-    suspend fun refreshOne(id:String){runCatching{var value=api.request("GET","/commissions/$id");value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"}?.let{operationId->runCatching{api.request("GET","/operations/$operationId")}.onSuccess{op->if(op.optString("status") in setOf("COMPLETED","FAILED"))value=api.request("GET","/commissions/$id")}};put(value);value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"}?.let{state.interventions?.refresh(it)}}.onFailure(::fail)}
+    }.onSuccess{if(revision!=visibilityRevision)return@onSuccess;state.commissions.entries.clear();it.forEach{value->put(value)};error=null}.onFailure(::fail)}
+    suspend fun refreshOne(id:String){val revision=visibilityRevision;runCatching{var value=api.request("GET","/commissions/$id");value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"}?.let{operationId->runCatching{api.request("GET","/operations/$operationId")}.onSuccess{op->if(op.optString("status") in setOf("COMPLETED","FAILED"))value=api.request("GET","/commissions/$id")}};if(revision==visibilityRevision)put(value);value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"}?.let{state.interventions?.refresh(it)}}.onFailure(::fail)}
+    suspend fun hide(id:String):Boolean {
+        val original=state.commissions.find(id) ?: return false
+        return runCatching{
+            val response=api.request("POST","/commissions/$id/hide",JSONObject().put("clientRequestId",UUID.nameUUIDFromBytes("${api.playerRef}:hide:commission:$id:${original.version}".toByteArray()).toString()).put("expectedVersion",original.version))
+            require(response.getBoolean("hidden")){"删除未完成"};visibilityRevision++;state.commissions.entries.removeAll{it.id==id};error=null;true
+        }.getOrElse{fail(it);false}
+    }
     suspend fun publish(key:String,draft:CommissionDraft):String?{
         val requestScope=api.financialScope()
         val kind="COMMISSION_PUBLISH"

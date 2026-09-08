@@ -198,6 +198,21 @@ func (s *Store) LatestChatSequence(ctx context.Context) (seq int64, err error) {
 	return
 }
 
+func (s *Store) PublicChatMessageV203(ctx context.Context, id string) (ChatMessage, error) {
+	rows, err := s.DB.QueryContext(ctx, "SELECT "+chatColumns+" FROM chat_messages_next m LEFT JOIN public_chat_metadata_v2 p ON p.message_id=m.message_id WHERE m.message_id=? AND m.kind='public_chat'", id)
+	if err != nil {
+		return ChatMessage{}, err
+	}
+	messages, err := scanMessages(rows)
+	if err != nil {
+		return ChatMessage{}, err
+	}
+	if len(messages) != 1 {
+		return ChatMessage{}, sql.ErrNoRows
+	}
+	return messages[0], nil
+}
+
 func (s *Store) PendingChats(ctx context.Context, node string) ([]ChatMessage, error) {
 	rows, err := s.DB.QueryContext(ctx, "SELECT "+chatColumns+` FROM core_chat_deliveries d JOIN chat_messages_next m ON m.sequence_id=d.message_sequence LEFT JOIN public_chat_metadata_v2 p ON p.message_id=m.message_id WHERE d.node_id=? AND d.acknowledged_at IS NULL AND d.expires_at>UTC_TIMESTAMP(6) ORDER BY d.message_sequence LIMIT 50`, node)
 	if err != nil {

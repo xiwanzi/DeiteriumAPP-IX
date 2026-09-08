@@ -110,7 +110,7 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
             }}
             if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("预计送达","以各商品交付说明为准");DetailRow("付款方式","钱包余额");DetailRow("可用余额",credit(state.balance));DetailRow("合计","${credit(items.sumOf{it.first.price*it.second})} 信用点");error?.let{Text(it,color=MaterialTheme.colorScheme.error)}}}
         }
-        if(items.isNotEmpty())Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){MotionButton({if(!state.balanceKnown)error="余额尚未同步，请先刷新钱包" else if(items.sumOf{it.first.price*it.second}>state.balance)error="余额不足，请调整商品数量" else if(!quoting)scope.launch{quoting=true;val quote=state.commerce.network?.quoteStore(items,quoteKey);if(quote!=null){quoteText=quote.toString();paymentKey=UUID.randomUUID().toString();if(quote.optJSONArray("warnings")?.length()!=0||apiCents(quote.getString("totalAmount"))!=items.sumOf{it.first.price*it.second})confirmQuote=true else pending=HashMap(items.associate{it.first.id to it.second})}else error=state.commerce.network?.error;quoting=false}},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=!quoting){Text(if(quoting)"正在确认报价…" else "确认支付 ${credit(items.sumOf{it.first.price*it.second})}")}}
+        if(items.isNotEmpty())Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){MotionButton({if(!state.balanceKnown)error="余额尚未同步，请先刷新钱包" else if(items.sumOf{it.first.price*it.second}>state.balance)error="余额不足，请调整商品数量" else if(!quoting)scope.launch{quoting=true;val quote=state.commerce.network?.quoteStore(items,quoteKey);if(quote!=null){quoteText=quote.toString();paymentKey=UUID.randomUUID().toString();confirmQuote=true}else error=state.commerce.network?.error;quoting=false}},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=!quoting){Text(if(quoting)"正在准备订单…" else "去结算 ${credit(items.sumOf{it.first.price*it.second})}")}}
     }
     if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false}){confirmQuote=false;pending=HashMap(items.associate{it.first.id to it.second})}
     if(pending.isNotEmpty()&&quoteText!=null) {
@@ -120,5 +120,7 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
 }
 @Composable
 fun CheckoutQuoteConfirmation(quote:JSONObject,onClose:()->Unit,onConfirm:()->Unit) {
-    IosDialog(onClose,{Text("确认服务器报价")},{Column{Text("${credit(apiCents(quote.getString("totalAmount")))} 信用点");val warnings=quote.optJSONArray("warnings");if(warnings!=null)for(index in 0 until warnings.length())Text(warnings.getString(index),Modifier.padding(top=10.dp))}},{PlainButton(onConfirm){Text("确认并付款")}}, {PlainButton(onClose){Text("取消")}})
+    val summary=remember(quote.toString()){checkoutSummary(quote)}
+    IosDialog(onClose,{Text("确认付款")},{Text("是否支付 ${credit(summary.total)} 信用点？")},
+        {PlainButton(onConfirm){Text("确认付款")}}, {PlainButton(onClose){Text("取消")}})
 }

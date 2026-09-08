@@ -166,13 +166,14 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     if(state.restoring){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background));return}
     var destination by rememberSaveable{mutableStateOf(Destination.Shop)};var stack by rememberSaveable{mutableStateOf(listOf<String>())}
     val route=stack.lastOrNull();val page=route ?: destination.name
+    SideEffect{state.activeConversation=route?.takeIf{it.startsWith("dm:")}?.removePrefix("dm:")}
     var transfer by rememberSaveable{mutableStateOf(false)};var transferTo by rememberSaveable{mutableStateOf<String?>(null)}
     var people by remember{mutableStateOf(false)};var record by remember{mutableStateOf<LedgerEntry?>(null)};var tuner by remember{mutableStateOf(false)};var resetPassword by remember{mutableStateOf(false)}
     var pendingNotification by remember{mutableStateOf<String?>(null)};var notificationAllowed by remember{mutableStateOf(notifications.allowed())}
     val notificationPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->notificationAllowed=granted&&notifications.allowed();pendingNotification=null;Toast.makeText(context,if(granted)"系统通知已开启" else "未开启系统通知，仍可查看应用内提醒",Toast.LENGTH_LONG).show()}
     val updates=LocalAppUpdates.current
     val lifecycle=LocalLifecycleOwner.current
-    DisposableEffect(lifecycle){val observer=LifecycleEventObserver{_,event->notificationAllowed=notifications.allowed();if(event==androidx.lifecycle.Lifecycle.Event.ON_RESUME)updates?.onResume()};lifecycle.lifecycle.addObserver(observer);onDispose{lifecycle.lifecycle.removeObserver(observer)}}
+    DisposableEffect(lifecycle){state.foreground=lifecycle.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED);val observer=LifecycleEventObserver{_,event->state.foreground=lifecycle.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED);notificationAllowed=notifications.allowed();if(event==androidx.lifecycle.Lifecycle.Event.ON_RESUME)updates?.onResume()};lifecycle.lifecycle.addObserver(observer);onDispose{lifecycle.lifecycle.removeObserver(observer)}}
     val sensorManager=remember{context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager}
     val sensorAvailable=remember{listOf(Sensor.TYPE_GAME_ROTATION_VECTOR,Sensor.TYPE_ROTATION_VECTOR,Sensor.TYPE_ACCELEROMETER).any{sensorManager.getDefaultSensor(it)!=null}}
     val saved=rememberSaveableStateHolder();val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
@@ -232,7 +233,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                             current=="commissions"||current=="events"||current=="event"->CommissionHallPage(state,inset,{open("commission:$it")})
                             current=="my-commissions"->CommissionHallPage(state,inset,{open("commission:$it")},mine=true)
                             current=="publish-commission"->PublishCommissionPage(state,inset){id->saved.removeState(current);stack=stack.dropLast(1)+"commission:$id"}
-                            current.startsWith("commission:")->CommissionDetailPage(state,current.removePrefix("commission:"),inset){open("dm:$it")}
+                            current.startsWith("commission:")->CommissionDetailPage(state,current.removePrefix("commission:"),inset,{open("dm:$it")},{back()})
                             current.startsWith("event:")->EventDetailPage(state,current.removePrefix("event:"),inset)
                             current.startsWith("product:")->ShopCatalog.find{it.id==current.removePrefix("product:")}?.let{ProductPage(it,state,inset,{open("bag")}){product,origin->flight=product to origin}}
                             current=="bag"->ShoppingBag(state,inset,{back()},::showOrder)
@@ -240,7 +241,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                             current=="publish"||current.startsWith("edit-listing:")->PublishListingPage(state.commerce,inset,{id->saved.removeState(current);val parent=stack.dropLast(1);val target="market-product:$id";stack=if(parent.lastOrNull()==target)parent else parent+target},if(current.startsWith("edit-listing:"))state.commerce.listings.find{it.id==current.removePrefix("edit-listing:")} else null)
                             current=="listings"->MarketPage(state.commerce,"",inset,{open("market-product:$it")},true){open("publish")}
                             current=="orders"->OrdersPage(state.commerce,inset,::showOrder)
-                            current.startsWith("order:")->OrderDetailPage(state.commerce,current.removePrefix("order:"),inset,{open("dm:$it")}){open("refund:$it")}
+                            current.startsWith("order:")->OrderDetailPage(state.commerce,current.removePrefix("order:"),inset,{open("dm:$it")},{open("refund:$it")},{back()})
                             current.startsWith("refund:")->RefundStatusPage(state.commerce,current.removePrefix("refund:"),inset,{open("dm:$it")},::showOrder)
                             current=="trade-notices"->TradeNoticesPage(state.commerce,inset,notificationAllowed,{if(Build.VERSION.SDK_INT>=33)notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)},::open,state::readNotice)
                             current=="notifications"->NotificationPage(inset,notificationAllowed,userName,{if(Build.VERSION.SDK_INT>=33)notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)else context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))},{context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))})
@@ -268,8 +269,8 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                     }
                 }
             }
-            if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,if(updates?.hasUpdates==true)setOf(Destination.Profile.ordinal) else emptySet()){destination=Destination.entries[it]}}
-            flight?.let{(product,start)->Image(painterResource(product.image),null,Modifier.size(72.dp).graphicsLayer{val t=flightProgress.value;val current=start+(bagCenter-start)*t+Offset(-90f*kotlin.math.sin(t*Math.PI).toFloat(),-100f*kotlin.math.sin(t*Math.PI).toFloat());translationX=current.x-size.width/2;translationY=current.y-size.height/2;scaleX=1f-.78f*t;scaleY=scaleX;alpha=1f-.4f*t}.clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),contentScale=ContentScale.Crop)}
+            if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,buildSet{if(updates?.hasUpdates==true)add(Destination.Profile.ordinal);if(state.hasUnreadMessages)add(Destination.Info.ordinal)}){destination=Destination.entries[it]}}
+            flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}
             AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {
                 state.notice?.let{notice->LiquidGlass(Modifier.fillMaxWidth(),backdrop=backdrop,onClick={goToNotice(notice.route)}){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.NotificationsNone,null,tint=MaterialTheme.colorScheme.primary);Column(Modifier.weight(1f).padding(horizontal=10.dp)){Text(notice.title,style=MaterialTheme.typography.titleMedium);Text(notice.body,style=MaterialTheme.typography.bodySmall,maxLines=2)};IconButton({state.notice=null},Modifier.size(36.dp)){Icon(Icons.Outlined.Close,"关闭提醒",Modifier.size(18.dp))}}}}
             }

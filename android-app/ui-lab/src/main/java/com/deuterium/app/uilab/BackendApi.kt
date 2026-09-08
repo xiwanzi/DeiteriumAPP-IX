@@ -25,9 +25,9 @@ import javax.crypto.spec.GCMParameterSpec
 class ApiFailure(val code: String, message: String, val status: Int = 0) : IOException(message)
 
 /** All asset and identity authority stays on the backend. No offline-success fallback. */
-class BackendApi private constructor(context: Context) {
+class BackendApi internal constructor(context: Context, origin: String = BuildConfig.API_BASE_URL) {
     private val prefs = context.getSharedPreferences("backend-v2", Context.MODE_PRIVATE)
-    val baseUrl: String = BuildConfig.API_BASE_URL.trimEnd('/')
+    val baseUrl: String = origin.trimEnd('/')
     val http = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS).callTimeout(25, TimeUnit.SECONDS)
         .retryOnConnectionFailure(false).followRedirects(false).build()

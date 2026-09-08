@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun OrdersPage(book:CommerceBook,topInset:Dp,onOrder:(String)->Unit) {
+    var deleting by remember{mutableStateOf<CommerceOrder?>(null)}
     LaunchedEffect(Unit){book.network?.refreshOrders()}
     var channel by rememberSaveable{mutableIntStateOf(0)};var selling by rememberSaveable{mutableIntStateOf(0)};var filter by rememberSaveable{mutableStateOf("全部")}
     val orders=book.orders.filter{it.channel==(if(channel==0)OrderChannel.Official else OrderChannel.Market)&&(if(channel==1&&selling==1)it.seller==book.userName else it.buyer==book.userName)}.filter{
@@ -36,8 +37,10 @@ fun OrdersPage(book:CommerceBook,topInset:Dp,onOrder:(String)->Unit) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text(if(selling==1&&channel==1)"买家 ${order.buyer}" else order.seller,Modifier.weight(1f),style=MaterialTheme.typography.titleMedium);Text(order.status,color=if(order.refund==RefundState.Approved)MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodyMedium)}
             order.lines.take(2).forEach{line->Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically){OrderThumbnail(line,Modifier.size(66.dp,76.dp));Column(Modifier.weight(1f).padding(start=14.dp)){Text(line.title,style=MaterialTheme.typography.bodyLarge);Text("${credit(line.unitPrice)} × ${line.quantity}",Modifier.padding(top=5.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
             Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically){Text(order.createdAt.format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm")),Modifier.weight(1f),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);Text("共 ${order.lines.sumOf{it.quantity}} 件  ${credit(order.amount)}",style=MaterialTheme.typography.titleMedium)}
+            if(order.canHideRecord)PlainButton({deleting=order},Modifier.align(Alignment.End)){Text("删除记录",color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }}}
     }
+    deleting?.let{order->DeleteRecordDialog(order.lines.firstOrNull()?.title ?: "订单",{deleting=null}){book.network?.hideOrder(order.id)==true}}
 }
 
 @Composable
@@ -55,9 +58,9 @@ fun OrderProgress(order:CommerceOrder) {
 }
 
 @Composable
-fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Unit,onRefundStatus:(String)->Unit={}) {
+fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Unit,onRefundStatus:(String)->Unit={},onDeleted:()->Unit={}) {
     LaunchedEffect(id){while(true){book.network?.refreshOrder(id);delay(5000)}}
-    val scope=rememberCoroutineScope()
+    val scope=rememberCoroutineScope();var deleting by remember{mutableStateOf(false)}
     val order=book.order(id) ?: return
     val buyer=order.buyer==book.userName
     val clipboard=LocalClipboardManager.current;val context=LocalContext.current
@@ -101,6 +104,7 @@ fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Uni
             if(order.refundAttempts>0)item{SettingsGroup{SettingsRow("退款详情",Icons.Outlined.ReceiptLong,detail=if(order.refund==RefundState.Requested)"待卖家处理" else "查看进度"){onRefundStatus(id)}}}
             order.intervention?.let{case->item{InterventionSummary(case){intervention=true}}}
             if(order.interventionCaseId!=null&&order.intervention==null)item{PlainButton({intervention=true}){Text("查看平台介入")}}
+            if(order.canHideRecord)item{PlainButton({deleting=true},Modifier.fillMaxWidth()){Text("删除记录",color=MaterialTheme.colorScheme.error)}}
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface) {
             Row(Modifier.navigationBarsPadding().padding(18.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -116,6 +120,7 @@ fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Uni
             }
         }
     }
+    if(deleting)DeleteRecordDialog(order.lines.firstOrNull()?.title ?: "订单",{deleting=false}){(book.network?.hideOrder(id)==true).also{if(it)onDeleted()}}
     if(intervention)OrderInterventionSheet(book,order){intervention=false}
     if(confirmReceipt)IosDialog({confirmReceipt=false},{Text(if(order.construction)"确认工程已验收？" else "确认已收到商品？")},{Text("请检查交付内容。确认后，平台将 ${credit(order.amount)} 信用点结算给 ${order.seller}，订单标记为已完成。")},{PlainButton({scope.launch{if(book.network?.orderAction(id,"confirm")==true)confirmReceipt=false}}){Text(order.receiptLabel)}}, {PlainButton({confirmReceipt=false}){Text("暂不确认")}})
     if(ship)IosDialog({ship=false},{Text(if(order.construction)"确认开始施工？" else "确认已经交付？")},{Text(if(order.construction)"将开始 ${durationHours(order.confirmationHours)} 的工期倒计时，请确认已经预留验收时间。" else "请先按约定交付物品。发货后开始72小时自动确认倒计时。")},{PlainButton({scope.launch{if(book.network?.orderAction(id,if(order.construction)"start-work" else "ship")==true)ship=false}}){Text(order.shipLabel)}}, {PlainButton({ship=false}){Text("取消")}})

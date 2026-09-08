@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: DeuteriumAPP 完整业务接口契约
-  version: 2.0.0
+  version: 2.0.3
   license:
     name: Proprietary
-  description: 2026-09-08 体验版 07 配套契约。保留 /api/v1 路径；新增商城、市场、委托、资料、通知、更新及网页商家/管理端接口。x-implementation-status 区分已有接口与待实现契约。本轮不代表服务端已上线。
+  description: 2026-09-09 当前契约。2.0.3 增加账号级记录隐藏及可直接发送公共消息的 HTTP 入口；保留 /api/v1 路径及既有业务模型。旧实施标签按各自历史阶段理解，具体已发布能力以部署记录为准。
 servers:
 - url: /api/v1
 security:
@@ -41,6 +41,90 @@ tags:
 - name: Appearance
   description: 远程外观配置
 paths:
+  /orders/{orderId}/hide:
+    post:
+      tags: [Orders]
+      summary: 删除本人记录显示
+      description: 按账号持久隐藏终态交易或下架/售罄的自有市场商品。保留业务、资金、证据和对方记录；活跃/未知交易不可隐藏，重新活跃后再次显示。
+      operationId: hideOrderidV203
+      x-implementation-status: implemented_v203
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationRequest'
+      responses:
+        '200':
+          description: 已隐藏；同一幂等请求重试保持相同结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HideRecordResponseV203'
+        default:
+          $ref: '#/components/responses/Error'
+  /commissions/{commissionId}/hide:
+    post:
+      tags: [Commissions]
+      summary: 删除本人记录显示
+      description: 按账号持久隐藏终态交易或下架/售罄的自有市场商品。保留业务、资金、证据和对方记录；活跃/未知交易不可隐藏，重新活跃后再次显示。
+      operationId: hideCommissionidV203
+      x-implementation-status: implemented_v203
+      parameters:
+      - name: commissionId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationRequest'
+      responses:
+        '200':
+          description: 已隐藏；同一幂等请求重试保持相同结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HideRecordResponseV203'
+        default:
+          $ref: '#/components/responses/Error'
+  /market/listings/{listingId}/hide:
+    post:
+      tags: [Market]
+      summary: 删除本人记录显示
+      description: 按账号持久隐藏终态交易或下架/售罄的自有市场商品。保留业务、资金、证据和对方记录；活跃/未知交易不可隐藏，重新活跃后再次显示。
+      operationId: hideListingidV203
+      x-implementation-status: implemented_v203
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutationRequest'
+      responses:
+        '200':
+          description: 已隐藏；同一幂等请求重试保持相同结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HideRecordResponseV203'
+        default:
+          $ref: '#/components/responses/Error'
   /app/update-check:
     get:
       tags:
@@ -487,9 +571,9 @@ paths:
       tags:
       - Chat
       summary: 发送公共聊天或回复
-      description: HTTP 是待实现的同义入口；与 chat.send WebSocket 共享 clientMessageId 去重和回复校验。正式公共消息仍需插件桥成功转发，不能假装已到达服务器。
+      description: 2.0.3 已实现；与 chat.send WebSocket 共用鉴权、频控、clientMessageId 去重和回复校验，不等待历史同步或套接字握手。accepted 表示后端已持久接受并排队向在线游戏节点投递，不代表全部节点已经 ACK。
       operationId: postChatMessages
-      x-implementation-status: contract_only
+      x-implementation-status: implemented_v203
       x-required-permissions:
       - AUTHENTICATED_PLAYER
       responses:
@@ -498,7 +582,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V2ChatMessageResponse'
+                $ref: '#/components/schemas/PublicSendResponseV203'
         '400':
           description: 字段或格式错误
           content:
@@ -12414,6 +12498,55 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    HideRecordResponseV203:
+      type: object
+      additionalProperties: false
+      required: [requestId, data]
+      properties:
+        requestId:
+          type: string
+        serverTime:
+          type: string
+          format: date-time
+        data:
+          type: object
+          additionalProperties: false
+          required: [hidden]
+          properties:
+            hidden:
+              type: boolean
+    PublicSendResponseV203:
+      type: object
+      additionalProperties: false
+      required: [requestId, data]
+      properties:
+        requestId:
+          type: string
+        serverTime:
+          type: string
+          format: date-time
+        data:
+          type: object
+          additionalProperties: false
+          required: [clientMessageId, status]
+          properties:
+            clientMessageId:
+              type: string
+            status:
+              type: string
+              enum: [accepted, failed, unknown]
+            messageId:
+              type: string
+            message:
+              $ref: '#/components/schemas/ChatMessage'
+            error:
+              type: object
+              required: [code, message]
+              properties:
+                code:
+                  type: string
+                message:
+                  type: string
     RequestId:
       type: string
       example: req_01HV0000000000000000000000
@@ -15005,6 +15138,12 @@ components:
       type: object
       additionalProperties: false
       properties:
+        canHideRecord:
+          type: boolean
+          description: 当前查看者是否可以删除本人的记录显示；不影响交易或其他参与者
+        hiddenFromHistory:
+          type: boolean
+          description: 当前查看者已隐藏的终态记录；重新进入活跃状态时为 false
         title:
           type: string
           minLength: 1
@@ -15657,6 +15796,12 @@ components:
       type: object
       additionalProperties: false
       properties:
+        canHideRecord:
+          type: boolean
+          description: 当前查看者是否可以删除本人的记录显示；不影响交易或其他参与者
+        hiddenFromHistory:
+          type: boolean
+          description: 当前查看者已隐藏的终态记录；重新进入活跃状态时为 false
         orderId:
           type: string
           minLength: 1
@@ -16158,6 +16303,12 @@ components:
       type: object
       additionalProperties: false
       properties:
+        canHideRecord:
+          type: boolean
+          description: 当前查看者是否可以删除本人的记录显示；不影响交易或其他参与者
+        hiddenFromHistory:
+          type: boolean
+          description: 当前查看者已隐藏的终态记录；重新进入活跃状态时为 false
         commissionId:
           type: string
           minLength: 1

@@ -574,6 +574,8 @@ func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV
 		if f.Kind == "listing" {
 			q += " AND owner_id=?"
 			args = append(args, user)
+			q += " AND NOT ((state<>'ACTIVE' OR available_stock=0) AND EXISTS (SELECT 1 FROM personal_record_visibility_v203 vh WHERE vh.user_id=? AND vh.resource_kind='LISTING' AND vh.resource_id=catalog_records_v2.resource_id))"
+			args = append(args, user)
 		}
 		if f.State != "" {
 			q += " AND state=?"
@@ -734,6 +736,12 @@ func (s *Store) CatalogViewV2(ctx context.Context, viewer string, d CatalogRecor
 		out["seller"] = seller
 		out["photos"] = photos
 		out["active"] = d.State == "ACTIVE"
+		out["canHideRecord"] = listingCanHideV203(d, viewer)
+		hidden, e := hiddenRecordV203(ctx, s.DB, viewer, "LISTING", d.ID)
+		if e != nil {
+			return nil, e
+		}
+		out["hiddenFromHistory"] = hidden && listingCanHideV203(d, viewer)
 		out["stock"] = d.Stock
 		out["createdAt"] = d.CreatedAt
 		out["updatedAt"] = d.UpdatedAt

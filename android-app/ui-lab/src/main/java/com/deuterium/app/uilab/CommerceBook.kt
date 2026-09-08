@@ -12,7 +12,7 @@ data class OrderLine(val productId:String,val title:String,val subtitle:String,v
     val image:Int=0,val artKey:String="",val imageUri:String?=null,val imageUris:List<String> = emptyList()) { val total:Long get()=Math.multiplyExact(unitPrice,quantity.toLong()) }
 data class MarketListing(val id:String,val title:String,val subtitle:String,val description:String,val category:String,val price:Long,val stock:Int,
     val seller:String,val qq:String,val methods:Set<DeliveryMethod>,val pickupLocation:String,val artKey:String="",val imageUri:String?=null,val active:Boolean=true,
-    val imageUris:List<String> = emptyList(),val workHours:Int=168,val version:Long=1,val sellerRef:String="") {
+    val imageUris:List<String> = emptyList(),val workHours:Int=168,val version:Long=1,val sellerRef:String="",val canHideRecord:Boolean=false) {
     val photos:List<String> get()=imageUris.ifEmpty{listOfNotNull(imageUri)}
     val construction:Boolean get()=category.startsWith("建筑服务")
     val confirmationHours:Int get()=if(construction)workHours else 72
@@ -25,7 +25,7 @@ data class CommerceOrder(val id:String,val key:String,val channel:OrderChannel,v
     val construction:Boolean=false,val confirmationHours:Int=72,val projectName:String="",val deadlineMillis:Long?=null,
     val pausedMillis:Long?=null,val refundAttempts:Int=0,val refundRequestedAt:LocalDateTime?=null,val refundResolvedAt:LocalDateTime?=null,val automatic:Boolean=false,
     val completedAt:LocalDateTime?=null,val rejectionReason:String="",val intervention:InterventionCase?=null,
-    val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null) {
+    val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null,val canHideRecord:Boolean=false) {
     val platformPending:Boolean get()=fundsStatus=="INTERVENTION_HOLD"||intervention?.pending==true
     val canIntervene:Boolean get()=pendingOperationId==null&&(serverActions?.contains("REQUEST_INTERVENTION") ?: (channel==OrderChannel.Market&&refund==RefundState.Rejected&&intervention==null))
     val amount:Long get()=lines.sumOf{it.total}

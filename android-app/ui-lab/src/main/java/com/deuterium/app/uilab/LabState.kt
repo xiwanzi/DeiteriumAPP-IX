@@ -60,6 +60,10 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     val heldBalance: Long get() = remoteHeld
     val directChats = mutableStateMapOf<String, SnapshotStateList<ChatLine>>()
     val directPending = mutableStateMapOf<String, Boolean>()
+    val conversationUnread = mutableStateMapOf<String, Int>()
+    var activeConversation: String? = null
+    var foreground = true
+    val hasUnreadMessages: Boolean get() = conversationUnread.values.any{it>0}
     private val conversationIds=mutableMapOf<String,String>()
     private val contactRefreshLock=kotlinx.coroutines.sync.Mutex()
     var contactsKnown by mutableStateOf(api==null);private set
@@ -92,16 +96,16 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             runCatching { service.verifySession() }.onSuccess { profileBio = service.user?.optString("bio").orEmpty() }
                 .onFailure { report(it) }
             if(!service.signedIn || closed) return@launch
-            notificationPreferences?.sync();preferencesSyncedAt=System.nanoTime()/1_000_000
+            openChat()
+            scope.launch{notificationPreferences?.sync();preferencesSyncedAt=System.nanoTime()/1_000_000}
             service.pendingChat()?.let { previous ->
                 uncertainMessage = Triple(previous.getString("clientId"), previous.getString("content"), previous.optString("reply").takeIf { it.isNotBlank() })
                 chatDraft = TextFieldValue(previous.getString("content"))
                 storageMessage = "上一条消息结果待确认，重试会使用原消息标识"
             }
-            openChat()
             refresh()
-            loadAnnouncements()
-            scope.launch { loadConversations() }
+            scope.launch{loadAnnouncements()}
+            scope.launch { while(!closed){if(foreground)loadConversations();delay(4000)} }
             scope.launch { loadDirectory();refreshPresence() }
             scope.launch { commerce.network?.refreshStore() }
             scope.launch { commerce.network?.refreshMarket() }
@@ -168,15 +172,18 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         if(previous != null && (previous.second != text || previous.third != replyId)) { storageMessage = "上一条消息结果待确认，请先重试原消息"; return }
         val clientId = previous?.first ?: UUID.randomUUID().toString()
         uncertainMessage = Triple(clientId, text, replyId)
-        api?.savePendingChat(JSONObject().put("clientId", clientId).put("content", text).put("reply", replyId.orEmpty()))
+        val refs = api?.pendingChat()?.takeIf{it.optString("clientId")==clientId}?.optJSONArray("mentionedPlayerRefs")
+            ?: JSONArray(Regex("@([A-Za-z0-9_]+)").findAll(text).mapNotNull { match -> Players.find { it.name == match.groupValues[1] }?.playerRef?.takeIf { it.isNotBlank() } }.toList())
+        api?.savePendingChat(JSONObject().put("clientId", clientId).put("content", text).put("reply", replyId.orEmpty()).put("mentionedPlayerRefs",refs))
+        chatReplyPending = true
         scope.launch {
-            chatReplyPending = true
             runCatching {
-                val refs = Regex("@([A-Za-z0-9_]+)").findAll(text).mapNotNull { match -> Players.find { it.name == match.groupValues[1] }?.playerRef?.takeIf { it.isNotBlank() } }.toList()
-                chatSocket?.send(clientId, text, replyId, refs) ?: throw ApiFailure("CHAT_DISCONNECTED", "消息连接暂不可用")
+                val request=JSONObject().put("clientMessageId",clientId).put("content",text).put("mentionedPlayerRefs",refs)
+                replyId?.let{request.put("replyToMessageId",it)}
+                api?.request("POST","/chat/messages",request) ?: throw ApiFailure("CHAT_DISCONNECTED", "消息连接暂不可用")
             }.onSuccess { response ->
                 when(response.optString("status")) {
-                    "accepted" -> { chatDraft = TextFieldValue(""); chatReplyTo = null; uncertainMessage = null; api?.savePendingChat(null); loadChat() }
+                    "accepted" -> { response.optJSONObject("message")?.let{addMessage(it,false)};if(chatDraft.text.trim()==text)chatDraft = TextFieldValue(""); chatReplyTo = null; uncertainMessage = null; api?.savePendingChat(null);scope.launch{loadChat()} }
                     "unknown", "" -> { storageMessage = "消息发送结果待确认，请重试原消息" }
                     else -> { if(response.optJSONObject("error")?.optString("code") != "RESULT_UNKNOWN"){uncertainMessage = null;api?.savePendingChat(null)}; storageMessage = response.optJSONObject("error")?.optString("message") ?: "消息发送失败" }
                 }
@@ -339,7 +346,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             val account=service.financialScope()
             val values=service.listAll("/chat/conversations")
             account.verifyCurrent(service.financialScope())
-            values.forEach{value->val other=value.getJSONObject("otherPlayer");rememberPlayer(other);val name=other.getString("gameId");conversationIds[name]=value.getString("conversationId");value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)}}
+            values.forEach{value->val other=value.getJSONObject("otherPlayer");rememberPlayer(other);val name=other.getString("gameId");conversationIds[name]=value.getString("conversationId");value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)};conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[conversationIds[name]])0 else value.optInt("unreadCount").coerceAtLeast(0)}
             contactsKnown=true;contactsError=null
         }catch(cancelled:kotlinx.coroutines.CancellationException){throw cancelled}
         catch(error:Exception){contactsError=error.message ?: "联系人暂时无法同步"}
@@ -363,8 +370,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         runCatching { api!!.request("GET","/chat/conversations/$id/messages?limit=100") }
             .onSuccess { response->response.getJSONArray("items").objects().asReversed().forEach{addMessage(it,false,name)};directErrors.remove(name);if(name !in directHistoryCursors)directHistoryCursors[name]=cursor(response) }
             .onFailure { directErrors[name]=it.message ?: "消息读取失败" }
-        conversation(name).lastOrNull()?.remoteId?.takeIf{it.isNotBlank()&&it!=readCursors[id]}?.let{last->
-            runCatching { api!!.request("POST","/chat/conversations/$id/read",JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("lastReadMessageId",last)) }.onSuccess{readCursors[id]=last}
+        conversation(name).lastOrNull()?.remoteId?.takeIf{foreground&&activeConversation==name&&it.isNotBlank()&&it!=readCursors[id]}?.let{last->
+            runCatching { api!!.request("POST","/chat/conversations/$id/read",JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("lastReadMessageId",last)) }.onSuccess{readCursors[id]=last;conversationUnread[name]=it.optInt("unreadCount").coerceAtLeast(0)}
         }
     }
     private suspend fun refreshPresence(){runCatching{api!!.request("GET","/chat/presence")}.onSuccess{onlineCount=if(it.optBoolean("available"))it.getInt("onlineCount")else null}.onFailure{onlineCount=null}}

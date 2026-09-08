@@ -35,12 +35,13 @@ private fun UrgencyBadge(urgency:Urgency) {
 @Composable
 fun CommissionHallPage(state:LabState,topInset:Dp,onOpen:(String)->Unit,mine:Boolean=false) {
     LaunchedEffect(Unit){state.commissions.network?.refresh()}
+    var deleting by remember{mutableStateOf<Commission?>(null)}
     var role by rememberSaveable{mutableIntStateOf(0)};var filter by rememberSaveable{mutableStateOf("全部")}
-    val entries=state.commissions.entries.filter{(mine||it.serverStatus!="FUNDING")&&(!mine||if(role==0)it.owner==state.userName else it.worker==state.userName)&&(when(filter){"待接取"->it.stage==CommissionStage.Open;"进行中"->it.stage==CommissionStage.Active;"待确认"->it.stage==CommissionStage.Completed;"已结束"->it.stage in setOf(CommissionStage.Confirmed,CommissionStage.Cancelled)&&!it.held;else->true})}
+    val entries=state.commissions.entries.filter{(mine||it.visibleInHall)&&(!mine||if(role==0)it.owner==state.userName else it.worker==state.userName)&&(when(filter){"待接取"->it.stage==CommissionStage.Open;"进行中"->it.stage==CommissionStage.Active;"待确认"->it.stage==CommissionStage.Completed;"已结束"->it.stage in setOf(CommissionStage.Confirmed,CommissionStage.Cancelled)&&!it.held;else->true})}
     LazyColumn(contentPadding=PaddingValues(start=18.dp,end=18.dp,top=topInset,bottom=45.dp),verticalArrangement=Arrangement.spacedBy(15.dp)) {
         item{Text(if(mine)"我的委托" else "互相搭把手",style=MaterialTheme.typography.headlineLarge);Text(if(mine)"查看履约进度，及时沟通与确认。" else LocalAppUpdates.current?.resourceStrings?.get("commissions.subtitle") ?: "报酬已预付，完成后安心结算。",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(mine)item{SegmentedControl(listOf("我发布的","我接取的"),role,{role=it;filter="全部"})}
-        item{Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){listOf("全部","待接取","进行中","待确认","已结束").forEach{label->ChoiceChip(filter==label,{filter=if(filter==label)"全部" else label},{Text(label)})}}}
+        item{Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){(if(mine)listOf("全部","待接取","进行中","待确认","已结束") else listOf("全部","待接取")).forEach{label->ChoiceChip(filter==label,{filter=if(filter==label)"全部" else label},{Text(label)})}}}
         state.commissions.network?.error?.let{error->item{Text(error,color=MaterialTheme.colorScheme.error)}}
         if(entries.isEmpty())item{Column(Modifier.fillMaxWidth().padding(vertical=65.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(Icons.Outlined.Assignment,null,Modifier.size(42.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant);Text("暂时没有相关委托",Modifier.padding(top=17.dp),style=MaterialTheme.typography.titleMedium)}}
         items(entries,key={it.id}){entry->Surface(onClick={onOpen(entry.id)},shape=RoundedCornerShape(23.dp),color=MaterialTheme.colorScheme.surface){Column(Modifier.padding(16.dp)){
@@ -50,8 +51,10 @@ fun CommissionHallPage(state:LabState,topInset:Dp,onOpen:(String)->Unit,mine:Boo
                 Text(entry.draft.location,Modifier.padding(top=5.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
             }}
             Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically){Text("${credit(entry.draft.reward)}",style=MaterialTheme.typography.titleLarge,color=MaterialTheme.colorScheme.primary);Text(" 信用点",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.weight(1f));Text(if(entry.stage==CommissionStage.Open&&entry.held)"已预付 · ${durationHours(entry.draft.workHours)}" else entry.worker?.let{"接取者 $it"} ?: entry.owner,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            if(mine&&entry.canHideRecord)PlainButton({deleting=entry},Modifier.align(Alignment.End)){Text("删除记录",color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }}}
     }
+    deleting?.let{entry->DeleteRecordDialog(entry.draft.title,{deleting=null}){state.commissions.network?.hide(entry.id)==true}}
 }
 
 @Composable
@@ -86,8 +89,8 @@ fun PublishCommissionPage(state:LabState,topInset:Dp,onPublished:(String)->Unit)
 }
 
 @Composable
-fun CommissionDetailPage(state:LabState,id:String,topInset:Dp,onChat:(String)->Unit) {
-    val book=state.commissions;val scope=rememberCoroutineScope()
+fun CommissionDetailPage(state:LabState,id:String,topInset:Dp,onChat:(String)->Unit,onDeleted:()->Unit={}) {
+    val book=state.commissions;val scope=rememberCoroutineScope();var deleting by remember{mutableStateOf(false)}
     LaunchedEffect(id){while(true){book.network?.refreshOne(id);delay(5000)}}
     val entry=book.find(id) ?: return;val owner=entry.owner==state.userName;val worker=entry.worker==state.userName
     var intervention by rememberSaveable{mutableStateOf(false)}
@@ -114,6 +117,7 @@ fun CommissionDetailPage(state:LabState,id:String,topInset:Dp,onChat:(String)->U
             if(entry.refundAttempts>0)item{LabCard{Text("退款记录",style=MaterialTheme.typography.titleMedium);DetailRow("申请说明",entry.refundReason);if(entry.rejectionReason.isNotBlank())DetailRow("拒绝理由",entry.rejectionReason);Text(if(entry.refund==RefundState.Requested)"等待接取者处理，自动确认暂停。" else "拒绝后可申请平台介入，退款申请次数不恢复。",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
             if(owner||worker)entry.intervention?.let{case->item{InterventionSummary(case){intervention=true}}}
             if((owner||worker)&&entry.interventionCaseId!=null&&entry.intervention==null)item{PlainButton({intervention=true}){Text("查看平台介入")}}
+            if(entry.canHideRecord)item{PlainButton({deleting=true},Modifier.fillMaxWidth()){Text("删除记录",color=MaterialTheme.colorScheme.error)}}
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){Row(Modifier.navigationBarsPadding().padding(18.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)){
             when{
@@ -123,14 +127,15 @@ fun CommissionDetailPage(state:LabState,id:String,topInset:Dp,onChat:(String)->U
                 owner&&!entry.held&&(entry.canIntervene||entry.intervention!=null)->MotionButton({intervention=true},Modifier.fillMaxWidth()){Text(if(entry.intervention!=null)"查看平台判决" else "申请平台介入")}
                 worker&&entry.refund==RefundState.Requested->{SecondaryButton({decisionActor=entry.worker;decision=false},Modifier.weight(1f)){Text("拒绝退款")};MotionButton({decisionActor=entry.worker;decision=true},Modifier.weight(1f)){Text("同意退款")}}
                 owner&&entry.refund==RefundState.Requested->SecondaryButton({action="withdraw"},Modifier.fillMaxWidth()){Text("撤回退款申请")}
-                owner&&entry.stage==CommissionStage.Open->SecondaryButton({action="cancel"},Modifier.fillMaxWidth()){Text("取消委托并退款")}
+                owner&&entry.visibleInHall->SecondaryButton({action="cancel"},Modifier.fillMaxWidth()){Text("取消委托并退款")}
                 owner&&entry.held->{SecondaryButton({if(entry.canIntervene||entry.intervention!=null)intervention=true else {note="";action="refund"}},Modifier.weight(1f),enabled=entry.canIntervene||entry.intervention!=null||entry.canRefund){Text(if(entry.intervention!=null)"查看平台介入" else if(entry.canIntervene)"申请平台介入" else if(entry.refundAttempts>0)"退款机会已用" else "申请退款")};MotionButton({action="confirm"},Modifier.weight(1f),enabled=!entry.platformPending&&entry.stage==CommissionStage.Completed){Text(if(entry.stage==CommissionStage.Completed)"确认完成" else "等待完成")}}
                 worker&&entry.stage==CommissionStage.Active->MotionButton({note="";action="complete"},Modifier.fillMaxWidth()){Text("提交已完成")}
-                !owner&&entry.stage==CommissionStage.Open->MotionButton({action="accept"},Modifier.fillMaxWidth()){Text("接取委托")}
+                !owner&&entry.visibleInHall->MotionButton({action="accept"},Modifier.fillMaxWidth()){Text("接取委托")}
                 else->SecondaryButton({},Modifier.fillMaxWidth(),enabled=false){Text(if(worker&&entry.stage==CommissionStage.Completed)"等待发布者确认" else entry.status)}
             }
         }}
     }
+    if(deleting)DeleteRecordDialog(entry.draft.title,{deleting=false}){(book.network?.hide(id)==true).also{if(it)onDeleted()}}
     if(intervention)CommissionInterventionSheet(book,entry){intervention=false}
     if(action in listOf("accept","cancel","confirm","withdraw")){val selected=action;IosDialog({action=null},{Text(when(selected){"accept"->"确认接取委托？";"cancel"->"取消并退回报酬？";"withdraw"->"撤回退款申请？";else->"确认委托已完成？"})},{Text(when(selected){"accept"->"接取后开始 ${durationHours(entry.draft.workHours)} 的履约时限，请确认能够完成约定要求。";"cancel"->"尚未接取的委托将关闭，预付报酬原路退回钱包。";"withdraw"->"计时会恢复，唯一一次退款机会不会恢复。";else->"${credit(entry.draft.reward)} 信用点将结算给 ${entry.worker}。请先核对交付内容。"})},{PlainButton({scope.launch{if(book.network?.action(id,selected ?: "confirm")==true)action=null else error=book.network?.error}}){Text("确认")}}, {PlainButton({action=null}){Text("取消")}})}
     if(action in listOf("complete","refund"))IosSheet({action=null}){Column(Modifier.verticalScroll(rememberScrollState()).padding(24.dp)){
