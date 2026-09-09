@@ -1,0 +1,82 @@
+{
+  "wallet": {
+    "availableAmountRead": true,
+    "todayIncomeAndExpenseRead": true,
+    "timeZone": "+08:00"
+  },
+  "personalLedger": {
+    "count": 25,
+    "gameRecords": 2,
+    "newestFirst": true
+  },
+  "ledgerDetail": "PASS",
+  "pooledLedgerThenBalance": "PASS",
+  "/admin/transactions?limit=25": {
+    "count": 25
+  },
+  "/admin/transactions?businessType=GAME&limit=25": {
+    "count": 4
+  },
+  "/admin/orders?limit=25": {
+    "count": 8
+  },
+  "/admin/products?limit=25": {
+    "count": 5
+  },
+  "/admin/players?q=xiwanzi": {
+    "count": 1
+  },
+  "smtp": {
+    "secretStorageReady": true,
+    "configured": false,
+    "enabled": false,
+    "pending": 0
+  },
+  "interventions": {
+    "pending": 0,
+    "submitted": 0
+  },
+  "/orders?limit=100": {
+    "count": 8,
+    "hideCapability": true
+  },
+  "/commissions/me?limit=100": {
+    "count": 0,
+    "hideCapability": true
+  },
+  "/market/me/listings?limit=100": {
+    "count": 0,
+    "hideCapability": true
+  },
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true,
+      "version": "1.0.0",
+      "economy": false,
+      "economyAuthority": false,
+      "playerDataReady": false
+    },
+    {
+      "serverId": "amiya",
+      "online": true,
+      "version": "1.0.0",
+      "economy": true,
+      "economyAuthority": true,
+      "playerDataReady": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true,
+      "version": "1.0.0",
+      "economy": false,
+      "economyAuthority": false,
+      "playerDataReady": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ],
+  "temporarySessionRevoked": true
+}

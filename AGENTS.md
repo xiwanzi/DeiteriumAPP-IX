@@ -1,10 +1,10 @@
 # Deuterium IX 工程约定
 
-本轮 2.0.4 发布工作（2026-09-09）：用户已明确授权补修安装后的退出/加载问题、发布 2.0.4 并推送源码，包含当前公开维护仓库。此前候选为 20400，本次正式发布包使用 20401；发布完成前仍以 2.0.3 线上记录为准。候选内容见 [2.0.4 候选交付](docs/deployment/deuterium-2.0.4-candidate.md)。
+当前发布（2026-09-09）：**App 2.0.4（20401）、Web 2.0.4、配套 Go、Core 1.0.1 和 XConomy .2 已上线**。源码主体 `812f1d1a5056`，见 [2.0.4 部署记录](docs/deployment/deuterium-2.0.4-live.md)。当前维护工作区为 `C:/DeiteriumAPP-IX/.worktrees/release-v204`；用户已授权本轮公开仓库推送与部署。SMTP 页面与密钥已就绪，真实邮箱参数尚待管理员填写。
 
-当前发布（2026-09-09）：App 2.0.3 (20300)，配套 Go 源码 `15bb45dc6625`。先看 [部署记录](docs/deployment/deuterium-2.0.3-live.md)；付款只显示金额二次确认，记录删除为账号级隐藏，公告/AI 支持 Markdown。游戏插件和网站未更换。
+2.0.4 已修复安装后的旧任务残留及加载等待，统一游戏/App 流水和日统计、最新记录排序、删除按钮与主题切换；网页支持永久删除公告、介入邮件队列和完整交易审计。2.0.3 与 20400 候选记录是历史。
 
-先读 `CONTEXT.md`、`docs/project-status.md`、`docs/prd/deuterium-current.md` 和目标模块说明；运行 `git status --short`。本仓库是 2026-09-08 从多工作区整理的新私有维护入口，旧工作区不得自动覆盖回来。
+先读 `CONTEXT.md`、`docs/project-status.md`、`docs/prd/deuterium-current.md` 和目标模块说明；运行 `git status --short`。本仓库是 2026-09-08 从多工作区整理的统一维护入口，旧工作区不得自动覆盖回来。
 
 - Android 当前模块为 `android-app/ui-lab`；Web 为 `web-app`；Go 为 `backend-next`；游戏插件为 `deuterium-core`。`android-app/app` 是保留的旧模块，不作为现行发布入口。
 - Mail 与 YouerModSync 在各自独立私有仓库维护。先核对 `components.lock.json`，接口更改必须同步配套版本和文档，禁止复制出第二份业务权威。
@@ -16,4 +16,4 @@
 - 沿用相邻实现，不做无关重构。文档默认中文，提交采用英文 Conventional Commits。
 - 大改动走独立分支和 PR；推送、合并与部署依本轮授权。不得提交私钥、token、密码、运行时、数据库或本机绝对路径配置；不得 `git add .`。
 - 按修改范围运行构建/测试；纯文档检查链接、事实和差异即可。历史测试不冒充本次测试，模拟器不代替真机及完整游戏切服验收。
-- 完成时说明修改、验证、提交合并状态及真实部署状态。本次归档授权不等于重新发布线上软件。
+- 完成时说明修改、验证、提交合并状态及真实部署状态。后续发布继续按对应轮次授权执行。

@@ -6,41 +6,42 @@
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.3",
-      "versionCode": 20300,
-      "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
-      "publishedSha256": "9ccfe155cb49e74964f7ff7f44fb39cad9585cb3140fab14b703825063e0ce51"
+      "version": "2.0.4",
+      "versionCode": 20401,
+      "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
+      "publishedSha256": "6af287aff417242cd2ac9fb3d7c7b9f66d876b5f48d60a7d2560e2ca433ee96f"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.0",
-      "sourceCommit": "2455abb6c2ef43f3957ca5ac0a0e3106aeca3496",
-      "publishedSourceCommit": "4de1ee7a6aabdc6c8a5c1f44a16b69db406f4e8f"
+      "version": "2.0.4",
+      "sourceCommit": "558156655b56bba70aefdab902598f923b93ba48",
+      "publishedSourceCommit": "558156655b56bba70aefdab902598f923b93ba48",
+      "publishedArchiveSha256": "887c2c4846bc52ec041f9cf5b6ed4681083c72d1da792809422a1e678862eed8"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
-      "publishedSourceCommit": "15bb45dc662586474b2307097b811e9463be05bc",
-      "publishedSha256": "0f95a84703638f119228312fece80e7d1c6f3f970e5cede7168054de0f039bb7"
+      "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
+      "publishedSourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
+      "publishedSha256": "5d4e48cfec9f1074ad417606bc843342469f3196316256b7569711558ee2ec84"
     },
     {
       "name": "core",
       "path": "deuterium-core",
-      "version": "1.0.0",
-      "sourceCommit": "f07f69e3e8f370f740874dcf707585a815e52b8c",
-      "developmentSourceCommit": "5ae67062921a683bf4417ffd6de0c539d0f564f1",
-      "publishedSha256": "6be8b022e6a360b11455100150d59f1032087edd34c6d75fa8e4b81adf9c5137"
+      "version": "1.0.1",
+      "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
+      "developmentSourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
+      "publishedSha256": "2cfc69580687759bafa1654a177c859426391d82c71ab99df47188153c0cd2bc"
     },
     {
       "name": "xconomy-extension",
       "path": "adapters/xconomy",
-      "version": "2.26.3-deuterium.1",
-      "sourceCommit": "f07f69e3e8f370f740874dcf707585a815e52b8c",
+      "version": "2.26.3-deuterium.2",
+      "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
       "upstreamSource": "third_party/XConomy-2.26.3",
       "inputSha256": "0e3695f75f9d8769bb365d6c60fe48d169baf162b0bed423b456acef0a53584f",
-      "publishedSha256": "880e9d5fa6b36c074e72df9ac250bc118bb80a62c949bbdadb203240228b6344"
+      "publishedSha256": "abcdf0337a227ecef55b4e4c1e4f9c13d477e760cb8cd1c32cd42c6449229fd5"
     },
     {
       "name": "mail",

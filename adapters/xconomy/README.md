@@ -4,9 +4,9 @@
 
 扩展保留 XConomy 自有数据库与经济账号，由插件内部 API 完成受控资金事务。Core 只调用 `ControlledEconomyAPI`，不读取 XConomy 凭据、不直接更新经济表。
 
-## 2.0.4 候选增量
+## 2.0.4 已发布增量
 
-新增已提交账本的只读分页查询和北京时间当日汇总；`ledgerApiVersion()=1`，资金执行 API 仍为 1。Core 配套为 1.0.1。安装时幂等添加时间/玩家时间索引，既有原生与 App 流水均可读取，不重写经济余额。当前尚未部署，见 [统一流水契约](../../docs/contracts/admin-ledger-v204.md)。
+新增已提交账本的只读分页查询和北京时间当日汇总；`ledgerApiVersion()=1`，资金执行 API 仍为 1。Core 配套为 1.0.1。安装时幂等添加时间/玩家时间索引，既有原生与 App 流水均可读取，不重写经济余额。已部署四服，见[部署记录](../../docs/deployment/deuterium-2.0.4-live.md)与[统一流水契约](../../docs/contracts/admin-ledger-v204.md)。
 
 ## 并发与持久化
 

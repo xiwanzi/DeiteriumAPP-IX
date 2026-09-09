@@ -1,6 +1,6 @@
 # Deuterium Core
 
-2.0.4 候选版本为 **Core 1.0.1**：新增经济权威节点的只读 `wallet.records` 命令，配套 XConomy `2.26.3-deuterium.2`。原资金执行协议不变，当前尚未部署；见[统一流水契约](../docs/contracts/admin-ledger-v204.md)。
+2.0.4 配套版本为 **Core 1.0.1**：新增经济权威节点的只读 `wallet.records` 命令，配套 XConomy `2.26.3-deuterium.2`。原资金执行协议不变，已换包四服并恢复三个常驻节点；见[部署记录](../docs/deployment/deuterium-2.0.4-live.md)与[统一流水契约](../docs/contracts/admin-ledger-v204.md)。
 
 Java 21 / Youer 1.21.1 插件。主命令 `/dc`。物品库内置，邮箱仍为独立 DeuteriumMail；Core 只调用其公开 API。此目录不包含邮箱实现、经济数据库凭据或任意服务器命令执行接口。
 

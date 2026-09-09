@@ -1,0 +1,6 @@
+{
+  "backupDirectory": "/var/backups/deuterium/app-2.0.4-20260909-20401",
+  "beforeBusinessCounts": "COMMISSION\t3\nORDER\t8",
+  "sqlSha256": "fa584700218623e51c63d2b74cb3c6213f6643f8afc498273775d2c38871051e",
+  "sqlBytes": 170155
+}

@@ -1,20 +1,20 @@
 # 当前项目状态
 
-本机候选：2.0.4 管理/SMTP/统一流水和 App 体验修复已完成，见 [候选交付](deployment/deuterium-2.0.4-candidate.md)与[本次 QA](qa/admin-ledger-v204-2026-09-09.md)。尚未推送、合并或部署，下方线上版本仍为 2.0.3。
-
-基准：2026-09-09。App 2.0.3 (20300) 与配套 Go 已发布，账号更新提醒已推送；本次新增显示偏好表，保留真实业务数据。
+基准：2026-09-09。App 2.0.4（20401）、Web 2.0.4、配套 Go/Core/XConomy 已发布；账号更新提醒已加入 xiwanzi 通知，原始业务与 Mail/Sync 配置保留。见 [2.0.4 部署记录](deployment/deuterium-2.0.4-live.md)。
 
 | 部分 | 当前状态 | 依据 |
 | --- | --- | --- |
-| App | 2.0.3 (20300)，修复加购/搜索，简洁付款确认、历史删除、未读红点、Markdown 和公共发送优化 | [2.0.3](deployment/deuterium-2.0.3-live.md) |
-| 网站 | 2.0.0 静态 React/Vite，玩家、商家、平台管理及只读审计 | [网页部署](../web-app/docs/deployment-v2.md) |
-| 后端 | Go `15bb45dc6625`，新增账号级隐藏与公共消息 HTTP 入口，既有完整业务保留 | [2.0.0](deployment/deuterium-2.0.0-live.md)、[2.0.1](deployment/deuterium-2.0.1-live.md) |
-| Core / Mail / Sync / XConomy | 四服安装同批配套；三常驻服已启动验证，MEK 停止禁领 | [插件记录](deployment/deuterium-2.0.0-live.md) |
+| App | 2.0.4（20401），安装退出/启动恢复、统一流水与日统计、最新记录排序、删除按钮与主题修复 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
+| 网站 | 2.0.4，公告永久删除、SMTP 配置/提醒、全服和玩家审计、商品发布优化 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
+| 后端 | Go `812f1d1a5056`，统一经济账本读取、SMTP 持久队列与管理员业务查询 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
+| Core / Mail / Sync / XConomy | Core 1.0.1、XConomy .2 已换四服，Mail/Sync 不变；三服已恢复，MEK 停止禁领 | [插件记录](deployment/deuterium-2.0.4-live.md) |
 | 源码维护 | 新主仓库汇总 App/Web/Go/Core/XConomy；Mail、Sync 独立 PR | [归档交接](repository-handoff.md) |
 
 ## 本次验证与历史证据
 
-2.0.3：Android 119 项单测、Lint 0 错误，模拟器交互/Markdown 浅深色/付款时序通过；Go 122 项 race/integration 通过（既有人工夹具跳过），两个实际响应通过契约校验。公网 APK 摘要、更新检查、账号提醒、生产只读接口和三常驻节点在线均已核对。见 [本次 QA](qa/app-v203-2026-09-09.md)。
+2.0.4：121 项 Android 单测、Lint 0 错误；真实系统安装器、取消和覆盖旧版恢复通过。Go 123 项顶层 race/integration、Web 54 项单测/18 项浏览器流程、Core 29、XConomy 10 项数据库测试及 7 种响应契约通过。实际下载/更新检查/业务只读/节点恢复见 [部署记录](deployment/deuterium-2.0.4-live.md)。SMTP 实际邮箱尚未配置。
+
+历史 2.0.3：Android 119 项单测、Lint 0 错误，模拟器交互/Markdown 浅深色/付款时序通过；Go 122 项 race/integration 通过（既有人工夹具跳过），两个实际响应通过契约校验。公网 APK 摘要、更新检查、账号提醒、生产只读接口和三常驻节点在线均已核对。见 [本次 QA](qa/app-v203-2026-09-09.md)。
 
 ## 已有验证和仍需验收
 
