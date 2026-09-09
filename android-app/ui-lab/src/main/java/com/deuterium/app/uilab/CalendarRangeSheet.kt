@@ -15,6 +15,7 @@ import java.time.*
 
 @Composable
 fun CalendarRangeSheet(initialStart:Long,initialEnd:Long,onClose:()->Unit,onApply:(Long,Long)->Unit) {
+    val today=LocalDate.now(ZoneId.of("Asia/Shanghai"))
     var start by remember{mutableStateOf<LocalDate?>(LocalDate.ofEpochDay(initialStart))}
     var end by remember{mutableStateOf<LocalDate?>(LocalDate.ofEpochDay(initialEnd))}
     var month by remember{mutableStateOf(YearMonth.from(start))}
@@ -35,9 +36,9 @@ fun CalendarRangeSheet(initialStart:Long,initialEnd:Long,onClose:()->Unit,onAppl
                     val date=month.atDay(number);val selected=date==start||date==end
                     val inRange=start!=null&&end!=null&&date>=start&&date<=end
                     if(inRange)Box(Modifier.fillMaxWidth().height(38.dp).background(MaterialTheme.colorScheme.primaryContainer))
-                    Box(Modifier.size(39.dp).background(if(selected)MaterialTheme.colorScheme.primary else Color.Transparent,CircleShape).clickable{
+                    Box(Modifier.size(39.dp).background(if(selected)MaterialTheme.colorScheme.primary else Color.Transparent,CircleShape).clickable(enabled=date<=today){
                         if(!selectingEnd||start==null||date<start){start=date;end=null;selectingEnd=true}else{end=date;selectingEnd=false}
-                    },contentAlignment=Alignment.Center){Text(number.toString(),color=if(selected)Color.White else MaterialTheme.colorScheme.onSurface,style=MaterialTheme.typography.bodyLarge)}
+                    },contentAlignment=Alignment.Center){Text(number.toString(),color=if(date>today)MaterialTheme.colorScheme.onSurface.copy(alpha=.25f) else if(selected)Color.White else MaterialTheme.colorScheme.onSurface,style=MaterialTheme.typography.bodyLarge)}
                 }}
             }
         }}
