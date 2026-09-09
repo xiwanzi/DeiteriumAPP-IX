@@ -22,22 +22,20 @@ import org.json.JSONObject
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.UUID
 
 @Composable
 fun SakiPlansPage(state:LabState,topInset:Dp){
     val ai=state.ai ?: return
     val scope=rememberCoroutineScope()
     var selected by rememberSaveable{mutableStateOf("")}
-    var confirming by remember{mutableStateOf(false)}
-    var payment by rememberSaveable{mutableStateOf<String?>(null)}
-    var requestId by rememberSaveable{mutableStateOf("")}
+    var checkout by rememberSaveable{mutableStateOf<String?>(null)}
     var checking by remember{mutableStateOf(false)}
     LaunchedEffect(Unit){ai.refresh();ai.loadPlans();if(ai.purchasePending)ai.recoverPurchase()}
     LaunchedEffect(ai.purchasePending){while(ai.purchasePending){delay(5000);ai.recoverPurchase()}}
     val plan=ai.plans.find{it.optString("planId")==selected}
     val switching=ai.expiresAt!=null&&plan!=null&&ai.currentPlan?.optString("planId")!=plan.getString("planId")
-    val available=plan?.optBoolean("purchasable")==true&&!switching&&!ai.purchasePending
+    val downgrade=switching&&ai.plans.indexOfFirst{it.optString("planId")==selected}<=ai.plans.indexOfFirst{it.optString("planId")==ai.currentPlan?.optString("planId")}
+    val available=plan?.optBoolean("purchasable")==true&&!downgrade&&!ai.purchasePending
     Box(Modifier.fillMaxSize()){
         LazyColumn(contentPadding=PaddingValues(start=22.dp,end=22.dp,top=topInset,bottom=245.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){
             item{Column(Modifier.fillMaxWidth().padding(top=10.dp,bottom=8.dp),horizontalAlignment=Alignment.CenterHorizontally){
@@ -54,7 +52,7 @@ fun SakiPlansPage(state:LabState,topInset:Dp){
             if(ai.plans.isNotEmpty())item{Text("选择套餐",style=MaterialTheme.typography.titleLarge)}
             ai.plans.filter{it.optString("code")!="free"}.forEach{p->item(key=p.getString("planId")){
                 val chosen=selected==p.getString("planId");val purchasable=p.optBoolean("purchasable")
-                Surface(onClick={if(payment==null&&!ai.purchasePending)selected=p.getString("planId")},shape=RoundedCornerShape(23.dp),color=if(chosen)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.45f)else MaterialTheme.colorScheme.surface,border=BorderStroke(if(chosen)2.dp else 1.dp,if(chosen)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha=.45f))){
+                Surface(onClick={if(checkout==null&&!ai.purchasePending)selected=p.getString("planId")},shape=RoundedCornerShape(23.dp),color=if(chosen)MaterialTheme.colorScheme.primaryContainer.copy(alpha=.45f)else MaterialTheme.colorScheme.surface,border=BorderStroke(if(chosen)2.dp else 1.dp,if(chosen)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha=.45f))){
                     Column(Modifier.fillMaxWidth().padding(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
                         Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(p.getString("name"),style=MaterialTheme.typography.titleLarge);Text("${p.getInt("quotaPerWindow")} 次 / ${p.getInt("windowHours")} 小时",Modifier.padding(top=5.dp),color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodyMedium)};Icon(if(chosen)Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,null,tint=if(chosen)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)}
                         if(p.optString("description").isNotBlank())Text(p.getString("description"),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -63,18 +61,17 @@ fun SakiPlansPage(state:LabState,topInset:Dp){
                     }
                 }
             }}
-            item{Text("付款成功后立即生效，无需领取。套餐不支持退款，不会自动续费。同套餐续购可延长有效期。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=20.sp)}
+            item{Text("付款后立即生效，不会自动续费。支持补差价升级，到期时间不变；同套餐续购可延长有效期。不支持降级与退款。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,lineHeight=20.sp)}
             if(ai.plans.isEmpty())item{SecondaryButton({scope.launch{ai.loadPlans()}}){Text("重新读取套餐")}}
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface,shadowElevation=5.dp){Column(Modifier.navigationBarsPadding().padding(horizontal=22.dp,vertical=18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
             ai.purchaseError?.let{Text(it,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)}
             if(ai.purchasePending)MotionButton({scope.launch{checking=true;ai.recoverPurchase();checking=false}},Modifier.fillMaxWidth().heightIn(min=52.dp),enabled=!checking){Text(if(checking)"正在查看…" else "查看开通进度")}
-            else MotionButton({confirming=true},Modifier.fillMaxWidth().heightIn(min=52.dp),enabled=available){Text(if(available)"购买 ${plan!!.getString("name")}" else if(switching)"当前套餐到期后可更换" else if(plan==null)"选择一个套餐" else "暂未开放购买")}
+            else MotionButton({checkout=plan?.toString()},Modifier.fillMaxWidth().heightIn(min=52.dp),enabled=available){Text(if(available)"${if(switching)"升级至" else if(ai.expiresAt!=null)"续购" else "购买"} ${plan!!.getString("name")}" else if(downgrade)"不支持降级" else if(plan==null)"选择一个套餐" else "暂未开放购买")}
             Text("使用信用点付款 · 一次购买，按期使用",Modifier.fillMaxWidth(),textAlign=TextAlign.Center,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }}
     }
-    if(confirming&&plan!=null)IosDialog({confirming=false},{Text("确认付款？")},{Text("${credit(apiCents(plan.getString("price")))} 信用点")},{PlainButton({confirming=false;requestId=UUID.randomUUID().toString();payment=plan.toString()}){Text("确认付款")}}, {PlainButton({confirming=false}){Text("取消")}})
-    payment?.let{raw->val purchased=remember(raw){JSONObject(raw)};PaymentExperience(apiCents(purchased.getString("price")),"Saki AI · ${purchased.getString("name")}","套餐已开通",{ai.purchase(purchased,requestId)},errorMessage=ai.purchaseError,onClose={payment=null;scope.launch{ai.refresh();ai.loadPlans()}})}
+    checkout?.let{raw->SakiPurchaseCheckout(state,JSONObject(raw),onClose={checkout=null;scope.launch{ai.refresh();ai.loadPlans()}})}
 }
 
 @Composable

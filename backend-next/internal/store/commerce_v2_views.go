@@ -164,7 +164,7 @@ func commerceActionsV2(d CommerceRecordV2, viewer string, refund *CommerceRefund
 }
 func commerceBaseViewV2(d CommerceRecordV2, viewer string, refund *CommerceRefundV2, caseActive bool, now time.Time) map[string]any {
 	out := map[string]any{}
-	fields := "orderNo construction buyer seller items delivery confirmationHours shippedAt workCompletedAt confirmedAt completionDescription completionAssetIds orderType aiPlan aiExpiresAt"
+	fields := "orderNo construction buyer seller items delivery confirmationHours shippedAt workCompletedAt confirmedAt completionDescription completionAssetIds orderType aiPlan aiExpiresAt aiPricing"
 	if d.Kind == "COMMISSION" {
 		fields = "owner worker content workDueAt acceptanceDueAt completionDescription completionAssetIds acceptedAt completedAt confirmedAt"
 	}

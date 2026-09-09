@@ -119,7 +119,7 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
             item { Text(if(name=="AI 助手")state.ai?.quotaText ?: "DEUTERIUM ASSISTANT" else "今天",Modifier.fillMaxWidth().padding(vertical=12.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center) }
             if(state.directHistoryLoading[name]==true)item{Text("正在读取历史消息…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }
-        if(name=="AI 助手")PlainButton(onPlans,Modifier.fillMaxWidth()){Text("Saki AI · 套餐与额度")}
+        if(name=="AI 助手"&&messages.isEmpty()&&state.ai?.conversationId!=null&&state.ai?.busy==false&&state.ai?.recoveredDraft.isNullOrBlank())PlainButton(onPlans,Modifier.fillMaxWidth()){Text("Saki AI · 套餐与额度")}
         if(name=="AI 助手"&&messages.isEmpty())Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             listOf("给我一些建筑建议","怎样使用市场").forEach{AssistChoice({scope.launch{state.sendDirect(name,it)}},label={Text(it)})}
         }

@@ -2317,6 +2317,31 @@ tr:last-child td {
 .saki-success p { margin-bottom: 0; font-size: 13px; }
 .saki-confirm { display: grid; text-align: center; gap: 10px; padding: 22px 0 35px; }
 .saki-confirm strong { font-size: 34px; }
+.saki-checkout { width: min(440px, calc(100vw - 24px)); background: var(--bg); border-radius: 28px; }
+.saki-checkout::backdrop { background: transparent; backdrop-filter: none; }
+.saki-checkout .modal-head { padding: 18px 20px 10px; }
+.saki-checkout .modal-body { padding: 8px 20px 24px; }
+.saki-purchase-card { background: var(--surface); border-radius: 18px; overflow: hidden; margin-bottom: 22px; }
+.saki-purchase-card > div { padding: 16px; }
+.saki-purchase-card > div + div { border-top: 1px solid var(--border); }
+.saki-purchase-card p { margin: 5px 0; font-size: 13px; line-height: 1.6; }
+.saki-purchase-card small, .saki-purchase-product span { color: var(--muted); font-size: 12px; }
+.saki-purchase-product { display: flex; align-items: center; gap: 14px; }
+.saki-purchase-product img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; }
+.saki-purchase-product > div { display: grid; gap: 4px; }
+.saki-purchase-card .saki-checkout-amount { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.saki-original-price { display: block; font-size: 14px; color: color-mix(in srgb, var(--muted) 60%, transparent); text-decoration-thickness: 1px; }
+.saki-checkout .button { min-height: 52px; }
+.saki-checkout-caption { text-align: center; font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+.saki-checkout-result { text-align: center; display: grid; justify-items: center; gap: 18px; padding: 28px 0 0; animation: saki-appear 240ms ease both; }
+.saki-checkout-result > svg { color: var(--blue); }
+.saki-checkout-result p, .saki-checkout-result h3 { margin: 0; }
+.saki-checkout-result > strong { font-size: 28px; }
+.saki-checkout-result small { font-size: 12px; font-weight: 400; }
+.saki-spinner { animation: saki-spin 1s linear infinite; }
+@keyframes saki-appear { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) { .modal.saki-checkout { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 28px 28px 0 0; max-height: 95dvh; padding-bottom: env(safe-area-inset-bottom); } }
+@media (prefers-reduced-motion: reduce) { .saki-spinner, .saki-checkout-result { animation: none; } }
 .saki-payment { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; border-radius: inherit; background: color-mix(in srgb,var(--surface) 96%,transparent); }
 .saki-payment > div { text-align: center; }
 .saki-purchase-footer { position: sticky; bottom: 0; z-index: 2; padding-top: 12px; background: var(--surface); box-shadow: 0 -10px 18px var(--surface); }

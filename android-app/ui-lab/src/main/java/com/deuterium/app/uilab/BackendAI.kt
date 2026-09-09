@@ -50,7 +50,14 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
     var maxInputChars by mutableIntStateOf(2000);private set
     private val purchaseLock=kotlinx.coroutines.sync.Mutex()
 
-    suspend fun purchase(plan:JSONObject,requestId:String):Boolean {
+    suspend fun purchaseQuote(plan:JSONObject):JSONObject {
+        val scope=api.financialScope()
+        val quote=api.request("POST","/ai/purchase-quotes",JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("planId",plan.getString("planId")).put("expectedPlanVersion",plan.getLong("version")))
+        scope.verifyCurrent(api.financialScope())
+        return quote
+    }
+
+    suspend fun purchase(plan:JSONObject,requestId:String,quoteId:String?=null):Boolean {
         if(!purchaseLock.tryLock())return false
         purchaseError=null
         val scope=api.financialScope()
@@ -58,6 +65,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             val old=api.pendingOperation("AI_PURCHASE")
             if(old!=null){if(old.getJSONObject("request").getString("planId")!=plan.getString("planId"))throw IllegalStateException("上一笔套餐购买仍在处理中");return recoverPurchase()}
             val request=JSONObject().put("clientRequestId",requestId).put("planId",plan.getString("planId")).put("expectedPlanVersion",plan.getLong("version"))
+            quoteId?.let{request.put("quoteId",it)}
             api.saveOperation("AI_PURCHASE",JSONObject().put("request",request),scope);purchasePending=true
             val response=api.request("POST","/ai/purchases",request)
             val op=response.getJSONObject("operation")
@@ -65,7 +73,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             return finishPurchase(op,scope)
         }catch(failure:Exception){
             if(failure is kotlinx.coroutines.CancellationException)throw failure
-            if(failure is ApiFailure && failure.code in setOf("AI_PLAN_CHANGED","AI_PLAN_UNAVAILABLE","AI_PURCHASE_UNAVAILABLE","AI_PLAN_ACTIVE","AI_PURCHASE_PENDING","CAPABILITY_UNAVAILABLE","INVALID_REQUEST"))api.saveOperation("AI_PURCHASE",null,scope)
+            if(failure is ApiFailure && failure.code in setOf("AI_PLAN_CHANGED","AI_PLAN_UNAVAILABLE","AI_PURCHASE_UNAVAILABLE","AI_PLAN_ACTIVE","AI_DOWNGRADE_NOT_ALLOWED","AI_UPGRADE_UNAVAILABLE","AI_QUOTE_REQUIRED","AI_QUOTE_CHANGED","QUOTE_EXPIRED","QUOTE_ALREADY_USED","AMOUNT_LIMIT","AI_PURCHASE_PENDING","CAPABILITY_UNAVAILABLE","INVALID_REQUEST"))api.saveOperation("AI_PURCHASE",null,scope)
             purchasePending=api.pendingOperation("AI_PURCHASE")!=null;purchaseError=failure.message ?: "购买暂未完成，请稍后查看";return false
         }finally{purchaseLock.unlock()}
     }

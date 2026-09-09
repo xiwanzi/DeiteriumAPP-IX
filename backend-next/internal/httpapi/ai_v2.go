@@ -38,6 +38,7 @@ func (s *Server) registerAIConfigV2(mux *http.ServeMux, c aiConfigV2, configErro
 	mux.HandleFunc("GET /api/v1/ai/messages", g.configuredV206((*aiGatewayV2).messages))
 	mux.HandleFunc("POST /api/v1/ai/conversation/reset", g.configuredV206((*aiGatewayV2).reset))
 	mux.HandleFunc("POST /api/v1/ai/chat/stream", g.configuredV206((*aiGatewayV2).stream))
+	mux.HandleFunc("POST /api/v1/ai/purchase-quotes", g.configuredV206((*aiGatewayV2).quoteV207))
 	mux.HandleFunc("POST /api/v1/ai/purchases", g.configuredV206((*aiGatewayV2).purchaseV206))
 	mux.HandleFunc("GET /api/v1/ai/purchases/{purchaseId}", g.purchaseGetV206)
 	g.registerSettingsV206(mux)
