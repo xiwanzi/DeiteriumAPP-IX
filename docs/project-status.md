@@ -1,8 +1,9 @@
 # 当前项目状态
 
-2026-09-09 本机候选：账单大金额、小祥配置/购买与订单、账号权限/封禁、商店头像裁切、通知降噪/转账到账和网页间距已完成，代码 `6e0b727`，工作区 `.worktrees/saki-admin-experience`。验证与截图见 [本轮验收](qa/saki-admin-2026-09-09.md)。**尚未推送、合并或发布，下面仍是当前线上基线。**
+2026-09-09：**App 2.0.6（20600）、Web 2.0.6 与配套 Go 已上线**。App/Web 源码 `4d9a001ebd0e`（PR #9），Go 最终源码 `515c87fd4936`（PR #10）。账单、Saki/账号后台、头像裁切、购买订单与通知优化见 [2.0.6 部署记录](deployment/deuterium-2.0.6-live.md)。Saki 售卖仍关闭；本轮工作区 `.worktrees/saki-admin-experience`，分支 `release/v206-live`。下方 2.0.5 及更早状态为历史。
 
-最新网站发布（2026-09-09 14:59）：**Web 2.0.5 与配套 Go 已上线**，源码 `0386f1bd5664`。PC 管理、商品 App/裁切预览、游戏邮件配置、头像与购买体验见 [网页 2.0.5 部署记录](deployment/web-2.0.5-live.md) 和 [开发验收](qa/desktop-admin-2026-09-09.md)。
+
+此前网站发布（2026-09-09 14:59）：**Web 2.0.5 与配套 Go 已上线**，源码 `0386f1bd5664`。PC 管理、商品 App/裁切预览、游戏邮件配置、头像与购买体验见 [网页 2.0.5 部署记录](deployment/web-2.0.5-live.md) 和 [开发验收](qa/desktop-admin-2026-09-09.md)。
 
 基准：2026-09-09。**App 2.0.5（20500）已发布，历史账单与删除/结果浮窗修复已上线，账号通知已推送**，见 [2.0.5](deployment/deuterium-2.0.5-live.md)。网站与 Go 已随后更新为上述 Web 2.0.5 配套版本，游戏插件仍沿用 2.0.4。
 
@@ -10,11 +11,11 @@
 
 | 部分 | 当前状态 | 依据 |
 | --- | --- | --- |
-| App | 2.0.5（20500），历史账单日期、简洁删除及确认、结果浮窗居中 | [2.0.5](deployment/deuterium-2.0.5-live.md) |
-| 网站 | 2.0.5，PC 管理、App/裁切/邮件预览、头像与购买体验 | [网页 2.0.5](deployment/web-2.0.5-live.md) |
-| 后端 | Go `0386f1bd5664`，商品游戏邮件文案与固定投递计划，保留账本/SMTP/管理能力 | [网页 2.0.5](deployment/web-2.0.5-live.md) |
-| Core / Mail / Sync / XConomy | Core 1.0.1、XConomy .2 已换四服，Mail/Sync 不变；三服已恢复，MEK 停止禁领 | [插件记录](deployment/deuterium-2.0.4-live.md) |
-| 源码维护 | 新主仓库汇总 App/Web/Go/Core/XConomy；Mail、Sync 独立 PR | [归档交接](repository-handoff.md) |
+| App | 2.0.6（20600），大额账单、Saki 套餐与订单、头像和通知 | [2.0.6](deployment/deuterium-2.0.6-live.md) |
+| 网站 | 2.0.6，小祥/账号后台、商店头像裁切与操作间距 | [2.0.6](deployment/deuterium-2.0.6-live.md) |
+| 后端 | Go 515c87fd4936，021 迁移、数字套餐、权限封禁及到账通知 | [2.0.6](deployment/deuterium-2.0.6-live.md) |
+| 游戏插件 | Core 1.0.1、XConomy .2、Mail/Sync 沿用 2.0.4；三服在线，MEK 离线 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
+| 源码维护 | .worktrees/saki-admin-experience / release/v206-live | [本轮记录](deployment/deuterium-2.0.6-live.md) |
 
 ## 本次验证与历史证据
 
@@ -30,7 +31,7 @@
 
 历史发布证据包括：App 113 项单元测试及付款四时序模拟器检查；Go 119 项 race/integration 通过（既有人工浏览器夹具跳过）；网站 54 项 Node 测试；Core/Sync/Mail 真实隔离 Youer、保存证明恢复与三常驻服启动验证。这些数目不是本次新跑的测试，整理验证单列于 [交接记录](repository-handoff.md)。
 
-真实手机手感、完整游戏客户端领取/跨服流程以及 MEK 模组兼容仍不能用自动化测试代替。完整第三方 OIDC Provider、账号封禁管理没有被本轮发布证据确认为完成。AI 当前免费 20 次/24 小时、管理员豁免，其余套餐禁购。
+真实手机手感、完整游戏客户端领取/跨服流程以及 MEK 模组兼容仍不能用自动化测试代替。完整第三方 OIDC Provider 仍未包含；账号权限与封禁已在 2.0.6 实现。AI 默认免费 20 次/24 小时、管理员豁免；购买链路已接入，套餐售卖开关仍关闭。
 
 ## 数据和版本规则
 

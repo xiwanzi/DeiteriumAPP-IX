@@ -1,0 +1,10 @@
+{
+  "privateDirectory": "/opt/deuterium/releases/staged-v206-4d9a001ebd0e",
+  "verifiedFiles": [
+    "Deuterium-2.0.6-20600-test.apk",
+    "deuterium-linux-amd64",
+    "web-2.0.6.zip"
+  ],
+  "sourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
+  "liveServiceChanged": false
+}

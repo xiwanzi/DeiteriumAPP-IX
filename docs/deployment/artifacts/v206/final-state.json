@@ -1,0 +1,21 @@
+{
+  "service": "active",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.6-515c87fd4936",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.6-4d9a001ebd0e/dist",
+  "health": {
+    "status": "ready"
+  },
+  "runningExecutable": "/opt/deuterium/releases/release-2.0.6-515c87fd4936/deuterium",
+  "configAndEnvironmentUnchanged": true,
+  "businessCounts": "COMMISSION\t4\nORDER\t9",
+  "migrationCount": 17,
+  "lateLegacyNoticesHidden": 0,
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": false
+  },
+  "paidPlansEnabled": false,
+  "temporarySessionRevoked": true
+}

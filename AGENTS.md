@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-09：**App 2.0.6（20600）、Web 2.0.6 与配套 Go 已上线**。App/Web 源码 `4d9a001ebd0e`（PR #9），Go 最终源码 `515c87fd4936`（PR #10）。账单、Saki/账号后台、头像裁切、购买订单与通知优化见 [2.0.6 部署记录](docs/deployment/deuterium-2.0.6-live.md)。Saki 售卖仍关闭；本轮工作区 `.worktrees/saki-admin-experience`，分支 `release/v206-live`。下方 2.0.5 及更早状态为历史。
+
 当前网站发布（2026-09-09 14:59）：**Web 2.0.5 与配套 Go 已上线**，源码通过 PR #7 合入 main（`0386f1bd5664`），见 [网页 2.0.5 部署记录](docs/deployment/web-2.0.5-live.md)。本轮维护工作区 `C:/DeiteriumAPP-IX/.worktrees/desktop-admin`，部署文档分支 `release/web205`。PC 管理导航/表格、商品手机与裁切预览、游戏邮件文案、玩家头像和购买体验已发布。App 保持已发布 2.0.5（20500），游戏插件沿用 2.0.4 配套版本；下方“网站和 Go 沿用 2.0.4”是 App 发布时的历史状态。
 
 当前 App 发布（2026-09-09）：**2.0.5（20500）已上线并推送账号提醒**，源码 `bcfe87e398e75`，见 [2.0.5 部署记录](docs/deployment/deuterium-2.0.5-live.md)。修复历史账单时钟偏差、删除入口及确认浮窗、退款成功居中；当前维护工作区仍为 `C:/DeiteriumAPP-IX/.worktrees/release-v204`，分支 `release/v205`。网站、Go 程序和游戏插件沿用 2.0.4。
