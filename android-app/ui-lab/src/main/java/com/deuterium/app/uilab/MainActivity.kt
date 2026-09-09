@@ -60,9 +60,16 @@ class MainActivity : ComponentActivity() {
             when(theme){1->android.app.UiModeManager.MODE_NIGHT_NO;2->android.app.UiModeManager.MODE_NIGHT_YES;else->android.app.UiModeManager.MODE_NIGHT_AUTO})
     }
     override fun onNewIntent(intent:Intent) { super.onNewIntent(intent);setIntent(intent);incomingRoute=intent.getStringExtra("route") }
+    override fun onWindowFocusChanged(hasFocus:Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Warm starts and returns from package installation can omit the native
+        // splash exit callback. A focused app window must never wait on it.
+        if(hasFocus)nativeLaunchReady=true
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        InstallCompletionReceiver.onUiStarted()
         enableEdgeToEdge()
         nativeLaunchReady=Build.VERSION.SDK_INT<31||savedInstanceState!=null
         if(Build.VERSION.SDK_INT>=31)splashScreen.setOnExitAnimationListener { splash ->splash.remove();nativeLaunchReady=true}

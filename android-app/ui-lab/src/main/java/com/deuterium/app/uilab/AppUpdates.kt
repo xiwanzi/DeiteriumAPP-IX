@@ -164,7 +164,15 @@ class AppUpdates(application:Application):AndroidViewModel(application) {
         }
         pendingInstall=false;installing=true
         scope.launch{
-            runCatching{withContext(Dispatchers.IO){UpdateFiles.verify(file,item.sizeBytes,item.sha256);verifyApk(file,item)};val uri=FileProvider.getUriForFile(context,context.packageName+".updates",file);installerLaunched=true;context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))}.onFailure{installing=false;installerLaunched=false;stage=UpdateStage.Failed;message=it.message ?: "无法打开系统安装程序"}
+            runCatching{
+                withContext(Dispatchers.IO){UpdateFiles.verify(file,item.sizeBytes,item.sha256);verifyApk(file,item)}
+                val uri=FileProvider.getUriForFile(context,context.packageName+".updates",file)
+                context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                installerLaunched=true
+                // Complete the handoff while this coroutine is still running;
+                // a paused Compose screen may not observe another UI event.
+                InstallCompletionReceiver.closeAppTasks(context)
+            }.onFailure{installing=false;installerLaunched=false;stage=UpdateStage.Failed;message=it.message ?: "无法打开系统安装程序"}
         }
     }
     fun onResume(){if(installerLaunched){installing=false;installerLaunched=false};if(pendingInstall){if(context.packageManager.canRequestPackageInstalls())install()else pendingInstall=false};if(System.currentTimeMillis()-lastChecked>4*3600000L)check()}

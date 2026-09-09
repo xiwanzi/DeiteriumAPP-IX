@@ -1,0 +1,7 @@
+INSTRUMENTATION_RESULT: fromVersion=20401
+INSTRUMENTATION_RESULT: late_replacement_notification_preserves_fresh_ui=PASS
+INSTRUMENTATION_RESULT: system_installer_confirmation_remains_visible=PASS
+INSTRUMENTATION_RESULT: toVersion=20402
+INSTRUMENTATION_RESULT: verified_apk_handoff_removes_only_app_task=PASS
+INSTRUMENTATION_RESULT: verified_update_remains_available_to_installer=PASS
+INSTRUMENTATION_CODE: -1

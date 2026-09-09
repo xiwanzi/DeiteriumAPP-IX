@@ -12,7 +12,7 @@ android {
         applicationId = "com.deuterium.app.uilab"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20400
+        versionCode = 20401
         versionName = "2.0.4"
         testInstrumentationRunner = "com.deuterium.app.uilab.LiveBackendInstrumentation"
         val apiBase = providers.gradleProperty("deuteriumApiBase").orElse("https://47.103.99.34").get()
