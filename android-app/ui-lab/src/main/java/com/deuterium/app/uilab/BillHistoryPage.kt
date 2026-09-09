@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.net.URLEncoder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -36,13 +35,7 @@ fun BillHistoryPage(state:LabState,initial:String,topInset:Dp,onRecord:(LedgerEn
         val current=if(more)generation else ++generation
         loading=true;error=null
         try {
-            val zone=ZoneId.of("Asia/Shanghai")
-            val from=LocalDate.ofEpochDay(start).atStartOfDay(zone).toInstant()
-            val to=minOf(LocalDate.ofEpochDay(end+1).atStartOfDay(zone).toInstant(),Instant.now())
-            require(end-start<366){"单次查询最多一年，请缩小日期范围"}
-            fun encoded(value:String)=URLEncoder.encode(value,"UTF-8")
-            val query=if(more&&cursor!=null)"cursor=${encoded(cursor!!)}" else "from=${encoded(from.toString())}&to=${encoded(to.toString())}"+(if(type=="all")"" else "&direction=$type")
-            val result=api.request("GET","/wallet/records?limit=25&$query")
+            val result=api.request("GET",billHistoryPath(start,end,type,today,if(more)cursor else null))
             val array=result.getJSONArray("records")
             val records=ledgerEntries((0 until array.length()).map{array.getJSONObject(it)})
             if(current==generation){
@@ -66,7 +59,7 @@ fun BillHistoryPage(state:LabState,initial:String,topInset:Dp,onRecord:(LedgerEn
         item { Surface(onClick={picker=true},shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surface) {
             Row(Modifier.fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.SpaceBetween){Text("${LocalDate.ofEpochDay(start).format(format)} — ${LocalDate.ofEpochDay(end).format(format)}");Text("选择范围",color=MaterialTheme.colorScheme.primary)}
         } }
-        item { LabCard {
+        if(rows.isNotEmpty() || (!loading && error==null))item { LabCard {
             Text("${if(cursor!=null)"已加载 " else ""}${rows.size} 笔交易 · 北京时间",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.fillMaxWidth().padding(top=12.dp),horizontalArrangement=Arrangement.SpaceBetween){
                 Column { Text("收入",style=MaterialTheme.typography.bodySmall);Text("+${credit(rows.filter{it.amount>0}.sumOf{it.amount})}",style=MaterialTheme.typography.titleLarge,color=MaterialTheme.colorScheme.primary) }
