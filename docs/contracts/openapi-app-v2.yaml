@@ -14455,6 +14455,14 @@ components:
           maxLength: 128
           description: 服务端已批准的游戏邮箱发放模板，不能提交任意命令
           example: ref_demo_001
+        mailTitle:
+          type: string
+          maxLength: 80
+          description: 可选游戏邮件纯文本标题，最多 240 UTF-8 字节，留空使用默认订单标题；发布后仅影响新订单
+        mailBody:
+          type: string
+          maxLength: 1000
+          description: 可选游戏邮件纯文本正文，允许换行，最多 3000 UTF-8 字节；多商品合并正文超过 4096 字节时须分开购买
         deliverySummary:
           type: string
           minLength: 1

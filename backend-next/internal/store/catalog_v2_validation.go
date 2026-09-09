@@ -196,8 +196,11 @@ func ValidateCatalogContentV2(kind string, o CatalogObjectV2) error {
 			return catalogInvalid()
 		}
 	case "product":
-		if !catalogFields(o, "title subtitle description brandId categoryId price coverAssetId galleryAssetIds galleryAltTexts contentBlocks includedItems deliveryTemplateRef deliverySummary estimatedDelivery inventoryPolicy stock limitPerOrder posterTone accentColor badges sortOrder", "") {
+		if !catalogFields(o, "title subtitle description brandId categoryId price coverAssetId galleryAssetIds galleryAltTexts contentBlocks includedItems deliveryTemplateRef deliverySummary estimatedDelivery inventoryPolicy stock limitPerOrder posterTone accentColor badges sortOrder", "mailTitle mailBody") {
 			return catalogInvalid()
+		}
+		if e := validateProductMail(o); e != nil {
+			return e
 		}
 		if !catalogText(o["title"], 1, 80) || !catalogText(o["subtitle"], 1, 200) || !catalogText(o["description"], 1, 10000) || !CatalogReferenceV2(catalogString(o, "brandId")) || !CatalogReferenceV2(catalogString(o, "categoryId")) || !CatalogReferenceV2(catalogString(o, "deliveryTemplateRef")) {
 			return catalogInvalid()

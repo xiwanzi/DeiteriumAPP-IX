@@ -1,0 +1,23 @@
+import React, { useState } from "react";
+import { Package, ShoppingBag, Mail, ShieldCheck, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Avatar, Badge, Button } from "./components.jsx";
+import { ContentBlocks } from "./RemoteCollection.jsx";
+import { credit } from "./format.js";
+
+export default function ProductDetails({ product, official, quantity, setQuantity, busy, error, bagMessage, onAdd, onBuy, owned, onEdit, onUnlist }) {
+  const [imageIndex, setImageIndex] = useState(0), [failed, setFailed] = useState({});
+  const c = product.content || product, images = product.images || product.photos || [], selected = images[imageIndex] || images[0];
+  const stock = product.availableStock ?? product.stock ?? c.stock ?? 999, max = Math.min(stock, c.limitPerOrder ?? 999), valid = Number.isInteger(quantity) && quantity >= 1 && quantity <= max;
+  return <div className="product-detail-layout">
+    <div className="product-gallery"><div className="product-main-image">{selected?.url && !failed[selected.url] ? <img src={selected.url} alt={selected.altText || c.title} onError={() => setFailed((old) => ({ ...old, [selected.url]: true }))} /> : <div className="product-image-empty"><Package size={46} /><span>{selected?.url ? "图片暂时无法加载" : "暂无商品图片"}</span></div>}{images.length > 1 && <><button className="gallery-prev" aria-label="上一张商品图" onClick={() => setImageIndex((imageIndex + images.length - 1) % images.length)}><ChevronLeft size={20} /></button><button className="gallery-next" aria-label="下一张商品图" onClick={() => setImageIndex((imageIndex + 1) % images.length)}><ChevronRight size={20} /></button><span className="gallery-count">{imageIndex + 1} / {images.length}</span></>}</div>
+      {images.length > 1 && <div className="product-thumbnails">{images.map((image, i) => <button key={image.assetId} aria-label={`查看第 ${i + 1} 张商品图`} aria-pressed={i === imageIndex} onClick={() => setImageIndex(i)}><img src={image.url} alt="" /></button>)}</div>}
+    </div>
+    <div className="product-buy-panel"><Badge tone={official ? "blue" : "sage"}>{official ? "官方商城" : "玩家市场"}</Badge><h2>{c.title}</h2><p className="product-subtitle">{c.subtitle}</p><div className="product-price"><strong>{credit(c.price)}</strong><span>信用点 / 件</span></div>
+      <div className="product-delivery-card"><div>{official ? <Mail size={21} /> : <ShieldCheck size={21} />}<div><strong>{official ? "游戏内邮箱交付" : "平台担保交易"}</strong><p>{c.estimatedDelivery || (official ? "付款后自动投递到游戏邮箱" : "付款由平台托管，完成履约后结算")}</p></div></div><p>{c.deliverySummary || (official ? "未领取时，可按订单规则申请退款。" : "请确认交付地点和商品说明后再购买。")}</p></div>
+      {product.seller && <div className="product-seller"><Avatar user={product.seller} /><span>{product.seller.gameId || product.seller.displayName || "卖家"}</span>{product.contactQq && <small>QQ {product.contactQq}</small>}</div>}
+      {!owned ? <><div className="product-quantity-row"><div><label htmlFor="purchase-quantity">购买数量</label><small>{stock <= 0 ? "已售罄" : c.inventoryPolicy === "UNLIMITED" ? `不限库存 · 单笔最多 ${max} 件` : `库存 ${stock} 件 · 单笔最多 ${max} 件`}</small></div><div className="quantity-stepper"><button aria-label="减少购买数量" disabled={busy || quantity <= 1} onClick={() => setQuantity(quantity - 1)}><Minus size={16} /></button><input id="purchase-quantity" type="number" min={1} max={max} value={quantity} onChange={(e) => setQuantity(e.target.value === "" ? "" : Number(e.target.value))} /><button aria-label="增加购买数量" disabled={busy || !Number.isInteger(quantity) || quantity >= max} onClick={() => setQuantity(quantity + 1)}><Plus size={16} /></button></div></div>
+        {bagMessage && <p className="purchase-success-note" role="status">{bagMessage}</p>}{error && <p className="auth-error" role="alert">{error}</p>}<div className="product-purchase-actions">{official && <Button secondary disabled={busy || !valid} onClick={onAdd}><ShoppingBag size={17} />加入购物袋</Button>}<Button disabled={busy || !valid} onClick={onBuy}>{stock <= 0 ? "已售罄" : "立即购买"}</Button></div><p className="preview-note">下一步确认服务端最新报价后付款。</p></> : <div className="button-row"><Button onClick={onEdit}>{product.active ? "编辑商品" : "重新上架"}</Button>{product.active && <Button secondary onClick={onUnlist}>下架</Button>}</div>}
+    </div>
+    <section className="product-description"><h3>商品详情</h3><p>{c.description || c.subtitle}</p><ContentBlocks blocks={c.contentBlocks || c.detailBlocks || []} media={product.media || product.images || []} />{c.includedItems?.length > 0 && <><h3>包含内容</h3><ul>{c.includedItems.map((line, i) => <li key={i}>{line}</li>)}</ul></>}{product.pickupLocation && <p>交付地点：{product.pickupLocation}</p>}</section>
+  </div>;
+}

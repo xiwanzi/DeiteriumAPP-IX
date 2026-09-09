@@ -113,7 +113,7 @@ function TransferForm({ client, user, journal, saveJournal, onSuccess }) {
   const request = journal?.request || confirmation;
   if (result?.status === "success") return <div className="empty"><Check size={38} /><h2>转账成功</h2><p>{credit(result.amount)} 信用点已转给 {result.recipient?.gameId || recipient?.gameId}。</p><small className="mono">{result.transferId}</small></div>;
   if (request) return <>
-    <div className="player-detail"><Avatar user={recipient?.gameId || journal?.recipient?.gameId} size="large" /><h2>{recipient?.gameId || journal?.recipient?.gameId}</h2><strong className="price">{credit(request.amount)}<small>信用点</small></strong></div>
+    <div className="player-detail"><Avatar user={recipient || journal?.recipient} size="large" /><h2>{recipient?.gameId || journal?.recipient?.gameId}</h2><strong className="price">{credit(request.amount)}<small>信用点</small></strong></div>
     {request.note && <p className="notice-box">备注：{request.note}</p>}
     <p>{journal ? (result?.status === "failed" ? "服务器报告转账失败。" : "转账结果等待核对，请使用下方按钮查询同一笔交易。") : "请核对收款人和金额，确认后提交转账。"}</p>
     {error && <div className="auth-error" role="alert">{error}</div>}
@@ -125,7 +125,7 @@ function TransferForm({ client, user, journal, saveJournal, onSuccess }) {
   return <>
     <form onSubmit={search}><Field label="收款玩家" value={query} onChange={(e) => { setQuery(e.target.value); setRecipient(null); }} placeholder="输入游戏 ID 或 QQ" required maxLength={64} /><Button secondary type="submit" disabled={busy}><Search size={16} />查找玩家</Button></form>
     {searched && !candidates.length && <p className="muted">没有找到可转账的玩家。</p>}
-    <div className="button-row">{candidates.map((p) => <Button key={p.playerRef} secondary={recipient?.playerRef !== p.playerRef} onClick={() => setRecipient(p)}><Avatar user={p.gameId} />{p.gameId}</Button>)}</div>
+    <div className="button-row">{candidates.map((p) => <Button key={p.playerRef} secondary={recipient?.playerRef !== p.playerRef} onClick={() => setRecipient(p)}><Avatar user={p} />{p.gameId}</Button>)}</div>
     <form onSubmit={prepare}><Field label="金额（信用点）" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" required maxLength={10} /><Field label="备注" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder="选填" />
       {error && <div className="auth-error" role="alert">{error}</div>}<Button type="submit" disabled={!recipient || busy}>下一步<ArrowUpRight size={16} /></Button>
     </form>

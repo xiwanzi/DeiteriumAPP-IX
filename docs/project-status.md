@@ -1,5 +1,7 @@
 # 当前项目状态
 
+开发候选（2026-09-09）：Web 2.0.5 与配套 Go 的 PC 管理、商品 App/裁切预览、游戏邮件配置、头像与购买体验优化已在 `feat/desktop-admin-experience` 完成本机验收，**尚未部署**；详见 [本轮验收](qa/desktop-admin-2026-09-09.md)。下方仍为当前线上版本。
+
 基准：2026-09-09。**App 2.0.5（20500）已发布，历史账单与删除/结果浮窗修复已上线，账号通知已推送**，见 [2.0.5](deployment/deuterium-2.0.5-live.md)。网站、Go 与游戏插件保持以下 2.0.4 配套版本。
 
 此前部署：App 2.0.4（20401）、Web 2.0.4、配套 Go/Core/XConomy 已发布；账号更新提醒已加入 xiwanzi 通知，原始业务与 Mail/Sync 配置保留。见 [2.0.4 部署记录](deployment/deuterium-2.0.4-live.md)。

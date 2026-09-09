@@ -4,6 +4,7 @@ import { PageHead, Button, Empty, Badge, Modal } from "./components.jsx";
 import { credit } from "./format.js";
 import { id } from "./format.js";
 import { ListingForm } from "./CatalogManagement.jsx";
+import ProductDetails from "./ProductDetails.jsx";
 import PurchaseFlow from "./PurchaseFlow.jsx";
 import { resourceId } from "./business.js";
 
@@ -58,13 +59,12 @@ export default function RemoteCollection({ client, path, user, onNotificationTar
   const addToBag = async () => { setBusy(true);setError("");setBagMessage("");try{const r=await client.request("/api/v1/store/cart");const old=r.data.items.find((item)=>item.productId===selected.productId);await client.request(`/api/v1/store/cart/items/${encodeURIComponent(selected.productId)}`,{method:"PUT",body:{clientRequestId:id(),expectedVersion:r.data.version,quantity:(old?.quantity||0)+quantity}});setBagMessage("已加入购物袋");}catch(e){setError(e.message);}finally{setBusy(false);} };
   const unlistItem = async () => { setBusy(true);setError("");const scope=`unlist:${unlist.listingId}:${unlist.version}`;actionKeys.current[scope] ||= id();try{await client.request(`/api/v1/market/listings/${encodeURIComponent(unlist.listingId)}/unlist`,{method:"POST",body:{clientRequestId:actionKeys.current[scope],expectedVersion:unlist.version}});setUnlist(null);setSelected(null);await load();}catch(e){setError(e.message);}finally{setBusy(false);} };
   const content = selected?.content || selected;
-  const validQuantity = Number.isInteger(quantity) && quantity >= 1 && quantity <= Math.min(selected?.availableStock ?? selected?.stock ?? 999, selected?.content?.limitPerOrder ?? 999);
   const visible = items.filter((item) => `${item.title || item.content?.title || ""} ${item.summary || item.subtitle || item.content?.description || ""}`.toLowerCase().includes(query.toLowerCase()));
   return <>
     <PageHead eyebrow="DEUTERIUM COMMUNITY" title={config.title} subtitle={config.subtitle}><Button secondary disabled={busy} onClick={() => load()}><RefreshCw size={16} />刷新</Button>{path==="/market"&&<><Button secondary onClick={()=>setMine(!mine)}>{mine?"发现好物":"我的发布"}</Button><Button onClick={()=>setEditor({})}><Plus size={16}/>发布商品</Button></>}</PageHead>
     <label className="search-input" style={{ maxWidth: 480, marginBottom: 24 }}><Search size={17} /><input aria-label={`搜索${config.title}`} placeholder={`搜索已加载的${config.title}`} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
     {error && <div className="notice-box" role="alert">{error}</div>}
-    <div className="foundation-grid">{visible.map((item) => {
+    <div className={`foundation-grid ${path === "/" || path === "/market" ? "shop-catalog-grid" : ""}`}>{visible.map((item) => {
       const c = item.content || item, image = item.images?.[0] || item.photos?.[0] || item.cover;
       return <button className="foundation-card" style={{ textAlign: "left", color: "inherit", cursor: "pointer" }} key={item[config.key]} onClick={() => select(item)}>
         {image?.url ? <img src={image.url} alt={image.altText || c.title} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /> : <Package size={24} />}
@@ -75,20 +75,17 @@ export default function RemoteCollection({ client, path, user, onNotificationTar
     {!busy && !error && !visible.length && <Empty title={query ? "没有匹配的结果" : config.empty} text={query ? "试试其他关键词。" : "新的内容发布后会出现在这里。"} />}
     {busy && <p className="muted" role="status">正在读取…</p>}
     {cursor && <Button secondary disabled={busy} onClick={() => load(true)}>加载更多</Button>}
-    {selected && <Modal title={content.title} close={() => setSelected(null)}>
-      {(selected.images || selected.photos || (selected.cover ? [selected.cover] : [])).map((asset) => <img key={asset.assetId} src={asset.url} alt={asset.altText || content.title} style={{ width: "100%", borderRadius: 12, marginBottom: 12 }} />)}
-      <p className="description" style={{ whiteSpace: "pre-wrap" }}>{content.description || content.subtitle || selected.summary || selected.body}</p>
-      <ContentBlocks blocks={content.contentBlocks || content.detailBlocks || []} media={selected.media || selected.images || []} />
-      {content.location && <p>地点：{content.location}</p>}
-      {selected.contactQq && <p>联系 QQ：{selected.contactQq}</p>}
-      {(content.price !== undefined || content.reward !== undefined) && <strong className="price">{credit(content.price ?? content.reward)}<small>信用点</small></strong>}
-      {selected.publishedAt && <p className="muted">{new Date(selected.publishedAt).toLocaleString("zh-CN")}</p>}
-      {path==="/market"&&selected.seller?.playerRef===user?.playerRef&&<div className="button-row"><Button onClick={()=>{setEditor(selected);setSelected(null);}}>{selected.active?"编辑商品":"重新上架"}</Button>{selected.active&&<Button secondary onClick={()=>{setUnlist(selected);setSelected(null);}}>下架</Button>}</div>}
-      {(path==="/"||path==="/market"&&selected.seller?.playerRef!==user?.playerRef)&&<><div className="field"><label htmlFor="purchase-quantity">购买数量</label><input id="purchase-quantity" type="number" min={1} max={Math.min(selected.availableStock??selected.stock??999,selected.content?.limitPerOrder??999)} value={quantity} onChange={(e)=>setQuantity(Number(e.target.value))}/></div>{bagMessage&&<p role="status">{bagMessage}</p>}{error&&<p className="auth-error" role="alert">{error}</p>}<div className="button-row">{path==="/"&&<Button secondary disabled={busy||!validQuantity} onClick={addToBag}>加入购物袋</Button>}<Button disabled={busy||!validQuantity} onClick={()=>{setPurchase({item:selected,quantity});setSelected(null);}}>立即购买</Button></div></>}
-      {path==="/notifications"&&<><div className="button-row">{!selected.readAt&&<Button secondary onClick={()=>markNotification(selected)}>标记已读</Button>}{selected.target&&onNotificationTarget&&<Button onClick={()=>onNotificationTarget(selected.target)}>查看相关内容</Button>}</div>{error&&<p className="auth-error" role="alert">{error}</p>}</>}
+    {selected && <Modal title={path === "/" || path === "/market" ? "商品详情" : content.title} close={() => setSelected(null)} wide={path === "/" || path === "/market"} className={path === "/" || path === "/market" ? "product-detail-modal" : ""}>
+      {path === "/" || path === "/market" ? <ProductDetails key={selected.productId || selected.listingId} product={selected} official={path === "/"} quantity={quantity} setQuantity={setQuantity} busy={busy} error={error} bagMessage={bagMessage} onAdd={addToBag} onBuy={() => {setPurchase({item:selected,quantity});setSelected(null);}} owned={path === "/market" && selected.seller?.playerRef === user?.playerRef} onEdit={() => {setEditor(selected);setSelected(null);}} onUnlist={() => {setUnlist(selected);setSelected(null);}} /> : <>
+        {(selected.images || selected.photos || (selected.cover ? [selected.cover] : [])).map((asset) => <img key={asset.assetId} src={asset.url} alt={asset.altText || content.title} style={{width:"100%",borderRadius:12,marginBottom:12}} />)}
+        <p className="description" style={{whiteSpace:"pre-wrap"}}>{content.description || content.subtitle || selected.summary || selected.body}</p>
+        <ContentBlocks blocks={content.contentBlocks || content.detailBlocks || []} media={selected.media || selected.images || []} />
+        {selected.publishedAt && <p className="muted">{new Date(selected.publishedAt).toLocaleString("zh-CN")}</p>}
+        {path === "/notifications" && <><div className="button-row">{!selected.readAt && <Button secondary onClick={() => markNotification(selected)}>标记已读</Button>}{selected.target && onNotificationTarget && <Button onClick={() => onNotificationTarget(selected.target)}>查看相关内容</Button>}</div>{error && <p className="auth-error" role="alert">{error}</p>}</>}
+      </>}
     </Modal>}
     {editor&&<Modal title={editor.listingId?"编辑玩家商品":"发布玩家商品"} close={()=>setEditor(null)} wide guardClose dismissOnBackdrop={false}><ListingForm client={client} user={user} initial={editor} onSaved={async()=>{setEditor(null);await load();}}/></Modal>}
     {unlist&&<Modal title="确认下架" close={()=>setUnlist(null)}><p>下架“{unlist.title}”后，其他玩家将无法购买。</p>{error&&<p className="auth-error" role="alert">{error}</p>}<Button disabled={busy} onClick={unlistItem}>确认下架</Button></Modal>}
-    {purchase&&<Modal title="确认购买" close={()=>setPurchase(null)}><PurchaseFlow client={client} user={user} channel={path==="/market"?"PLAYER_MARKET":"OFFICIAL_STORE"} listing={path==="/market"?purchase.item:undefined} items={[{productId:purchase.item.productId||purchase.item.listingId,quantity:purchase.quantity,expectedProductVersion:purchase.item.version}]} onResource={(resource)=>navigate(`/orders?order=${encodeURIComponent(resourceId(resource.value))}`)}/></Modal>}
+    {purchase&&<Modal title="确认购买" close={()=>setPurchase(null)} className="checkout-modal"><PurchaseFlow client={client} user={user} channel={path==="/market"?"PLAYER_MARKET":"OFFICIAL_STORE"} listing={path==="/market"?purchase.item:undefined} previewProducts={[purchase.item]} items={[{productId:purchase.item.productId||purchase.item.listingId,quantity:purchase.quantity,expectedProductVersion:purchase.item.version}]} onResource={(resource)=>navigate(`/orders?order=${encodeURIComponent(resourceId(resource.value))}`)}/></Modal>}
   </>;
 }

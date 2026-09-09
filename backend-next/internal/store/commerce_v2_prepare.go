@@ -59,6 +59,9 @@ func commerceItemSnapshotV2(ctx context.Context, tx *sql.Tx, p CatalogRecordV2, 
 // Quote and checkout use the same whole-order delivery limits. This reads the
 // frozen published templates only; it creates no order, hold or delivery intent.
 func commerceDeliveryContentsV2(ctx context.Context, tx *sql.Tx, products map[string]CatalogRecordV2, quantities map[string]int64, nodes map[string]CatalogNodePolicyV2) (CatalogObjectV2, error) {
+	if _, _, e := productMailText(products, quantities, ""); e != nil {
+		return nil, e
+	}
 	attachments := map[string]CatalogObjectV2{}
 	allowed := map[string]bool{}
 	domain := ""
@@ -165,7 +168,11 @@ func commerceMailPlanV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2, pro
 	if len(raw) > 24000 {
 		return nil, catalogError(422, "DELIVERY_SIZE_LIMIT", "订单交付快照过大，请分开购买。")
 	}
-	return CatalogObjectV2{"source": "deuterium-commerce", "deliveryId": ID("delivery_"), "orderId": d.ID, "recipientUuid": d.OwnerUUID, "title": "官方商城订单 " + catalogString(d.Body, "orderNo"), "body": "购买的物品已按订单快照投递，请在支持领取的服务器打开邮箱。", "sender": "Deuterium 官方商城", "snapshotJson": raw, "snapshotSha256": Digest([]byte(raw)), "allowedServerIds": snapshot["allowedServerIds"], "inventoryDomain": snapshot["inventoryDomain"]}, nil
+	title, body, e := productMailText(products, quantities, catalogString(d.Body, "orderNo"))
+	if e != nil {
+		return nil, e
+	}
+	return CatalogObjectV2{"source": "deuterium-commerce", "deliveryId": ID("delivery_"), "orderId": d.ID, "recipientUuid": d.OwnerUUID, "title": title, "body": body, "sender": "Deuterium 官方商城", "snapshotJson": raw, "snapshotSha256": Digest([]byte(raw)), "allowedServerIds": snapshot["allowedServerIds"], "inventoryDomain": snapshot["inventoryDomain"]}, nil
 }
 
 func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, expected int64, channel string, available bool, nodes map[string]CatalogNodePolicyV2) (CommerceMutationV2, error) {

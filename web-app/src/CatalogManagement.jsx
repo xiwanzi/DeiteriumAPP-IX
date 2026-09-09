@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Plus, RefreshCw, Upload, Trash2, ArrowUp } from "lucide-react";
+import { Plus, RefreshCw, Upload, Trash2, ArrowUp, Search, Package, ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
 import { Badge, Button, Empty, Field, Modal, PageHead, Tabs } from "./components.jsx";
 import { credit, id } from "./format.js";
 import ProductForm from "./ProductEditor.jsx";
@@ -48,41 +48,59 @@ export function ListingForm({ client, user, initial = {}, onSaved }) {
 
 export default function CatalogManagement({ client, user }) {
   const [stores, setStores] = useState([]), [selected, setSelected] = useState(""), [products, setProducts] = useState([]), [brands, setBrands] = useState([]), [categories, setCategories] = useState([]), [templates, setTemplates] = useState([]),
-    [error, setError] = useState(""), [busy, setBusy] = useState(false), [modal, setModal] = useState(null), [reason, setReason] = useState("");
+    [error, setError] = useState(""), [busy, setBusy] = useState(false), [modal, setModal] = useState(null), [reason, setReason] = useState(""), [query, setQuery] = useState(""), [status, setStatus] = useState("ALL"), [categoryFilter, setCategoryFilter] = useState("ALL"), [page, setPage] = useState(1), [cursor, setCursor] = useState(null);
   const all = (user.permissions || []).includes("platform.admin"), current = stores.find((store) => store.storeId === selected), actionKeys = useRef({});
   const loadStores = async () => {
     setBusy(true); setError("");
     try { const r = await client.request("/api/v1/merchant/me"); const values = await Promise.all(r.data.storeIds.map((storeId) => client.request(`/api/v1/merchant/stores/${encodeURIComponent(storeId)}`))); const next = values.map((item) => item.data); setStores(next); setSelected((old) => next.some((store) => store.storeId === old) ? old : next[0]?.storeId || ""); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
-  const loadStoreContent = async () => {
+  const generation = useRef(0);
+  const loadStoreContent = async (more = false) => {
+    const requestGeneration = ++generation.current;
     if (!selected) return; setBusy(true); setError("");
-    try { const [p, b, c, t] = await Promise.all(["products", "brands", "categories", "delivery-templates"].map((kind) => client.request(`/api/v1/merchant/stores/${encodeURIComponent(selected)}/${kind}?limit=100`))); setProducts(p.data); setBrands(b.data); setCategories(c.data); setTemplates(t.data); }
-    catch (e) { setError(e.message); } finally { setBusy(false); }
+    try { const [p, b, c, t] = await Promise.all(["products", "brands", "categories", "delivery-templates"].map((kind) => client.request(`/api/v1/merchant/stores/${encodeURIComponent(selected)}/${kind}?limit=100${kind === "products" && more && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`))); if (requestGeneration !== generation.current) return; setProducts((old) => more ? [...new Map([...old, ...p.data].map((product) => [product.productId, product])).values()] : p.data); setCursor(p.page?.nextCursor); setBrands(b.data); setCategories(c.data); setTemplates(t.data); }
+    catch (e) { if (requestGeneration === generation.current) setError(e.message); } finally { if (requestGeneration === generation.current) setBusy(false); }
   };
-  useEffect(() => { loadStores(); }, []); useEffect(() => { loadStoreContent(); }, [selected]);
+  useEffect(() => { loadStores(); }, []); useEffect(() => { setProducts([]); setBrands([]); setCategories([]); setTemplates([]); setCursor(null); setPage(1); loadStoreContent(); return () => { generation.current++; }; }, [selected]);
+  useEffect(() => { setPage(1); }, [query, status, categoryFilter]);
   const action = async (product, kind, explanation = "") => {
+    if (busy) return;
     setBusy(true); setError(""); const scope = `${product.productId}:${product.version}:${kind}:${explanation}`; actionKeys.current[scope] ||= id();
     try { await client.request(`/api/v1/merchant/products/${encodeURIComponent(product.productId)}/${kind}`, { method: "POST", body: { clientRequestId: actionKeys.current[scope], expectedVersion: product.version, ...(kind !== "publish" ? { reason: explanation } : {}) } }); setModal(null); await loadStoreContent(); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
-  return <>
-    <PageHead eyebrow="MERCHANT WORKSPACE" title="商店管理" subtitle="商品、分类与店铺资料，在这里统一维护。"><Button secondary disabled={busy} onClick={loadStores}><RefreshCw size={16} />刷新</Button>{all && <Button onClick={() => setModal({ type: "store-create" })}><Plus size={16} />创建商店</Button>}</PageHead>
+  const states = { ACTIVE: "已上架", DRAFT: "草稿", UNLISTED: "已下架", ARCHIVED: "已归档" };
+  const filtered = products.filter((product) => (status === "ALL" || product.visibility === status) && (categoryFilter === "ALL" || product.draft.categoryId === categoryFilter) && `${product.draft.title} ${product.draft.subtitle} ${product.productId}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const pages = Math.max(1, Math.ceil(filtered.length / 12)), currentPage = Math.min(page, pages);
+  return <div className="catalog-workspace">
+    <PageHead eyebrow="MERCHANT WORKSPACE" title="商店管理" subtitle="商品、分类与店铺资料，在这里统一维护。"><Button secondary disabled={busy} onClick={async () => { await loadStores(); await loadStoreContent(); }}><RefreshCw size={16} />刷新</Button>{all && <Button onClick={() => setModal({ type: "store-create" })}><Plus size={16} />创建商店</Button>}</PageHead>
     {error && <p className="notice-box" role="alert">{error}</p>}
-    {stores.length > 0 && <Field label="当前商店"><select value={selected} onChange={(e) => setSelected(e.target.value)}>{stores.map((store) => <option key={store.storeId} value={store.storeId}>{store.name}</option>)}</select></Field>}
+    {stores.length > 1 && <Field label="当前商店"><select disabled={busy} value={selected} onChange={(e) => setSelected(e.target.value)}>{stores.map((store) => <option key={store.storeId} value={store.storeId}>{store.name}</option>)}</select></Field>}
     {current && <>
-      <div className="panel" style={{ padding: 22 }}><h2>{current.name}</h2><p>{current.intro}</p><div className="button-row"><Button secondary onClick={() => setModal({ type: "store-edit", item: current })}>编辑商店资料</Button><Button secondary onClick={() => setModal({ type: "brand" })}>新增品牌</Button><Button secondary onClick={() => setModal({ type: "category" })}>新增分类</Button><Button secondary onClick={() => setModal({ type: "templates" })}>交付模板</Button><Button secondary onClick={() => setModal({ type: "orders" })}>商店订单</Button><Button onClick={() => setModal({ type: "product", item: {} })}>新增商品</Button></div></div>
+      <section className="store-overview"><div className="store-identity"><span className="store-mark"><Package size={25} /></span><div><h2>{current.name}</h2><p>{current.intro || "在这里管理店铺与商品交付"}</p></div></div><Button secondary disabled={busy} onClick={() => setModal({ type: "store-edit", item: current })}><Settings2 size={16} />店铺资料</Button></section>
+      <div className="catalog-stats">{[["已加载商品", products.length], ["已上架", products.filter((p) => p.visibility === "ACTIVE").length], ["草稿", products.filter((p) => p.visibility === "DRAFT").length], ["可用交付模板", templates.filter((t) => t.active).length]].map(([label, count]) => <div key={label}><span>{label}</span><strong>{count}</strong></div>)}</div>
+      <div className="catalog-actions"><div className="button-row"><Button secondary disabled={busy} onClick={() => setModal({ type: "brand" })}>新增品牌</Button><Button secondary disabled={busy} onClick={() => setModal({ type: "category" })}>新增分类</Button><Button secondary disabled={busy} onClick={() => setModal({ type: "templates" })}>交付模板</Button><Button secondary disabled={busy} onClick={() => setModal({ type: "orders" })}>商店订单</Button></div><Button disabled={busy} onClick={() => setModal({ type: "product", item: {} })}><Plus size={17} />新增商品</Button></div>
       {(!brands.some((x)=>x.active) || !categories.some((x)=>x.active) || !templates.some((x)=>x.active)) && <p className="notice-box">发布商品前，请准备好{!brands.some((x)=>x.active) ? "品牌、" : ""}{!categories.some((x)=>x.active) ? "分类、" : ""}{!templates.some((x)=>x.active) ? "游戏内邮箱交付模板" : "交付资料"}。</p>}
-      <div className="foundation-grid">{products.map((product) => <article key={product.productId} className="foundation-card"><Badge tone={product.visibility === "ACTIVE" ? "sage" : "neutral"}>{{ ACTIVE: "已上架", DRAFT: "草稿", UNLISTED: "已下架", ARCHIVED: "已归档" }[product.visibility]}</Badge><h3>{product.draft.title}</h3><p>{product.draft.subtitle}</p><strong className="price">{credit(product.draft.price)}<small>信用点</small></strong><div className="button-row"><Button secondary disabled={busy || product.visibility === "ARCHIVED"} onClick={() => setModal({ type: "product", item: product })}>编辑</Button><Button disabled={busy || product.visibility === "ARCHIVED"} onClick={() => action(product, "publish")}>发布</Button>{product.visibility === "ACTIVE" && <Button secondary disabled={busy} onClick={() => { setModal({ type: "unlist", item: product }); setReason(""); }}>下架</Button>}</div></article>)}</div>
-      {!busy && !products.length && <Empty title="还没有商品" text="保存商品草稿并发布后，玩家就能在官方商城看到。" />}
+      <section className="catalog-table-panel">
+        <div className="catalog-filterbar"><label className="search-input"><Search size={17} /><input aria-label="搜索管理商品" placeholder="搜索已加载的商品名称、简介或编号" value={query} onChange={(e) => setQuery(e.target.value)} /></label><select aria-label="商品状态" value={status} onChange={(e) => setStatus(e.target.value)}><option value="ALL">全部状态</option>{Object.entries(states).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select><select aria-label="商品分类筛选" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}><option value="ALL">全部分类</option>{categories.map((c) => <option value={c.categoryId} key={c.categoryId}>{c.name}</option>)}</select></div>
+        <div className="table-wrap"><table className="catalog-table"><thead><tr><th scope="col">商品</th><th scope="col">状态</th><th scope="col">分类</th><th scope="col">售价 / 信用点</th><th scope="col">库存</th><th scope="col">操作</th></tr></thead><tbody>{filtered.slice((currentPage - 1) * 12, currentPage * 12).map((product) => {
+          const image = product.draftImages?.[0] || product.published?.images?.[0];
+          return <tr key={product.productId}><td><button className="catalog-product-cell" disabled={busy || product.visibility === "ARCHIVED"} onClick={() => setModal({ type: "product", item: product })}>{image?.url ? <img src={image.url} alt="" /> : <span className="catalog-thumbnail"><Package size={22} /></span>}<span><strong>{product.draft.title}</strong><small>{product.draft.subtitle}</small></span></button></td><td><Badge tone={product.visibility === "ACTIVE" ? "sage" : "neutral"}>{states[product.visibility]}</Badge>{product.hasUnpublishedChanges && <small className="unpublished-hint">有未发布修改</small>}</td><td>{categories.find((c) => c.categoryId === product.draft.categoryId)?.name || "—"}</td><td className="catalog-price">{credit(product.draft.price)}</td><td>{product.draft.inventoryPolicy === "UNLIMITED" ? "不限量" : product.availableStock ?? product.draft.stock}</td><td><div className="catalog-row-actions"><Button secondary disabled={busy || product.visibility === "ARCHIVED"} onClick={() => setModal({ type: "product", item: product })}>编辑 / 预览</Button>{product.visibility !== "ACTIVE" && <Button disabled={busy || product.visibility === "ARCHIVED"} onClick={() => action(product, "publish")}>发布</Button>}{product.visibility === "ACTIVE" && <button type="button" className="text-button" disabled={busy} onClick={() => { setModal({ type: "unlist", item: product }); setReason(""); }}>下架</button>}</div></td></tr>;
+        })}</tbody></table></div>
+        {!busy && !filtered.length && <Empty title={products.length ? "没有匹配的商品" : "还没有商品"} text={products.length ? "调整关键词、状态或分类后重试。" : "添加图片与商品信息，预览后保存并发布。"} />}
+        {busy && <p className="catalog-loading" role="status">正在读取商品…</p>}
+        <footer className="catalog-pagination"><span>已加载 {products.length} 件 · 筛选结果 {filtered.length} 件</span><div><Button secondary aria-label="上一页商品" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={16} /></Button><span>{currentPage} / {pages}</span><Button secondary aria-label="下一页商品" disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}><ChevronRight size={16} /></Button>{cursor && <Button secondary disabled={busy} onClick={() => loadStoreContent(true)}>加载更多商品</Button>}</div></footer>
+      </section>
     </>}
+    {!busy && !error && !stores.length && <Empty title="还没有可管理的商店" text={all ? "先创建商店，再准备分类与交付模板。" : "获得商店授权后，就能在这里维护商品。"} />}
     {modal?.type.startsWith("store-") && <Modal title={modal.type === "store-create" ? "创建商店" : "商店资料"} close={() => setModal(null)}><StoreForm client={client} user={user} initial={modal.item || {}} onSaved={async () => { setModal(null); await loadStores(); }} /></Modal>}
     {(modal?.type === "brand" || modal?.type === "category") && <Modal title={modal.type === "brand" ? "新增品牌" : "新增分类"} close={() => setModal(null)}><ClassificationForm client={client} storeId={selected} kind={modal.type} onSaved={async () => { setModal(null); await loadStoreContent(); }} /></Modal>}
-    {modal?.type === "product" && <Modal title={modal.item.productId ? "编辑商品" : "新增商品"} close={() => setModal(null)} wide guardClose dismissOnBackdrop={false}><ProductForm client={client} storeId={selected} initial={modal.item} brands={brands} categories={categories} templates={templates} onSaved={async () => { setModal(null); await loadStoreContent(); }} /></Modal>}
+    {modal?.type === "product" && <Modal title={modal.item.productId ? "编辑商品" : "新增商品"} close={() => setModal(null)} wide className="product-editor-modal" guardClose dismissOnBackdrop={false}><ProductForm client={client} storeId={selected} initial={modal.item} brands={brands} categories={categories} templates={templates} onSaved={async ({ close }) => { if (close) setModal(null); await loadStoreContent(); }} /></Modal>}
     {modal?.type === "templates" && <Modal title="游戏内邮箱交付模板" close={() => setModal(null)} wide><DeliveryTemplateManagement client={client} storeId={selected} onChanged={loadStoreContent}/></Modal>}
     {modal?.type === "orders" && <Modal title="商店订单" close={() => setModal(null)} wide><BusinessPages client={client} user={user} type="ORDER" merchantStoreId={selected}/></Modal>}
     {modal?.type === "unlist" && <Modal title="下架商品" close={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); action(modal.item, "unlist", reason); }}><p>确认下架“{modal.item.draft.title}”？已经成交的订单不受影响。</p><Field label="下架原因"><textarea required minLength={2} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>确认下架</Button></form></Modal>}
-  </>;
+  </div>;
 }
 
 function StoreForm({ client, user, initial, onSaved }) {

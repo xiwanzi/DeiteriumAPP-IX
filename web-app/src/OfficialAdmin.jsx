@@ -8,16 +8,17 @@ import { uploadAsset } from "./assets.js";
 import InterventionManagement from "./Interventions.jsx";
 import TradeAudit from "./TradeAudit.jsx";
 import EmailSettings from "./EmailSettings.jsx";
-import { confirmNavigation, useUnsavedChanges } from "./unsaved-changes.js";
+import CatalogManagement from "./CatalogManagement.jsx";
+import { useUnsavedChanges } from "./unsaved-changes.js";
 
-export default function OfficialAdmin({ client, user, navigate }) {
+export default function OfficialAdmin({ client, user, navigate, search = "" }) {
   const permissions = user.permissions || [], all = permissions.includes("platform.admin"),
     tabs = [...(all || permissions.includes("intervention.manage") ? ["平台介入"] : []), ...(all || permissions.includes("announcements.manage") ? ["公告管理"] : []), ...(all || permissions.includes("audit.read") ? ["管理审计"] : []), ...(all ? ["邮件提醒"] : []), "商店管理", ...(all || permissions.includes("core.read") ? ["Core 管理"] : [])],
-    [tab, setTab] = useState(() => { const requested = {interventions:"平台介入",announcements:"公告管理",audit:"管理审计",email:"邮件提醒"}[new URLSearchParams(location.search).get("section")]; return tabs.includes(requested) ? requested : tabs[0]; }), [pending, setPending] = useState(0);
-  const changeTab = (next) => { if (next !== tab && confirmNavigation()) setTab(next); };
+    requested = {interventions:"平台介入",announcements:"公告管理",audit:"管理审计",email:"邮件提醒",core:"Core 管理"}[new URLSearchParams(search).get("section")],
+    tab = tabs.includes(requested) ? requested : tabs[0], [pending, setPending] = useState(0);
   useEffect(() => { if (!all && !permissions.includes("intervention.manage")) return; let alive = true; const load = async () => { try { const r = await client.request("/api/v1/admin/interventions/summary"); if (alive) setPending(r.data.pending); } catch {} }; load(); const timer = setInterval(load, 15000); return () => { alive = false; clearInterval(timer); }; }, [client, all, permissions.join(",")]);
-  return <>{pending > 0 && <div className="intervention-alert" role="status"><span><strong>{pending} 起平台介入</strong>需要继续跟进</span><Button secondary onClick={() => changeTab("平台介入")}>查看案件</Button></div>}<Tabs values={tabs} value={tab} onChange={changeTab} />
-    {tab === "Core 管理" ? <CoreAdmin client={client} /> : tab === "公告管理" ? <AnnouncementManagement client={client} /> : tab === "平台介入" ? <InterventionManagement client={client} user={user} /> : tab === "管理审计" ? <TradeAudit client={client} /> : tab === "邮件提醒" ? <EmailSettings client={client} /> : <><PageHead eyebrow="MERCHANT WORKSPACE" title="商店管理" subtitle="管理你的商店、商品与玩家发布。" /><Button onClick={() => navigate("/merchant")}>进入商店管理</Button></>}
+  return <>{pending > 0 && tab !== "平台介入" && <div className="intervention-alert" role="status"><span><strong>{pending} 起平台介入</strong>需要继续跟进</span><Button secondary onClick={() => navigate("/admin?section=interventions")}>查看案件</Button></div>}
+    {tab === "Core 管理" ? <CoreAdmin client={client} /> : tab === "公告管理" ? <AnnouncementManagement client={client} /> : tab === "平台介入" ? <InterventionManagement client={client} user={user} /> : tab === "管理审计" ? <TradeAudit client={client} /> : tab === "邮件提醒" ? <EmailSettings client={client} /> : <CatalogManagement client={client} user={user} />}
   </>;
 }
 

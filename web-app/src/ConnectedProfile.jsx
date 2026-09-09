@@ -4,7 +4,7 @@ import { Avatar, Badge, Button, Empty, Field, Modal, PageHead, Toggle } from "./
 import { id } from "./format.js";
 import { uploadAsset } from "./assets.js";
 
-export default function ConnectedProfile({ client, user, onLogout, navigate }) {
+export default function ConnectedProfile({ client, user, onLogout, navigate, onProfileUpdated }) {
   const [profile, setProfile] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false), [bio, setBio] = useState(""), [progress, setProgress] = useState(null);
   const pendingBio = useRef(null), fileInput = useRef(null);
@@ -21,7 +21,7 @@ export default function ConnectedProfile({ client, user, onLogout, navigate }) {
     try {
       const asset = await uploadAsset(client, file, "AVATAR", "PROFILE", user.userId, (value, label) => setProgress({ value, label }));
       const r = await client.patchProfile({ clientRequestId: id(), expectedVersion: profile.version, avatarAssetId: asset.assetId });
-      setProfile(r.data);
+      setProfile(r.data); onProfileUpdated?.(r.data);
     } catch (e) { setError(e.message); } finally { setBusy(false); setProgress(null); if (fileInput.current) fileInput.current.value = ""; }
   };
   return <section className="connected-profile">
