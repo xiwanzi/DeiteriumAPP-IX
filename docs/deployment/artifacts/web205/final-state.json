@@ -1,0 +1,12 @@
+{
+  "service": "active",
+  "backendDirectory": "/opt/deuterium/releases/web-admin-2.0.5-edfae91758b9",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.5-edfae91758b9/dist",
+  "health": {
+    "status": "ready"
+  },
+  "runningExecutable": "/opt/deuterium/releases/web-admin-2.0.5-edfae91758b9/deuterium",
+  "configEnvironmentAndAppManifestUnchanged": true,
+  "businessCounts": "COMMISSION\t3\nORDER\t9",
+  "temporarySessionRevoked": true
+}

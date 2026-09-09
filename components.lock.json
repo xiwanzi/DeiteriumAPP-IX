@@ -14,17 +14,19 @@
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.4",
-      "sourceCommit": "558156655b56bba70aefdab902598f923b93ba48",
-      "publishedSourceCommit": "558156655b56bba70aefdab902598f923b93ba48",
-      "publishedArchiveSha256": "887c2c4846bc52ec041f9cf5b6ed4681083c72d1da792809422a1e678862eed8"
+      "version": "2.0.5",
+      "sourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
+      "publishedSourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
+      "publishedArchiveSha256": "8054fe7ae8209b8ca0991bbc60cd18276576436a8e2cfa2a8dab0768d811d5a7",
+      "buildSourceCommit": "edfae91758b9144811b494bfb7a733d7ef069c7b"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
-      "publishedSourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
-      "publishedSha256": "5d4e48cfec9f1074ad417606bc843342469f3196316256b7569711558ee2ec84"
+      "sourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
+      "publishedSourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
+      "publishedSha256": "32041fecabf67c9f31d38fccb5d682d375eac967041a03d5418604f90f54ce5b",
+      "buildSourceCommit": "edfae91758b9144811b494bfb7a733d7ef069c7b"
     },
     {
       "name": "core",

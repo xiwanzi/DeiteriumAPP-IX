@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "edfae91758b9144811b494bfb7a733d7ef069c7b",
+  "mergedCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
+  "sameSourceTree": true,
+  "backendDirectory": "/opt/deuterium/releases/web-admin-2.0.5-edfae91758b9",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.5-edfae91758b9/dist",
+  "verifiedArtifacts": [
+    {
+      "name": "web-2.0.5.zip",
+      "bytes": 33668702,
+      "sha256": "8054fe7ae8209b8ca0991bbc60cd18276576436a8e2cfa2a8dab0768d811d5a7"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "bytes": 18116226,
+      "sha256": "32041fecabf67c9f31d38fccb5d682d375eac967041a03d5418604f90f54ce5b"
+    }
+  ]
+}
