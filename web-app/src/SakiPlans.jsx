@@ -4,6 +4,8 @@ import { Button, Modal, media } from "./components.jsx";
 import { credit, id } from "./format.js";
 import { savedBusiness, saveBusiness, clearBusiness, findBusiness, replayUnreceivedBusiness } from "./business.js";
 
+const priceCents = (value) => { const [whole, fraction = ""] = String(value).split("."); return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0")); };
+
 export default function SakiPlans({ client, user, plans, account, onUpdated }) {
   const [selectedId, setSelectedId] = useState(null), [confirmation, setConfirmation] = useState(null), [busy, setBusy] = useState(false), [result, setResult] = useState(""), [error, setError] = useState("");
   const [pending, setPending] = useState(() => Object.values(savedBusiness(user.userId)).find((e) => e.kind === "AI_PURCHASE") || null);
@@ -63,7 +65,8 @@ export default function SakiPlans({ client, user, plans, account, onUpdated }) {
       </div> : <>
         <div className="saki-purchase-card">
           <div className="saki-purchase-product"><img src={media("xiaoxiang_avatar.png")} alt=""/><div><strong>{confirmation.plan.name}</strong><span>{confirmation.plan.quotaPerWindow} 次 / {confirmation.plan.windowHours} 小时</span><small>{confirmation.kind==="UPGRADE" ? "套餐升级" : confirmation.kind==="RENEWAL" ? "套餐续购" : "Saki AI 服务"}</small></div></div>
-          <div><small>{confirmation.kind==="UPGRADE" ? "本次补差价" : "本次付款"}</small><p className="saki-checkout-amount">{credit(confirmation.totalAmount)} <small>信用点</small></p>
+          <div><small>{confirmation.kind==="UPGRADE" ? "升级套餐" : "本次付款"}</small><p className="saki-checkout-amount">{credit(confirmation.totalAmount)} <small>信用点</small></p>
+            {confirmation.kind==="UPGRADE" && priceCents(confirmation.plan.price)>priceCents(confirmation.totalAmount) && <del className="saki-original-price">原价 {credit(confirmation.plan.price)} 信用点</del>}
             {confirmation.kind!=="UPGRADE" && <p>{confirmation.plan.durationDays} 天使用权益</p>}</div>
           <div>{confirmation.kind==="UPGRADE" ? <><p>有效期至 {new Date(confirmation.entitlementExpiresAt).toLocaleString("zh-CN",{timeZone:"Asia/Shanghai"})}</p><p>升级立即生效，到期时间不变。</p></> : <p>{confirmation.kind==="RENEWAL" ? "付款后延长当前套餐有效期。" : "付款后立即生效，无需领取。"}</p>}<p>不会自动续费，不支持降级与退款。</p></div>
           <div><small>购买账号：{user.gameId || user.displayName}</small></div>

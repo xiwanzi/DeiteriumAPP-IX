@@ -2330,6 +2330,7 @@ tr:last-child td {
 .saki-purchase-product img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; }
 .saki-purchase-product > div { display: grid; gap: 4px; }
 .saki-purchase-card .saki-checkout-amount { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.saki-original-price { display: block; font-size: 14px; color: color-mix(in srgb, var(--muted) 60%, transparent); text-decoration-thickness: 1px; }
 .saki-checkout .button { min-height: 52px; }
 .saki-checkout-caption { text-align: center; font-size: 12px; color: var(--muted); margin: 12px 0 0; }
 .saki-checkout-result { text-align: center; display: grid; justify-items: center; gap: 18px; padding: 28px 0 0; animation: saki-appear 240ms ease both; }

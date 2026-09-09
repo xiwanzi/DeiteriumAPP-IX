@@ -80,7 +80,7 @@ object SakiLayoutCheck {
             click("小祥 Plus");click("购买 小祥 Plus");waitFor("quote"){node("购买账号：FixtureSelf")!=null&&node("本次付款")!=null};screenshot("checkout-light");click("取消");check(purchases.get()==0)
             click("购买 小祥 Plus");waitFor("quote"){node("购买账号：FixtureSelf")!=null&&node("本次付款")!=null};val checkoutWindow=test.uiAutomation.rootInActiveWindow.windowId;click("确认购买");waitFor("scan"){node("请看向屏幕")!=null};check(test.uiAutomation.rootInActiveWindow.windowId==checkoutWindow){"Checkout recreated the overlay"};screenshot("payment-scan");result.putString("checkout_payment_same_window","PASS");waitFor("paid"){node("套餐已开通")!=null};check(purchases.get()==1);screenshot("payment-success");click("完成")
             waitFor("stay on plans"){node("套餐与额度")!=null&&node("当前套餐 · 小祥 Plus")!=null};check(page=="plans")
-            scroll(true);click("小祥 Ultra");click("升级至 小祥 Ultra");waitFor("upgrade quote"){node("升级立即生效，到期时间不变。")!=null&&node("16.00")!=null};check(node("剩余天数向上取整")==null&&node("差价 30.00 × 8 天 ÷ 15")==null);screenshot("upgrade-light")
+            scroll(true);click("小祥 Ultra");click("升级至 小祥 Ultra");waitFor("upgrade quote"){node("升级套餐")!=null&&node("原价 42.50 信用点")!=null&&node("16.00")!=null};check(node("剩余天数向上取整")==null&&node("差价 30.00 × 8 天 ÷ 15")==null);screenshot("upgrade-light")
             test.runOnMainSync{mode=2};Thread.sleep(400);screenshot("upgrade-dark")
             test.runOnMainSync{font=1.3f};Thread.sleep(400);screenshot("upgrade-large-text");test.runOnMainSync{font=1f;animated=false};Thread.sleep(650)
             click("确认购买");waitFor("upgraded"){node("套餐已升级")!=null};check(purchases.get()==2);click("完成")

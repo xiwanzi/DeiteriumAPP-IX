@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.delay
 import org.json.JSONObject
@@ -84,12 +85,13 @@ internal fun SakiPurchaseCheckout(state:LabState,selected:JSONObject,onClose:()-
                                     }
                                     HorizontalDivider(Modifier.padding(start=17.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.4f))
                                     Column(Modifier.padding(17.dp),verticalArrangement=Arrangement.spacedBy(7.dp)){
-                                        Text(if(upgrade)"本次补差价" else "本次付款",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(if(upgrade)"升级套餐" else "本次付款",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                         if(quote==null)Text(if(loading)"正在读取价格…" else "价格暂不可用",fontSize=22.sp,fontWeight=FontWeight.SemiBold)
                                         else Row(verticalAlignment=Alignment.Bottom,horizontalArrangement=Arrangement.spacedBy(7.dp)){
                                             Box(Modifier.weight(1f,false)){AdaptiveMoney(credit(apiCents(quote.getString("totalAmount"))),size=29.sp)}
                                             Text("信用点",Modifier.padding(bottom=4.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
+                                        if(upgrade&&quote!=null&&apiCents(plan.getString("price"))>apiCents(quote.getString("totalAmount")))Text("原价 ${credit(apiCents(plan.getString("price")))} 信用点",fontSize=14.sp,textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.6f))
                                         if(!upgrade)Text("${plan.getInt("durationDays")} 天使用权益",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     HorizontalDivider(Modifier.padding(start=17.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.4f))
