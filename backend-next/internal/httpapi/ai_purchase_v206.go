@@ -5,6 +5,26 @@ import (
 	"net/http"
 )
 
+func (g *aiGatewayV2) quoteV207(w http.ResponseWriter, r *http.Request) {
+	u, err := g.server.authenticate(r)
+	if err != nil {
+		failError(w, r, err)
+		return
+	}
+	var input store.AIPurchaseInputV206
+	if err = body(w, r, &input); err != nil {
+		socialFailureV2(w, r, err)
+		return
+	}
+	available := g.server.commerceAvailableHTTPV2(CommerceReserveV2) && g.server.commerceAvailableHTTPV2(CommerceSettleV2) && g.server.commerceAvailableHTTPV2(CommerceRefundV2)
+	quote, err := g.server.Store.AIQuoteV207(r.Context(), u.User.ID, input, g.config.Enabled && g.config.PaidEnabled && g.configError == nil, available)
+	if err != nil {
+		catalogFailV2(w, r, err)
+		return
+	}
+	v2Success(w, r, quote.PublicV207())
+}
+
 func (g *aiGatewayV2) purchaseV206(w http.ResponseWriter, r *http.Request) {
 	// Replays remain recoverable through operations even after sales are disabled.
 	u, err := g.server.authenticate(r)

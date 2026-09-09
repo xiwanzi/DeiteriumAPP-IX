@@ -34,6 +34,7 @@ func aiEffectivePlanV206(ctx context.Context, tx *sql.Tx, user string, policy AI
 }
 
 type AIPurchaseInputV206 struct {
+	QuoteID             string `json:"quoteId,omitempty"`
 	ClientRequestID     string `json:"clientRequestId"`
 	PlanID              string `json:"planId"`
 	ExpectedPlanVersion int64  `json:"expectedPlanVersion"`
@@ -45,59 +46,27 @@ func (s *Store) PrepareAIPurchaseV206(ctx context.Context, actor string, input A
 	}
 	return s.commerceMutateV2(ctx, actor, input.ClientRequestID, "ai.purchase", input, func(tx *sql.Tx) (CommerceMutationV2, error) {
 		result := CommerceMutationV2{}
-		// Lock configuration before the payer; disabling sales and checkout are atomic.
-		var settingsRaw string
-		err := tx.QueryRowContext(ctx, "SELECT settings_json FROM ai_settings_v206 WHERE id=1 LOCK IN SHARE MODE").Scan(&settingsRaw)
-		if errors.Is(err, sql.ErrNoRows) || !enabled {
-			return result, catalogError(503, "AI_PURCHASE_UNAVAILABLE", "套餐购买暂未开放。")
-		}
-		if err != nil {
+		if err := aiSalesLockV207(ctx, tx, actor, enabled, available); err != nil {
 			return result, err
-		}
-		var settings AISettingsV206
-		if err = json.Unmarshal([]byte(settingsRaw), &settings); err != nil {
-			return result, err
-		}
-		if !settings.Enabled || !settings.PaidEnabled {
-			return result, catalogError(503, "AI_PURCHASE_UNAVAILABLE", "套餐购买暂未开放。")
-		}
-		if err = commerceAvailableV2(available); err != nil {
-			return result, err
-		}
-		var identityStatus string
-		if err = tx.QueryRowContext(ctx, "SELECT status FROM identities WHERE id=? FOR UPDATE", actor).Scan(&identityStatus); err != nil {
-			return result, err
-		}
-		if identityStatus != "active" {
-			return result, ErrUnauthorized
 		}
 		owner, err := commerceUserTxV2(ctx, tx, actor, true)
 		if err != nil {
 			return result, err
 		}
-		var p AIPlanV2
-		err = tx.QueryRowContext(ctx, "SELECT plan_id,code,name,description,CAST(price AS CHAR),quota_limit,window_hours,duration_days,model_tier,active,version FROM ai_plans_v2 WHERE plan_id=? LOCK IN SHARE MODE", input.PlanID).Scan(&p.PlanID, &p.Code, &p.Name, &p.Description, &p.Price, &p.QuotaPerWindow, &p.WindowHours, &p.DurationDays, &p.ModelTier, &p.Active, &p.Version)
-		if err != nil {
-			return result, socialMissing(err)
-		}
-		if !p.Active || p.Code == "free" {
-			return result, catalogError(409, "AI_PLAN_UNAVAILABLE", "这个套餐暂时无法购买，请选择其他套餐。")
-		}
-		if p.Version != input.ExpectedPlanVersion {
-			return result, catalogError(409, "AI_PLAN_CHANGED", "套餐信息已更新，请查看最新价格和权益后重新确认。")
-		}
-		if err = commerceWithinExecutionLimitV2(p.Price); err != nil {
-			return result, err
-		}
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		var activePlan string
-		err = tx.QueryRowContext(ctx, "SELECT plan_id FROM ai_entitlements_v206 WHERE user_id=? AND expires_at>? LOCK IN SHARE MODE", actor, now).Scan(&activePlan)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		terms, err := aiPurchaseTermsV207(ctx, tx, actor, input, now)
+		if err != nil {
 			return result, err
 		}
-		if activePlan != "" && activePlan != p.PlanID {
-			return result, catalogError(409, "AI_PLAN_ACTIVE", "当前套餐仍在有效期内，到期后可更换套餐。")
+		if input.QuoteID != "" {
+			terms, err = aiConfirmQuoteV207(ctx, tx, actor, input.QuoteID, terms, now)
+			if err != nil {
+				return result, err
+			}
+		} else if terms.Kind == "UPGRADE" {
+			return result, catalogError(409, "AI_QUOTE_REQUIRED", "请更新客户端，查看升级费用后再确认购买。")
 		}
+		p := terms.Plan
 		var pending string
 		if err = tx.QueryRowContext(ctx, `SELECT resource_id FROM commerce_resources_v2 WHERE owner_id=? AND JSON_UNQUOTE(JSON_EXTRACT(body,'$.orderType'))='AI_SUBSCRIPTION' AND funds_state NOT IN ('SETTLED','UNPAID','REFUNDED') LIMIT 1 FOR UPDATE`, actor).Scan(&pending); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return result, err
@@ -107,12 +76,13 @@ func (s *Store) PrepareAIPurchaseV206(ctx context.Context, actor string, input A
 		}
 		p.Currency = "CREDIT"
 		p.Purchasable = true
-		d := commerceNewResourceV2("ORDER", "OFFICIAL_STORE", owner, p.Price, now)
+		d := commerceNewResourceV2("ORDER", "OFFICIAL_STORE", owner, terms.TotalAmount, now)
+		d.QuoteID = input.QuoteID
 		seller := CatalogObjectV2{"kind": "OFFICIAL_STORE", "playerRef": nil, "storeId": "saki-ai", "displayName": "Saki AI", "contactQq": nil}
-		items := []any{CatalogObjectV2{"productId": p.PlanID, "productVersion": p.Version, "title": p.Name, "subtitle": p.Description, "description": p.Description, "unitPrice": p.Price, "quantity": 1, "photoAssetIds": []string{}, "categoryName": "AI 套餐", "includedItems": []any{}, "contentBlocks": []any{}}}
+		items := []any{CatalogObjectV2{"productId": p.PlanID, "productVersion": p.Version, "title": p.Name, "subtitle": p.Description, "description": p.Description, "unitPrice": terms.TotalAmount, "quantity": 1, "photoAssetIds": []string{}, "categoryName": "AI 套餐", "includedItems": []any{}, "contentBlocks": []any{}}}
 		delivery := CatalogObjectV2{"method": "DIGITAL", "note": "付款成功后自动开通，无需领取"}
-		d.Body = CatalogObjectV2{"orderType": "AI_SUBSCRIPTION", "orderNo": "S" + now.Format("20060102") + d.ID[6:], "construction": false, "buyer": commercePartyV2(owner), "seller": seller, "items": items, "delivery": delivery, "confirmationHours": 0, "aiPlan": p}
-		snapshot := CatalogObjectV2{"snapshotId": d.SnapshotID, "orderId": d.ID, "buyer": d.Body["buyer"], "seller": seller, "items": items, "totalAmount": p.Price, "delivery": delivery, "confirmationHours": 0, "orderType": "AI_SUBSCRIPTION", "aiPlan": p, "capturedAt": now}
+		d.Body = CatalogObjectV2{"orderType": "AI_SUBSCRIPTION", "orderNo": "S" + now.Format("20060102") + d.ID[6:], "construction": false, "buyer": commercePartyV2(owner), "seller": seller, "items": items, "delivery": delivery, "confirmationHours": 0, "aiPlan": p, "aiPricing": terms.PublicV207()}
+		snapshot := CatalogObjectV2{"snapshotId": d.SnapshotID, "orderId": d.ID, "buyer": d.Body["buyer"], "seller": seller, "items": items, "totalAmount": terms.TotalAmount, "delivery": delivery, "confirmationHours": 0, "orderType": "AI_SUBSCRIPTION", "aiPlan": p, "aiPricing": terms.PublicV207(), "capturedAt": now}
 		d.SnapshotSHA256 = commerceSnapshotHashV2(snapshot)
 		snapshot["sha256"] = d.SnapshotSHA256
 		if err = commerceSaveV2(ctx, tx, &d, true); err != nil {
@@ -154,6 +124,13 @@ func activateAIOrderV206(ctx context.Context, tx *sql.Tx, d *CommerceRecordV2, n
 		start = oldExpiry
 	}
 	expires := start.AddDate(0, 0, p.DurationDays)
+	if pricing, ok := catalogObject(d.Body["aiPricing"]); ok && catalogString(pricing, "kind") == "UPGRADE" {
+		fixed, parseErr := time.Parse(time.RFC3339Nano, catalogString(pricing, "entitlementExpiresAt"))
+		if parseErr != nil {
+			return parseErr
+		}
+		expires = fixed
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO ai_entitlements_v206 VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE plan_id=VALUES(plan_id),plan_snapshot=VALUES(plan_snapshot),expires_at=VALUES(expires_at),updated_at=VALUES(updated_at)`, d.OwnerID, p.PlanID, catalogJSON(p), expires, now)
 	if err != nil {
 		return err

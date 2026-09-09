@@ -48,7 +48,7 @@ internal suspend fun recoverPendingOperation(
                 request("POST", path, original).getJSONObject("operation")
             } catch (rejection: ApiFailure) {
                 // An expired original quote cannot be replaced or paid silently. Other errors retain the original intent.
-                if ((rejection.status == 409 && rejection.code == "QUOTE_EXPIRED") || (kind == "AI_PURCHASE" && rejection.code in setOf("AI_PLAN_CHANGED","AI_PLAN_UNAVAILABLE","AI_PURCHASE_UNAVAILABLE","AI_PLAN_ACTIVE","CAPABILITY_UNAVAILABLE"))) {
+                if ((rejection.status == 409 && rejection.code == "QUOTE_EXPIRED") || (kind == "AI_PURCHASE" && rejection.code in setOf("AI_PLAN_CHANGED","AI_PLAN_UNAVAILABLE","AI_PURCHASE_UNAVAILABLE","AI_PLAN_ACTIVE","AI_DOWNGRADE_NOT_ALLOWED","AI_UPGRADE_UNAVAILABLE","AI_QUOTE_REQUIRED","AI_QUOTE_CHANGED","QUOTE_EXPIRED","QUOTE_ALREADY_USED","AMOUNT_LIMIT","CAPABILITY_UNAVAILABLE"))) {
                     scope.verifyCurrent(currentScope())
                     persist(null)
                 }

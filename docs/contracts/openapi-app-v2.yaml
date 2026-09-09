@@ -868,6 +868,28 @@ paths:
         default:
           $ref: '#/components/responses/Error'
       x-implementation-status: existing_v1
+  /ai/purchase-quotes:
+    post:
+      tags: [AI]
+      summary: 获取普通购买、续购或补差价升级的确认报价
+      description: 升级费用按购买时原套餐标价与目标现价之差 × 向上取整的剩余天数 / 15，四舍五入到分。报价绑定账号及当前权益，最长 90 秒内有效，且不跨越计费天数变化或原套餐到期时间。升级不延长有效期、不允许降级或退款。
+      operationId: createAiPurchaseQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiPurchaseQuoteRequest'
+      responses:
+        '200':
+          description: 已锁定本次确认金额
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiPurchaseQuoteResponse'
+        default:
+          $ref: '#/components/responses/Error'
+      x-implementation-status: implemented_candidate
   /ai/purchases:
     post:
       tags:
@@ -13715,6 +13737,62 @@ components:
         properties:
           data:
             $ref: '#/components/schemas/AiConversationResetData'
+    AiPurchaseQuoteRequest:
+      type: object
+      additionalProperties: false
+      required: [clientRequestId, planId, expectedPlanVersion]
+      properties:
+        clientRequestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        planId:
+          type: string
+        expectedPlanVersion:
+          type: integer
+          format: int64
+          minimum: 1
+    AiPurchaseQuote:
+      type: object
+      additionalProperties: false
+      required: [quoteId, plan, kind, totalAmount, currency, remainingDays, entitlementExpiresAt, expiresAt]
+      properties:
+        quoteId:
+          type: string
+        plan:
+          $ref: '#/components/schemas/AiPlan'
+        kind:
+          type: string
+          enum: [PURCHASE, RENEWAL, UPGRADE]
+        totalAmount:
+          $ref: '#/components/schemas/CreditAmount'
+        currency:
+          type: string
+          enum: [CREDIT]
+        previousPrice:
+          $ref: '#/components/schemas/CreditAmount'
+        priceDifference:
+          $ref: '#/components/schemas/CreditAmount'
+        remainingDays:
+          type: integer
+          format: int64
+          minimum: 0
+        entitlementExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 升级严格保留此到期时间；普通新购为空。
+        expiresAt:
+          type: string
+          format: date-time
+    AiPurchaseQuoteResponse:
+      allOf:
+      - $ref: '#/components/schemas/ApiResponseBase'
+      - type: object
+        required: [data]
+        properties:
+          data:
+            $ref: '#/components/schemas/AiPurchaseQuote'
     AiPurchaseRequest:
       type: object
       required:
@@ -13723,6 +13801,9 @@ components:
       - expectedPlanVersion
       additionalProperties: false
       properties:
+        quoteId:
+          type: string
+          description: 新客户端必须传入确认报价；仅旧客户端普通购买和同套餐续购可省略。
         expectedPlanVersion:
           type: integer
           format: int64
@@ -15873,6 +15954,12 @@ components:
           type: string
           nullable: true
           enum: [AI_SUBSCRIPTION, null]
+        aiPricing:
+          anyOf:
+          - $ref: '#/components/schemas/AiPurchaseQuote'
+          - type: object
+            nullable: true
+            enum: [null]
         aiPlan:
           anyOf:
           - $ref: '#/components/schemas/AiPlan'
@@ -18740,6 +18827,12 @@ components:
           type: string
           nullable: true
           enum: [AI_SUBSCRIPTION, null]
+        aiPricing:
+          anyOf:
+          - $ref: '#/components/schemas/AiPurchaseQuote'
+          - type: object
+            nullable: true
+            enum: [null]
         aiPlan:
           anyOf:
           - $ref: '#/components/schemas/AiPlan'
