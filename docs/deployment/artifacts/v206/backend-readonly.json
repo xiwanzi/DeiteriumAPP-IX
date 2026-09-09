@@ -1,0 +1,20 @@
+{
+  "backendAdminReadable": true,
+  "ai": {
+    "enabled": true,
+    "paidPlansEnabled": false,
+    "providerConfigured": true,
+    "planCount": 3,
+    "systemPromptConfigured": true
+  },
+  "accountCount": 70,
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": false
+  },
+  "ledgerThenBalance": "PASS",
+  "orderRead": "PASS",
+  "notificationPolicyRead": "PASS"
+}

@@ -1,0 +1,18 @@
+{
+  "probes": [
+    {
+      "configuredParameters": false,
+      "httpStatus": 200,
+      "completed": true,
+      "outputCharacters": 5
+    },
+    {
+      "configuredParameters": true,
+      "httpStatus": 200,
+      "completed": true,
+      "outputCharacters": 5
+    }
+  ],
+  "configUnchanged": true,
+  "userChatHistoryChanged": false
+}

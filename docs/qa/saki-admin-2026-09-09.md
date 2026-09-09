@@ -1,5 +1,7 @@
 # Saki、账单与后台候选验收
 
+正式 2.0.6 已随后发布，见 [部署记录](../deployment/deuterium-2.0.6-live.md)。以下为候选阶段的历史验收快照。
+
 2026-09-09。本轮实现提交 `6e0b727331a17cad72c622e999b87d08b04e1fca`，分支 `feat/saki-admin-experience`，位于 `C:/DeiteriumAPP-IX/.worktrees/saki-admin-experience`。**已完成本机候选，未推送、合并或部署。线上仍为已有 2.0.5。**
 
 ## 本轮结果
