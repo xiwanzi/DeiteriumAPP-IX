@@ -1,0 +1,12 @@
+{
+  "productionReadOnly": true,
+  "productsInTable": 1,
+  "cropDimensionsVisible": true,
+  "gameMailEditorVisible": true,
+  "purchaseDetailVisible": false,
+  "purchaseCheckSkipped": "No published products; verified in isolated tests",
+  "loadedChatAvatars": 32,
+  "blockedWrites": 0,
+  "runtimeErrors": [],
+  "apiFailures": []
+}

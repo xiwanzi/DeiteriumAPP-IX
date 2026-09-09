@@ -1,0 +1,47 @@
+{
+  "nodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ],
+  "managedStoreCount": 1,
+  "managedProductCount": 1,
+  "productsWithPreviewImages": 1,
+  "storeProductsReadable": true,
+  "chat": {
+    "messagesReadable": 32,
+    "profilesChecked": 3,
+    "imageUrlsVerified": 3
+  },
+  "transactions": {
+    "readable": true,
+    "loaded": 10
+  },
+  "orders": {
+    "readable": true,
+    "loaded": 9
+  },
+  "announcements": {
+    "readable": true,
+    "loaded": 2
+  },
+  "interventionsReadable": true,
+  "smtp": {
+    "readable": true,
+    "secretStorageReady": true
+  },
+  "ledgerThenBalanceReadable": true
+}

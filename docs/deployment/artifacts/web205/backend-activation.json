@@ -1,0 +1,9 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/web-admin-2.0.5-edfae91758b9",
+  "health": {
+    "status": "ready"
+  },
+  "backendSha256": "32041fecabf67c9f31d38fccb5d682d375eac967041a03d5418604f90f54ce5b",
+  "appManifestUnchanged": true,
+  "serviceRestarted": true
+}

@@ -1,0 +1,7 @@
+{
+  "backupDirectory": "/var/backups/deuterium/web-2.0.5-20260909-edfae91758b9",
+  "beforeBusinessCounts": "COMMISSION\t3\nORDER\t9",
+  "sqlSha256": "996e051d1c51d82fbc54c43eea0bc41eca3b57c418372692e6431686786f0f71",
+  "sqlBytes": 211250,
+  "databaseMigrationRequired": false
+}

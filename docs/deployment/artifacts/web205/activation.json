@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "edfae91758b9144811b494bfb7a733d7ef069c7b",
+  "backendDirectory": "/opt/deuterium/releases/web-admin-2.0.5-edfae91758b9",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.5-edfae91758b9/dist",
+  "publishedAt": "2026-09-09T06:59:54Z",
+  "webVersion": "2.0.5",
+  "businessCounts": "COMMISSION\t3\nORDER\t9",
+  "appManifestSha256": "4fa1b329ef6b0b9080bd584ea0be168f89c1d8a2ebbd7803c22fb2de3d29f750"
+}

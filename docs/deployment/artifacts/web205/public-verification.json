@@ -1,0 +1,19 @@
+{
+  "origin": "https://47.103.99.34",
+  "version": "2.0.5",
+  "htmlMatchesBuild": true,
+  "merchantRouteMatchesBuild": true,
+  "assets": [
+    {
+      "path": "/assets/index-CXLOY1RY.js",
+      "sizeBytes": 426295,
+      "sha256": "a18cdd23a08fa0cab315ca950e41fb5cecec3659f9410e26a80d26db93c93aec"
+    },
+    {
+      "path": "/assets/index-D6U-GtLw.css",
+      "sizeBytes": 114991,
+      "sha256": "9b22e3cd6100dec0bb4e7a972d94c87f3b5afac5a4cdeed78aa5a9da92dd9ad1"
+    }
+  ],
+  "cacheControl": "no-cache"
+}

@@ -1,6 +1,6 @@
 # Deuterium IX 项目上下文
 
-2026-09-09，当前 App 2.0.5（20500），见 [2.0.5](docs/deployment/deuterium-2.0.5-live.md)；Web 2.0.4、Go、Core 1.0.1 与 XConomy .2 已部署，见 [2.0.4](docs/deployment/deuterium-2.0.4-live.md)。原生 Android、同源网站与统一后端连接真实账号、信用点、聊天、商城、市场及委托；游戏内收支与 App 交易使用同一份已提交账本。
+2026-09-09，当前 App 2.0.5（20500），见 [2.0.5](docs/deployment/deuterium-2.0.5-live.md)；Web 2.0.5 与配套 Go（`0386f1bd5664`）已部署，见 [网页 2.0.5](docs/deployment/web-2.0.5-live.md)。Core 1.0.1 与 XConomy .2 沿用 [2.0.4](docs/deployment/deuterium-2.0.4-live.md) 配套版本。原生 Android、同源网站与统一后端连接真实账号、信用点、聊天、商城、市场及委托；游戏内收支与 App 交易使用同一份已提交账本。
 
 ## 架构
 

@@ -1,6 +1,6 @@
 # PC 官方管理与商品体验验收
 
-2026-09-09。基线 `251ac68`，分支 `feat/desktop-admin-experience`；**Web 2.0.5 候选与配套 Go 已完成本机实现、构建与验收，尚未推送、合并或部署。** 线上网站仍为 2.0.4，App 仍为已发布的 2.0.5。工作区 `C:/DeiteriumAPP-IX/.worktrees/desktop-admin`。
+2026-09-09。基线 `251ac68`，分支 `feat/desktop-admin-experience`；**Web 2.0.5 与配套 Go 已完成下述开发验收，并在 14:59 经 PR #7 合并后部署。** 上线检查另见 [网页部署记录](../deployment/web-2.0.5-live.md)，不与下述隔离测试混计。App 仍为已发布的 2.0.5。工作区 `C:/DeiteriumAPP-IX/.worktrees/desktop-admin`。
 
 ## 本轮实现
 
