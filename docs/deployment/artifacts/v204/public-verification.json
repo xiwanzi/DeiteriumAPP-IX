@@ -1,0 +1,34 @@
+{
+  "versionName": "2.0.4",
+  "versionCode": 20401,
+  "publishedAt": "2026-09-09T04:26:12Z",
+  "checks": {
+    "20004": "update to 20401",
+    "20100": "update to 20401",
+    "20101": "update to 20401",
+    "20200": "update to 20401",
+    "20300": "update to 20401",
+    "20400": "update to 20401",
+    "20401": "no downgrade/self update",
+    "20402": "no downgrade/self update"
+  },
+  "publicApkBytes": 23319339,
+  "sha256": "6af287aff417242cd2ac9fb3d7c7b9f66d876b5f48d60a7d2560e2ca433ee96f",
+  "webVersion": "2.0.4",
+  "webBundle": "index-B9q47T73.js",
+  "accountUpdateNotice": {
+    "recipient": "xiwanzi",
+    "eventKey": "app.release:20401",
+    "count": 1
+  },
+  "publicWebFiles": {
+    "assets/index-B9q47T73.js": {
+      "bytes": 399408,
+      "sha256": "bfba65a858b24fa699bcbae68a91c9ef4ffd777e122d7e3bd9449a7e0903d2fd"
+    },
+    "assets/index-DBNfQUYt.css": {
+      "bytes": 92272,
+      "sha256": "98db9a4489bab5d2760016455e15c0cb24f953eb39c484c3061bda928de8d4d8"
+    }
+  }
+}

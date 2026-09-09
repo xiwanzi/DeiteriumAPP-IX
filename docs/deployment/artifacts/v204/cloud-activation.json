@@ -1,0 +1,9 @@
+{
+  "releaseDirectory": "/opt/deuterium/releases/app-2.0.4-812f1d1a5056",
+  "backendSha256": "5d4e48cfec9f1074ad417606bc843342469f3196316256b7569711558ee2ec84",
+  "health": {
+    "status": "ready"
+  },
+  "smtpSecretStorageReady": true,
+  "afterBusinessCounts": "COMMISSION\t3\nORDER\t8"
+}

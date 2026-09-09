@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "phase": "install",
+  "at": "2026-09-09T04:16:14Z",
+  "newJars": {
+    "Deuterium-Core-1.0.1.jar": "2cfc69580687759bafa1654a177c859426391d82c71ab99df47188153c0cd2bc",
+    "XConomy-Bukkit-2.26.3-deuterium.2.jar": "abcdf0337a227ecef55b4e4c1e4f9c13d477e760cb8cd1c32cd42c6449229fd5"
+  },
+  "configFilesChanged": 0,
+  "allNodesStopped": true
+}

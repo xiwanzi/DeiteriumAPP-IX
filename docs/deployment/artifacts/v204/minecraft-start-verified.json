@@ -1,0 +1,89 @@
+{
+  "ok": true,
+  "at": "2026-09-09T04:24:43Z",
+  "allOriginalResidentNodesRestored": true,
+  "mekRemainsStopped": true,
+  "configurationHashesUnchanged": true,
+  "states": {
+    "login": {
+      "node": "login",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 15924
+    },
+    "amiya": {
+      "node": "amiya",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 50216
+    },
+    "odyssey": {
+      "node": "odyssey",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 27380
+    },
+    "mek": {
+      "node": "mek",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    }
+  },
+  "protocolStatus": [
+    {
+      "node": "login",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "amiya",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "odyssey",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "mek",
+      "online": false,
+      "error": "unreachable"
+    }
+  ],
+  "loadedVersions": {
+    "login": [
+      "[12:17:10] [Server thread/INFO] [XConomy]: 正在加载服务器插件 XConomy v2.26.3-deuterium.2",
+      "[12:17:11] [Server thread/INFO] [DeuteriumCore]: 正在加载服务器插件 DeuteriumCore v1.0.1",
+      "[12:17:14] [Server thread/INFO] [XConomy]: 正在启用 XConomy v2.26.3-deuterium.2",
+      "[12:17:17] [Server thread/INFO] [DeuteriumCore]: 正在启用 DeuteriumCore v1.0.1",
+      "[12:17:18] [Server thread/INFO] [DeuteriumCore]: Core 已启用：/dc help；节点 login，物品库 mysql。",
+      "[12:17:29] [Server thread/INFO]: Done (55.265s)! For help, type \"help\""
+    ],
+    "amiya": [
+      "[12:17:05] [Server thread/INFO] [XConomy]: 正在加载服务器插件 XConomy v2.26.3-deuterium.2",
+      "[12:17:06] [Server thread/INFO] [DeuteriumCore]: 正在加载服务器插件 DeuteriumCore v1.0.1",
+      "[12:17:09] [Server thread/INFO] [XConomy]: 正在启用 XConomy v2.26.3-deuterium.2",
+      "[12:17:13] [Server thread/INFO] [DeuteriumCore]: 正在启用 DeuteriumCore v1.0.1",
+      "[12:17:14] [Server thread/INFO] [DeuteriumCore]: Core 已启用：/dc help；节点 amiya，物品库 mysql。",
+      "[12:17:28] [Server thread/INFO]: Done (61.591s)! For help, type \"help\""
+    ],
+    "odyssey": [
+      "[12:17:00] [Server thread/INFO] [XConomy]: 正在加载服务器插件 XConomy v2.26.3-deuterium.2",
+      "[12:17:01] [Server thread/INFO] [DeuteriumCore]: 正在加载服务器插件 DeuteriumCore v1.0.1",
+      "[12:17:03] [Server thread/INFO] [XConomy]: 正在启用 XConomy v2.26.3-deuterium.2",
+      "[12:17:08] [Server thread/INFO] [DeuteriumCore]: 正在启用 DeuteriumCore v1.0.1",
+      "[12:17:08] [Server thread/INFO] [DeuteriumCore]: Core 已启用：/dc help；节点 odyssey，物品库 mysql。",
+      "[12:17:21] [Server thread/INFO]: Done (50.877s)! For help, type \"help\""
+    ]
+  },
+  "startCommandsRepeated": false,
+  "initialStatusPollError": "transient JSONDecodeError; all original start ACKs retained"
+}

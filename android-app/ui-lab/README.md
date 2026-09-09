@@ -1,4 +1,4 @@
-> 当前发布：App 2.0.3 (20300)，源码 15bb45dc6625。更新、修复和验收见 [部署记录](../../docs/deployment/deuterium-2.0.3-live.md)。下方早期版本说明保留其历史适用范围。
+> 当前发布：App 2.0.4（20401），源码 812f1d1a5056。更新、修复和验收见 [部署记录](../../docs/deployment/deuterium-2.0.4-live.md)。下方早期版本说明保留其历史适用范围。
 
 # Deuterium Android 2.0.0
 

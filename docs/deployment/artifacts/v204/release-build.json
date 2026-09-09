@@ -1,0 +1,32 @@
+{
+  "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
+  "versionName": "2.0.4",
+  "versionCode": 20401,
+  "artifacts": {
+    "Deuterium-2.0.4-20401-test.apk": {
+      "sizeBytes": 23319339,
+      "sha256": "6af287aff417242cd2ac9fb3d7c7b9f66d876b5f48d60a7d2560e2ca433ee96f"
+    },
+    "Deuterium-Core-1.0.1.jar": {
+      "sizeBytes": 15770452,
+      "sha256": "2cfc69580687759bafa1654a177c859426391d82c71ab99df47188153c0cd2bc"
+    },
+    "deuterium-linux-amd64": {
+      "sizeBytes": 12710048,
+      "sha256": "5d4e48cfec9f1074ad417606bc843342469f3196316256b7569711558ee2ec84"
+    },
+    "Deuterium-Web-2.0.4.zip": {
+      "sizeBytes": 33656430,
+      "sha256": "887c2c4846bc52ec041f9cf5b6ed4681083c72d1da792809422a1e678862eed8"
+    },
+    "XConomy-2.26.3-deuterium.2-source.zip": {
+      "sizeBytes": 348657,
+      "sha256": "60d373ebf9540ccba6e77dd2f2287c75399c4b8add58074bb1871c7647d48a82"
+    },
+    "XConomy-Bukkit-2.26.3-deuterium.2.jar": {
+      "sizeBytes": 1382661,
+      "sha256": "abcdf0337a227ecef55b4e4c1e4f9c13d477e760cb8cd1c32cd42c6449229fd5"
+    }
+  },
+  "webSourceCommit": "558156655b56bba70aefdab902598f923b93ba48"
+}

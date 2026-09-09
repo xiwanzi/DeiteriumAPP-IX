@@ -1,0 +1,7 @@
+{
+  "runtimeConfigFollowsStaticRelease": true,
+  "configVersion": "2.0.4",
+  "backupPath": "/var/backups/deuterium/app-2.0.4-20260909-20401/nginx-deuterium-test.conf",
+  "beforeSha256": "c18a5c7cbf29cb4fb8e9eb66907b09d00cf9defa9ede1a644249358579b94142",
+  "afterSha256": "23e2051cb3edf7c759fa13716f5eec05b7c1a2424b0f8b63691189cbede878d9"
+}

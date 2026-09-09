@@ -1,6 +1,6 @@
 # 部署与维护手册
 
-已按 2026-09-09 的 [2.0.3 部署记录](deuterium-2.0.3-live.md) 更新；App/Go 发布已完成，其他组件沿用 2.0.0 的安装组合。发布事实以 [2.0.0](deuterium-2.0.0-live.md)、[2.0.1](deuterium-2.0.1-live.md)、[2.0.2](deuterium-2.0.2-live.md) 为准；下方流程用于后续有授权的部署。
+当前以 2026-09-09 的 [2.0.4 部署记录](deuterium-2.0.4-live.md) 为准：App/Web/Go/Core/XConomy 已更新，Mail/Sync 不变，三服运行、MEK 停止。SMTP 私有密钥已准备，真实邮箱参数由管理员填写；下方流程用于后续有授权的部署。
 
 ## 拓扑和路径
 
@@ -8,11 +8,11 @@
 | --- | --- |
 | 公网入口 | `https://47.103.99.34`，443，同源 API；域名在当时仍等待备案 |
 | Go | systemd `deuterium.service`，`/opt/deuterium/current/deuterium`，监听 `127.0.0.1:8080` |
-| Go 发布目录 | `/opt/deuterium/releases/app-2.0.3-15bb45dc6625`；`current` 指向已验证版本 |
+| Go 发布目录 | `/opt/deuterium/releases/app-2.0.4-812f1d1a5056`；`current` 指向已验证版本 |
 | 配置 | `/etc/deuterium/config.json`、`backend.env`、`releases.json`；AI 配置与提示词由环境中的文件路径指定 |
 | 后端库 | MariaDB `deuterium_backend`，独立账号；禁止复用游戏经济数据库身份 |
 | Nginx | 现有宝塔路径 `/www/server/panel/vhost/nginx/deuterium-test.conf`；80 ACME webroot `/var/www/deuterium-acme` |
-| 网站 | 发布目录 `/var/www/deuterium/releases/web-2.0.0-4de1ee7/dist`；实际生效 root 从 Nginx 配置核对 |
+| 网站 | 发布目录 `/var/www/deuterium/releases/web-2.0.4-812f1d1a5056/dist`；实际生效 root 从 Nginx 配置核对 |
 | APK | Nginx `/downloads/` 公开渠道，发布时必须核对实际 alias/root，不上传私有目录 |
 | 云备份 | `/var/backups/deuterium/`，含数据库一致性备份、前版配置和更新清单，受限访问 |
 | 游戏备份 | 游戏主机 `E:/Deuterium_IX/deployment-backups/app-v2-20260908/final-sync`，不是云端公开目录 |

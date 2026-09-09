@@ -1,4 +1,4 @@
-> 当前归档：本目录是已发布 Go 集成后端（含 2.0.1 图片生命周期），并非仅 foundation。部署使用 [当前手册](../docs/deployment/README.md) 与 `ops/` 模板；下文保留开发来源和历史验收。
+> 当前发布：Go `812f1d1a5056`，已随 2.0.4 部署统一经济账本查询、SMTP 持久队列及管理员业务审计。见[2.0.4 部署记录](../docs/deployment/deuterium-2.0.4-live.md)；下方保留开发来源与历史验收。
 
 # Deuterium 后端与 Core 集成
 
