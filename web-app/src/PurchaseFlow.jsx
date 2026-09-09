@@ -39,7 +39,7 @@ export function CreationProgress({ client, user, entry, initialResult, onResourc
     {value && <><Badge tone={confirmed ? "sage" : "neutral"}>{fundsLabels[value.fundsStatus] || value.fundsStatus}</Badge><p className="price">{credit(value.amount ?? value.content?.reward)}<small>信用点</small></p><p>{value.orderNo || value.content?.title}</p></>}
     {expired ? <p className="notice-box">原报价未能创建订单。请重新查看最新价格，并再次确认后付款。</p> : !confirmed && !failed && <p className="notice-box">请保留当前请求。系统会继续查询同一笔业务，结果未确认前不要重新付款。</p>}
     {error && <p className="auth-error" role="alert">{error}</p>}
-    <div className="button-row">{!expired && <Button secondary disabled={busy} onClick={lookup}>刷新处理结果</Button>}{notFound && <Button disabled={busy} onClick={retryOriginal}>重试原请求</Button>}{expired && onRestart && <Button onClick={onRestart}>重新获取报价</Button>}{resource && onResource && <Button onClick={() => onResource(resource)}>查看{resource.type === "ORDER" ? "订单" : "委托"}</Button>}</div>
+    <div className="button-row">{!expired && <Button secondary disabled={busy} onClick={lookup}>刷新处理结果</Button>}{notFound && <Button disabled={busy} onClick={retryOriginal}>继续处理</Button>}{expired && onRestart && <Button onClick={onRestart}>重新获取报价</Button>}{resource && onResource && <Button onClick={() => onResource(resource)}>查看{resource.type === "ORDER" ? "订单" : "委托"}</Button>}</div>
   </div>;
 }
 

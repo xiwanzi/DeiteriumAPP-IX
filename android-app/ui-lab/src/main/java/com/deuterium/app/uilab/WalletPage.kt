@@ -133,21 +133,29 @@ private fun SummaryCard(label: String, value: String, income: Boolean, modifier:
 
 @Composable
 fun LedgerRow(record: LedgerEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val incoming = record.amount > 0
-    Surface(onClick = onClick, modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface) {
-        Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).background(if(incoming) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
-                Icon(if(record.name == "服务器奖励") Icons.Outlined.Redeem else if(incoming) Icons.Outlined.SouthWest else Icons.Outlined.NorthEast,
-                    null, Modifier.size(20.dp), tint = if(incoming) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text(record.name, style = MaterialTheme.typography.titleMedium)
-                if(record.detail != record.name)Text(record.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text((if(incoming) "+" else "−") + credit(abs(record.amount)), fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                    color = if(incoming) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                Text(record.time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val incoming=record.amount>0
+    val money=(if(incoming) "+" else "−")+credit(abs(record.amount))
+    val measurer=androidx.compose.ui.text.rememberTextMeasurer()
+    val density=androidx.compose.ui.platform.LocalDensity.current
+    val amountStyle=MaterialTheme.typography.titleMedium.copy(fontSize=16.sp,fontWeight=FontWeight.SemiBold)
+    Surface(onClick=onClick,modifier=modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=MaterialTheme.colorScheme.surface){
+        BoxWithConstraints(Modifier.padding(15.dp)){
+            val stacked=measurer.measure(androidx.compose.ui.text.AnnotatedString(money),amountStyle,maxLines=1,softWrap=false).size.width>with(density){(maxWidth-68.dp).toPx()}*.55f
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Box(Modifier.size(44.dp).background(if(incoming)MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){Icon(if(incoming)Icons.Outlined.SouthWest else Icons.Outlined.NorthEast,null,Modifier.size(20.dp),tint=if(incoming)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)}
+                Column(Modifier.weight(1f).padding(start=12.dp)){
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        Column(Modifier.weight(1f).padding(end=10.dp)){
+                            Text(record.name,style=MaterialTheme.typography.titleMedium,maxLines=1,overflow=TextOverflow.Ellipsis)
+                            if(record.detail!=record.name)Text(record.detail,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+                        }
+                        Column(horizontalAlignment=Alignment.End){
+                            if(!stacked)Text(money,style=amountStyle,color=if(incoming)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,maxLines=1,softWrap=false)
+                            Text(record.time,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    if(stacked)AdaptiveMoney(money,Modifier.padding(top=8.dp),if(incoming)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,20.sp)
+                }
             }
         }
     }

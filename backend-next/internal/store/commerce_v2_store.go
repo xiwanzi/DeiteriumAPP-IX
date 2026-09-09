@@ -48,7 +48,7 @@ func (s *Store) commerceMutateAttemptV2(ctx context.Context, actor, key, scope s
 		return result, e
 	}
 	if priorScope != scope || priorFingerprint != fingerprint {
-		return result, catalogError(409, "IDEMPOTENCY_CONFLICT", "原请求标识已用于不同内容，请查询原结果。")
+		return result, catalogError(409, "IDEMPOTENCY_CONFLICT", "这笔请求的内容已变化，请先查看之前的处理结果。")
 	}
 	if raw != "" {
 		if e = json.Unmarshal([]byte(raw), &result); e == nil {
@@ -170,7 +170,7 @@ func (s *Store) CommerceCanUploadEvidenceV2(ctx context.Context, user, businessT
 }
 func commerceEventV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2, actor, kind, summary string, metadata any) error {
 	id := ID("event_")
-	_, e := tx.ExecContext(ctx, "INSERT INTO commerce_events_v2(event_id,resource_id,event_type,actor_id,summary,metadata,created_at) VALUES(?,?,?,?,?,?,UTC_TIMESTAMP(6))", id, d.ID, kind, commerceOptionalString(actor), summary, catalogJSON(metadata))
+	_, e := tx.ExecContext(ctx, "INSERT INTO commerce_events_v2(event_id,resource_id,event_type,actor_id,summary,metadata,created_at) VALUES(?,?,?,?,?,?,UTC_TIMESTAMP(6))", id, d.ID, kind, commerceOptionalString(actor), customerCommerceTextV206(summary), catalogJSON(metadata))
 	if e != nil {
 		return e
 	}
@@ -187,7 +187,11 @@ func commerceEventV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2, actor,
 		recipients = append(recipients, d.PayeeID)
 	}
 	for _, user := range recipients {
-		if e = AddNotificationV2(ctx, tx, user, id, topic, "交易状态更新", summary, target); e != nil {
+		title, body, milestone, push := commerceNoticeV206(d, kind, actor, user)
+		if title == "" {
+			continue
+		}
+		if e = AddNotificationWithPushV206(ctx, tx, user, "commerce:"+d.ID+":"+milestone, topic, title, body, target, push); e != nil {
 			return e
 		}
 	}
@@ -253,7 +257,7 @@ func commerceMoneyStepV2(d CommerceRecordV2, command, amount string) CommerceSte
 }
 func commerceAvailableV2(available bool) error {
 	if !available {
-		return catalogError(503, "CAPABILITY_UNAVAILABLE", "受控资金或交付服务尚未就绪，本次未扣款，也不会等待恢复后自动付款。")
+		return catalogError(503, "CAPABILITY_UNAVAILABLE", "交易服务暂不可用，本次未扣款，请稍后重试。")
 	}
 	return nil
 }

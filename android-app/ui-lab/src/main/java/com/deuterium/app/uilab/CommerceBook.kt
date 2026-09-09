@@ -25,13 +25,14 @@ data class CommerceOrder(val id:String,val key:String,val channel:OrderChannel,v
     val construction:Boolean=false,val confirmationHours:Int=72,val projectName:String="",val deadlineMillis:Long?=null,
     val pausedMillis:Long?=null,val refundAttempts:Int=0,val refundRequestedAt:LocalDateTime?=null,val refundResolvedAt:LocalDateTime?=null,val automatic:Boolean=false,
     val completedAt:LocalDateTime?=null,val rejectionReason:String="",val intervention:InterventionCase?=null,
-    val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null,val canHideRecord:Boolean=false) {
+    val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null,val canHideRecord:Boolean=false,val isSaki:Boolean=false,val sellerAvatarUri:String?=null,val aiExpiresAt:LocalDateTime?=null) {
     val platformPending:Boolean get()=fundsStatus=="INTERVENTION_HOLD"||intervention?.pending==true
     val canIntervene:Boolean get()=pendingOperationId==null&&(serverActions?.contains("REQUEST_INTERVENTION") ?: (channel==OrderChannel.Market&&refund==RefundState.Rejected&&intervention==null))
     val amount:Long get()=lines.sumOf{it.total}
     val receiptLabel:String get()=if(construction)"确认验收" else "确认收货"
     val shipLabel:String get()=if(construction)"开始施工" else "确认发货"
     val status:String get()=when {
+        isSaki&&fundsStatus=="SETTLED"->"已开通"
         fundsStatus=="UNPAID"->if(serverStatus=="CANCELLED")"已取消 · 未扣款" else "未付款"
         fundsStatus=="SETTLING"->"结算处理中";fundsStatus=="REFUNDING"->"退款处理中";fundsStatus=="UNKNOWN"->"资金结果待确认"
         pendingOperationId!=null->"操作处理中"

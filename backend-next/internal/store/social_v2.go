@@ -79,6 +79,7 @@ type SocialTarget struct {
 	StateVersion int64  `json:"stateVersion"`
 }
 type SocialNotification struct {
+	SystemPush     bool         `json:"systemPush"`
 	NotificationID string       `json:"notificationId"`
 	Topic          string       `json:"topic"`
 	Title          string       `json:"title"`
@@ -561,11 +562,14 @@ func reserveSocialSend(ctx context.Context, tx *sql.Tx, userID string) error {
 	return nil
 }
 func AddNotificationV2(ctx context.Context, tx *sql.Tx, userID, eventKey, topic, title, body string, target SocialTarget) error {
+	return AddNotificationWithPushV206(ctx, tx, userID, eventKey, topic, title, body, target, true)
+}
+func AddNotificationWithPushV206(ctx context.Context, tx *sql.Tx, userID, eventKey, topic, title, body string, target SocialTarget, push bool) error {
 	encoded, err := json.Marshal(target)
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_notifications_v2(notification_id,user_id,event_key,topic,title,body,target_json,created_at) VALUES(?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`, ID("not_"), userID, eventKey, topic, title, body, encoded)
+	_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_notifications_v2(notification_id,user_id,event_key,topic,title,body,target_json,system_push,created_at) VALUES(?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`, ID("not_"), userID, eventKey, topic, title, body, encoded, push)
 	return err
 }
 func (s *Store) SendDirectV2(ctx context.Context, u User, conversation string, input SocialSendRequest, forward *SocialForwardRequest) (json.RawMessage, error) {
@@ -765,7 +769,7 @@ func (s *Store) PatchNotificationPreferencesV2(ctx context.Context, userID strin
 	})
 }
 func (s *Store) NotificationsV2(ctx context.Context, userID string, before int64, unreadOnly bool, limit int) ([]SocialNotification, error) {
-	rows, err := s.DB.QueryContext(ctx, `SELECT sequence_id,notification_id,topic,title,body,target_json,created_at,read_at FROM social_notifications_v2 WHERE user_id=? AND (?=0 OR sequence_id<?) AND (?=false OR read_at IS NULL) ORDER BY sequence_id DESC LIMIT ?`, userID, before, before, unreadOnly, limit)
+	rows, err := s.DB.QueryContext(ctx, `SELECT sequence_id,notification_id,topic,title,body,target_json,created_at,read_at,system_push FROM social_notifications_v2 WHERE user_id=? AND inbox_visible=TRUE AND (?=0 OR sequence_id<?) AND (?=false OR read_at IS NULL) ORDER BY sequence_id DESC LIMIT ?`, userID, before, before, unreadOnly, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -775,7 +779,7 @@ func (s *Store) NotificationsV2(ctx context.Context, userID string, before int64
 		var n SocialNotification
 		var target string
 		var read sql.NullTime
-		if err = rows.Scan(&n.Sequence, &n.NotificationID, &n.Topic, &n.Title, &n.Body, &target, &n.CreatedAt, &read); err != nil {
+		if err = rows.Scan(&n.Sequence, &n.NotificationID, &n.Topic, &n.Title, &n.Body, &target, &n.CreatedAt, &read, &n.SystemPush); err != nil {
 			return nil, err
 		}
 		if err = json.Unmarshal([]byte(target), &n.Target); err != nil {
@@ -783,6 +787,9 @@ func (s *Store) NotificationsV2(ctx context.Context, userID string, before int64
 		}
 		if read.Valid {
 			n.ReadAt = &read.Time
+		}
+		if n.Topic == "STORE_ORDERS" || n.Topic == "MARKET_ORDERS" || n.Topic == "COMMISSIONS" {
+			n.Body = customerCommerceTextV206(n.Body)
 		}
 		result = append(result, n)
 	}

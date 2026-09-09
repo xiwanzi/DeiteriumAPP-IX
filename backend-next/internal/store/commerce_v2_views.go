@@ -81,6 +81,9 @@ func commerceCaseActiveTxV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2)
 }
 func commerceActionsV2(d CommerceRecordV2, viewer string, refund *CommerceRefundV2, caseActive bool) []string {
 	out := []string{}
+	if IsAIOrderV206(d) {
+		return out
+	}
 	owner, payee := viewer == d.OwnerID, viewer == d.PayeeID
 	if d.Channel == "OFFICIAL_STORE" && owner && d.State != "CANCELLED" {
 		out = append(out, "VIEW_MAILBOX")
@@ -161,7 +164,7 @@ func commerceActionsV2(d CommerceRecordV2, viewer string, refund *CommerceRefund
 }
 func commerceBaseViewV2(d CommerceRecordV2, viewer string, refund *CommerceRefundV2, caseActive bool, now time.Time) map[string]any {
 	out := map[string]any{}
-	fields := "orderNo construction buyer seller items delivery confirmationHours shippedAt workCompletedAt confirmedAt completionDescription completionAssetIds"
+	fields := "orderNo construction buyer seller items delivery confirmationHours shippedAt workCompletedAt confirmedAt completionDescription completionAssetIds orderType aiPlan aiExpiresAt"
 	if d.Kind == "COMMISSION" {
 		fields = "owner worker content workDueAt acceptanceDueAt completionDescription completionAssetIds acceptedAt completedAt confirmedAt"
 	}
@@ -286,6 +289,27 @@ func (s *Store) commerceViewV204(ctx context.Context, viewer, id string, public,
 			images = append(images, image)
 		}
 		out["images"] = images
+		if d.Channel == "OFFICIAL_STORE" && d.StoreID != "" {
+			var raw string
+			err := s.DB.QueryRowContext(ctx, "SELECT body FROM catalog_records_v2 WHERE resource_id=? AND kind='store'", d.StoreID).Scan(&raw)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return nil, err
+			}
+			if err == nil {
+				var profile CatalogObjectV2
+				if err = json.Unmarshal([]byte(raw), &profile); err != nil {
+					return nil, err
+				}
+				avatar, err := s.AssetForBindingV2(ctx, "STORE_PROFILE", d.StoreID, catalogString(profile, "logoAssetId"))
+				if err != nil {
+					return nil, err
+				}
+				if seller, ok := catalogObject(out["seller"]); ok {
+					seller["avatar"] = avatar
+					out["seller"] = seller
+				}
+			}
+		}
 	}
 	completionAssets := []map[string]any{}
 	for _, assetID := range catalogIDs(d.Body, "completionAssetIds") {

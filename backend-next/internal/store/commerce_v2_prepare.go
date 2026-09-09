@@ -546,7 +546,7 @@ func (s *Store) PrepareCommissionAcceptV2(ctx context.Context, actor, id, key st
 		if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
 			return result, e
 		}
-		if e = commerceEventV2(ctx, tx, d, actor, "commission.accept.reserved", "接取名额已锁定，正在确认唯一受益人。", map[string]string{"operationId": op.ID}); e != nil {
+		if e = commerceEventV2(ctx, tx, d, actor, "commission.accept.reserved", "正在接取委托，请稍候。", map[string]string{"operationId": op.ID}); e != nil {
 			return result, e
 		}
 		return CommerceMutationV2{ResourceID: d.ID, Kind: d.Kind, OperationID: op.ID}, nil

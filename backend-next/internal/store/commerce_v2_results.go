@@ -29,7 +29,7 @@ func commerceUncertainCodeV2(code string) bool {
 	return false
 }
 func commerceCheckMoneyProofV2(d CommerceRecordV2, step CommerceStepV2, r CommerceStepResultV2) (commerceMoneyProofV2, error) {
-	invalid := catalogError(409, "PAYMENT_PROOF_MISMATCH", "资金结果尚未与原操作核对。")
+	invalid := catalogError(409, "PAYMENT_PROOF_MISMATCH", "交易仍在处理中，请稍后查看。")
 	var proof commerceMoneyProofV2
 	p := CatalogObjectV2(r.Data)
 	if p == nil || !CatalogReferenceV2(r.CoreOperationID) || catalogString(p, "operationId") != r.CoreOperationID || catalogString(p, "businessRef") != d.ID || catalogString(p, "escrowRef") != d.EscrowRef || catalogString(p, "currency") != "CREDIT" || catalogString(p, "status") != "COMPLETED" || catalogString(p, "payerUuid") != d.OwnerUUID || catalogString(p, "escrowStatus") == "" || commerceBodyTimeV2(p["committedAt"]) == nil {
@@ -449,6 +449,10 @@ func (s *Store) ApplyCommerceStepV2(ctx context.Context, id string, index int, t
 			if e = s.commerceCompleteOperationV2(ctx, tx, &d, op, now); e != nil {
 				return op, e
 			}
+			if IsAIOrderV206(d) && d.FundsState == "REFUNDED" {
+				op.State = "FAILED"
+				op.ErrorCode = "AI_PURCHASE_REVERSED"
+			}
 		} else {
 			op.State = "PROCESSING"
 			if op.Action == "case-resolution" {
@@ -458,7 +462,19 @@ func (s *Store) ApplyCommerceStepV2(ctx context.Context, id string, index int, t
 	case "FAILED":
 		op.State = "FAILED"
 		d.PendingOperationID = ""
-		if e = s.commerceFailOperationV2(ctx, tx, &d, op, now); e != nil {
+		if IsAIOrderV206(d) && op.Action == "ai-purchase" && step.Command == "wallet.escrow.settle" {
+			// A proven failed settlement releases the existing hold. An UNKNOWN
+			// settlement never reaches this branch and is only queried by its ID.
+			d.Body["aiPurchaseFailed"] = true
+			d.FundsState = "REFUNDING"
+			d.PendingOperationID = op.ID
+			compensation := commerceMoneyStepV2(d, "wallet.escrow.refund", d.Amount)
+			compensation.ClientKey = "commerce:" + op.ID + ":compensation"
+			compensation.State = "PREPARED"
+			op.Steps = append(op.Steps, compensation)
+			op.StepIndex++
+			op.State = "PROCESSING"
+		} else if e = s.commerceFailOperationV2(ctx, tx, &d, op, now); e != nil {
 			return op, e
 		}
 	default:
@@ -478,12 +494,12 @@ func (s *Store) ApplyCommerceStepV2(ctx context.Context, id string, index int, t
 		if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
 			return op, e
 		}
-		summary := "原操作结果仍待核实，不会换标识重复执行。"
+		summary := "交易仍在处理中，请稍后查看。"
 		if status == "COMPLETED" {
-			summary = "原资金或交付步骤已由服务端证明确认。"
+			summary = "交易进度已更新，可查看详情。"
 		}
 		if status == "FAILED" {
-			summary = "原操作明确未完成，请查看交易当前状态后处理。"
+			summary = "操作未完成，请查看订单详情。"
 		}
 		if e = commerceEventV2(ctx, tx, d, op.ActorID, "operation."+status, summary, map[string]any{"operationId": op.ID, "step": index, "command": step.Command, "errorCode": code}); e != nil {
 			return op, e
@@ -497,6 +513,13 @@ func (s *Store) ApplyCommerceStepV2(ctx context.Context, id string, index int, t
 
 func (s *Store) commerceCompleteOperationV2(ctx context.Context, tx *sql.Tx, d *CommerceRecordV2, op CommerceOperationV2, now time.Time) error {
 	switch op.Action {
+	case "ai-purchase":
+		if failed, _ := d.Body["aiPurchaseFailed"].(bool); failed {
+			d.FundsState = "REFUNDED"
+			d.State = "REFUNDED"
+			return nil
+		}
+		return activateAIOrderV206(ctx, tx, d, now)
 	case "reserve", "bind", "deliver":
 		return nil
 	case "settle":
@@ -595,6 +618,15 @@ func (s *Store) commerceCompleteOperationV2(ctx context.Context, tx *sql.Tx, d *
 }
 func (s *Store) commerceFailOperationV2(ctx context.Context, tx *sql.Tx, d *CommerceRecordV2, op CommerceOperationV2, now time.Time) error {
 	switch op.Action {
+	case "ai-purchase":
+		if op.StepIndex == 0 {
+			d.State = "CANCELLED"
+			d.FundsState = "UNPAID"
+		} else {
+			d.State = "PAYMENT_PROCESSING"
+			d.FundsState = "HELD"
+		}
+		return nil
 	case "reserve":
 		if op.StepIndex == 0 {
 			d.State = "CANCELLED"

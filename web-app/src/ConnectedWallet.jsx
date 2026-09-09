@@ -123,7 +123,7 @@ function TransferForm({ client, user, journal, saveJournal, onSuccess }) {
     </div>
   </>;
   return <>
-    <form onSubmit={search}><Field label="收款玩家" value={query} onChange={(e) => { setQuery(e.target.value); setRecipient(null); }} placeholder="输入游戏 ID 或 QQ" required maxLength={64} /><Button secondary type="submit" disabled={busy}><Search size={16} />查找玩家</Button></form>
+    <form className="recipient-search" onSubmit={search}><Field label="收款玩家" value={query} onChange={(e) => { setQuery(e.target.value); setRecipient(null); }} placeholder="输入游戏 ID 或 QQ" required maxLength={64} /><Button secondary type="submit" disabled={busy}><Search size={16} />查找玩家</Button></form>
     {searched && !candidates.length && <p className="muted">没有找到可转账的玩家。</p>}
     <div className="button-row">{candidates.map((p) => <Button key={p.playerRef} secondary={recipient?.playerRef !== p.playerRef} onClick={() => setRecipient(p)}><Avatar user={p} />{p.gameId}</Button>)}</div>
     <form onSubmit={prepare}><Field label="金额（信用点）" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" required maxLength={10} /><Field label="备注" value={note} onChange={(e) => setNote(e.target.value)} maxLength={80} placeholder="选填" />

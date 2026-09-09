@@ -212,7 +212,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     LaunchedEffect(state.notice?.id){if(state.notice!=null){delay(4200);state.notice=null}}
     val title=when {
         route=="storage"->"存储空间"
-        route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route?.startsWith("dm:")==true->route.removePrefix("dm:")
+        route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->route.removePrefix("dm:")
         route=="announcement"->"官方公告";route=="event"->"委托大厅";route=="bag"->"购物袋";route=="orders"->"我的订单";route?.startsWith("order:")==true->"订单详情"
         route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"个人简介";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"
@@ -240,7 +240,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                             current=="wallet"->WalletPage(state,{openTransfer()},{record=it},inset){open("bills:$it")}
                             current.startsWith("bills:")->BillHistoryPage(state,current.removePrefix("bills:"),inset){record=it}
                             current=="public"->Box(Modifier.fillMaxSize().windowInsetsPadding(conversationInsets)){ChatPage(state,secondaryContentTop,{open("player:$it")}){openTransfer(it)}}
-                            current=="ai"||current.startsWith("dm:")->Box(Modifier.fillMaxSize().windowInsetsPadding(conversationInsets)){DirectChatPage(state,if(current=="ai")"AI 助手" else current.removePrefix("dm:"),secondaryContentTop){open("player:$it")}}
+                            current=="ai"||current.startsWith("dm:")->Box(Modifier.fillMaxSize().windowInsetsPadding(conversationInsets)){DirectChatPage(state,if(current=="ai")"AI 助手" else current.removePrefix("dm:"),secondaryContentTop,onPlans={open("ai-plans")}){open("player:$it")}}
                             current=="announcement"->CommunityDetail(false,state,inset)
                             current=="commissions"||current=="events"||current=="event"->CommissionHallPage(state,inset,{open("commission:$it")})
                             current=="my-commissions"->CommissionHallPage(state,inset,{open("commission:$it")},mine=true)
@@ -253,7 +253,8 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                             current=="publish"||current.startsWith("edit-listing:")->PublishListingPage(state.commerce,inset,{id->saved.removeState(current);val parent=stack.dropLast(1);val target="market-product:$id";stack=if(parent.lastOrNull()==target)parent else parent+target},if(current.startsWith("edit-listing:"))state.commerce.listings.find{it.id==current.removePrefix("edit-listing:")} else null)
                             current=="listings"->MarketPage(state.commerce,"",inset,{open("market-product:$it")},true){open("publish")}
                             current=="orders"->OrdersPage(state.commerce,inset,::showOrder)
-                            current.startsWith("order:")->OrderDetailPage(state.commerce,current.removePrefix("order:"),inset,{open("dm:$it")},{open("refund:$it")},{back()})
+                            current=="ai-plans"->SakiPlansPage(state,inset)
+                            current.startsWith("order:")->OrderDetailPage(state.commerce,current.removePrefix("order:"),inset,{open(if(it=="AI 助手")"ai" else "dm:$it")},{open("refund:$it")},{back()})
                             current.startsWith("refund:")->RefundStatusPage(state.commerce,current.removePrefix("refund:"),inset,{open("dm:$it")},::showOrder)
                             current=="trade-notices"->TradeNoticesPage(state.commerce,inset,notificationAllowed,{if(Build.VERSION.SDK_INT>=33)notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)},::open,state::readNotice)
                             current=="notifications"->NotificationPage(inset,notificationAllowed,userName,{if(Build.VERSION.SDK_INT>=33)notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)else context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))},{context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))})

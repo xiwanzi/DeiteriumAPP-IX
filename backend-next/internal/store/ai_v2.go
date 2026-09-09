@@ -15,6 +15,7 @@ var ErrAIConversationV2 = errors.New("ai conversation changed")
 var ErrAINotFoundV2 = errors.New("ai request not found")
 
 type AIPlanV2 struct {
+	Version        int64  `json:"version"`
 	PlanID         string `json:"planId"`
 	Code           string `json:"code"`
 	Name           string `json:"name"`
@@ -81,6 +82,7 @@ type AIPendingV2 struct {
 	RetryAfterSeconds  int       `json:"retryAfterSeconds"`
 }
 type AIStateV2 struct {
+	ExpiresAt    *time.Time       `json:"expiresAt"`
 	Plan         AIPlanV2         `json:"plan"`
 	Quota        AIQuotaV2        `json:"quota"`
 	Conversation AIConversationV2 `json:"conversation"`
@@ -89,6 +91,8 @@ type AIStateV2 struct {
 type AIPolicyV2 struct {
 	FreeQuota, WindowHours int
 	AdminExempt            bool
+	PaidEnabled            bool
+	Configured             bool
 }
 
 func AIWindowStartV2(now time.Time, hours int) time.Time {
@@ -96,7 +100,7 @@ func AIWindowStartV2(now time.Time, hours int) time.Time {
 	return time.Unix(now.Unix()-now.Unix()%seconds, 0).UTC()
 }
 func (s *Store) AIPlansV2(ctx context.Context, policy AIPolicyV2) ([]AIPlanV2, error) {
-	rows, err := s.DB.QueryContext(ctx, "SELECT plan_id,code,name,description,CAST(price AS CHAR),quota_limit,window_hours,duration_days,model_tier,active FROM ai_plans_v2 ORDER BY sort_order,plan_id")
+	rows, err := s.DB.QueryContext(ctx, "SELECT plan_id,code,name,description,CAST(price AS CHAR),quota_limit,window_hours,duration_days,model_tier,active,version FROM ai_plans_v2 ORDER BY sort_order,plan_id")
 	if err != nil {
 		return nil, err
 	}
@@ -104,19 +108,17 @@ func (s *Store) AIPlansV2(ctx context.Context, policy AIPolicyV2) ([]AIPlanV2, e
 	result := []AIPlanV2{}
 	for rows.Next() {
 		var p AIPlanV2
-		if err = rows.Scan(&p.PlanID, &p.Code, &p.Name, &p.Description, &p.Price, &p.QuotaPerWindow, &p.WindowHours, &p.DurationDays, &p.ModelTier, &p.Active); err != nil {
+		if err = rows.Scan(&p.PlanID, &p.Code, &p.Name, &p.Description, &p.Price, &p.QuotaPerWindow, &p.WindowHours, &p.DurationDays, &p.ModelTier, &p.Active, &p.Version); err != nil {
 			return nil, err
 		}
 		p.Currency = "CREDIT"
-		if p.Code == "free" {
+		if p.Code == "free" && !policy.Configured {
 			p.QuotaPerWindow = policy.FreeQuota
 			p.WindowHours = policy.WindowHours
 			p.Active = true
 			p.Price = "0.00"
-		} else {
-			p.Active = false
-			p.Price = "9999999.00"
 		}
+		p.Purchasable = p.Code != "free" && p.Active && policy.PaidEnabled
 		result = append(result, p)
 	}
 	return result, rows.Err()
@@ -178,9 +180,13 @@ func aiUnlimitedV2(ctx context.Context, tx *sql.Tx, user string, policy AIPolicy
 	return count > 0, err
 }
 func aiQuotaLockedV2(ctx context.Context, tx *sql.Tx, user string, policy AIPolicyV2, now time.Time) (AIQuotaV2, error) {
+	plan, _, err := aiEffectivePlanV206(ctx, tx, user, policy, now)
+	if err != nil {
+		return AIQuotaV2{}, err
+	}
+	policy.FreeQuota, policy.WindowHours = plan.QuotaPerWindow, plan.WindowHours
 	start := AIWindowStartV2(now, policy.WindowHours)
 	q := AIQuotaV2{Limit: policy.FreeQuota, WindowHours: policy.WindowHours, ResetsAt: start.Add(time.Duration(policy.WindowHours) * time.Hour)}
-	var err error
 	q.Unlimited, err = aiUnlimitedV2(ctx, tx, user, policy)
 	if err != nil {
 		return q, err
@@ -210,7 +216,10 @@ func (s *Store) AIStateV2(ctx context.Context, user string, policy AIPolicyV2, n
 	if err != nil {
 		return state, err
 	}
-	state.Plan = AIPlanV2{PlanID: "plan_free", Code: "free", Name: "ProMax", Description: "默认", Price: "0.00", Currency: "CREDIT", QuotaPerWindow: policy.FreeQuota, WindowHours: policy.WindowHours, ModelTier: "flash", Active: true}
+	state.Plan, state.ExpiresAt, err = aiEffectivePlanV206(ctx, tx, user, policy, now)
+	if err != nil {
+		return state, err
+	}
 	state.Quota, err = aiQuotaLockedV2(ctx, tx, user, policy, now)
 	if err != nil {
 		return state, err
@@ -286,6 +295,7 @@ func (s *Store) BeginAIV2(ctx context.Context, user, key, content, model string,
 	if quota.Remaining <= 0 && !quota.Unlimited {
 		return e, false, ErrAIQuotaV2
 	}
+	policy.WindowHours = quota.WindowHours
 	e = AIExchangeV2{ID: ID("air_"), UserID: user, ConversationID: conv, ClientMessageID: key, Fingerprint: Digest([]byte(content)), Input: content, UserMessageID: ID("aim_"), AssistantMessageID: ID("aim_"), Status: "pending", Progress: "queued", Sources: []AISourceV2{}, Model: model, WindowStart: AIWindowStartV2(now, policy.WindowHours), WindowHours: policy.WindowHours, QuotaState: "reserved", CreatedAt: now, UpdatedAt: now, DeadlineAt: now.Add(lifetime)}
 	if quota.Unlimited {
 		e.QuotaState = "exempt"

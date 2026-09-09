@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
-import { Badge, Button, Empty, Field, Modal, PageHead, Tabs } from "./components.jsx";
+import { Badge, Button, Empty, Field, Modal, PageHead, Tabs, Avatar, media } from "./components.jsx";
 import { MediaPicker } from "./MediaPicker.jsx";
 import { CreationProgress } from "./PurchaseFlow.jsx";
 import { businessOperation, businessResource, clearBusiness, fundsLabels, fundsPending, resourceId, resourcePath, saveBusiness, savedBusiness } from "./business.js";
@@ -33,7 +33,9 @@ export function BusinessDetail({ client, user, type, reference, initial, onChang
     <div className="button-row"><Badge tone={pending ? "neutral" : "blue"}>{label || value.status}</Badge><Badge tone="neutral">{fundsLabels[value.fundsStatus] || value.fundsStatus}</Badge><Button secondary disabled={busy} onClick={load}><RefreshCw size={15} />刷新</Button></div>
     <h2>{type === "COMMISSION" ? value.content?.title : value.items?.map((item) => item.title).join("、") || value.orderNo}</h2>
     <p className="price">{credit(value.amount ?? value.content?.reward)}<small>信用点</small></p>
-    {pending && <p className="notice-box">资金结果仍在核对。页面会查询原处理记录，确认前暂不开放新的资金操作。</p>}
+    {type === "ORDER" && <div className="settings-banner"><Avatar user={{name:value.seller?.displayName,avatar:value.orderType === "AI_SUBSCRIPTION" ? {url:media("xiaoxiang_avatar.png")} : value.seller?.avatar}} /><div><strong>{value.seller?.displayName}</strong><p>{value.orderType === "AI_SUBSCRIPTION" ? "套餐自动开通，无需领取，不支持退款。" : value.channel === "OFFICIAL_STORE" ? "官方商家" : "玩家卖家"}</p></div>{value.orderType === "AI_SUBSCRIPTION" && <a className="button secondary" href="/information?conversation=assistant">联系卖家</a>}</div>}
+    {value.aiExpiresAt && <p>套餐有效期至 {new Date(value.aiExpiresAt).toLocaleString("zh-CN")}</p>}
+    {pending && <p className="notice-box">交易仍在处理中，进度会自动更新。请稍后查看。</p>}
     {value.interventionCaseId && <p className="notice-box">这笔业务有平台处理记录。<Button secondary onClick={() => setIntervention(value.interventionCaseId)}>查看处理记录</Button></p>}
     <dl className="detail-list">
       <div><dt>{type === "COMMISSION" ? "发布者" : "买方"}</dt><dd>{(value.owner || value.buyer)?.displayName}</dd></div>
@@ -85,7 +87,7 @@ function BusinessAction({ client, user, type, value, action, onUpdated, onInterv
     {refund && <p className="notice-box">退款申请只有一次机会。提交后即计入申请次数，撤回或被拒绝不会恢复次数。</p>}
     {action === "WITHDRAW_REFUND" && <p className="notice-box">撤回后不会恢复退款机会，暂停的确认计时会继续。</p>}
     {["CONFIRM", "CONFIRM_ACCEPTANCE", "CONFIRM_RECEIPT"].includes(action) && <p className="notice-box">确认后将按约定结算给对方，请确认已经收到商品或验收完成。</p>}
-    {action === "ACCEPT" && <p>接取后会锁定约定与报酬，并开始履约计时。资金绑定未确认时会继续核对。</p>}
+    {action === "ACCEPT" && <p>接取后开始计算约定工期，完成并通过验收后获得报酬。</p>}
     {action === "CANCEL" && <p>确认取消这项委托？预付报酬将在退款确认后返还。</p>}
     {refund && <Field label="退款原因"><select value={reasonCode} onChange={(e) => setReasonCode(e.target.value)}><option value="NO_LONGER_NEEDED">不再需要</option><option value="DELIVERY_DELAY">交付延迟</option><option value="NOT_AS_DESCRIBED">与描述不符</option><option value="OTHER">其他</option></select></Field>}
     {resolve && <Field label="处理决定"><select value={decision} onChange={(e) => setDecision(e.target.value)}><option value="APPROVE">同意退款</option><option value="REJECT">拒绝退款</option></select></Field>}
@@ -148,6 +150,6 @@ export default function BusinessPages({ client, user, type = "ORDER", merchantSt
     {!busy && !error && !items.length && <Empty title={isCommission ? "当前没有委托" : "还没有订单"} text="有新的业务后会显示在这里。" />}{cursor && <Button secondary disabled={busy} onClick={() => load(true)}>加载更多</Button>}
     {selected && <Modal title={isCommission ? "委托详情" : "订单详情"} close={() => setSelected(null)} wide><BusinessDetail client={client} user={user} type={type} reference={selected.reference} initial={selected.value} onChanged={() => load()} /></Modal>}
     {creating && <Modal title="发布委托" close={() => setCreating(false)} wide><CommissionForm client={client} user={user} onResource={onResource} /></Modal>}
-    {pending && <Modal title="核对原请求" close={() => setPending(null)}><CreationProgress client={client} user={user} entry={pending} onResource={onResource} /></Modal>}
+    {pending && <Modal title="查看处理进度" close={() => setPending(null)}><CreationProgress client={client} user={user} entry={pending} onResource={onResource} /></Modal>}
   </>;
 }

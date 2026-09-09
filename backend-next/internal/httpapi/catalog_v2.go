@@ -99,6 +99,10 @@ func catalogJSONValueV2(d *json.Decoder, depth int) (any, error) {
 }
 func catalogFailV2(w http.ResponseWriter, r *http.Request, e error) {
 	var problem *store.CatalogErrorV2
+	if errors.Is(e, store.ErrSocialInvalid) || errors.Is(e, store.ErrSocialVersion) || errors.Is(e, store.ErrSocialNotFound) {
+		socialFailureV2(w, r, e)
+		return
+	}
 	if errors.As(e, &problem) {
 		failure(w, r, problem.Status, problem.Code, problem.Message)
 		return

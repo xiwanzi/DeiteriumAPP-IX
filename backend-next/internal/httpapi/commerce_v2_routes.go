@@ -249,7 +249,7 @@ func (s *Server) commerceOperationHTTPV2(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	id, key, kind := r.PathValue("operationId"), r.URL.Query().Get("clientRequestId"), r.URL.Query().Get("kind")
-	if (id != "" && !store.CatalogReferenceV2(id)) || (id == "" && (!store.CatalogReferenceV2(key) || !commerceOneOfV2(kind, "STORE_PURCHASE", "MARKET_PURCHASE", "COMMISSION_PUBLISH", "COMMISSION_ACCEPT", "REFUND", "SETTLEMENT"))) {
+	if (id != "" && !store.CatalogReferenceV2(id)) || (id == "" && (!store.CatalogReferenceV2(key) || !commerceOneOfV2(kind, "STORE_PURCHASE", "MARKET_PURCHASE", "AI_PURCHASE", "COMMISSION_PUBLISH", "COMMISSION_ACCEPT", "REFUND", "SETTLEMENT"))) {
 		catalogFailV2(w, r, bridge.ErrProtocol)
 		return
 	}

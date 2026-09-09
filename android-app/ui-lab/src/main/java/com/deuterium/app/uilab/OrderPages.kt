@@ -62,6 +62,7 @@ fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Uni
     LaunchedEffect(id){while(true){book.network?.refreshOrder(id);delay(5000)}}
     val scope=rememberCoroutineScope();var deleting by remember{mutableStateOf(false)}
     val order=book.order(id) ?: return
+    if(order.isSaki){SakiOrderDetail(book,order,topInset,{onChat("AI 助手")},onDeleted);return}
     val buyer=order.buyer==book.userName
     val clipboard=LocalClipboardManager.current;val context=LocalContext.current
     var intervention by rememberSaveable{mutableStateOf(false)}
@@ -80,7 +81,7 @@ fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Uni
             } }
             item { LabCard { OrderProgress(order);OrderCountdown(order,book.nowMillis) } }
             item { LabCard {
-                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){PlayerAvatar(if(buyer)order.seller else order.buyer);Column(Modifier.weight(1f).padding(start=13.dp)){Text(if(buyer)order.seller else order.buyer,style=MaterialTheme.typography.titleMedium);Text(if(buyer)"${if(order.channel==OrderChannel.Official)"官方商家" else "卖家"}" else "买家",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};PlainButton({onChat(if(buyer)if(order.channel==OrderChannel.Official)"官方客服" else order.seller else order.buyer)}){Text(if(buyer)"联系卖家" else "联系买家")}}
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){if(buyer&&order.channel==OrderChannel.Official)LocalAvatar(order.sellerAvatarUri,order.seller,Modifier.size(44.dp)) else PlayerAvatar(if(buyer)order.seller else order.buyer);Column(Modifier.weight(1f).padding(start=13.dp)){Text(if(buyer)order.seller else order.buyer,style=MaterialTheme.typography.titleMedium);Text(if(buyer)"${if(order.channel==OrderChannel.Official)"官方商家" else "卖家"}" else "买家",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};PlainButton({onChat(if(buyer)if(order.channel==OrderChannel.Official)"官方客服" else order.seller else order.buyer)}){Text(if(buyer)"联系卖家" else "联系买家")}}
                 if(order.channel==OrderChannel.Market&&buyer){SettingsDivider();Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("卖家 QQ",Modifier.weight(1f),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant);Text(order.sellerQQ,style=MaterialTheme.typography.bodyMedium);IconButton({copied(order.sellerQQ)}){Icon(Icons.Outlined.ContentCopy,"复制卖家QQ",Modifier.size(18.dp),tint=MaterialTheme.colorScheme.primary)}}}
                 order.lines.forEach{line->Row(Modifier.fillMaxWidth().padding(top=18.dp),verticalAlignment=Alignment.CenterVertically){OrderThumbnail(line,Modifier.size(72.dp,86.dp));Column(Modifier.weight(1f).padding(start=14.dp)){Text(line.title,style=MaterialTheme.typography.titleMedium);Text(line.subtitle,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2);Text("${credit(line.unitPrice)} × ${line.quantity}",Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium)}}}
                 DetailRow("实付金额","${credit(order.amount)} 信用点")

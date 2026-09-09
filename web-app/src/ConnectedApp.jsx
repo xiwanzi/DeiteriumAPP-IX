@@ -226,7 +226,7 @@ export default function ConnectedApp() {
             key={session.user.userId}
             client={client}
             user={session.user}
-            requestedConversation={requestedConversation}
+            requestedConversation={new URLSearchParams(search).get("conversation") || requestedConversation}
             onProfile={(p) => setModal({ type: "player", player: p })}
             onUnavailable={() => navigate("/announcements")}
           />
