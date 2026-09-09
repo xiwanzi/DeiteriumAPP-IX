@@ -19,8 +19,8 @@ import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public final class CommandDispatcher {
-    private static final Set<String> TYPES = Set.of("player.resolve", "verification.deliver", "wallet.balance", "wallet.transfer", "operation.query", "mailbox.create", "mailbox.query", "mailbox.revoke","wallet.escrow.reserve","wallet.escrow.bind","wallet.escrow.settle","wallet.escrow.refund","wallet.escrow.query");
-    private static final Set<String> READS = Set.of("player.resolve", "wallet.balance", "operation.query", "mailbox.query","wallet.escrow.query");
+    private static final Set<String> TYPES = Set.of("player.resolve", "verification.deliver", "wallet.balance", "wallet.records", "wallet.transfer", "operation.query", "mailbox.create", "mailbox.query", "mailbox.revoke","wallet.escrow.reserve","wallet.escrow.bind","wallet.escrow.settle","wallet.escrow.refund","wallet.escrow.query");
+    private static final Set<String> READS = Set.of("player.resolve", "wallet.balance", "wallet.records", "operation.query", "mailbox.query","wallet.escrow.query");
     private final Supplier<CoreConfig> config;
     private final Supplier<CoreMailbox> mailbox;
     private final GameThread game;
@@ -124,6 +124,10 @@ public final class CommandDispatcher {
                     sessions.require(id, session.sessionEpoch()).sendMessage(Component.text("[Deuterium ID] " + (purpose.equals("register") ? "注册" : "重置密码") + "验证码：" + code + "。请勿向他人提供。"));
                     return Json.tree(Map.of("delivered", true));
                 }).get(Math.max(1, deadline - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+            }
+            case "wallet.records" -> {
+                if(!config.get().economyEnabled()||!config.get().nodeId().equals(config.get().economyAuthority()))throw new CoreFailure("ECONOMY_DISABLED","请通过经济权威节点查询流水。");
+                yield economy.records(payload);
             }
             case "wallet.balance", "wallet.transfer" -> {
                 if (!config.get().economyEnabled()) throw new CoreFailure("ECONOMY_DISABLED", "受控经济能力尚未启用。");

@@ -125,10 +125,16 @@ func commerceSaveCaseV2(ctx context.Context, tx *sql.Tx, c *CommerceCaseV2, crea
 			return e
 		}
 		c.Sequence, e = r.LastInsertId()
-		return e
+		if e != nil {
+			return e
+		}
+		return enqueueCaseEmailV204(ctx, tx, c.ID)
 	}
 	_, e := tx.ExecContext(ctx, "UPDATE commerce_interventions_v2 SET state=?,version=?,body=?,assigned_admin_id=?,funds_held=?,target_refund_amount=?,decision=?,resolution=?,evidence_entries=?,updated_at=? WHERE case_id=?", c.State, c.Version, catalogJSON(c.Body), commerceOptionalString(c.AssignedAdminID), c.FundsHeld, commerceOptionalString(c.TargetRefundAmount), commerceOptionalString(c.Decision), c.Resolution, catalogJSON(c.EvidenceEntries), c.UpdatedAt, c.ID)
-	return e
+	if e != nil {
+		return e
+	}
+	return enqueueCaseEmailV204(ctx, tx, c.ID)
 }
 func commerceCaseAdminTxV2(ctx context.Context, tx *sql.Tx, user string) (bool, error) {
 	var n int

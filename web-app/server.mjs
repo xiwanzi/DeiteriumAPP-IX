@@ -96,6 +96,6 @@ server.on("upgrade", (req, socket, head) =>
 );
 server.listen(port, host, () =>
   console.log(
-    `Deuterium Web 2.0.0 (${target ? "connected" : "unconfigured"}): http://${host}:${port}`,
+    `Deuterium Web 2.0.4 (${target ? "connected" : "unconfigured"}): http://${host}:${port}`,
   ),
 );

@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from "react";
+import { confirmNavigation } from "./unsaved-changes.js";
 import {
   X,
   ArrowUpRight,
@@ -110,7 +111,8 @@ export function Tabs({ values, value, onChange, label = "筛选" }) {
     </div>
   );
 }
-export function Modal({ title, children, close, wide = false }) {
+export function Modal({ title, children, close, wide = false, guardClose = false, dismissOnBackdrop = true }) {
+  const requestClose = () => { if (!guardClose || confirmNavigation()) close(); };
   const ref = useRef(null),
     label = useId();
   useEffect(() => {
@@ -131,10 +133,10 @@ export function Modal({ title, children, close, wide = false }) {
       aria-labelledby={label}
       onCancel={(e) => {
         e.preventDefault();
-        close();
+        requestClose();
       }}
       onClick={(e) => {
-        if (e.target === ref.current) {
+        if (dismissOnBackdrop && e.target === ref.current) {
           const r = ref.current.getBoundingClientRect();
           if (
             e.clientX < r.left ||
@@ -142,13 +144,13 @@ export function Modal({ title, children, close, wide = false }) {
             e.clientY < r.top ||
             e.clientY > r.bottom
           )
-            close();
+            requestClose();
         }
       }}
     >
       <div className="modal-head">
         <h2 id={label}>{title}</h2>
-        <button className="icon-button" aria-label="关闭弹窗" onClick={close}>
+        <button className="icon-button" aria-label="关闭弹窗" onClick={requestClose}>
           <X size={20} />
         </button>
       </div>

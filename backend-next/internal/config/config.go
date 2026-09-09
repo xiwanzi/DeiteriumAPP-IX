@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/subtle"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -30,6 +31,7 @@ type Node struct {
 }
 
 type Config struct {
+	SMTPKey           []byte   `json:"-"`
 	Listen            string   `json:"listen"`
 	PublicOrigin      string   `json:"publicOrigin"`
 	Development       bool     `json:"development"`
@@ -52,6 +54,12 @@ func Load(path string) (Config, error) {
 	var extra any
 	if d.Decode(&extra) != io.EOF {
 		return c, errors.New("trailing service configuration")
+	}
+	if raw := os.Getenv("DEUTERIUM_SMTP_KEY"); raw != "" {
+		c.SMTPKey, err = base64.StdEncoding.DecodeString(raw)
+		if err != nil || len(c.SMTPKey) != 32 {
+			return c, errors.New("DEUTERIUM_SMTP_KEY must be base64 encoding of 32 random bytes")
+		}
 	}
 	return c, c.Validate()
 }

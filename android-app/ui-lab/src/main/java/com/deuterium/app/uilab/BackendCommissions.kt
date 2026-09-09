@@ -26,6 +26,7 @@ class BackendCommissions(private val api:BackendApi,private val state:LabState) 
             refund=when(refund?.optString("status")){"REQUESTED","PROCESSING"->RefundState.Requested;"REJECTED"->RefundState.Rejected;"APPROVED"->RefundState.Approved;else->RefundState.None},refundAttempts=value.optInt("refundAttemptsUsed"),refundReason=refund?.optString("reason").orEmpty(),rejectionReason=refund?.optString("rejectionReason").orEmpty(),pausedMillis=if(value.isNull("pausedRemainingSeconds"))null else value.optLong("pausedRemainingSeconds")*1000,automatic=value.optBoolean("automatic"),
             serverStatus=status,fundsStatus=value.getString("fundsStatus"),serverActions=set,version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"))
         val index=state.commissions.entries.indexOfFirst{it.id==id};if(index>=0)state.commissions.entries[index]=entry else state.commissions.entries.add(0,entry)
+        state.commissions.entries.sortWith(compareByDescending<Commission>{it.createdAt}.thenByDescending{it.id})
         return id
     }
     suspend fun refresh(){val revision=visibilityRevision;runCatching{

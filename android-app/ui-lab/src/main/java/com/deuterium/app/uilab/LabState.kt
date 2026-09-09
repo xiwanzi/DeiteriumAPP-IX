@@ -32,9 +32,12 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     var walletError by mutableStateOf<String?>(null)
     var ledgerKnown by mutableStateOf(false);private set
     var ledgerError by mutableStateOf<String?>(null);private set
+    var todayIncome by mutableStateOf<Long?>(null);private set
+    var todayExpense by mutableStateOf<Long?>(null);private set
     var remoteHeld by mutableLongStateOf(0)
     var refreshed by mutableStateOf("等待同步")
     var refreshing by mutableStateOf(false)
+    private var refreshAgain=false
     var transferPending by mutableStateOf(api?.pendingTransfer()!=null);private set
     var transferSucceeded by mutableStateOf(false);private set
     var activeTransferKey by mutableStateOf<String?>(null);private set
@@ -192,23 +195,24 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }
     }
     fun refresh() {
-        if(refreshing || api == null) return
+        if(api == null) return
+        if(refreshing){refreshAgain=true;return}
+        refreshing=true
         scope.launch {
-            refreshing = true
+          try { do {
+            refreshAgain=false
             runCatching { api.request("GET", "/wallet/balance").getJSONObject("balance") }.onSuccess { value ->
                 balance = apiCents(value.optString("availableAmount", value.getString("amount"))); remoteHeld = apiCents(value.optString("heldAmount", "0"))
                 balanceKnown = true; walletError = null; refreshed = if(value.optBoolean("fresh")) "刚刚更新 · 已同步" else "已读取缓存余额"
-            }.onFailure { walletError = it.message ?: "余额读取失败"; refreshed = "余额尚未同步" }
-            runCatching { api.listAll("/wallet/records","records") }.onSuccess { values ->
-                ledger.clear(); ledger.addAll(values.filter { it.optString("status") == "success" }.map { value ->
-                    val at = runCatching { Instant.parse(value.getString("occurredAt")).atZone(ZoneId.systemDefault()).toLocalDateTime() }.getOrDefault(LocalDateTime.now())
-                    val amount = apiCents(value.getString("amount")) * if(value.optString("direction") == "expense") -1 else 1
-                    LedgerEntry(value.getString("recordId").hashCode().toLong(), value.optJSONObject("otherPlayer")?.optString("gameId").orEmpty(), value.optString("note", "玩家转账"), amount, at.format(DateTimeFormatter.ofPattern("HH:mm")), at)
-                })
+                todayIncome=value.optJSONObject("today")?.optString("income")?.takeIf{it.isNotBlank()}?.let(::apiCents)
+                todayExpense=value.optJSONObject("today")?.optString("expense")?.takeIf{it.isNotBlank()}?.let(::apiCents)
+            }.onFailure { todayIncome=null;todayExpense=null;walletError = it.message ?: "余额读取失败"; refreshed = "余额尚未同步" }
+            runCatching { val values=api.request("GET","/wallet/records?limit=25").getJSONArray("records").objects();values to ledgerEntries(values) }.onSuccess { (values,records) ->
+                ledger.clear(); ledger.addAll(records)
                 ledgerKnown=true;ledgerError=null
                 recentTransfers.clear();recentTransfers.addAll(values.filter{it.optString("direction")=="expense"&&it.optString("businessType","TRANSFER")=="TRANSFER"}.mapNotNull{it.optJSONObject("otherPlayer")?.optString("gameId")?.takeUnless{name->name.isBlank()||name=="null"}}.distinct().take(5))
             }.onFailure { ledgerKnown=false;ledgerError="账单暂时无法完整同步，请稍后重试";walletError=walletError ?: ledgerError }
-            refreshing = false
+          } while(refreshAgain) } finally { refreshing=false }
         }
     }
     suspend fun searchRecipients(query: String): List<PlayerProfile> {

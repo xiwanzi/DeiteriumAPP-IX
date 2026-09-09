@@ -6,20 +6,25 @@ import { ContentBlocks } from "./RemoteCollection.jsx";
 import { id } from "./format.js";
 import { uploadAsset } from "./assets.js";
 import InterventionManagement from "./Interventions.jsx";
-import AuditManagement from "./AuditManagement.jsx";
+import TradeAudit from "./TradeAudit.jsx";
+import EmailSettings from "./EmailSettings.jsx";
+import { confirmNavigation, useUnsavedChanges } from "./unsaved-changes.js";
 
 export default function OfficialAdmin({ client, user, navigate }) {
   const permissions = user.permissions || [], all = permissions.includes("platform.admin"),
-    tabs = [...(all || permissions.includes("core.read") ? ["Core 管理"] : []), ...(all || permissions.includes("announcements.manage") ? ["公告管理"] : []), ...(all || permissions.includes("intervention.manage") ? ["平台介入"] : []), ...(all || permissions.includes("audit.read") ? ["管理审计"] : []), "商店管理"],
-    [tab, setTab] = useState(tabs[0]);
-  return <><Tabs values={tabs} value={tab} onChange={setTab} />
-    {tab === "Core 管理" ? <CoreAdmin client={client} /> : tab === "公告管理" ? <AnnouncementManagement client={client} /> : tab === "平台介入" ? <InterventionManagement client={client} user={user} /> : tab === "管理审计" ? <AuditManagement client={client} /> : <><PageHead eyebrow="MERCHANT WORKSPACE" title="商店管理" subtitle="管理你的商店、商品与玩家发布。" /><Button onClick={() => navigate("/merchant")}>进入商店管理</Button></>}
+    tabs = [...(all || permissions.includes("intervention.manage") ? ["平台介入"] : []), ...(all || permissions.includes("announcements.manage") ? ["公告管理"] : []), ...(all || permissions.includes("audit.read") ? ["管理审计"] : []), ...(all ? ["邮件提醒"] : []), "商店管理", ...(all || permissions.includes("core.read") ? ["Core 管理"] : [])],
+    [tab, setTab] = useState(() => { const requested = {interventions:"平台介入",announcements:"公告管理",audit:"管理审计",email:"邮件提醒"}[new URLSearchParams(location.search).get("section")]; return tabs.includes(requested) ? requested : tabs[0]; }), [pending, setPending] = useState(0);
+  const changeTab = (next) => { if (next !== tab && confirmNavigation()) setTab(next); };
+  useEffect(() => { if (!all && !permissions.includes("intervention.manage")) return; let alive = true; const load = async () => { try { const r = await client.request("/api/v1/admin/interventions/summary"); if (alive) setPending(r.data.pending); } catch {} }; load(); const timer = setInterval(load, 15000); return () => { alive = false; clearInterval(timer); }; }, [client, all, permissions.join(",")]);
+  return <>{pending > 0 && <div className="intervention-alert" role="status"><span><strong>{pending} 起平台介入</strong>需要继续跟进</span><Button secondary onClick={() => changeTab("平台介入")}>查看案件</Button></div>}<Tabs values={tabs} value={tab} onChange={changeTab} />
+    {tab === "Core 管理" ? <CoreAdmin client={client} /> : tab === "公告管理" ? <AnnouncementManagement client={client} /> : tab === "平台介入" ? <InterventionManagement client={client} user={user} /> : tab === "管理审计" ? <TradeAudit client={client} /> : tab === "邮件提醒" ? <EmailSettings client={client} /> : <><PageHead eyebrow="MERCHANT WORKSPACE" title="商店管理" subtitle="管理你的商店、商品与玩家发布。" /><Button onClick={() => navigate("/merchant")}>进入商店管理</Button></>}
   </>;
 }
 
 function AnnouncementManagement({ client }) {
   const [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [editor, setEditor] = useState(null), [withdraw, setWithdraw] = useState(null), [reason, setReason] = useState("");
   const actionKeys = useRef({});
+  const [deleting, setDeleting] = useState(null);
   const load = async (more = false) => {
     setBusy(true); setError("");
     try { const r = await client.request(`/api/v1/admin/announcements?limit=30${more && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`); setItems((old) => more ? [...old, ...r.data] : r.data); setCursor(r.page?.nextCursor); }
@@ -27,11 +32,12 @@ function AnnouncementManagement({ client }) {
   };
   useEffect(() => { load(); }, []);
   const action = async (item, actionName, explanation = "") => {
+    if (busy) return;
     setBusy(true); setError(""); const scope = `${item.announcementId}:${item.version}:${actionName}:${explanation}`;
     actionKeys.current[scope] ||= id();
     try {
       await client.request(`/api/v1/admin/announcements/${encodeURIComponent(item.announcementId)}/${actionName}`, { method: "POST", body: { clientRequestId: actionKeys.current[scope], expectedVersion: item.version, ...(actionName === "unpublish" ? { reason: explanation } : {}) } });
-      setWithdraw(null); await load();
+      setWithdraw(null); setDeleting(null); await load();
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   };
   return <>
@@ -40,11 +46,12 @@ function AnnouncementManagement({ client }) {
     <div className="announcement-admin-list">{items.map((item) => <article key={item.announcementId}>
       {item.cover?.url && <div className="admin-ann-cover"><img src={item.cover.url} alt={item.title} /></div>}
       <div className="admin-ann-copy"><Badge tone={item.status === "PUBLISHED" ? "sage" : "neutral"}>{{ DRAFT: "草稿", PUBLISHED: "已发布", WITHDRAWN: "已撤下" }[item.status] || "公告"}</Badge>{item.pinned && <Badge>置顶</Badge>}{item.hasUnpublishedChanges && item.status === "PUBLISHED" && <Badge tone="amber">有未发布修改</Badge>}<h3>{item.title}</h3><p>{item.summary}</p></div>
-      <div className="button-row"><Button secondary disabled={busy} onClick={() => setEditor(item)}>编辑</Button><Button disabled={busy} onClick={() => action(item, "publish")}>{item.status === "PUBLISHED" ? "发布更新" : "发布"}</Button>{item.status === "PUBLISHED" && <Button secondary disabled={busy} onClick={() => { setWithdraw(item); setReason(""); }}>撤下</Button>}</div>
+      <div className="button-row"><Button secondary disabled={busy} onClick={() => setEditor(item)}>编辑</Button><Button disabled={busy} onClick={() => action(item, "publish")}>{item.status === "PUBLISHED" ? "发布更新" : "发布"}</Button>{item.status === "PUBLISHED" && <Button secondary disabled={busy} onClick={() => { setWithdraw(item); setReason(""); }}>撤下</Button>}<Button danger secondary disabled={busy} onClick={() => {setDeleting(item);setError("");}}><Trash2 size={16} />永久删除</Button></div>
     </article>)}</div>
     {!busy && !items.length && <Empty title="还没有公告" text="创建并发布后，玩家就能在 App 和网页看到。" />}
     {cursor && <Button secondary disabled={busy} onClick={() => load(true)}>加载更多</Button>}
-    {editor && <Modal title={editor.announcementId ? "编辑公告" : "新建公告"} close={() => setEditor(null)} wide><AnnouncementForm client={client} initial={editor} onSaved={async () => { setEditor(null); await load(); }} /></Modal>}
+    {editor && <Modal title={editor.announcementId ? "编辑公告" : "新建公告"} close={() => setEditor(null)} wide guardClose dismissOnBackdrop={false}><AnnouncementForm client={client} initial={editor} onSaved={async () => { setEditor(null); await load(); }} /></Modal>}
+    {deleting && <Modal title="永久删除公告" close={() => {if(!busy)setDeleting(null);}} dismissOnBackdrop={false}><p>确认永久删除“{deleting.title}”？</p><p>正文、草稿、发布版本和关联通知都会删除，无法恢复。</p>{error && <p className="auth-error" role="alert">{error}</p>}<div className="button-row"><Button secondary disabled={busy} onClick={() => setDeleting(null)}>保留公告</Button><Button danger disabled={busy} onClick={() => action(deleting,"delete")}>{busy ? "正在删除…" : "确认永久删除"}</Button></div></Modal>}
     {withdraw && <Modal title="撤下公告" close={() => setWithdraw(null)}><form onSubmit={(e) => { e.preventDefault(); action(withdraw, "unpublish", reason); }}><p>撤下“{withdraw.title}”后，玩家将无法查看此公告。</p><Field label="撤下原因"><textarea required maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>{error && <p role="alert" className="auth-error">{error}</p>}<Button type="submit" disabled={busy}>确认撤下</Button></form></Modal>}
   </>;
 }
@@ -55,6 +62,7 @@ function AnnouncementForm({ client, initial, onSaved }) {
     [cover, setCover] = useState(initial.cover || null), [media, setMedia] = useState(initial.media || []),
     [pinned, setPinned] = useState(initial.pinned || false), [priority, setPriority] = useState(initial.priority || "NORMAL"),
     [preview, setPreview] = useState(false), [busy, setBusy] = useState(false), [progress, setProgress] = useState(null), [error, setError] = useState("");
+  useUnsavedChanges({title,summary,blocks,cover:cover?.assetId,pinned,priority},busy);
   const request = useRef(null), coverInput = useRef(null), imageInput = useRef(null);
   const update = (index, patch) => setBlocks((old) => old.map((block, n) => n === index ? { ...block, ...patch } : block));
   const move = (index, delta) => setBlocks((old) => { const next = [...old], target = index + delta; if (target < 0 || target >= next.length) return old; [next[index], next[target]] = [next[target], next[index]]; return next; });

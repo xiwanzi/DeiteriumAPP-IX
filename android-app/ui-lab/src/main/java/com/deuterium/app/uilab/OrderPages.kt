@@ -27,7 +27,7 @@ fun OrdersPage(book:CommerceBook,topInset:Dp,onOrder:(String)->Unit) {
     var channel by rememberSaveable{mutableIntStateOf(0)};var selling by rememberSaveable{mutableIntStateOf(0)};var filter by rememberSaveable{mutableStateOf("全部")}
     val orders=book.orders.filter{it.channel==(if(channel==0)OrderChannel.Official else OrderChannel.Market)&&(if(channel==1&&selling==1)it.seller==book.userName else it.buyer==book.userName)}.filter{
         when(filter){"进行中"->it.serverStatus !in setOf("CANCELLED","REFUNDED")&&it.stage !in listOf(OrderStage.Confirmed,OrderStage.Claimed)&&it.refund!=RefundState.Approved;"已完成"->it.stage in listOf(OrderStage.Confirmed,OrderStage.Claimed);"退款"->it.refund!=RefundState.None;else->true}
-    }
+    }.sortedWith(compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id})
     LazyColumn(contentPadding=PaddingValues(start=16.dp,end=16.dp,top=topInset,bottom=40.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
         item { SegmentedControl(listOf("商城订单","市场订单"),channel,{channel=it;filter="全部"}) }
         if(channel==1)item { SegmentedControl(listOf("我买到的","我卖出的"),selling,{selling=it},Modifier.fillMaxWidth(.64f)) }
@@ -37,7 +37,7 @@ fun OrdersPage(book:CommerceBook,topInset:Dp,onOrder:(String)->Unit) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text(if(selling==1&&channel==1)"买家 ${order.buyer}" else order.seller,Modifier.weight(1f),style=MaterialTheme.typography.titleMedium);Text(order.status,color=if(order.refund==RefundState.Approved)MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodyMedium)}
             order.lines.take(2).forEach{line->Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically){OrderThumbnail(line,Modifier.size(66.dp,76.dp));Column(Modifier.weight(1f).padding(start=14.dp)){Text(line.title,style=MaterialTheme.typography.bodyLarge);Text("${credit(line.unitPrice)} × ${line.quantity}",Modifier.padding(top=5.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
             Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically){Text(order.createdAt.format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm")),Modifier.weight(1f),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);Text("共 ${order.lines.sumOf{it.quantity}} 件  ${credit(order.amount)}",style=MaterialTheme.typography.titleMedium)}
-            if(order.canHideRecord)PlainButton({deleting=order},Modifier.align(Alignment.End)){Text("删除记录",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            if(order.canHideRecord)DeleteRecordButton({deleting=order},Modifier.align(Alignment.End))
         }}}
     }
     deleting?.let{order->DeleteRecordDialog(order.lines.firstOrNull()?.title ?: "订单",{deleting=null}){book.network?.hideOrder(order.id)==true}}
@@ -104,7 +104,7 @@ fun OrderDetailPage(book:CommerceBook,id:String,topInset:Dp,onChat:(String)->Uni
             if(order.refundAttempts>0)item{SettingsGroup{SettingsRow("退款详情",Icons.Outlined.ReceiptLong,detail=if(order.refund==RefundState.Requested)"待卖家处理" else "查看进度"){onRefundStatus(id)}}}
             order.intervention?.let{case->item{InterventionSummary(case){intervention=true}}}
             if(order.interventionCaseId!=null&&order.intervention==null)item{PlainButton({intervention=true}){Text("查看平台介入")}}
-            if(order.canHideRecord)item{PlainButton({deleting=true},Modifier.fillMaxWidth()){Text("删除记录",color=MaterialTheme.colorScheme.error)}}
+            if(order.canHideRecord)item{DeleteRecordButton({deleting=true},Modifier.fillMaxWidth())}
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface) {
             Row(Modifier.navigationBarsPadding().padding(18.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)) {

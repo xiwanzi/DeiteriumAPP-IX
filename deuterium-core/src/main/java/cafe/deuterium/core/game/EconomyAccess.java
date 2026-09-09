@@ -27,6 +27,11 @@ public final class EconomyAccess {
         }catch(ReflectiveOperationException failure){throw unavailable();}
     }
     public JsonObject balance(UUID player){return call("balance",new Class<?>[]{UUID.class},player);}
+    public JsonObject records(JsonObject payload){
+        Map<String,Object> fields=new LinkedHashMap<>();
+        payload.entrySet().forEach(entry->{if(!entry.getValue().isJsonPrimitive()||!entry.getValue().getAsJsonPrimitive().isString())throw CoreFailure.invalid("无效流水查询参数。");fields.put(entry.getKey(),entry.getValue().getAsString());});
+        return call("records",new Class<?>[]{Map.class},fields);
+    }
     public JsonObject execute(String operation,String command,JsonObject payload){
         Map<String,Object> fields=new LinkedHashMap<>();payload.entrySet().forEach(entry->{if(entry.getValue().isJsonNull())fields.put(entry.getKey(),null);else if(entry.getValue().isJsonPrimitive())fields.put(entry.getKey(),entry.getValue().getAsString());else throw CoreFailure.invalid("资金参数必须为标量。");});
         return call("execute",new Class<?>[]{String.class,String.class,Map.class},operation,command,fields);

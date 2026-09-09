@@ -37,7 +37,7 @@ fun CommissionHallPage(state:LabState,topInset:Dp,onOpen:(String)->Unit,mine:Boo
     LaunchedEffect(Unit){state.commissions.network?.refresh()}
     var deleting by remember{mutableStateOf<Commission?>(null)}
     var role by rememberSaveable{mutableIntStateOf(0)};var filter by rememberSaveable{mutableStateOf("全部")}
-    val entries=state.commissions.entries.filter{(mine||it.visibleInHall)&&(!mine||if(role==0)it.owner==state.userName else it.worker==state.userName)&&(when(filter){"待接取"->it.stage==CommissionStage.Open;"进行中"->it.stage==CommissionStage.Active;"待确认"->it.stage==CommissionStage.Completed;"已结束"->it.stage in setOf(CommissionStage.Confirmed,CommissionStage.Cancelled)&&!it.held;else->true})}
+    val entries=state.commissions.entries.filter{(mine||it.visibleInHall)&&(!mine||if(role==0)it.owner==state.userName else it.worker==state.userName)&&(when(filter){"待接取"->it.stage==CommissionStage.Open;"进行中"->it.stage==CommissionStage.Active;"待确认"->it.stage==CommissionStage.Completed;"已结束"->it.stage in setOf(CommissionStage.Confirmed,CommissionStage.Cancelled)&&!it.held;else->true})}.sortedWith(compareByDescending<Commission>{it.createdAt}.thenByDescending{it.id})
     LazyColumn(contentPadding=PaddingValues(start=18.dp,end=18.dp,top=topInset,bottom=45.dp),verticalArrangement=Arrangement.spacedBy(15.dp)) {
         item{Text(if(mine)"我的委托" else "互相搭把手",style=MaterialTheme.typography.headlineLarge);Text(if(mine)"查看履约进度，及时沟通与确认。" else LocalAppUpdates.current?.resourceStrings?.get("commissions.subtitle") ?: "报酬已预付，完成后安心结算。",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(mine)item{SegmentedControl(listOf("我发布的","我接取的"),role,{role=it;filter="全部"})}
@@ -51,7 +51,7 @@ fun CommissionHallPage(state:LabState,topInset:Dp,onOpen:(String)->Unit,mine:Boo
                 Text(entry.draft.location,Modifier.padding(top=5.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
             }}
             Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically){Text("${credit(entry.draft.reward)}",style=MaterialTheme.typography.titleLarge,color=MaterialTheme.colorScheme.primary);Text(" 信用点",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);Spacer(Modifier.weight(1f));Text(if(entry.stage==CommissionStage.Open&&entry.held)"已预付 · ${durationHours(entry.draft.workHours)}" else entry.worker?.let{"接取者 $it"} ?: entry.owner,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-            if(mine&&entry.canHideRecord)PlainButton({deleting=entry},Modifier.align(Alignment.End)){Text("删除记录",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            if(mine&&entry.canHideRecord)DeleteRecordButton({deleting=entry},Modifier.align(Alignment.End))
         }}}
     }
     deleting?.let{entry->DeleteRecordDialog(entry.draft.title,{deleting=null}){state.commissions.network?.hide(entry.id)==true}}
@@ -117,7 +117,7 @@ fun CommissionDetailPage(state:LabState,id:String,topInset:Dp,onChat:(String)->U
             if(entry.refundAttempts>0)item{LabCard{Text("退款记录",style=MaterialTheme.typography.titleMedium);DetailRow("申请说明",entry.refundReason);if(entry.rejectionReason.isNotBlank())DetailRow("拒绝理由",entry.rejectionReason);Text(if(entry.refund==RefundState.Requested)"等待接取者处理，自动确认暂停。" else "拒绝后可申请平台介入，退款申请次数不恢复。",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
             if(owner||worker)entry.intervention?.let{case->item{InterventionSummary(case){intervention=true}}}
             if((owner||worker)&&entry.interventionCaseId!=null&&entry.intervention==null)item{PlainButton({intervention=true}){Text("查看平台介入")}}
-            if(entry.canHideRecord)item{PlainButton({deleting=true},Modifier.fillMaxWidth()){Text("删除记录",color=MaterialTheme.colorScheme.error)}}
+            if(entry.canHideRecord)item{DeleteRecordButton({deleting=true},Modifier.fillMaxWidth())}
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){Row(Modifier.navigationBarsPadding().padding(18.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)){
             when{

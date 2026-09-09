@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+本轮 2.0.4 发布工作（2026-09-09）：用户已明确授权补修安装后的退出/加载问题、发布 2.0.4 并推送源码，包含当前公开维护仓库。此前候选为 20400，本次正式发布包使用 20401；发布完成前仍以 2.0.3 线上记录为准。候选内容见 [2.0.4 候选交付](docs/deployment/deuterium-2.0.4-candidate.md)。
+
 当前发布（2026-09-09）：App 2.0.3 (20300)，配套 Go 源码 `15bb45dc6625`。先看 [部署记录](docs/deployment/deuterium-2.0.3-live.md)；付款只显示金额二次确认，记录删除为账号级隐藏，公告/AI 支持 Markdown。游戏插件和网站未更换。
 
 先读 `CONTEXT.md`、`docs/project-status.md`、`docs/prd/deuterium-current.md` 和目标模块说明；运行 `git status --short`。本仓库是 2026-09-08 从多工作区整理的新私有维护入口，旧工作区不得自动覆盖回来。

@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -59,9 +60,16 @@ class MainActivity : ComponentActivity() {
             when(theme){1->android.app.UiModeManager.MODE_NIGHT_NO;2->android.app.UiModeManager.MODE_NIGHT_YES;else->android.app.UiModeManager.MODE_NIGHT_AUTO})
     }
     override fun onNewIntent(intent:Intent) { super.onNewIntent(intent);setIntent(intent);incomingRoute=intent.getStringExtra("route") }
+    override fun onWindowFocusChanged(hasFocus:Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Warm starts and returns from package installation can omit the native
+        // splash exit callback. A focused app window must never wait on it.
+        if(hasFocus)nativeLaunchReady=true
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        InstallCompletionReceiver.onUiStarted()
         enableEdgeToEdge()
         nativeLaunchReady=Build.VERSION.SDK_INT<31||savedInstanceState!=null
         if(Build.VERSION.SDK_INT>=31)splashScreen.setOnExitAnimationListener { splash ->splash.remove();nativeLaunchReady=true}
@@ -122,7 +130,11 @@ class MainActivity : ComponentActivity() {
             }
             LabTheme(theme, motion, true, params.overlay) {
                 val dark = MaterialTheme.colorScheme.background.red < .5f
-                SideEffect { WindowCompat.getInsetsController(window,window.decorView).apply { isAppearanceLightStatusBars = !dark; isAppearanceLightNavigationBars = !dark } }
+                val windowBackground = MaterialTheme.colorScheme.background
+                SideEffect {
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(windowBackground.toArgb()))
+                    WindowCompat.getInsetsController(window,window.decorView).apply { isAppearanceLightStatusBars = !dark; isAppearanceLightNavigationBars = !dark }
+                }
                 CompositionLocalProvider(LocalHeaderGlassParameters provides params.header,LocalAppUpdates provides updates,LocalContentColor provides MaterialTheme.colorScheme.onSurface, LocalOverlayGlassEnabled provides overlayGlass,LocalDeviceTilt provides rememberDeviceTilt(tilt && motion && (glass||overlayGlass))) {
                     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                     if(!signedIn) AuthPage { name ->

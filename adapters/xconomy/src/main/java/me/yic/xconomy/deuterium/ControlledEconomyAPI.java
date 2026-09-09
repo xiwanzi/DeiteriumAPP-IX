@@ -29,6 +29,8 @@ public final class ControlledEconomyAPI {
         }
     }
     public static int apiVersion(){engine();return 1;}
+    public static int ledgerApiVersion(){engine();return 1;}
+    public static Map<String,Object> records(Map<String,Object> input){return engine().records(input);}
     public static Map<String,Object> initializeSystemAccounts(){return engine().initializeSystemAccounts();}
     public static Map<String,Object> balance(UUID player){return engine().balance(player);}
     public static Map<String,Object> execute(String operation,String command,Map<String,Object> payload){

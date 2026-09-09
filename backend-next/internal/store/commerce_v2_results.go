@@ -586,7 +586,10 @@ func (s *Store) commerceCompleteOperationV2(ctx context.Context, tx *sql.Tx, d *
 			}
 		}
 		_, e = tx.ExecContext(ctx, "UPDATE commerce_interventions_v2 SET state='RESOLVED',version=version+1,funds_held=FALSE,updated_at=? WHERE case_id=? AND resource_id=?", now, d.InterventionCaseID, d.ID)
-		return e
+		if e != nil {
+			return e
+		}
+		return enqueueCaseEmailV204(ctx, tx, d.InterventionCaseID)
 	}
 	return catalogInvalid()
 }
@@ -652,7 +655,10 @@ func (s *Store) commerceFailOperationV2(ctx context.Context, tx *sql.Tx, d *Comm
 	case "case-resolution":
 		d.FundsState = "INTERVENTION_HOLD"
 		_, e := tx.ExecContext(ctx, "UPDATE commerce_interventions_v2 SET state='RESOLVING',version=version+1,updated_at=? WHERE case_id=?", now, d.InterventionCaseID)
-		return e
+		if e != nil {
+			return e
+		}
+		return enqueueCaseEmailV204(ctx, tx, d.InterventionCaseID)
 	}
 	return nil
 }

@@ -1,0 +1,1149 @@
+openapi: 3.0.3
+info:
+  title: Deuterium 2.0.4 管理增量 API
+  version: 2.0.4
+  description: 候选实现。详细语义和升级顺序见 admin-ledger-v204.md。
+servers:
+- url: /api/v1
+security:
+- bearerAuth: []
+- webSession: []
+paths:
+  /admin/announcements/{announcementId}/delete:
+    parameters:
+    - name: announcementId
+      in: path
+      required: true
+      schema: &id001
+        type: string
+    post:
+      summary: 永久删除公告及通知副本
+      description: 权限：announcements.manage 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteRequest'
+  /admin/email-settings:
+    get:
+      summary: 读取 SMTP 配置及送达状态
+      description: 权限：platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailSettingsResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: 保存 SMTP 配置（密码只写）
+      description: 权限：platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailSaveResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailSave'
+  /admin/email-settings/test:
+    post:
+      summary: 将测试邮件加入持久队列
+      description: 权限：platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTestResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTestRequest'
+  /admin/interventions/summary:
+    get:
+      summary: 查询待跟进案件数量
+      description: 权限：intervention.manage 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterventionSummaryResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/players:
+    get:
+      summary: 查询注册及游戏玩家
+      description: 权限：audit.read 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerListResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 100
+      - &id003
+        name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 4096
+  /admin/transactions:
+    get:
+      summary: 读取全服或指定玩家的已提交账本
+      description: 权限：audit.read 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 4096
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+          description: 受 Core 帧大小约束，实际每页最多 25 条。
+      - name: playerRef
+        in: query
+        required: false
+        schema: *id001
+      - name: direction
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - income
+          - expense
+      - name: businessType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - TRANSFER
+          - GAME
+          - OFFICIAL_STORE
+          - MARKET_ORDER
+          - COMMISSION
+      - name: from
+        in: query
+        required: false
+        schema: &id002
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema: *id002
+  /admin/orders:
+    get:
+      summary: 查询完整订单历史（忽略个人隐藏）
+      description: 权限：audit.read 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - *id003
+      - &id004
+        name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 25
+      - name: playerRef
+        in: query
+        required: false
+        schema: *id001
+      - name: q
+        in: query
+        required: false
+        schema: *id001
+      - name: status
+        in: query
+        required: false
+        schema: *id001
+      - name: channel
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - OFFICIAL_STORE
+          - PLAYER_MARKET
+  /admin/orders/{resourceId}:
+    parameters:
+    - name: resourceId
+      in: path
+      required: true
+      schema: *id001
+    get:
+      summary: 查询只读订单详情
+      description: 权限：audit.read 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/products:
+    get:
+      summary: 查询完整商品历史（含下架和草稿）
+      description: 权限：audit.read 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - *id003
+      - *id004
+      - name: playerRef
+        in: query
+        required: false
+        schema: *id001
+      - name: q
+        in: query
+        required: false
+        schema: *id001
+      - name: status
+        in: query
+        required: false
+        schema: *id001
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - product
+          - listing
+  /admin/products/{resourceId}:
+    parameters:
+    - name: resourceId
+      in: path
+      required: true
+      schema: *id001
+    get:
+      summary: 查询只读商品详情
+      description: 权限：audit.read 或 platform.admin
+      responses:
+        '200':
+          description: 查询或操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '400':
+          description: 参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 版本变化或配置未就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 依赖服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    webSession:
+      type: apiKey
+      in: cookie
+      name: __Host-deuterium_session
+      description: 写请求还需要既有 CSRF 与 Origin 校验；开发环境使用 deuterium_dev_session。
+  schemas:
+    Page:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+      required:
+      - nextCursor
+      - hasMore
+    Error:
+      type: object
+      properties:
+        requestId: *id001
+        error:
+          type: object
+          properties:
+            code: *id001
+            message: *id001
+          required:
+          - code
+          - message
+      required:
+      - error
+    DeleteRequest:
+      type: object
+      properties:
+        clientRequestId: &id011
+          type: string
+          minLength: 1
+          maxLength: 128
+        expectedVersion: &id005
+          type: integer
+          minimum: 0
+      required:
+      - clientRequestId
+      - expectedVersion
+    DeleteResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: object
+          properties:
+            announcementId: *id001
+            deleted:
+              type: boolean
+              enum:
+              - true
+          required:
+          - announcementId
+          - deleted
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime
+    EmailSettings:
+      type: object
+      properties:
+        enabled: &id006
+          type: boolean
+        host: &id007
+          type: string
+          maxLength: 253
+        port: &id008
+          type: integer
+          minimum: 1
+          maximum: 65535
+        security: &id009
+          type: string
+          enum:
+          - TLS
+          - STARTTLS
+        username: &id010
+          type: string
+          maxLength: 320
+        from:
+          type: string
+          description: 尚未配置时为空字符串。
+        recipients:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            format: email
+          description: 尚未配置时为空数组。
+        version: *id005
+        passwordConfigured:
+          type: boolean
+      required:
+      - enabled
+      - host
+      - port
+      - security
+      - username
+      - from
+      - recipients
+      - version
+      - passwordConfigured
+    EmailSave:
+      type: object
+      properties:
+        enabled: *id006
+        host: *id007
+        port: *id008
+        security: *id009
+        username: *id010
+        from:
+          type: string
+          format: email
+        recipients:
+          type: array
+          minItems: 1
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            format: email
+        clientRequestId: *id011
+        expectedVersion: *id005
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 2048
+          description: 省略表示保留已保存密码。
+      required:
+      - enabled
+      - host
+      - port
+      - security
+      - username
+      - from
+      - recipients
+      - clientRequestId
+      - expectedVersion
+    EmailEvent:
+      type: object
+      properties:
+        eventId: *id001
+        caseId:
+          type: string
+          nullable: true
+        caseVersion: *id005
+        caseState: *id001
+        status:
+          type: string
+          enum:
+          - PENDING
+          - SENDING
+          - RETRY
+          - SENT
+        attempts: *id005
+        nextAttemptAt: *id002
+        lastError: *id001
+        createdAt: *id002
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - eventId
+      - caseId
+      - status
+      - attempts
+      - lastError
+      - createdAt
+    EmailSettingsResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: object
+          properties:
+            settings:
+              $ref: '#/components/schemas/EmailSettings'
+            secretStorageReady:
+              type: boolean
+            delivery:
+              type: object
+              properties:
+                pending: *id005
+                retrying: *id005
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/EmailEvent'
+              required:
+              - pending
+              - retrying
+              - events
+          required:
+          - settings
+          - secretStorageReady
+          - delivery
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime
+    EmailSaveResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          $ref: '#/components/schemas/EmailSettings'
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime
+    EmailTestRequest:
+      type: object
+      properties:
+        clientRequestId: *id011
+      required:
+      - clientRequestId
+    EmailTestResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: object
+          properties:
+            eventId: *id001
+            status:
+              type: string
+              enum:
+              - PENDING
+          required:
+          - eventId
+          - status
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime
+    InterventionSummaryResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: object
+          properties:
+            pending: *id005
+            submitted: *id005
+          required:
+          - pending
+          - submitted
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime
+    Player:
+      type: object
+      properties:
+        playerRef: *id001
+        uuid:
+          type: string
+          format: uuid
+        gameId: *id001
+        qq: *id001
+        registered:
+          type: boolean
+        status: *id001
+      required:
+      - playerRef
+      - uuid
+      - gameId
+      - qq
+      - registered
+      - status
+    PlayerListResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+        serverTime: *id002
+        page:
+          $ref: '#/components/schemas/Page'
+      required:
+      - requestId
+      - data
+      - serverTime
+      - page
+    Transaction:
+      allOf:
+      - $ref: ./openapi-app-v2.yaml#/components/schemas/WalletRecord
+      - type: object
+        properties:
+          player:
+            type: object
+            properties:
+              uuid: *id001
+              gameId: *id001
+            required:
+            - uuid
+            - gameId
+          operationId: *id001
+          ledgerType: *id001
+        required:
+        - player
+        - operationId
+        - ledgerType
+    TransactionListResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        serverTime: *id002
+        page:
+          $ref: '#/components/schemas/Page'
+      required:
+      - requestId
+      - data
+      - serverTime
+      - page
+    OrderSummary:
+      type: object
+      properties:
+        orderId: *id001
+        channel: &id014
+          type: string
+          enum:
+          - OFFICIAL_STORE
+          - PLAYER_MARKET
+        status: *id001
+        fundsStatus: *id001
+        amount: &id013
+          type: string
+          pattern: ^\d+(\.\d{1,2})?$
+        createdAt: *id002
+        updatedAt: *id002
+        buyer: &id012
+          type: object
+          properties:
+            displayName: *id001
+            playerRef:
+              type: string
+              nullable: true
+            contactQq:
+              type: string
+              nullable: true
+          required:
+          - displayName
+        seller: *id012
+        items: &id015
+          type: array
+          items:
+            type: object
+            properties:
+              productId: *id001
+              title: *id001
+              quantity:
+                type: integer
+                minimum: 1
+              unitPrice: *id013
+        settledAmount: *id013
+        refundedAmount: *id013
+        storeId: *id001
+        interventionCaseId: *id001
+      required:
+      - orderId
+      - channel
+      - status
+      - fundsStatus
+      - amount
+      - createdAt
+      - buyer
+      - seller
+      - items
+    OrderListResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        serverTime: *id002
+        page:
+          $ref: '#/components/schemas/Page'
+      required:
+      - requestId
+      - data
+      - serverTime
+      - page
+    OrderDetailResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: object
+          properties:
+            orderId: *id001
+            channel: *id014
+            status: *id001
+            fundsStatus: *id001
+            amount: *id013
+            createdAt: *id002
+            updatedAt: *id002
+            buyer: *id012
+            seller: *id012
+            items: *id015
+            settledAmount: *id013
+            refundedAmount: *id013
+            storeId: *id001
+            interventionCaseId:
+              type: string
+              nullable: true
+            delivery:
+              type: object
+              properties:
+                method: *id001
+                location: *id001
+            readOnly:
+              type: boolean
+              enum:
+              - true
+            availableActions:
+              type: array
+              maxItems: 0
+              items: *id001
+            refund:
+              type: object
+              nullable: true
+          required:
+          - orderId
+          - items
+          - delivery
+          - readOnly
+          - availableActions
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime
+    ProductSummary:
+      type: object
+      properties:
+        productId: *id001
+        kind:
+          type: string
+          enum:
+          - product
+          - listing
+        title: *id001
+        price: *id013
+        stock:
+          type: integer
+          nullable: true
+        state: *id001
+        storeId: *id001
+        createdAt: *id002
+        updatedAt: *id002
+      required:
+      - productId
+      - kind
+      - title
+      - price
+      - stock
+      - state
+      - createdAt
+    ProductListResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+        serverTime: *id002
+        page:
+          $ref: '#/components/schemas/Page'
+      required:
+      - requestId
+      - data
+      - serverTime
+      - page
+    ProductDetailResponse:
+      type: object
+      properties:
+        requestId: *id001
+        data:
+          type: object
+          properties:
+            productId: *id001
+            listingId: *id001
+            kind:
+              type: string
+              enum:
+              - product
+              - listing
+            draft:
+              type: object
+            published:
+              type: object
+              nullable: true
+            title: *id001
+            description: *id001
+            photos:
+              type: array
+              items:
+                type: object
+            readOnly:
+              type: boolean
+              enum:
+              - true
+            state: *id001
+          required:
+          - kind
+          - readOnly
+          - state
+        serverTime: *id002
+      required:
+      - requestId
+      - data
+      - serverTime

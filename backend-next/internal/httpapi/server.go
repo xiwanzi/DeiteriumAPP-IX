@@ -42,6 +42,7 @@ func New(s *store.Store, c config.Config) *Server {
 		nodes = append(nodes, node.ID)
 	}
 	go server.coreWorker(nodes)
+	go server.emailWorkerV204()
 	return server
 }
 func (s *Server) Close() { s.cancel(); s.Hub.Wake() }
@@ -57,6 +58,8 @@ func (s *Server) Handler() http.Handler {
 	s.registerCommerceV2(mux)
 	s.registerAIV2(mux)
 	s.registerAdminAuditV2(mux)
+	s.registerAdminEmailV204(mux)
+	s.registerAdminCommerceV204(mux)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)

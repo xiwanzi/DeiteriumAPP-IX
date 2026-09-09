@@ -1,0 +1,9 @@
+{
+  "fromVersion": 20401,
+  "toVersion": 20402,
+  "systemInstallationCompleted": true,
+  "openAfterInstallationReady": true,
+  "warmRelaunchReady": true,
+  "cancelKeepsInstalledVersion": true,
+  "reopenAfterCancellationReady": true
+}

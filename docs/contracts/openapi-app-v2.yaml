@@ -473,12 +473,11 @@ paths:
     get:
       tags:
       - Wallet
-      summary: 获取基础信用点流水
+      summary: 获取经济权威账本流水（时间倒序）
       operationId: listWalletRecords
       parameters:
       - $ref: '#/components/parameters/Limit'
       - $ref: '#/components/parameters/Cursor'
-      - $ref: '#/components/parameters/AfterRecordId'
       - name: direction
         in: query
         required: false
@@ -487,7 +486,7 @@ paths:
           enum:
           - income
           - expense
-        description: ''
+        description: 2.0.4 统一账本筛选；默认最近一年，游标固定账号与筛选条件。
       - name: businessType
         in: query
         required: false
@@ -495,14 +494,10 @@ paths:
           type: string
           enum:
           - TRANSFER
-          - STORE_PURCHASE
-          - MARKET_RESERVE
-          - MARKET_SETTLEMENT
-          - COMMISSION_RESERVE
-          - COMMISSION_SETTLEMENT
-          - REFUND
-          - ADJUSTMENT
-          - AI_PURCHASE
+          - GAME
+          - OFFICIAL_STORE
+          - MARKET_ORDER
+          - COMMISSION
         description: ''
       - name: from
         in: query
@@ -12996,12 +12991,28 @@ components:
           properties:
             market:
               $ref: '#/components/schemas/CreditAmount'
+            store:
+              $ref: '#/components/schemas/CreditAmount'
             commissions:
               $ref: '#/components/schemas/CreditAmount'
           required:
           - market
           - commissions
           description: ''
+        today:
+          type: object
+          required: [income, expense, date, timeZone]
+          properties:
+            income:
+              $ref: '#/components/schemas/CreditAmount'
+            expense:
+              $ref: '#/components/schemas/CreditAmount'
+            date:
+              type: string
+              format: date
+            timeZone:
+              type: string
+              enum: ['+08:00']
         serverNow:
           type: string
           format: date-time
@@ -13162,7 +13173,14 @@ components:
         direction:
           $ref: '#/components/schemas/WalletRecordDirection'
         otherPlayer:
-          $ref: '#/components/schemas/PlayerSummary'
+          type: object
+          nullable: true
+          required: [playerRef, gameId]
+          properties:
+            playerRef:
+              type: string
+            gameId:
+              type: string
         amount:
           type: string
           pattern: ^\d+(\.\d{1,2})?$
@@ -13175,6 +13193,20 @@ components:
         note:
           type: string
           nullable: true
+        source:
+          type: string
+          enum: [APP, GAME]
+        title:
+          type: string
+        businessType:
+          type: string
+          enum: [TRANSFER, GAME, OFFICIAL_STORE, MARKET_ORDER, COMMISSION]
+        businessRef:
+          type: string
+        beforeBalance:
+          $ref: '#/components/schemas/CreditAmount'
+        afterBalance:
+          $ref: '#/components/schemas/CreditAmount'
         occurredAt:
           type: string
           format: date-time
@@ -17248,14 +17280,10 @@ components:
           type: string
           enum:
           - TRANSFER
-          - STORE_PURCHASE
-          - MARKET_RESERVE
-          - MARKET_SETTLEMENT
-          - COMMISSION_RESERVE
-          - COMMISSION_SETTLEMENT
-          - REFUND
-          - ADJUSTMENT
-          - AI_PURCHASE
+          - GAME
+          - OFFICIAL_STORE
+          - MARKET_ORDER
+          - COMMISSION
         businessRef:
           type: string
           minLength: 1
@@ -17263,7 +17291,23 @@ components:
           description: 服务端生成的不透明引用
           example: ref_demo_001
         counterparty:
-          $ref: '#/components/schemas/OrderParty'
+          type: object
+          required: [kind, playerRef, storeId, displayName, contactQq]
+          properties:
+            kind:
+              type: string
+              enum: [PLAYER, SYSTEM, OFFICIAL_STORE]
+            playerRef:
+              type: string
+              nullable: true
+            storeId:
+              type: string
+              nullable: true
+            displayName:
+              type: string
+            contactQq:
+              type: string
+              nullable: true
         status:
           type: string
           enum:
@@ -17276,6 +17320,24 @@ components:
           minLength: 0
           maxLength: 500
           description: 业务备注
+        source:
+          type: string
+          enum: [APP, GAME]
+        title:
+          type: string
+        otherPlayer:
+          type: object
+          nullable: true
+          required: [playerRef, gameId]
+          properties:
+            playerRef:
+              type: string
+            gameId:
+              type: string
+        beforeBalance:
+          $ref: '#/components/schemas/CreditAmount'
+        afterBalance:
+          $ref: '#/components/schemas/CreditAmount'
         occurredAt:
           type: string
           format: date-time

@@ -50,16 +50,16 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     suspend fun refreshMarket(){
         val revision=visibilityRevision
         runCatching{val visible=api.listAll("/market/listings");val own=api.listAll("/market/me/listings");(visible+own).associateBy{it.getString("listingId")}.values.filterNot{it.optBoolean("hiddenFromHistory")}.map(::listing)}
-            .onSuccess{if(revision!=visibilityRevision)return@onSuccess;state.commerce.listings.clear();state.commerce.listings.addAll(it);marketError=null}.onFailure{marketError=it.message}
+            .onSuccess{if(revision!=visibilityRevision)return@onSuccess;state.commerce.listings.clear();state.commerce.listings.addAll(it.sortedWith(compareByDescending<MarketListing>{entry->entry.createdAt}.thenByDescending{entry->entry.id}));marketError=null}.onFailure{marketError=it.message}
     }
     private fun listing(value:JSONObject):MarketListing {
         val seller=value.getJSONObject("seller");val name=seller.getString("gameId")
         if(name!=state.userName){Players.removeAll{it.name==name};Players.add(PlayerProfile(name,seller.optString("qq").takeUnless{it=="null"}.orEmpty(),seller.optString("bio"),seller.optBoolean("online"),seller.optString("lastSeenAt"),seller.getString("playerRef"),seller.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"}))}
         val photos=value.array("photoAssetIds").strings().map{"asset:$it"}
         return MarketListing(value.getString("listingId"),value.getString("title"),value.getString("subtitle"),value.getString("description"),categoryName(value.getString("categoryCode")),apiCents(value.getString("price")),value.getInt("stock"),
-            name,value.getString("contactQq"),value.array("deliveryMethods").strings().map(::deliveryMethod).toSet(),value.optString("pickupLocation"),imageUri=photos.firstOrNull(),active=value.getBoolean("active"),imageUris=photos,workHours=value.optInt("workHours",168),version=value.getLong("version"),sellerRef=seller.getString("playerRef"),canHideRecord=value.optBoolean("canHideRecord"))
+            name,value.getString("contactQq"),value.array("deliveryMethods").strings().map(::deliveryMethod).toSet(),value.optString("pickupLocation"),imageUri=photos.firstOrNull(),active=value.getBoolean("active"),imageUris=photos,workHours=value.optInt("workHours",168),version=value.getLong("version"),sellerRef=seller.getString("playerRef"),canHideRecord=value.optBoolean("canHideRecord"),createdAt=date(value,"createdAt") ?: LocalDateTime.MIN)
     }
-    private fun putListing(value:JSONObject):String {val p=listing(value);if(value.optBoolean("hiddenFromHistory")){state.commerce.listings.removeAll{it.id==p.id};return p.id};val index=state.commerce.listings.indexOfFirst{it.id==p.id};if(index>=0)state.commerce.listings[index]=p else state.commerce.listings.add(0,p);return p.id}
+    private fun putListing(value:JSONObject):String {val p=listing(value);if(value.optBoolean("hiddenFromHistory")){state.commerce.listings.removeAll{it.id==p.id};return p.id};val index=state.commerce.listings.indexOfFirst{it.id==p.id};if(index>=0)state.commerce.listings[index]=p else state.commerce.listings.add(0,p);state.commerce.listings.sortWith(compareByDescending<MarketListing>{it.createdAt}.thenByDescending{it.id});return p.id}
     suspend fun refreshListing(id:String){val revision=visibilityRevision;runCatching{api.request("GET","/market/listings/$id")}.onSuccess{if(revision==visibilityRevision)putListing(it)}.onFailure{report(it)}}
     suspend fun publish(draft:MarketListing,original:MarketListing?):String? = runCatching{
         require(draft.photos.isNotEmpty()&&draft.photos.all{it.startsWith("asset:")}){"请先完成图片上传"}
@@ -112,6 +112,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             refundAttempts=value.optInt("refundAttemptsUsed"),refundRequestedAt=refund?.let{date(it,"requestedAt")},refundResolvedAt=refund?.let{date(it,"resolvedAt")},automatic=value.optBoolean("automatic"),completedAt=date(value,"workCompletedAt"),rejectionReason=refund?.optString("rejectionReason").orEmpty(),
             serverStatus=value.getString("status"),fundsStatus=value.getString("fundsStatus"),serverActions=value.array("availableActions").strings().toSet(),version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"))
         val index=state.commerce.orders.indexOfFirst{it.id==id};if(index>=0)state.commerce.orders[index]=order else state.commerce.orders.add(0,order)
+        state.commerce.orders.sortWith(compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id})
         serverOrders[id]=value;return id
     }
     suspend fun refreshOrders(){val revision=visibilityRevision;runCatching{api.listAll("/orders")}.onSuccess{values->if(revision!=visibilityRevision)return@onSuccess;state.commerce.orders.clear();values.forEach{putOrder(it)}}.onFailure{report(it)}}

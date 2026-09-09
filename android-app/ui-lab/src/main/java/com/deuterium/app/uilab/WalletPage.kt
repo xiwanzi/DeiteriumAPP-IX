@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 
 @Composable
 fun WalletPage(state: LabState, onTransfer: () -> Unit, onRecord: (LedgerEntry) -> Unit, topInset: Dp = 12.dp, onBills: (String) -> Unit = {}) {
+    LaunchedEffect(state){state.refresh()}
     val motion = LocalMotion.current
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -42,8 +43,8 @@ fun WalletPage(state: LabState, onTransfer: () -> Unit, onRecord: (LedgerEntry) 
         state.walletError?.let{message->item{Text(message,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)}}
         item(key = "summary") {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard("本日收入", if(state.ledgerKnown)"+${credit(state.ledger.filter { it.amount > 0 && it.at.toLocalDate() == java.time.LocalDate.now() }.sumOf { it.amount })}" else "—", true, Modifier.weight(1f), { onBills("income") })
-                SummaryCard("本日支出", if(state.ledgerKnown)"−${credit(state.ledger.filter { it.amount < 0 && it.at.toLocalDate() == java.time.LocalDate.now() }.sumOf { -it.amount })}" else "—", false, Modifier.weight(1f), { onBills("expense") })
+                SummaryCard("本日收入", state.todayIncome?.let{"+${credit(it)}"} ?: "—", true, Modifier.weight(1f), { onBills("income") })
+                SummaryCard("本日支出", state.todayExpense?.let{"−${credit(it)}"} ?: "—", false, Modifier.weight(1f), { onBills("expense") })
             }
         }
         item(key = "label") {
@@ -52,7 +53,7 @@ fun WalletPage(state: LabState, onTransfer: () -> Unit, onRecord: (LedgerEntry) 
                 PlainButton({ onBills("all") }) { Text("历史账单") }
             }
         }
-        items(state.ledger.take(8), key = { it.id }) { record ->
+        items(state.ledger.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id}).take(8), key = { it.id }) { record ->
             LedgerRow(record, onClick = { onRecord(record) }, modifier = if(motion) Modifier.animateItem() else Modifier)
         }
         item { Text("所有收支均可在历史账单中查看。", Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -141,7 +142,7 @@ fun LedgerRow(record: LedgerEntry, onClick: () -> Unit, modifier: Modifier = Mod
             }
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text(record.name, style = MaterialTheme.typography.titleMedium)
-                Text(record.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if(record.detail != record.name)Text(record.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text((if(incoming) "+" else "−") + credit(abs(record.amount)), fontSize = 16.sp, fontWeight = FontWeight.SemiBold,

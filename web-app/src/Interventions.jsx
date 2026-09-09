@@ -10,6 +10,7 @@ const states = { SUBMITTED: "待受理", IN_REVIEW: "处理中", WAITING_EVIDENC
 export default function InterventionManagement({ client, user }) {
   const [status, setStatus] = useState(""), [mine, setMine] = useState(false), [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [selected, setSelected] = useState(null);
   const generation = useRef(0);
+  useEffect(() => { const id = new URLSearchParams(location.search).get("case"); if (id) setSelected(id); }, []);
   const load = async (more = false) => { const current = ++generation.current; setBusy(true); setError(""); try { const r = await client.request(`/api/v1/admin/interventions?limit=30${status ? `&status=${status}` : ""}${mine ? "&assignedToMe=true" : ""}${more && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`); if (current === generation.current) { setItems((old) => more ? [...old, ...r.data] : r.data); setCursor(r.page?.nextCursor); } } catch (e) { if (current === generation.current) setError(e.message); } finally { if (current === generation.current) setBusy(false); } };
   useEffect(() => { setItems([]); load(); return () => { generation.current++; }; }, [status, mine]);
   return <><PageHead eyebrow="PLATFORM SUPPORT" title="平台介入" subtitle="依据成交快照与当事人提交的资料处理争议。"><Button secondary disabled={busy} onClick={() => load()}>刷新</Button></PageHead>

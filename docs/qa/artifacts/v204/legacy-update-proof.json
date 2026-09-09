@@ -1,0 +1,6 @@
+{
+  "fromVersion": 20300,
+  "toVersion": 20401,
+  "legacyTasksRemovedAfterReplacement": true,
+  "newVersionReopenReady": true
+}
