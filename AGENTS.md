@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-10：**App 2.0.7（20700）、Web 2.0.7 与配套 Go 已于 03:22 上线**，源码 `4262edd84c03`（PR #12）。Saki 支持逐日递减、最低 5 天差价的升级，严格保留原到期时间；购买确认展示升级实付与淡色删除线原价，不显示公式。空会话才显示输入框上方套餐入口。用户已开启的套餐配置及 11 笔订单、4 个委托保留，三常驻服在线，MEK 离线。当前维护工作区 `.worktrees/saki-upgrade-checkout`，分支 `release/v207-live`。下方为较早发布记录。 见 [2.0.7 部署记录](docs/deployment/deuterium-2.0.7-live.md)。
+
 2026-09-09：**App 2.0.6（20600）、Web 2.0.6 与配套 Go 已上线**。App/Web 源码 `4d9a001ebd0e`（PR #9），Go 最终源码 `515c87fd4936`（PR #10）。账单、Saki/账号后台、头像裁切、购买订单与通知优化见 [2.0.6 部署记录](docs/deployment/deuterium-2.0.6-live.md)。Saki 售卖仍关闭；本轮工作区 `.worktrees/saki-admin-experience`，分支 `release/v206-live`。下方 2.0.5 及更早状态为历史。
 
 当前网站发布（2026-09-09 14:59）：**Web 2.0.5 与配套 Go 已上线**，源码通过 PR #7 合入 main（`0386f1bd5664`），见 [网页 2.0.5 部署记录](docs/deployment/web-2.0.5-live.md)。本轮维护工作区 `C:/DeiteriumAPP-IX/.worktrees/desktop-admin`，部署文档分支 `release/web205`。PC 管理导航/表格、商品手机与裁切预览、游戏邮件文案、玩家头像和购买体验已发布。App 保持已发布 2.0.5（20500），游戏插件沿用 2.0.4 配套版本；下方“网站和 Go 沿用 2.0.4”是 App 发布时的历史状态。

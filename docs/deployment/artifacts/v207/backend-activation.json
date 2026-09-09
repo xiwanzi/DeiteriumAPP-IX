@@ -1,0 +1,9 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.7-4262edd84c03",
+  "backendSha256": "0cd9c160bf3fc3d514a153d3d83fcaa31743981ea4b3b65d4afdf0db6dbf32c1",
+  "health": {
+    "status": "ready"
+  },
+  "migrationsChanged": false,
+  "appAndWebPublicationPending": true
+}

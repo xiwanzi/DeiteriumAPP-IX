@@ -1,0 +1,32 @@
+{
+  "webVersion": "2.0.7",
+  "htmlMatchesBuild": true,
+  "cacheControl": "no-cache",
+  "assets": [
+    {
+      "path": "/assets/index-D0FrO23v.js",
+      "sha256": "6ca82207bddfdb0bbdc132406ea523f11010ab4ee66412e728c449422f854fc9",
+      "sizeBytes": 455987
+    },
+    {
+      "path": "/assets/index-D0MJ38GT.css",
+      "sha256": "8e28f39e38d764b59c470058051a89b0afcf78b34a3783c81bf06676bf3a2ab6",
+      "sizeBytes": 123204
+    }
+  ],
+  "updateChecks": {
+    "20004": "20700",
+    "20101": "20700",
+    "20200": "20700",
+    "20300": "20700",
+    "20401": "20700",
+    "20500": "20700",
+    "20501": "20700",
+    "20600": "20700",
+    "20699": "20700",
+    "20700": "no self/downgrade",
+    "20701": "no self/downgrade"
+  },
+  "publicApkHashVerified": true,
+  "chineseReleaseNotesVerified": true
+}

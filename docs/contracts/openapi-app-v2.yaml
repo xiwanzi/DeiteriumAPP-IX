@@ -21014,6 +21014,6 @@ components:
       - payload
       description: ''
 x-document-status: contract_delivery_not_backend_deployment
-x-client-version: 0.7.0-ui-lab (7)
-x-contract-revision: 2026-09-08-oss-direct-appearance-visibility
-x-generated-operation-count: 153
+x-client-version: 2.0.7 (20700)
+x-contract-revision: 2026-09-10-saki-upgrade-five-day-minimum
+x-generated-operation-count: 157

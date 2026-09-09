@@ -1,0 +1,6 @@
+{
+  "fromVersion": 20600,
+  "toVersion": 20700,
+  "systemInstallerUpdateOpen": "PASS",
+  "warmReopen": "PASS"
+}
