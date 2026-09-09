@@ -234,7 +234,7 @@ func commerceRequireVersionV2(d CommerceRecordV2, expected int64) error {
 		return catalogVersion()
 	}
 	if d.PendingOperationID != "" {
-		return catalogError(409, "OPERATION_IN_PROGRESS", "原操作尚未确认，请先查询原结果。")
+		return catalogError(409, "OPERATION_IN_PROGRESS", "上一笔操作仍在处理中，请稍后查看。")
 	}
 	return nil
 }

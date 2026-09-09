@@ -88,6 +88,11 @@ func (s *Store) CoreReply(ctx context.Context, node, id, status string, result [
 	if _, err = tx.ExecContext(ctx, "UPDATE core_operations SET state=?,result=?,updated_at=UTC_TIMESTAMP(6) WHERE operation_id=?", status, result, id); err != nil {
 		return err
 	}
+	if status == "COMPLETED" {
+		if err = walletTransferNoticeV206(ctx, tx, id); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
 func (s *Store) MarkCoreUnknown(ctx context.Context, id string) error {

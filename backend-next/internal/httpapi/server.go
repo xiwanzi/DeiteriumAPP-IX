@@ -59,6 +59,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAIV2(mux)
 	s.registerAdminAuditV2(mux)
 	s.registerAdminEmailV204(mux)
+	s.registerAdminAccountsV206(mux)
 	s.registerAdminCommerceV204(mux)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {

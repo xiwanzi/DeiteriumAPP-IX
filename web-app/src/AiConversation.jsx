@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button, Badge, Modal } from "./components.jsx";
 import { credit } from "./format.js";
 import { aiSources } from "./ai-stream.js";
+import SakiPlans from "./SakiPlans.jsx";
 
 function normalizeAi(message, user) {
   const mine = message.role === "user";
@@ -74,8 +75,6 @@ export default function useAiConversation({ client, user, active }) {
   const quota = account?.quota, caption = quota ? quota.unlimited ? "管理员 · 不限次数 · 可联网搜索" : `${quota.windowHours || 24} 小时额度 · ${quota.remaining} / ${quota.limit} · 可联网搜索` : "DeepSeek V4 Flash · 可联网搜索";
   return { messages, send, load, busy, connection, caption, error, status, pending,
     actions: <Button secondary onClick={() => setShowOptions(true)}>AI 选项</Button>,
-    plansModal: <>{showOptions && <Modal title="AI 会话" close={() => setShowOptions(false)}><p>{caption}</p><div className="button-row">{pending && !busy && <Button onClick={() => { setShowOptions(false); resume(); }}>继续查看</Button>}<Button secondary disabled={busy} onClick={async () => { if (await reset()) setShowOptions(false); }}>新对话</Button><Button secondary onClick={() => { setShowOptions(false); setShowPlans(true); }}>额度与计划</Button></div></Modal>}{showPlans && <Modal title="AI 额度与计划" close={() => setShowPlans(false)}><p>当前使用 DeepSeek V4 Flash。根据问题需要使用联网搜索。</p>{quota && <div className="notice-box">{quota.unlimited ? "管理员账号不限制请求次数。" : `免费额度：${quota.limit} 次 / ${quota.windowHours} 小时，剩余 ${quota.remaining} 次。`}{!quota.unlimited && quota.resetsAt && <p>下次重置：{new Date(quota.resetsAt).toLocaleString("zh-CN")}</p>}</div>}
-      <div className="foundation-grid">{plans.map((plan) => <div className="foundation-card" key={plan.planId}><h3>{plan.name}</h3><p>{plan.description}</p><strong className="price">{credit(plan.price)}<small>信用点</small></strong><p><Badge tone="neutral">{String(plan.price) === "0.00" || String(plan.price) === "0" ? "免费计划" : "暂未开放购买"}</Badge></p><Button disabled>暂不提供购买</Button></div>)}</div>
-    </Modal>}</>,
+    plansModal: <>{showOptions && <Modal title="AI 会话" close={() => setShowOptions(false)}><p>{caption}</p><div className="button-row">{pending && !busy && <Button onClick={() => { setShowOptions(false); resume(); }}>继续查看</Button>}<Button secondary disabled={busy} onClick={async () => { if (await reset()) setShowOptions(false); }}>新对话</Button><Button secondary onClick={() => { setShowOptions(false); setShowPlans(true); }}>额度与计划</Button></div></Modal>}{showPlans && <Modal title="套餐与额度" close={() => setShowPlans(false)}><SakiPlans client={client} user={user} plans={plans} account={account} onUpdated={load} /></Modal>}</>,
   };
 }

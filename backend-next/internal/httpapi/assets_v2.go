@@ -109,11 +109,15 @@ func (s *Server) registerAssetsV2(mux *http.ServeMux) {
 			failure(w, r, 400, "INVALID_REQUEST", "图片信息不正确，仅支持 PNG、JPEG、WebP，最大20MiB。 ")
 			return
 		}
-		if in.Purpose == "STORE_MEDIA" {
-			if in.BusinessRef == "" {
-				failure(w, r, 400, "INVALID_REQUEST", "店铺图片必须绑定店铺。 ")
+		if in.Purpose == "STORE_MEDIA" && in.BusinessRef == "" {
+			// Only platform admins can create stores. An avatar uploaded during
+			// creation stays owned/unbound until the store is saved successfully.
+			if _, err := s.admin(r, "platform.admin"); err != nil {
+				failError(w, r, err)
 				return
 			}
+		}
+		if in.Purpose == "STORE_MEDIA" && in.BusinessRef != "" {
 			var present int
 			if err = s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM catalog_records_v2 WHERE resource_id=? AND kind='store'", in.BusinessRef).Scan(&present); err != nil {
 				failError(w, r, err)

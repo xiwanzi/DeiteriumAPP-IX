@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -20,7 +21,7 @@ type aiGatewayV2 struct {
 	config      aiConfigV2
 	configError error
 	client      *http.Client
-	slots       chan struct{}
+	active      *atomic.Int32
 }
 
 func (s *Server) registerAIV2(mux *http.ServeMux) {
@@ -31,24 +32,15 @@ func (s *Server) registerAIConfigV2(mux *http.ServeMux, c aiConfigV2, configErro
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ResponseHeaderTimeout = 45 * time.Second
 	transport.MaxIdleConnsPerHost = max(1, int(c.MaxConcurrent))
-	g := &aiGatewayV2{server: s, config: c, configError: configError, client: &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, slots: make(chan struct{}, max(1, int(c.MaxConcurrent)))}
-	mux.HandleFunc("GET /api/v1/ai/me", g.me)
-	mux.HandleFunc("GET /api/v1/ai/plans", g.plans)
-	mux.HandleFunc("GET /api/v1/ai/messages", g.messages)
-	mux.HandleFunc("POST /api/v1/ai/conversation/reset", g.reset)
-	mux.HandleFunc("POST /api/v1/ai/chat/stream", g.stream)
-	mux.HandleFunc("POST /api/v1/ai/purchases", func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := g.authenticate(w, r); !ok {
-			return
-		}
-		failure(w, r, 503, "AI_PURCHASE_UNAVAILABLE", "当前仅开放免费 AI，套餐购买暂未开放。")
-	})
-	mux.HandleFunc("GET /api/v1/ai/purchases/{purchaseId}", func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := g.authenticate(w, r); !ok {
-			return
-		}
-		failure(w, r, 404, "AI_PURCHASE_NOT_FOUND", "未找到该套餐购买记录。")
-	})
+	g := &aiGatewayV2{server: s, config: c, configError: configError, client: &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, active: &atomic.Int32{}}
+	mux.HandleFunc("GET /api/v1/ai/me", g.configuredV206((*aiGatewayV2).me))
+	mux.HandleFunc("GET /api/v1/ai/plans", g.configuredV206((*aiGatewayV2).plans))
+	mux.HandleFunc("GET /api/v1/ai/messages", g.configuredV206((*aiGatewayV2).messages))
+	mux.HandleFunc("POST /api/v1/ai/conversation/reset", g.configuredV206((*aiGatewayV2).reset))
+	mux.HandleFunc("POST /api/v1/ai/chat/stream", g.configuredV206((*aiGatewayV2).stream))
+	mux.HandleFunc("POST /api/v1/ai/purchases", g.configuredV206((*aiGatewayV2).purchaseV206))
+	mux.HandleFunc("GET /api/v1/ai/purchases/{purchaseId}", g.purchaseGetV206)
+	g.registerSettingsV206(mux)
 	return g
 }
 func (g *aiGatewayV2) authenticate(w http.ResponseWriter, r *http.Request) (store.Session, bool) {
@@ -92,7 +84,7 @@ func (g *aiGatewayV2) me(w http.ResponseWriter, r *http.Request) {
 		aiFailureV2(w, r, err)
 		return
 	}
-	success(w, r, map[string]any{"assistantName": g.config.AssistantName, "plan": state.Plan, "quota": state.Quota, "conversation": state.Conversation, "pendingRequest": state.Pending, "maxInputChars": int(g.config.MaxInput), "webSearchAvailable": true})
+	success(w, r, map[string]any{"assistantName": g.config.AssistantName, "plan": state.Plan, "expiresAt": state.ExpiresAt, "quota": state.Quota, "conversation": state.Conversation, "pendingRequest": state.Pending, "maxInputChars": int(g.config.MaxInput), "webSearchAvailable": g.config.WebSearch})
 }
 func (g *aiGatewayV2) plans(w http.ResponseWriter, r *http.Request) {
 	if _, ok := g.authenticate(w, r); !ok {
@@ -160,7 +152,7 @@ func (g *aiGatewayV2) reset(w http.ResponseWriter, r *http.Request) {
 	success(w, r, map[string]any{"conversation": conversation})
 }
 func (g *aiGatewayV2) run(e store.AIExchangeV2) {
-	defer func() { <-g.slots }()
+	defer g.active.Add(-1)
 	ctx, cancel := context.WithTimeout(g.server.ctx, time.Duration(g.config.TimeoutSeconds)*time.Second)
 	defer cancel()
 	history, err := g.server.Store.AIContextV2(ctx, e, int(g.config.MaxContext))
@@ -250,10 +242,10 @@ func (g *aiGatewayV2) stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if created {
-		select {
-		case g.slots <- struct{}{}:
+		if g.active.Add(1) <= int32(g.config.MaxConcurrent) {
 			go g.run(e)
-		default:
+		} else {
+			g.active.Add(-1)
 			ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 			_ = g.server.Store.FinishAIV2(ctx, e, "failed", "AI_SERVER_BUSY", "", 0, 0)
 			stop()

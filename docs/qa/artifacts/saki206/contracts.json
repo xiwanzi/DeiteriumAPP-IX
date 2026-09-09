@@ -1,0 +1,292 @@
+{
+  "AiMeResponse": {
+    "data": {
+      "assistantName": "客服小祥",
+      "conversation": {
+        "active": true,
+        "conversationId": "aic_cb12d30224470a1016859f40782a2085",
+        "startedAt": "2026-09-09T09:46:08.326751Z",
+        "updatedAt": "2026-09-09T09:46:08.326751Z"
+      },
+      "expiresAt": "2026-10-09T09:46:08.319704Z",
+      "maxInputChars": 2000,
+      "pendingRequest": null,
+      "plan": {
+        "active": true,
+        "code": "pro",
+        "currency": "CREDIT",
+        "description": "暂未开放",
+        "durationDays": 30,
+        "modelTier": "flash",
+        "name": "小祥 Plus",
+        "planId": "plan_pro",
+        "price": "12.50",
+        "purchasable": true,
+        "quotaPerWindow": 12,
+        "version": 2,
+        "windowHours": 2
+      },
+      "quota": {
+        "limit": 12,
+        "remaining": 12,
+        "reserved": 0,
+        "resetsAt": "2026-09-09T10:00:00Z",
+        "unlimited": false,
+        "used": 0,
+        "windowHours": 2
+      },
+      "webSearchAvailable": true
+    },
+    "requestId": ""
+  },
+  "V2OrderContractSnapshotResponse": {
+    "data": {
+      "aiPlan": {
+        "active": true,
+        "code": "pro",
+        "currency": "CREDIT",
+        "description": "暂未开放",
+        "durationDays": 30,
+        "modelTier": "flash",
+        "name": "小祥 Plus",
+        "planId": "plan_pro",
+        "price": "12.50",
+        "purchasable": true,
+        "quotaPerWindow": 12,
+        "version": 2,
+        "windowHours": 2
+      },
+      "buyer": {
+        "contactQq": "20000",
+        "displayName": "Alice",
+        "kind": "PLAYER",
+        "playerRef": "player_Alice",
+        "storeId": null
+      },
+      "capturedAt": "2026-09-09T09:46:08.297909Z",
+      "confirmationHours": 0,
+      "delivery": {
+        "method": "DIGITAL",
+        "note": "付款成功后自动开通，无需领取"
+      },
+      "items": [
+        {
+          "categoryName": "AI 套餐",
+          "contentBlocks": [],
+          "description": "暂未开放",
+          "includedItems": [],
+          "photoAssetIds": [],
+          "productId": "plan_pro",
+          "productVersion": 2,
+          "quantity": 1,
+          "subtitle": "暂未开放",
+          "title": "小祥 Plus",
+          "unitPrice": "12.50"
+        }
+      ],
+      "orderId": "order_e526ab62017549696ae9e68e1868bbf9",
+      "orderType": "AI_SUBSCRIPTION",
+      "seller": {
+        "contactQq": null,
+        "displayName": "Saki AI",
+        "kind": "OFFICIAL_STORE",
+        "playerRef": null,
+        "storeId": "saki-ai"
+      },
+      "sha256": "58ac2c80979ecb7a9d8d5e10cff18a6163ab57e1d03ce05e1ca675da1cfca35b",
+      "snapshotId": "snapshot_8bc7c98c4aab080b6ea3c0318cd76e5d",
+      "totalAmount": "12.50"
+    },
+    "requestId": "",
+    "serverTime": "2026-09-09T09:46:08.3444197Z"
+  },
+  "V2OrderCreationResultResponse": {
+    "data": {
+      "operation": {
+        "amount": "12.50",
+        "clientRequestId": "saki-one",
+        "createdAt": "2026-09-09T09:46:08.297909Z",
+        "errorCode": null,
+        "kind": "AI_PURCHASE",
+        "operationId": "op_2b05a426fca0d8051370601c254afdd0",
+        "resourceId": "order_e526ab62017549696ae9e68e1868bbf9",
+        "resourceType": "ORDER",
+        "retryAfterSeconds": 3,
+        "status": "COMPLETED",
+        "updatedAt": "2026-09-09T09:46:08.319704Z"
+      },
+      "order": {
+        "aiExpiresAt": "2026-10-09T09:46:08.3197045Z",
+        "aiPlan": {
+          "active": true,
+          "code": "pro",
+          "currency": "CREDIT",
+          "description": "暂未开放",
+          "durationDays": 30,
+          "modelTier": "flash",
+          "name": "小祥 Plus",
+          "planId": "plan_pro",
+          "price": "12.50",
+          "purchasable": true,
+          "quotaPerWindow": 12,
+          "version": 2,
+          "windowHours": 2
+        },
+        "amount": "12.50",
+        "autoConfirmAt": null,
+        "automatic": false,
+        "availableActions": [],
+        "buyer": {
+          "contactQq": "20000",
+          "displayName": "Alice",
+          "kind": "PLAYER",
+          "playerRef": "player_Alice",
+          "storeId": null
+        },
+        "canHideRecord": true,
+        "channel": "OFFICIAL_STORE",
+        "completionAssetIds": [],
+        "completionAssets": [],
+        "completionDescription": "",
+        "confirmationHours": 0,
+        "confirmedAt": "2026-09-09T09:46:08.3197045Z",
+        "construction": false,
+        "createdAt": "2026-09-09T09:46:08.297909Z",
+        "currency": "CREDIT",
+        "delivery": {
+          "method": "DIGITAL",
+          "note": "付款成功后自动开通，无需领取"
+        },
+        "fundsStatus": "SETTLED",
+        "hiddenFromHistory": false,
+        "images": [],
+        "interventionCaseId": null,
+        "items": [
+          {
+            "categoryName": "AI 套餐",
+            "contentBlocks": [],
+            "description": "暂未开放",
+            "includedItems": [],
+            "photoAssetIds": [],
+            "productId": "plan_pro",
+            "productVersion": 2,
+            "quantity": 1,
+            "subtitle": "暂未开放",
+            "title": "小祥 Plus",
+            "unitPrice": "12.50"
+          }
+        ],
+        "orderId": "order_e526ab62017549696ae9e68e1868bbf9",
+        "orderNo": "S20260909e526ab62017549696ae9e68e1868bbf9",
+        "orderType": "AI_SUBSCRIPTION",
+        "pausedRemainingSeconds": null,
+        "pendingOperationId": null,
+        "refund": null,
+        "refundAttemptsUsed": 0,
+        "seller": {
+          "contactQq": null,
+          "displayName": "Saki AI",
+          "kind": "OFFICIAL_STORE",
+          "playerRef": null,
+          "storeId": "saki-ai"
+        },
+        "serverNow": "2026-09-09T09:46:08.3401779Z",
+        "shippedAt": null,
+        "snapshotId": "snapshot_8bc7c98c4aab080b6ea3c0318cd76e5d",
+        "snapshotSha256": "58ac2c80979ecb7a9d8d5e10cff18a6163ab57e1d03ce05e1ca675da1cfca35b",
+        "status": "CONFIRMED",
+        "version": 3,
+        "workCompletedAt": null
+      }
+    },
+    "requestId": "",
+    "serverTime": "2026-09-09T09:46:08.3412156Z"
+  },
+  "V2OrderViewResponse": {
+    "data": {
+      "aiExpiresAt": "2026-10-09T09:46:08.3197045Z",
+      "aiPlan": {
+        "active": true,
+        "code": "pro",
+        "currency": "CREDIT",
+        "description": "暂未开放",
+        "durationDays": 30,
+        "modelTier": "flash",
+        "name": "小祥 Plus",
+        "planId": "plan_pro",
+        "price": "12.50",
+        "purchasable": true,
+        "quotaPerWindow": 12,
+        "version": 2,
+        "windowHours": 2
+      },
+      "amount": "12.50",
+      "autoConfirmAt": null,
+      "automatic": false,
+      "availableActions": [],
+      "buyer": {
+        "contactQq": "20000",
+        "displayName": "Alice",
+        "kind": "PLAYER",
+        "playerRef": "player_Alice",
+        "storeId": null
+      },
+      "canHideRecord": true,
+      "channel": "OFFICIAL_STORE",
+      "completionAssetIds": [],
+      "completionAssets": [],
+      "completionDescription": "",
+      "confirmationHours": 0,
+      "confirmedAt": "2026-09-09T09:46:08.3197045Z",
+      "construction": false,
+      "createdAt": "2026-09-09T09:46:08.297909Z",
+      "currency": "CREDIT",
+      "delivery": {
+        "method": "DIGITAL",
+        "note": "付款成功后自动开通，无需领取"
+      },
+      "fundsStatus": "SETTLED",
+      "hiddenFromHistory": false,
+      "images": [],
+      "interventionCaseId": null,
+      "items": [
+        {
+          "categoryName": "AI 套餐",
+          "contentBlocks": [],
+          "description": "暂未开放",
+          "includedItems": [],
+          "photoAssetIds": [],
+          "productId": "plan_pro",
+          "productVersion": 2,
+          "quantity": 1,
+          "subtitle": "暂未开放",
+          "title": "小祥 Plus",
+          "unitPrice": "12.50"
+        }
+      ],
+      "orderId": "order_e526ab62017549696ae9e68e1868bbf9",
+      "orderNo": "S20260909e526ab62017549696ae9e68e1868bbf9",
+      "orderType": "AI_SUBSCRIPTION",
+      "pausedRemainingSeconds": null,
+      "pendingOperationId": null,
+      "refund": null,
+      "refundAttemptsUsed": 0,
+      "seller": {
+        "contactQq": null,
+        "displayName": "Saki AI",
+        "kind": "OFFICIAL_STORE",
+        "playerRef": null,
+        "storeId": "saki-ai"
+      },
+      "serverNow": "2026-09-09T09:46:08.3359773Z",
+      "shippedAt": null,
+      "snapshotId": "snapshot_8bc7c98c4aab080b6ea3c0318cd76e5d",
+      "snapshotSha256": "58ac2c80979ecb7a9d8d5e10cff18a6163ab57e1d03ce05e1ca675da1cfca35b",
+      "status": "CONFIRMED",
+      "version": 3,
+      "workCompletedAt": null
+    },
+    "requestId": "",
+    "serverTime": "2026-09-09T09:46:08.3364988Z"
+  }
+}

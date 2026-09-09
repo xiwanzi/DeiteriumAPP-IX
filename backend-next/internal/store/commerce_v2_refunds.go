@@ -25,6 +25,9 @@ func (s *Store) PrepareCommerceRefundV2(ctx context.Context, actor, id, kind, ke
 		if e != nil {
 			return result, e
 		}
+		if IsAIOrderV206(d) {
+			return result, catalogError(409, "AI_NON_REFUNDABLE", "Saki AI 套餐为即时开通服务，不支持退款。")
+		}
 		if d.OwnerID != actor {
 			return result, catalogDenied()
 		}

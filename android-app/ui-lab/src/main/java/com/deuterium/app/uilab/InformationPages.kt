@@ -83,7 +83,7 @@ private fun HubRow(title:String,subtitle:String,icon:ImageVector,color:Color,asi
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DirectChatPage(state:LabState,name:String,topInset:Dp,onProfile:(String)->Unit) {
+fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},onProfile:(String)->Unit) {
     val messages=remember(name){state.conversation(name)}
     var draft by rememberSaveable(name,stateSaver=TextFieldValue.Saver){mutableStateOf(TextFieldValue(state.pendingDirectDraft(name)))}
     val list=rememberLazyListState()
@@ -119,6 +119,7 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onProfile:(String)->Un
             item { Text(if(name=="AI 助手")state.ai?.quotaText ?: "DEUTERIUM ASSISTANT" else "今天",Modifier.fillMaxWidth().padding(vertical=12.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center) }
             if(state.directHistoryLoading[name]==true)item{Text("正在读取历史消息…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }
+        if(name=="AI 助手")PlainButton(onPlans,Modifier.fillMaxWidth()){Text("Saki AI · 套餐与额度")}
         if(name=="AI 助手"&&messages.isEmpty())Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             listOf("给我一些建筑建议","怎样使用市场").forEach{AssistChoice({scope.launch{state.sendDirect(name,it)}},label={Text(it)})}
         }
@@ -126,17 +127,17 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onProfile:(String)->Un
     }
     selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward=if(name!="AI 助手")({forwarding=line})else null){replyId=line.id;scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
     forwarding?.let{ForwardMessageSheet(state,it,name){forwarding=null}}
-    if(aiOptions)state.ai?.let{AiOptionsSheet(it,{aiOptions=false}){draft=TextFieldValue("");replyId=null;aiOptions=false}}
+    if(aiOptions)state.ai?.let{AiOptionsSheet(it,{aiOptions=false},{aiOptions=false;onPlans()}){draft=TextFieldValue("");replyId=null;aiOptions=false}}
 }
 
 @Composable
-private fun AiOptionsSheet(ai:BackendAI,onClose:()->Unit,onReset:()->Unit){
+private fun AiOptionsSheet(ai:BackendAI,onClose:()->Unit,onPlans:()->Unit,onReset:()->Unit){
     val scope=rememberCoroutineScope();var resetting by remember{mutableStateOf(false)}
     LaunchedEffect(Unit){ai.loadPlans()}
     IosSheet(onClose){Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
         Text("小祥 AI",style=MaterialTheme.typography.headlineSmall);Text(ai.quotaText,color=MaterialTheme.colorScheme.onSurfaceVariant)
         MotionButton({if(!resetting)scope.launch{resetting=true;if(ai.reset())onReset();resetting=false}},Modifier.fillMaxWidth(),enabled=!ai.busy&&!resetting){Text(if(resetting)"正在开启…" else "新对话")}
-        ai.plans.forEach{plan->LabCard{Text(plan.getString("name"),style=MaterialTheme.typography.titleMedium);Text(if(plan.optString("code")=="free")"免费 · ${plan.getInt("quotaPerWindow")} 次 / ${plan.getInt("windowHours")} 小时" else "${plan.getString("price")} 信用点 · 暂未开放",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
+        SecondaryButton(onPlans,Modifier.fillMaxWidth()){Text("套餐与额度")}
     }}
 }
 

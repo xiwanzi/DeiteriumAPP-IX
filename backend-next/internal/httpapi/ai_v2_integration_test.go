@@ -39,7 +39,7 @@ func newAIFixtureV2(t *testing.T, provider http.Handler) *aiFixtureV2 {
 	f := &aiFixtureV2{db: db, users: map[string]store.User{}, tokens: map[string]string{}}
 	for i, name := range []string{"Alice", "Bob", "Admin"} {
 		u := store.User{ID: "ai_" + name, PlayerRef: "player_" + name, ServerUUID: fmt.Sprintf("01919e0f-00cb-7a82-88e3-b1d498cc001%d", i), GameID: name, QQ: fmt.Sprintf("2000%d", i), PasswordHash: "test-unused", Status: "active", IdentityStatus: "bound"}
-		if _, err := db.DB.Exec("INSERT INTO identities VALUES(?,?,?,?,?,?, 'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),?)", u.ID, u.PlayerRef, u.ServerUUID, u.GameID, u.QQ, u.PasswordHash, strings.Repeat("0", 64)); err != nil {
+		if _, err := db.DB.Exec("INSERT INTO identities(id,player_ref,server_uuid,game_id,qq,password_hash,status,created_at,updated_at,legacy_fingerprint) VALUES(?,?,?,?,?,?, 'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),?)", u.ID, u.PlayerRef, u.ServerUUID, u.GameID, u.QQ, u.PasswordHash, strings.Repeat("0", 64)); err != nil {
 			t.Fatal(err)
 		}
 		token := identity.Secret()

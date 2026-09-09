@@ -97,6 +97,18 @@ func TestSocialBrowserFixtureV2(t *testing.T) {
 		t.Fatal(err)
 	}
 	file.Close()
+	if os.Getenv("DEUTERIUM_SAKI_BROWSER_QA") == "1" {
+		c:=aiDefaultsV2();c.Enabled=true;c.APIKey="isolated-browser-provider";c.PaidEnabled=true
+		writeJSONFile("ai-config.json",c);writeJSONFile("ai-prompt.json",map[string]string{"content":"隔离验收的小祥","assistantName":"客服小祥"})
+		t.Setenv("DEUTERIUM_AI_CONFIG_FILE",filepath.Join(output,"ai-config.json"));t.Setenv("DEUTERIUM_AI_PROMPT_FILE",filepath.Join(output,"ai-prompt.json"))
+		v:=c.settingsV206();v.Prompt="你是 Deuterium IX 的小祥，友好地回答玩家的问题。";v.Plans,err=f.store.AIPlansV2(ctx,c.policy());if err!=nil{t.Fatal(err)}
+		v.Plans[0].Name="基础套餐"
+		v.Plans[1].Name="小祥 Plus";v.Plans[1].Price="12.50";v.Plans[1].Active=true;v.Plans[1].Description="更多问答额度，让灵感随时延续。"
+		v.Plans[2].Name="小祥 Ultra";v.Plans[2].Price="30.00";v.Plans[2].Active=true;v.Plans[2].Description="为经常与小祥聊天的你准备。"
+		if _,err=f.store.SaveAISettingsV206(ctx,f.users["Alice"].ID,"fixture-ai",0,v);err!=nil{t.Fatal(err)}
+		f.app.CommerceCore=newCommerceTestCore()
+		if _,err=f.store.CatalogCreateV2(ctx,f.users["Alice"].ID,"store","","fixture-store",store.CatalogObjectV2{"name":"Deuterium 官方商店","intro":"每一份灵感，都值得认真对待。","logoAssetId":nil,"coverAssetId":nil,"contactQq":"123456789","serviceHours":"每天 09:00–22:00","notice":"欢迎来到 Deuterium。"});err!=nil{t.Fatal(err)}
+	}
 	finished := make(chan struct{})
 	var once sync.Once
 	finishToken := identity.Secret()

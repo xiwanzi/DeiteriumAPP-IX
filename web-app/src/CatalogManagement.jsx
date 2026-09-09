@@ -8,6 +8,7 @@ import { uploadAsset } from "./assets.js";
 import DeliveryTemplateManagement from "./DeliveryTemplateManagement.jsx";
 import BusinessPages from "./BusinessPages.jsx";
 import {MediaPicker} from "./MediaPicker.jsx";
+import StoreAvatarPicker from "./StoreAvatarPicker.jsx";
 export {MediaPicker} from "./MediaPicker.jsx";
 
 export const marketCategories = [["MATERIALS", "建材"], ["EQUIPMENT", "装备"], ["SUPPLIES", "补给"], ["DECORATION", "装饰"], ["CONSTRUCTION", "建筑服务"], ["OTHER", "其他"]];
@@ -78,7 +79,7 @@ export default function CatalogManagement({ client, user }) {
     {error && <p className="notice-box" role="alert">{error}</p>}
     {stores.length > 1 && <Field label="当前商店"><select disabled={busy} value={selected} onChange={(e) => setSelected(e.target.value)}>{stores.map((store) => <option key={store.storeId} value={store.storeId}>{store.name}</option>)}</select></Field>}
     {current && <>
-      <section className="store-overview"><div className="store-identity"><span className="store-mark"><Package size={25} /></span><div><h2>{current.name}</h2><p>{current.intro || "在这里管理店铺与商品交付"}</p></div></div><Button secondary disabled={busy} onClick={() => setModal({ type: "store-edit", item: current })}><Settings2 size={16} />店铺资料</Button></section>
+      <section className="store-overview"><div className="store-identity"><span className="store-mark">{current.logo?.url ? <img src={current.logo.url} alt="商店头像" /> : <Package size={25} />}</span><div><h2>{current.name}</h2><p>{current.intro || "在这里管理店铺与商品交付"}</p></div></div><Button secondary disabled={busy} onClick={() => setModal({ type: "store-edit", item: current })}><Settings2 size={16} />店铺资料</Button></section>
       <div className="catalog-stats">{[["已加载商品", products.length], ["已上架", products.filter((p) => p.visibility === "ACTIVE").length], ["草稿", products.filter((p) => p.visibility === "DRAFT").length], ["可用交付模板", templates.filter((t) => t.active).length]].map(([label, count]) => <div key={label}><span>{label}</span><strong>{count}</strong></div>)}</div>
       <div className="catalog-actions"><div className="button-row"><Button secondary disabled={busy} onClick={() => setModal({ type: "brand" })}>新增品牌</Button><Button secondary disabled={busy} onClick={() => setModal({ type: "category" })}>新增分类</Button><Button secondary disabled={busy} onClick={() => setModal({ type: "templates" })}>交付模板</Button><Button secondary disabled={busy} onClick={() => setModal({ type: "orders" })}>商店订单</Button></div><Button disabled={busy} onClick={() => setModal({ type: "product", item: {} })}><Plus size={17} />新增商品</Button></div>
       {(!brands.some((x)=>x.active) || !categories.some((x)=>x.active) || !templates.some((x)=>x.active)) && <p className="notice-box">发布商品前，请准备好{!brands.some((x)=>x.active) ? "品牌、" : ""}{!categories.some((x)=>x.active) ? "分类、" : ""}{!templates.some((x)=>x.active) ? "游戏内邮箱交付模板" : "交付资料"}。</p>}
@@ -105,9 +106,11 @@ export default function CatalogManagement({ client, user }) {
 
 function StoreForm({ client, user, initial, onSaved }) {
   const [value, setValue] = useState({ name: initial.name || "", intro: initial.intro || "", contactQq: initial.contactQq || user.qq, serviceHours: initial.serviceHours || "", notice: initial.notice || "" }), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const [logo,setLogo]=useState(initial.logo || null),[uploading,setUploading]=useState(false);
+  useUnsavedChanges({value,logo:logo?.assetId},busy||uploading);
   const stable = useStableMutation();
-  const save = async (e) => { e.preventDefault(); setBusy(true); setError(""); try { const body = stable({ ...value, logoAssetId: initial.logo?.assetId || null, coverAssetId: initial.cover?.assetId || null, ...(initial.storeId ? { expectedVersion: initial.version } : {}) }); await client.request(initial.storeId ? `/api/v1/merchant/stores/${encodeURIComponent(initial.storeId)}` : "/api/v1/admin/stores", { method: initial.storeId ? "PUT" : "POST", body }); await onSaved(); } catch (e) { setError(e.message); } finally { setBusy(false); } };
-  return <form onSubmit={save}>{[["name", "商店名称", 60], ["intro", "商店简介", 300], ["contactQq", "联系 QQ", 12], ["serviceHours", "服务时间", 100], ["notice", "商店公告", 1000]].map(([key, label, max]) => <Field key={key} label={label} value={value[key]} onChange={(e) => setValue({ ...value, [key]: e.target.value })} required={["name", "contactQq"].includes(key)} maxLength={max} pattern={key === "contactQq" ? "[0-9]{5,12}" : undefined} />)}{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>保存商店</Button></form>;
+  const save = async (e) => { e.preventDefault(); if(busy||uploading)return; setBusy(true); setError(""); try { const body = stable({ ...value, logoAssetId: logo?.assetId || null, coverAssetId: initial.cover?.assetId || null, ...(initial.storeId ? { expectedVersion: initial.version } : {}) }); await client.request(initial.storeId ? `/api/v1/merchant/stores/${encodeURIComponent(initial.storeId)}` : "/api/v1/admin/stores", { method: initial.storeId ? "PUT" : "POST", body }); await onSaved(); } catch (e) { setError(e.message); } finally { setBusy(false); } };
+  return <form onSubmit={save} className="settings-stack"><StoreAvatarPicker client={client} storeId={initial.storeId} name={value.name} value={logo} onChange={setLogo} onBusy={setUploading} />{[["name", "商店名称", 60], ["intro", "商店简介", 300], ["contactQq", "联系 QQ", 12], ["serviceHours", "服务时间", 100], ["notice", "商店公告", 1000]].map(([key, label, max]) => <Field key={key} label={label} value={value[key]} onChange={(e) => setValue({ ...value, [key]: e.target.value })} required={["name", "contactQq"].includes(key)} maxLength={max} pattern={key === "contactQq" ? "[0-9]{5,12}" : undefined} />)}{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy||uploading}>保存商店</Button></form>;
 }
 function ClassificationForm({ client, storeId, kind, onSaved }) {
   const [name, setName] = useState(""), [order, setOrder] = useState(0), [busy, setBusy] = useState(false), [error, setError] = useState(""); const stable = useStableMutation();

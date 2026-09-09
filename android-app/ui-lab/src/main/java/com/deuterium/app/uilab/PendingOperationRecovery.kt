@@ -6,12 +6,12 @@ import java.net.URLEncoder
 internal data class FinancialScope(val owner: String, val origin: String) {
     fun verify(pending: JSONObject) {
         if (owner.isBlank() || pending.optString("owner") != owner || pending.optString("origin") != origin)
-            throw ApiFailure("REQUEST_SCOPE_MISMATCH", "原请求缺少匹配的账号或服务器信息，请联系平台核对，不能自动重新付款")
+            throw ApiFailure("REQUEST_SCOPE_MISMATCH", "这笔交易与当前账号不匹配，请联系平台协助处理")
     }
 
     fun verifyCurrent(current: FinancialScope) {
         if (owner.isBlank() || this != current)
-            throw ApiFailure("SESSION_CHANGED", "账号或服务器已变化，原请求保留待核对")
+            throw ApiFailure("SESSION_CHANGED", "账号或服务器已切换，请返回原账号查看交易进度")
     }
 }
 
@@ -40,6 +40,7 @@ internal suspend fun recoverPendingOperation(
             val path = when (kind) {
                 "STORE_PURCHASE" -> "/store/orders"
                 "MARKET_PURCHASE" -> "/market/orders"
+                "AI_PURCHASE" -> "/ai/purchases"
                 "COMMISSION_PUBLISH" -> "/commissions"
                 else -> throw ApiFailure("UNSUPPORTED_RECOVERY", "此操作需要按原记录核对")
             }
@@ -47,7 +48,7 @@ internal suspend fun recoverPendingOperation(
                 request("POST", path, original).getJSONObject("operation")
             } catch (rejection: ApiFailure) {
                 // An expired original quote cannot be replaced or paid silently. Other errors retain the original intent.
-                if (rejection.status == 409 && rejection.code == "QUOTE_EXPIRED") {
+                if ((rejection.status == 409 && rejection.code == "QUOTE_EXPIRED") || (kind == "AI_PURCHASE" && rejection.code in setOf("AI_PLAN_CHANGED","AI_PLAN_UNAVAILABLE","AI_PURCHASE_UNAVAILABLE","AI_PLAN_ACTIVE","CAPABILITY_UNAVAILABLE"))) {
                     scope.verifyCurrent(currentScope())
                     persist(null)
                 }

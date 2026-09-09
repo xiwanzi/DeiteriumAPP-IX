@@ -61,10 +61,7 @@ fun BillHistoryPage(state:LabState,initial:String,topInset:Dp,onRecord:(LedgerEn
         } }
         if(rows.isNotEmpty() || (!loading && error==null))item { LabCard {
             Text("${if(cursor!=null)"已加载 " else ""}${rows.size} 笔交易 · 北京时间",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth().padding(top=12.dp),horizontalArrangement=Arrangement.SpaceBetween){
-                Column { Text("收入",style=MaterialTheme.typography.bodySmall);Text("+${credit(rows.filter{it.amount>0}.sumOf{it.amount})}",style=MaterialTheme.typography.titleLarge,color=MaterialTheme.colorScheme.primary) }
-                Column(horizontalAlignment=Alignment.End){Text("支出",style=MaterialTheme.typography.bodySmall);Text("−${credit(rows.filter{it.amount<0}.sumOf{-it.amount})}",style=MaterialTheme.typography.titleLarge)}
-            }
+            LedgerTotals(rows.filter{it.amount>0}.sumOf{it.amount},rows.filter{it.amount<0}.sumOf{-it.amount})
         } }
         error?.let{message->item{Text(message,color=MaterialTheme.colorScheme.error);PlainButton({if(rows.isEmpty())refresh++ else scope.launch{load(true)}},enabled=!loading){Text("重新读取")}}}
         if(rows.isEmpty()&&!loading&&error==null)item { Text("所选范围内暂无账单",Modifier.fillMaxWidth().padding(vertical=50.dp),textAlign=androidx.compose.ui.text.style.TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant) }

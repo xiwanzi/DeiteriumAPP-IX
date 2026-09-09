@@ -35,7 +35,7 @@ export async function findBusiness(client, entry) {
   return { operation, resource };
 }
 export function canReplayBusiness(entry, userId, origin) {
-  return !entry.operationId && entry.userId === userId && entry.origin === origin && /^https?:\/\//.test(origin || "") && ({ STORE_PURCHASE: "/api/v1/store/orders", MARKET_PURCHASE: "/api/v1/market/orders", COMMISSION_PUBLISH: "/api/v1/commissions" })[entry.kind] === entry.path && Boolean(entry.body?.clientRequestId);
+  return !entry.operationId && entry.userId === userId && entry.origin === origin && /^https?:\/\//.test(origin || "") && ({ STORE_PURCHASE: "/api/v1/store/orders", MARKET_PURCHASE: "/api/v1/market/orders", AI_PURCHASE: "/api/v1/ai/purchases", COMMISSION_PUBLISH: "/api/v1/commissions" })[entry.kind] === entry.path && Boolean(entry.body?.clientRequestId);
 }
 export async function replayUnreceivedBusiness(client, entry, userId, origin) {
   if (!canReplayBusiness(entry, userId, origin)) throw new Error("当前账号、网站或原处理记录不允许重放这笔请求，请刷新订单核对。");

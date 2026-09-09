@@ -151,6 +151,7 @@ func (s *Server) RefreshCommerceMailboxV2(ctx context.Context, id string) error 
 }
 
 func (s *Server) StartCommerceV2() {
+	go s.walletNoticeWorkerV206()
 	go func() {
 		ticker := time.NewTicker(15 * time.Second)
 		defer ticker.Stop()

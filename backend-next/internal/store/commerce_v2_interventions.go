@@ -318,7 +318,7 @@ func (s *Store) CreateCommerceInterventionV2(ctx context.Context, actor, id, kin
 		if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
 			return result, e
 		}
-		if e = commerceEventV2(ctx, tx, d, actor, "intervention.created", "平台介入已提交，原案件引用已同步到交易。", map[string]string{"caseId": c.ID}); e != nil {
+		if e = commerceEventV2(ctx, tx, d, actor, "intervention.created", "平台已收到你的申请，请等待处理。", map[string]string{"caseId": c.ID}); e != nil {
 			return result, e
 		}
 		return CommerceMutationV2{ResourceID: c.ID, Kind: "INTERVENTION"}, nil
@@ -517,7 +517,7 @@ func (s *Store) CommerceCaseActionV2(ctx context.Context, actor, id, key, action
 		if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
 			return result, e
 		}
-		if e = commerceEventV2(ctx, tx, d, actor, "intervention."+action, "平台案件状态已更新，请查看原案件详情。", map[string]string{"caseId": c.ID, "action": action}); e != nil {
+		if e = commerceEventV2(ctx, tx, d, actor, "intervention."+action, "平台处理有新进展，请查看详情。", map[string]string{"caseId": c.ID, "action": action}); e != nil {
 			return result, e
 		}
 		return CommerceMutationV2{ResourceID: c.ID, Kind: "INTERVENTION", OperationID: opID}, nil

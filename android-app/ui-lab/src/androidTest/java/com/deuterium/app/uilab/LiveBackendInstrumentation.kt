@@ -16,6 +16,7 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        if(options.getString("sakiLayout")=="true"){SakiLayoutCheck.run(this);return}
         if(options.getString("historyLayout")=="true"){HistoryLayoutCheck.run(this);return}
         if(options.getString("installerHandoff")=="true"){InstallerHandoffCheck.run(this);return}
         if(options.getString("releaseV204")=="true"){ReleaseV204Check.run(this);return}

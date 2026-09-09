@@ -113,7 +113,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             scope.launch { commerce.network?.refreshStore() }
             scope.launch { commerce.network?.refreshMarket() }
             scope.launch { commissions.network?.refresh();commissions.network?.recover() }
-            scope.launch { commerce.network?.refreshOrders();commerce.network?.recoverOrder("STORE_PURCHASE");commerce.network?.recoverOrder("MARKET_PURCHASE") }
+            scope.launch { commerce.network?.refreshOrders();commerce.network?.recoverOrder("STORE_PURCHASE");commerce.network?.recoverOrder("MARKET_PURCHASE");ai?.recoverPurchase() }
             scope.launch { while(!closed){syncNotices();delay(8000)} }
             if(service.pendingTransfer() != null) scope.launch { recoverTransfer() }
             scope.launch { while(!closed){delay(2500);if(!service.pendingTransfer()?.optString("transferId").isNullOrBlank())recoverTransfer()} }
@@ -300,7 +300,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
                 val route=when(kind){"WALLET"->"wallet";"PUBLIC_CHAT"->"public";"CONVERSATION"->conversationIds.entries.find{it.value==ref}?.key?.let{"dm:$it"} ?: "Info";"COMMISSION"->"commission:$ref";"ORDER"->"order:$ref";"REFUND"->"refund:$ref";"ANNOUNCEMENT"->"announcement";"APP_UPDATE"->"about";else->"Info"}
                 val id=value.getString("notificationId");val at=Instant.parse(value.getString("createdAt")).atZone(ZoneId.systemDefault()).toLocalDateTime()
                 val record=TradeNotice(id,userName,value.getString("title"),value.getString("body"),ref,kind,at,!value.isNull("readAt"),route)
-                if(id !in shown && !record.read && delivered<5){
+                if(id !in shown && !record.read && value.optBoolean("systemPush",true) && delivered<5){
                     val topic=when(value.getString("topic")){"DIRECT_MESSAGES"->NotificationTopic.Direct;"MENTIONS"->NotificationTopic.Mentions;"FOLLOWED_PLAYERS"->NotificationTopic.Followed;"WALLET"->NotificationTopic.Wallet;"COMMISSIONS"->NotificationTopic.Commissions;"ANNOUNCEMENTS"->NotificationTopic.Announcements;"APP_UPDATES"->NotificationTopic.Updates;else->NotificationTopic.Market}
                     postNotification(DemoNotice(id.hashCode().toLong(),record.title,record.body,route,topic))
                     delivered++

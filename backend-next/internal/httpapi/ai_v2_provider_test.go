@@ -155,8 +155,8 @@ func TestAIConfigRejectsUnsafeProviderAndInvalidBudgetV2(t *testing.T) {
 	}
 	bad = c
 	bad.PaidEnabled = true
-	if validateAIConfigV2(bad) == nil {
-		t.Fatal("paid success enabled without finance")
+	if validateAIConfigV2(bad) != nil {
+		t.Fatal("paid configuration rejected after finance integration")
 	}
 	var n aiNumberV2
 	if json.Unmarshal([]byte(`"24"`), &n) != nil || n != 24 {

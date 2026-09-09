@@ -39,13 +39,60 @@ fun readAiEvents(reader:Reader,onEvent:(String,JSONObject)->Unit) {
         }
         dispatch()
     }
-    if(!finished)throw ApiFailure("AI_STREAM_INTERRUPTED","AI 连接已中断，可使用原请求恢复查看")
+    if(!finished)throw ApiFailure("AI_STREAM_INTERRUPTED","连接中断，已保留回复，可继续查看")
 }
 
 class BackendAI(private val api:BackendApi,private val state:LabState) {
+    var currentPlan by mutableStateOf<JSONObject?>(null);private set
+    var expiresAt by mutableStateOf<String?>(null);private set
+    var purchaseError by mutableStateOf<String?>(null);private set
+    var purchasePending by mutableStateOf(api.pendingOperation("AI_PURCHASE")!=null);private set
+    var maxInputChars by mutableIntStateOf(2000);private set
+    private val purchaseLock=kotlinx.coroutines.sync.Mutex()
+
+    suspend fun purchase(plan:JSONObject,requestId:String):Boolean {
+        if(!purchaseLock.tryLock())return false
+        purchaseError=null
+        val scope=api.financialScope()
+        try{
+            val old=api.pendingOperation("AI_PURCHASE")
+            if(old!=null){if(old.getJSONObject("request").getString("planId")!=plan.getString("planId"))throw IllegalStateException("上一笔套餐购买仍在处理中");return recoverPurchase()}
+            val request=JSONObject().put("clientRequestId",requestId).put("planId",plan.getString("planId")).put("expectedPlanVersion",plan.getLong("version"))
+            api.saveOperation("AI_PURCHASE",JSONObject().put("request",request),scope);purchasePending=true
+            val response=api.request("POST","/ai/purchases",request)
+            val op=response.getJSONObject("operation")
+            api.saveOperation("AI_PURCHASE",JSONObject().put("request",request).put("operationId",op.getString("operationId")),scope)
+            return finishPurchase(op,scope)
+        }catch(failure:Exception){
+            if(failure is kotlinx.coroutines.CancellationException)throw failure
+            if(failure is ApiFailure && failure.code in setOf("AI_PLAN_CHANGED","AI_PLAN_UNAVAILABLE","AI_PURCHASE_UNAVAILABLE","AI_PLAN_ACTIVE","AI_PURCHASE_PENDING","CAPABILITY_UNAVAILABLE","INVALID_REQUEST"))api.saveOperation("AI_PURCHASE",null,scope)
+            purchasePending=api.pendingOperation("AI_PURCHASE")!=null;purchaseError=failure.message ?: "购买暂未完成，请稍后查看";return false
+        }finally{purchaseLock.unlock()}
+    }
+    suspend fun recoverPurchase():Boolean {
+        val pending=api.pendingOperation("AI_PURCHASE") ?: return false
+        val scope=api.financialScope()
+        return try{
+            val op=recoverPendingOperation("AI_PURCHASE",pending,scope,{api.financialScope()},{method,path,body->api.request(method,path,body)},{value->api.saveOperation("AI_PURCHASE",value,scope)})
+            finishPurchase(op,scope)
+        }catch(failure:Exception){if(failure is kotlinx.coroutines.CancellationException)throw failure;purchaseError=failure.message;false}
+        finally{purchasePending=api.pendingOperation("AI_PURCHASE")!=null}
+    }
+    private suspend fun finishPurchase(op:JSONObject,scope:FinancialScope):Boolean{
+        scope.verifyCurrent(api.financialScope())
+        val id=op.getString("resourceId")
+        if(op.getString("status")=="COMPLETED"){
+            val order=api.request("GET","/orders/$id")
+            require(order.optString("orderType")=="AI_SUBSCRIPTION"&&order.optString("fundsStatus")=="SETTLED"){"套餐仍在开通中，请稍后查看"}
+            scope.verifyCurrent(api.financialScope());api.saveOperation("AI_PURCHASE",null,scope);purchasePending=false;purchaseError=null
+            state.commerce.network?.refreshOrder(id);refresh();state.refresh();return true
+        }
+        if(op.getString("status")=="FAILED"){api.saveOperation("AI_PURCHASE",null,scope);purchasePending=false;state.commerce.network?.refreshOrder(id);throw IllegalStateException(if(op.optString("errorCode")=="AI_PURCHASE_REVERSED")"套餐未能开通，信用点已退回" else "购买未完成，请查看订单详情")}
+        purchaseError="套餐仍在开通中，请稍后查看";purchasePending=true;return false
+    }
     private val key="AI 助手"
     private val owner=api.playerRef
-    private val http=api.http.newBuilder().callTimeout(215,TimeUnit.SECONDS).readTimeout(30,TimeUnit.SECONDS).build()
+    private val http=api.http.newBuilder().callTimeout(365,TimeUnit.SECONDS).readTimeout(30,TimeUnit.SECONDS).build()
     var quotaText by mutableStateOf("正在读取 AI 状态…");private set
     var statusText by mutableStateOf("正在生成回复…");private set
     var conversationId by mutableStateOf<String?>(null);private set
@@ -79,6 +126,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             val info=api.request("GET","/ai/me");val history=api.request("GET","/ai/messages?limit=100").getJSONArray("messages")
             if(busy||api.playerRef!=owner)return
             assistantName=info.getString("assistantName");quota(info.getJSONObject("quota"))
+            currentPlan=info.getJSONObject("plan");expiresAt=info.optString("expiresAt").takeUnless{it.isBlank()||it=="null"};maxInputChars=info.optInt("maxInputChars",2000)
             val current=info.getJSONObject("conversation").getString("conversationId")
             if(conversationId!=current){state.conversation(key).clear();conversationId=current}
             for(index in 0 until history.length())put(history.getJSONObject(index))
@@ -88,7 +136,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             val message=local?.optString("assistantMessageId")?.let{id->state.conversation(key).find{it.remoteId==id}}
             if(message?.aiStatus=="completed"||message?.aiStatus=="failed"){api.savePendingAI(owner,null);recoveredDraft=""}else recoveredDraft=local?.optString("draft",local.optString("content")).orEmpty()
             state.directErrors.remove(key)
-            if(pending!=null&&pending.optString("status") in setOf("unknown","incomplete"))state.directErrors[key]="上次回复未完整完成，已保留正文。可恢复原请求，或输入 /new 开始新对话。"
+            if(pending!=null&&pending.optString("status") in setOf("unknown","incomplete"))state.directErrors[key]="上次回复中断，已保留内容。可以继续查看，或输入 /new 开始新对话。"
         }.onFailure{state.directErrors[key]=it.message ?: "AI 状态读取失败"}
     }
     suspend fun loadPlans(){runCatching{api.request("GET","/ai/plans").getJSONArray("plans")}.onSuccess{items->plans=(0 until items.length()).map{items.getJSONObject(it)}}.onFailure{state.directErrors[key]=it.message ?: "套餐读取失败"}}
@@ -100,7 +148,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
         if(raw.trim()=="/new")return reset()
         if(busy||api.playerRef!=owner)return false
         val content=(if(reply==null)raw else "引用：${reply.text}\n\n$raw").trim()
-        if(content.codePointCount(0,content.length)>2000){state.directErrors[key]="问题与引用合计不能超过 2000 字";return false}
+        if(content.codePointCount(0,content.length)>maxInputChars){state.directErrors[key]="问题与引用合计不能超过 $maxInputChars 字";return false}
         val saved=api.pendingAI(owner)
         if(saved!=null&&saved.getString("content")!=content){state.directErrors[key]="上一条 AI 请求需要先恢复；可输入 /new 开始新对话";return false}
         val pending=saved ?: JSONObject().put("clientMessageId",UUID.randomUUID().toString()).put("content",content).put("draft",raw)
@@ -130,7 +178,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             val code=(failure as? ApiFailure)?.code
             if(code in setOf("AI_DISABLED","AI_INVALID_MESSAGE","AI_QUOTA_EXCEEDED","AI_PROVIDER_UNAVAILABLE","AI_SERVER_BUSY","AI_REQUEST_CONFLICT","AI_CONVERSATION_CHANGED","UNAUTHORIZED"))api.savePendingAI(owner,null)
             if(assistantId.isNotBlank()&&answer.isNotEmpty())partial(if(code=="AI_RESPONSE_INCOMPLETE")"incomplete" else "unknown")
-            state.directErrors[key]=failure.message ?: "AI 连接已中断，可恢复原请求";false
+            state.directErrors[key]=failure.message ?: "连接中断，已保留回复，可继续查看";false
         }finally{busy=false;state.directPending[key]=false}
     }
     private suspend fun stream(input:JSONObject,onEvent:(String,JSONObject)->Unit):Unit=suspendCancellableCoroutine{continuation->
@@ -139,7 +187,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             .post(input.toString().toRequestBody("application/json; charset=utf-8".toMediaType())).build())
         continuation.invokeOnCancellation{call.cancel()}
         call.enqueue(object:Callback{
-            override fun onFailure(call:Call,e:IOException){if(continuation.isActive)continuation.resumeWithException(ApiFailure("AI_STREAM_INTERRUPTED","AI 连接中断，可使用原请求恢复"))}
+            override fun onFailure(call:Call,e:IOException){if(continuation.isActive)continuation.resumeWithException(ApiFailure("AI_STREAM_INTERRUPTED","连接中断，可稍后继续查看"))}
             override fun onResponse(call:Call,response:Response){
                 try{response.use{
                     if(!it.isSuccessful){val error=runCatching{JSONObject(it.body?.string().orEmpty()).getJSONObject("error")}.getOrNull();if(it.code==401)runBlocking{withContext(Dispatchers.Main){if(api.token==credential)api.forgetSession()}};throw ApiFailure(error?.optString("code") ?: "HTTP_${it.code}",error?.optString("message") ?: "AI 服务暂不可用",it.code)}
