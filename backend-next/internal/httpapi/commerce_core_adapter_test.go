@@ -22,10 +22,20 @@ func TestCommerceCoreAdapterSerializesConcurrentReplayAndRejectsOtherActor(t *te
 	a := s.CommerceCore
 	var sent atomic.Int32
 	s.Core.Connect("amiya", func(ctx context.Context, _ string, value any) error {
-		sent.Add(1)
 		frame := value.(map[string]any)
 		id := frame["operationId"].(string)
-		result, _ := json.Marshal(map[string]any{"operationId": id, "status": "COMPLETED", "data": map[string]any{"operationId": id, "businessRef": "order_one", "amount": "1.00", "status": "RESERVED"}})
+		data := map[string]any{"operationId": id, "businessRef": "order_one", "amount": "1.00", "status": "RESERVED"}
+		switch frame["command"] {
+		case CommerceReserveV2:
+			sent.Add(1)
+		case "operation.query":
+			// A concurrent caller can observe SENT and query its result while the
+			// reserve callback commits. This read is not a duplicate funds command.
+			data = map[string]any{"acquired": true, "state": "PROCESSING", "result": nil}
+		default:
+			t.Errorf("unexpected Core command: %v", frame["command"])
+		}
+		result, _ := json.Marshal(map[string]any{"operationId": id, "status": "COMPLETED", "data": data})
 		if err := db.CoreReply(ctx, "amiya", id, "COMPLETED", result); err != nil {
 			return err
 		}

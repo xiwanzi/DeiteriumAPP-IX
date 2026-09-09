@@ -460,7 +460,7 @@ export default function Messenger({
                       aria-label={`查看 ${name} 的资料`}
                       onClick={() => onProfile?.(m.sender)}
                     >
-                      <Avatar user={name} />
+                      <Avatar user={m.senderProfile || (mine ? user : contacts.find((c) => c.player?.playerRef === m.sender)?.player) || name} />
                     </button>
                   )}
                   <div className="pc-message-content">
@@ -733,7 +733,7 @@ export default function Messenger({
                     ...new Map(
                       all.map((m) => [
                         m.sender,
-                        { id: m.sender, name: m.senderName || m.sender },
+                        { id: m.sender, name: m.senderName || m.sender, player: m.senderProfile },
                       ]),
                     ).values(),
                   ].slice(-8)
@@ -746,7 +746,7 @@ export default function Messenger({
                   key={p.id}
                   onClick={() => onProfile?.(p.id)}
                 >
-                  <Avatar user={p.name} />
+                  <Avatar user={p.player || p.name} />
                   <span>{p.name}</span>
                   <ArrowUpRight size={13} />
                 </button>

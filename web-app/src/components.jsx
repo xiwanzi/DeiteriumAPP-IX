@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { confirmNavigation } from "./unsaved-changes.js";
 import {
   X,
@@ -17,8 +17,9 @@ import {
 import { money } from "./format.js";
 export const media = (name) => `/media/${name}`;
 export function Avatar({ user = "玩家", size = "", onClick }) {
-  const p = typeof user === "object" ? { name: user.gameId || user.name || "玩家", color: "blue", avatar: user.avatar } : { name: user || "玩家", color: "blue" };
-  const content = p.avatar?.url ? <img className={`avatar ${p.color} ${size}`} src={p.avatar.url} alt="" aria-hidden="true" style={{ objectFit: "cover" }} /> : (
+  const p = user && typeof user === "object" ? { name: user.gameId || user.displayName || user.name || "玩家", color: "blue", avatar: user.avatar, avatarUrl: user.avatarUrl } : { name: user || "玩家", color: "blue" };
+  const source = p.avatar?.url || (typeof p.avatar === "string" ? p.avatar : p.avatarUrl), [failed, setFailed] = useState(null);
+  const content = source && failed !== source ? <img className={`avatar ${p.color} ${size}`} src={source} alt="" aria-hidden="true" onError={() => setFailed(source)} style={{ objectFit: "cover" }} /> : (
     <span className={`avatar ${p.color} ${size}`} aria-hidden="true">
       {p.name.slice(0, 1).toUpperCase()}
     </span>
@@ -111,7 +112,7 @@ export function Tabs({ values, value, onChange, label = "筛选" }) {
     </div>
   );
 }
-export function Modal({ title, children, close, wide = false, guardClose = false, dismissOnBackdrop = true }) {
+export function Modal({ title, children, close, wide = false, className = "", guardClose = false, dismissOnBackdrop = true }) {
   const requestClose = () => { if (!guardClose || confirmNavigation()) close(); };
   const ref = useRef(null),
     label = useId();
@@ -129,7 +130,7 @@ export function Modal({ title, children, close, wide = false, guardClose = false
   return (
     <dialog
       ref={ref}
-      className={`modal ${wide ? "wide" : ""}`}
+      className={`modal ${wide ? "wide" : ""} ${className}`}
       aria-labelledby={label}
       onCancel={(e) => {
         e.preventDefault();

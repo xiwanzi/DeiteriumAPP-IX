@@ -37,6 +37,7 @@ export default function ConnectedApp() {
     [loading, setLoading] = useState(true),
     [failure, setFailure] = useState(""),
     [path, setPath] = useState(location.pathname),
+    [search, setSearch] = useState(location.search),
     [dark, setDark] = useState(
       () => localStorage.getItem("deuterium-web-theme") === "dark",
     ),
@@ -58,6 +59,13 @@ export default function ConnectedApp() {
       },
     });
   const client = clientRef.current;
+  const [ownProfile, setOwnProfile] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setOwnProfile(null);
+    if (session?.user.playerRef) client.profile(session.user.playerRef).then((r) => { if (active) setOwnProfile(r.data); }).catch(() => {});
+    return () => { active = false; };
+  }, [client, session?.user.playerRef]);
   function applySession(s) {
     if (!s?.user?.userId) throw new Error("账号响应格式不正确，请重新连接。");
     if (sessionRef.current?.user.userId !== s.user.userId) { setRequestedConversation(null); setModal(null); }
@@ -82,6 +90,7 @@ export default function ConnectedApp() {
       if (!confirmNavigation()) { history.pushState({}, "", currentUrl.current); return; }
       currentUrl.current = location.href;
       setPath(location.pathname);
+      setSearch(location.search);
       setModal(null);
     };
     window.addEventListener("popstate", pop);
@@ -96,6 +105,7 @@ export default function ConnectedApp() {
         ({
           "/information": "信息",
           "/admin": "官方管理",
+          "/merchant": "商店管理",
           "/me": "我的",
           "/": "商城",
           "/wallet": "钱包",
@@ -125,9 +135,10 @@ export default function ConnectedApp() {
   }, [dark]);
   const navigate = (to) => {
     if (!confirmNavigation()) return;
-    if (location.pathname !== to) history.pushState({}, "", to);
+    if (location.pathname + location.search !== to) history.pushState({}, "", to);
     currentUrl.current = location.href;
     setPath(new URL(to, location.origin).pathname);
+    setSearch(new URL(to, location.origin).search);
     setModal(null);
     window.scrollTo(0, 0);
   };
@@ -182,6 +193,8 @@ export default function ConnectedApp() {
       />
     );
   const user = {
+    ...session.user,
+    avatar: ownProfile?.avatar || session.user.avatar,
     id: session.user.userId,
     name: session.user.gameId,
     qq: session.user.qq,
@@ -194,6 +207,7 @@ export default function ConnectedApp() {
         key={session.user.userId}
         user={user}
         path={path}
+        search={search}
         navigate={navigate}
         mode="foundation"
         dark={dark}
@@ -225,11 +239,11 @@ export default function ConnectedApp() {
         ) : path === "/commissions" ? (
           <BusinessPages client={client} user={session.user} type="COMMISSION" />
         ) : path === "/me" ? (
-          <ConnectedProfile client={client} user={session.user} onLogout={logout} navigate={navigate} />
+          <ConnectedProfile client={client} user={session.user} onLogout={logout} navigate={navigate} onProfileUpdated={setOwnProfile} />
         ) : path === "/notification-settings" ? (
           <ConnectedNotificationSettings client={client} />
         ) : path === "/admin" ? (
-          <OfficialAdmin client={client} user={session.user} navigate={navigate} />
+          <OfficialAdmin client={client} user={session.user} navigate={navigate} search={search} />
         ) : path === "/merchant" ? (
           <CatalogManagement client={client} user={session.user} />
         ) : (
@@ -243,7 +257,7 @@ export default function ConnectedApp() {
       </AppShell>
       {modal?.type === "about" && (
         <Modal title="Deuterium Web" close={() => setModal(null)}>
-          <h2>2.0.4</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
+          <h2>2.0.5</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
           <p className="muted">账号、聊天和交易以服务器记录为准。</p>
         </Modal>
       )}

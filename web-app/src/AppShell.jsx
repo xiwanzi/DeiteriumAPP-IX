@@ -19,6 +19,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Avatar, media } from "./components.jsx";
+import { adminNavigation } from "./admin-navigation.js";
 export const navigation = [
   ["/", "商城", Store],
   ["/market", "玩家市场", Shapes],
@@ -30,6 +31,7 @@ export const navigation = [
 export default function AppShell({
   user,
   path,
+  search = "",
   navigate,
   children,
   dark,
@@ -45,9 +47,13 @@ export default function AppShell({
 }) {
   const [mobile, setMobile] = useState(false),
     chat = path === "/information";
+  const managing = path === "/admin" || path === "/merchant";
+  const links = managing ? adminNavigation(user.permissions) : navigation;
+  const section = new URLSearchParams(search).get("section");
+  const activePath = path === "/admin" ? links.find(([to]) => to === `/admin?section=${section}`)?.[0] || links.find(([to]) => to.startsWith("/admin?"))?.[0] || "/merchant" : path;
   useEffect(() => {
     setMobile(false);
-  }, [path]);
+  }, [path, search]);
   useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape") setMobile(false);
@@ -62,7 +68,7 @@ export default function AppShell({
     setMobile(false);
   };
   return (
-    <div className={`app-shell ${chat ? "chat-shell" : ""}`}>
+    <div className={`app-shell ${chat ? "chat-shell" : ""} ${managing ? "management-shell" : ""}`}>
       <a className="skip-link" href="#main-content">
         跳到主要内容
       </a>
@@ -82,19 +88,19 @@ export default function AppShell({
         >
           <img src={media("app-icon.svg")} alt="Deuterium App 图标" />
           <span>
-            Deuterium<small>属于我们的世界</small>
+            Deuterium<small>{managing ? "官方管理工作台" : "属于我们的世界"}</small>
           </span>
         </a>
-        <div className="sidebar-caption">探索与连接</div>
-        <nav aria-label="主要导航">
-          {navigation.map(([to, label, Icon]) => (
+        <div className="sidebar-caption">{managing ? "店铺与运营" : "探索与连接"}</div>
+        <nav aria-label={managing ? "管理导航" : "主要导航"}>
+          {links.map(([to, label, Icon]) => (
             <a
               key={to}
               href={`${basePath}${to}`}
               title={label}
               aria-label={label}
-              aria-current={path === to ? "page" : undefined}
-              className={path === to ? "active" : ""}
+              aria-current={activePath === to ? "page" : undefined}
+              className={activePath === to ? "active" : ""}
               onClick={(e) => link(e, to)}
             >
               <Icon size={21} />
@@ -111,7 +117,8 @@ export default function AppShell({
             </span>
             <div className="world-lines" />
           </div>
-          {user.admin && (
+          {managing && <a className="admin-nav" href={`${basePath}/`} onClick={(e) => link(e, "/")}><Store size={19} /><span>返回玩家商城</span><ArrowUpRight size={14} /></a>}
+          {user.admin && !managing && (
             <a
               title="官方管理"
               aria-label="官方管理"
@@ -138,7 +145,7 @@ export default function AppShell({
             title={user.name}
             onClick={() => navigate("/me")}
           >
-            <Avatar user={user.name} />
+            <Avatar user={user} />
             <span>
               <strong>{user.name}</strong>
               <small>Deuterium ID</small>
@@ -160,20 +167,20 @@ export default function AppShell({
             <span className="breadcrumb">
               Deuterium <ChevronRight size={13} />
               <strong>
-                {navigation.find((n) => n[0] === path)?.[1] || ({"/admin":"官方管理","/announcements":"社区公告","/notifications":"通知","/notification-settings":"通知设置","/merchant":"商店管理","/cart":"购物袋","/orders":"我的订单"}[path]) || "Deuterium"}
+                {links.find((n) => n[0] === activePath)?.[1] || ({"/admin":"官方管理","/announcements":"社区公告","/notifications":"通知","/notification-settings":"通知设置","/merchant":"商店管理","/cart":"购物袋","/orders":"我的订单"}[path]) || "Deuterium"}
               </strong>
             </span>
           </div>
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.4
+              Deuterium · 2.0.5
             </button>
-            <button className="top-search" onClick={onSearch}>
+            {!managing && <button className="top-search" onClick={onSearch}>
               <Search size={17} />
               <span>{chat ? "搜索消息与会话…" : "搜索好物、委托…"}</span>
               <kbd>/</kbd>
-            </button>
+            </button>}
             <button
               className="icon-button"
               aria-label={dark ? "切换浅色模式" : "切换深色模式"}
@@ -216,7 +223,7 @@ export default function AppShell({
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.4 <b>·</b> Deuterium ID
+              Web 2.0.5 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}

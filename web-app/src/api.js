@@ -191,6 +191,7 @@ export function normalizeMessage(message, currentUser) {
     text: message.content,
     sender: message.sender?.playerRef,
     senderName: message.sender?.gameId || "玩家",
+    senderProfile: message.sender,
     mine: message.sender?.playerRef === currentUser.playerRef,
     source: message.sender?.source === "game" ? "游戏" : undefined,
     sentAt: message.sentAt,
