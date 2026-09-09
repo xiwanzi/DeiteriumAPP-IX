@@ -1,0 +1,23 @@
+{
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ],
+  "todayLedgerAfterRestart": "PASS",
+  "balanceAfterLedger": "PASS",
+  "temporarySessionRevoked": true
+}

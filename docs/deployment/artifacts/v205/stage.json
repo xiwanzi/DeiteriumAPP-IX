@@ -1,0 +1,10 @@
+{
+  "backupDirectory": "/var/backups/deuterium/app-2.0.5-20260909-20500",
+  "previousManifestSha256": "f9cd2c8588de631f33c23bcdfb7a0fd5b2e937b106d756cc8783b8835d11e8c4",
+  "backendDirectory": "/opt/deuterium/releases/app-2.0.4-812f1d1a5056",
+  "backendSha256": "5d4e48cfec9f1074ad417606bc843342469f3196316256b7569711558ee2ec84",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.4-812f1d1a5056/dist",
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.5-20500-test.apk",
+  "sizeBytes": 23319339,
+  "sha256": "b4a5e27000ed979375047f411b1716356707d6d3b7d11a1355f85f44d8e6b939"
+}

@@ -1,6 +1,8 @@
 # Deuterium IX 工程约定
 
-当前发布（2026-09-09）：**App 2.0.4（20401）、Web 2.0.4、配套 Go、Core 1.0.1 和 XConomy .2 已上线**。源码主体 `812f1d1a5056`，见 [2.0.4 部署记录](docs/deployment/deuterium-2.0.4-live.md)。当前维护工作区为 `C:/DeiteriumAPP-IX/.worktrees/release-v204`；用户已授权本轮公开仓库推送与部署。SMTP 页面与密钥已就绪，真实邮箱参数尚待管理员填写。
+当前 App 发布（2026-09-09）：**2.0.5（20500）已上线并推送账号提醒**，源码 `bcfe87e398e75`，见 [2.0.5 部署记录](docs/deployment/deuterium-2.0.5-live.md)。修复历史账单时钟偏差、删除入口及确认浮窗、退款成功居中；当前维护工作区仍为 `C:/DeiteriumAPP-IX/.worktrees/release-v204`，分支 `release/v205`。网站、Go 程序和游戏插件沿用 2.0.4。
+
+此前 2.0.4 发布（2026-09-09）：**App 2.0.4（20401）、Web 2.0.4、配套 Go、Core 1.0.1 和 XConomy .2 已上线**。源码主体 `812f1d1a5056`，见 [2.0.4 部署记录](docs/deployment/deuterium-2.0.4-live.md)。当前维护工作区为 `C:/DeiteriumAPP-IX/.worktrees/release-v204`；用户已授权本轮公开仓库推送与部署。SMTP 页面与密钥已就绪，真实邮箱参数尚待管理员填写。
 
 2.0.4 已修复安装后的旧任务残留及加载等待，统一游戏/App 流水和日统计、最新记录排序、删除按钮与主题切换；网页支持永久删除公告、介入邮件队列和完整交易审计。2.0.3 与 20400 候选记录是历史。
 

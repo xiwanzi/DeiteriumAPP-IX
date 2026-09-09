@@ -6,10 +6,10 @@
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.4",
-      "versionCode": 20401,
-      "sourceCommit": "812f1d1a50566b8d2ac266d8219ba74fb73a9211",
-      "publishedSha256": "6af287aff417242cd2ac9fb3d7c7b9f66d876b5f48d60a7d2560e2ca433ee96f"
+      "version": "2.0.5",
+      "versionCode": 20500,
+      "sourceCommit": "bcfe87e398e75dd199bc26992762ac9164301663",
+      "publishedSha256": "b4a5e27000ed979375047f411b1716356707d6d3b7d11a1355f85f44d8e6b939"
     },
     {
       "name": "web",
