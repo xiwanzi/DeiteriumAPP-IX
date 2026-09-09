@@ -6,27 +6,28 @@
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.5",
-      "versionCode": 20500,
-      "sourceCommit": "bcfe87e398e75dd199bc26992762ac9164301663",
-      "publishedSha256": "b4a5e27000ed979375047f411b1716356707d6d3b7d11a1355f85f44d8e6b939"
+      "version": "2.0.6",
+      "versionCode": 20600,
+      "sourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
+      "publishedSha256": "3b45ddd407aab468b346367604d5c62bbda996543bbf3b4a6a8db7cae2075645",
+      "buildSourceCommit": "1f8ada46265a9fea736ccf6f76449532fa98f3b4"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.5",
-      "sourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
-      "publishedSourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
-      "publishedArchiveSha256": "8054fe7ae8209b8ca0991bbc60cd18276576436a8e2cfa2a8dab0768d811d5a7",
-      "buildSourceCommit": "edfae91758b9144811b494bfb7a733d7ef069c7b"
+      "version": "2.0.6",
+      "sourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
+      "publishedSourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
+      "publishedArchiveSha256": "aff795fd2097d3197c5e14c7507357cf67254c8e8f252f8d182c7e01cd0e135d",
+      "buildSourceCommit": "1f8ada46265a9fea736ccf6f76449532fa98f3b4"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
-      "publishedSourceCommit": "0386f1bd56641f08f0b73faf819632f3cad9efda",
-      "publishedSha256": "32041fecabf67c9f31d38fccb5d682d375eac967041a03d5418604f90f54ce5b",
-      "buildSourceCommit": "edfae91758b9144811b494bfb7a733d7ef069c7b"
+      "sourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e",
+      "publishedSourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e",
+      "publishedSha256": "7d8a8c0336a2222c78dc3b9672110617eac8249498ff2916bfd73e586744d10c",
+      "buildSourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e"
     },
     {
       "name": "core",

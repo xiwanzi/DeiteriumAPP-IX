@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e",
+  "pullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/9",
+  "buildSourceCommit": "1f8ada46265a9fea736ccf6f76449532fa98f3b4",
+  "versionName": "2.0.6",
+  "versionCode": 20600,
+  "packageName": "com.deuterium.app.uilab",
+  "signerSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "files": [
+    {
+      "name": "Deuterium-2.0.6-20600-test.apk",
+      "sizeBytes": 23368491,
+      "sha256": "3b45ddd407aab468b346367604d5c62bbda996543bbf3b4a6a8db7cae2075645"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 12816544,
+      "sha256": "7d8a8c0336a2222c78dc3b9672110617eac8249498ff2916bfd73e586744d10c"
+    },
+    {
+      "name": "web-2.0.6.zip",
+      "sizeBytes": 33677694,
+      "sha256": "aff795fd2097d3197c5e14c7507357cf67254c8e8f252f8d182c7e01cd0e135d"
+    }
+  ],
+  "clientSourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
+  "backendSourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e",
+  "clientSourceTreesUnchanged": true,
+  "compatibilityPullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/10"
+}

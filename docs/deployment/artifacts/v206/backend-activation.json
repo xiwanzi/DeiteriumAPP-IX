@@ -1,0 +1,9 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.6-515c87fd4936",
+  "health": {
+    "status": "ready"
+  },
+  "migrationAndBusinessCounts": "021_saki_admin.sql\te08319d5660367e38106db47586e51f003e104344ce4aeca56953c4950d0ce8f\nCOMMISSION\t4\nORDER\t9\n0",
+  "appAndWebPublicationPending": true,
+  "restartCount": 1
+}

@@ -1,0 +1,25 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.6-20600-test",
+    "kind": "APK",
+    "versionName": "2.0.6",
+    "versionCode": 20600,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "优化历史账单大额显示和页面间距；新增小祥套餐页面及商城订单、商店头像裁切，后台可管理小祥设置与账号权限；精简交易通知、改善提示文案，并补齐转账到账提醒。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.6-20600-test.apk",
+    "sizeBytes": 23368491,
+    "sha256": "3b45ddd407aab468b346367604d5c62bbda996543bbf3b4a6a8db7cae2075645",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 20599,
+    "channel": "stable",
+    "publishedAt": "2026-09-09T13:46:10Z"
+  },
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.6-4d9a001ebd0e/dist",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.6-515c87fd4936",
+  "health": {
+    "status": "ready"
+  },
+  "appManifestSha256": "c12c302f787bed355876314b7e83f520a4032ed8ffcdf250e100b262cd0f5da7",
+  "publicApkVerified": true
+}

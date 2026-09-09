@@ -1,0 +1,10 @@
+{
+  "backupDirectory": "/var/backups/deuterium/release-2.0.6-20260909-4d9a001ebd0e",
+  "sqlSha256": "4ecaf2c0645e03c959c61efad56050edf206784a0b9676e2fe222fe7f1050f5c",
+  "sqlBytes": 232868,
+  "businessCounts": "COMMISSION\t4\nORDER\t9",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.6-4d9a001ebd0e",
+  "backendSha256": "48abda912bb33ad9e754f2c913e88bc3c09570cc2056ec49a57438367ecf662b",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.6-4d9a001ebd0e/dist",
+  "liveServiceChanged": false
+}

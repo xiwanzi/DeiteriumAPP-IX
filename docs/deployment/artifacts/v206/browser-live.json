@@ -1,0 +1,13 @@
+{
+  "liveReadOnly": true,
+  "aiSettingsVisible": true,
+  "paidPlansEnabled": false,
+  "accountRowsOnPage": 30,
+  "accountPagination": true,
+  "avatarCropPreview": true,
+  "ordersLoaded": 8,
+  "orderDetailReadable": true,
+  "mutationRequests": 0,
+  "runtimeErrors": [],
+  "apiFailures": []
+}
