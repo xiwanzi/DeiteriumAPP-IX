@@ -20,6 +20,8 @@ type AIQuoteV207 struct {
 	PreviousPrice          string     `json:"previousPrice,omitempty"`
 	PriceDifference        string     `json:"priceDifference,omitempty"`
 	RemainingDays          int64      `json:"remainingDays"`
+	ChargedDays            int64      `json:"chargedDays,omitempty"`
+	BillingCycleDays       int        `json:"billingCycleDays,omitempty"`
 	EntitlementExpiresAt   *time.Time `json:"entitlementExpiresAt"`
 	ExpiresAt              time.Time  `json:"expiresAt"`
 	EntitlementFingerprint string     `json:"entitlementFingerprint"`
@@ -32,7 +34,10 @@ func (q AIQuoteV207) PublicV207() CatalogObjectV2 {
 	return result
 }
 
-func aiUpgradeAmountV207(oldPrice, newPrice string, remaining time.Duration) (string, int64, error) {
+func aiUpgradeAmountV207(oldPrice, newPrice string, remaining time.Duration, cycleDays int) (string, int64, error) {
+	if cycleDays < 1 {
+		return "", 0, catalogInvalid()
+	}
 	old, err := commerceAmountV2(oldPrice)
 	if err != nil {
 		return "", 0, err
@@ -49,9 +54,11 @@ func aiUpgradeAmountV207(oldPrice, newPrice string, remaining time.Duration) (st
 	if remaining%(24*time.Hour) != 0 {
 		days++
 	}
-	cents := new(big.Int).Mul(delta, big.NewInt(days))
-	// Positive cents / 15, rounded half up, without floating-point money.
-	cents.Add(cents, big.NewInt(7)).Quo(cents, big.NewInt(15))
+	chargedDays := max(days, int64(min(5, cycleDays)))
+	cents := new(big.Int).Mul(delta, big.NewInt(chargedDays))
+	// The purchased cycle is immutable. Keep five days' difference as the floor
+	// (the whole cycle for cycles shorter than five days), rounding cents half up.
+	cents.Add(cents, big.NewInt(int64(cycleDays/2))).Quo(cents, big.NewInt(int64(cycleDays)))
 	amount := catalogMoneyString(cents)
 	return amount, days, commerceWithinExecutionLimitV2(amount)
 }
@@ -102,14 +109,18 @@ func aiPurchaseTermsV207(ctx context.Context, tx *sql.Tx, actor string, input AI
 			}
 			q.Kind = "UPGRADE"
 			q.PreviousPrice = old.Price
-			q.TotalAmount, q.RemainingDays, err = aiUpgradeAmountV207(old.Price, p.Price, expiry.Sub(now))
+			q.BillingCycleDays = old.DurationDays
+			q.TotalAmount, q.RemainingDays, err = aiUpgradeAmountV207(old.Price, p.Price, expiry.Sub(now), q.BillingCycleDays)
 			if err != nil {
 				return q, err
 			}
-			// A quoted ceiling must not survive the instant its billable day drops.
-			nextDay := expiry.Add(-time.Duration(q.RemainingDays-1) * 24 * time.Hour)
-			if nextDay.Before(q.ExpiresAt) {
-				q.ExpiresAt = nextDay
+			q.ChargedDays = max(q.RemainingDays, int64(min(5, q.BillingCycleDays)))
+			// A quoted price must not survive the instant its billable day drops.
+			if q.RemainingDays > int64(min(5, q.BillingCycleDays)) {
+				nextDay := expiry.Add(-time.Duration(q.RemainingDays-1) * 24 * time.Hour)
+				if nextDay.Before(q.ExpiresAt) {
+					q.ExpiresAt = nextDay
+				}
 			}
 			oldCents, _ := commerceAmountV2(old.Price)
 			newCents, _ := commerceAmountV2(p.Price)

@@ -872,7 +872,7 @@ paths:
     post:
       tags: [AI]
       summary: 获取普通购买、续购或补差价升级的确认报价
-      description: 升级费用按购买时原套餐标价与目标现价之差 × 向上取整的剩余天数 / 15，四舍五入到分。报价绑定账号及当前权益，最长 90 秒内有效，且不跨越计费天数变化或原套餐到期时间。升级不延长有效期、不允许降级或退款。
+      description: 升级费用按整期差价逐日降低，以当前权益购买时的套餐周期折算，剩余天数向上取整，最低按 5 天计费（周期不足 5 天时最低按整期），最终金额四舍五入到分。报价绑定账号及当前权益，最长 90 秒内有效，且不跨越计费天数变化或原套餐到期时间。升级不延长有效期、不允许降级或退款。
       operationId: createAiPurchaseQuote
       requestBody:
         required: true
@@ -13773,6 +13773,15 @@ components:
           $ref: '#/components/schemas/CreditAmount'
         priceDifference:
           $ref: '#/components/schemas/CreditAmount'
+        chargedDays:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 升级本次计费天数，含最低计费规则。
+        billingCycleDays:
+          type: integer
+          minimum: 1
+          description: 购买当前权益时锁定的套餐周期。
         remainingDays:
           type: integer
           format: int64

@@ -58,7 +58,7 @@ func TestSakiUpgradeSnapshotAmountExpiryAndConcurrentRecoveryV207(t *testing.T) 
 	actor := f.users["Alice"].ID
 	q := sakiQuoteV207(t, f, "quote")
 	quoteHTTP := f.json(t, "Alice", "POST", "/api/v1/ai/purchase-quotes", store.AIPurchaseInputV206{ClientRequestID: "quote", PlanID: "plan_ultra", ExpectedPlanVersion: 2}, 200)
-	if q.Kind != "UPGRADE" || q.TotalAmount != "16.00" || q.RemainingDays != 8 || q.PriceDifference != "30.00" || !q.EntitlementExpiresAt.Equal(expiry) {
+	if q.Kind != "UPGRADE" || q.TotalAmount != "8.00" || q.RemainingDays != 8 || q.ChargedDays != 8 || q.BillingCycleDays != 30 || q.PriceDifference != "30.00" || !q.EntitlementExpiresAt.Equal(expiry) {
 		t.Fatalf("bad quote: %+v", q)
 	}
 	q2 := sakiQuoteV207(t, f, "quote")
@@ -112,7 +112,7 @@ func TestSakiUpgradeSnapshotAmountExpiryAndConcurrentRecoveryV207(t *testing.T) 
 		t.Fatalf("upgrade changed expiry/price: %+v %v", state, err)
 	}
 	d, err := f.db.CommerceRecordV2(ctx, m.ResourceID)
-	if err != nil || d.Amount != "16.00" || c.calls[CommerceReserveV2] != 2 || c.calls[CommerceSettleV2] != 2 {
+	if err != nil || d.Amount != "8.00" || c.calls[CommerceReserveV2] != 2 || c.calls[CommerceSettleV2] != 2 {
 		t.Fatalf("wrong money: %+v %v", d, err)
 	}
 	if _, err = f.db.PrepareAIPurchaseV206(ctx, actor, input, false, false); err != nil {
@@ -191,10 +191,11 @@ func TestSakiUpgradeUsesPaidPriceAndFailedSettlementKeepsEntitlementV207(t *test
 	ctx := context.Background()
 	actor := f.users["Alice"].ID
 	v.Plans[1].Price = "20.00"
+	v.Plans[1].DurationDays = 15
 	sakiSaveV206(t, f, v, 1, "new-price")
 	input := store.AIPurchaseInputV206{ClientRequestID: "quote", PlanID: "plan_ultra", ExpectedPlanVersion: 3}
 	q, err := f.db.AIQuoteV207(ctx, actor, input, true, true)
-	if err != nil || q.TotalAmount != "16.00" || q.PreviousPrice != "12.50" {
+	if err != nil || q.TotalAmount != "8.00" || q.PreviousPrice != "12.50" || q.BillingCycleDays != 30 {
 		t.Fatal("lost paid snapshot", q, err)
 	}
 	input.ClientRequestID = "upgrade"
@@ -211,5 +212,32 @@ func TestSakiUpgradeUsesPaidPriceAndFailedSettlementKeepsEntitlementV207(t *test
 	state, err := f.db.AIStateV2(ctx, actor, store.AIPolicyV2{Configured: true}, time.Now())
 	if err != nil || state.Plan.Code != "pro" || !state.ExpiresAt.Equal(expiry) || c.calls[CommerceRefundV2] != 1 {
 		t.Fatal("failed upgrade changed old entitlement", state, err)
+	}
+}
+
+func TestSakiUpgradeLastDayKeepsFiveDayFloorAndActualExpiryV207(t *testing.T) {
+	f, _, _, _ := sakiUpgradeFixtureV207(t)
+	ctx := context.Background()
+	actor := f.users["Alice"].ID
+	expiry := time.Now().UTC().Add(time.Hour).Truncate(time.Microsecond)
+	if _, err := f.db.DB.Exec("UPDATE ai_entitlements_v206 SET expires_at=? WHERE user_id=?", expiry, actor); err != nil {
+		t.Fatal(err)
+	}
+	q := sakiQuoteV207(t, f, "last-day")
+	if q.TotalAmount != "5.00" || q.RemainingDays != 1 || q.ChargedDays != 5 || q.BillingCycleDays != 30 {
+		t.Fatalf("floor not retained: %+v", q)
+	}
+	input := store.AIPurchaseInputV206{ClientRequestID: "last-day-upgrade", PlanID: "plan_ultra", ExpectedPlanVersion: 2, QuoteID: q.QuoteID}
+	m, err := f.db.PrepareAIPurchaseV206(ctx, actor, input, true, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	op, err := f.app.RunCommerceOperationV2(ctx, m.OperationID, true)
+	if err != nil || op.State != "COMPLETED" {
+		t.Fatal(op, err)
+	}
+	state, err := f.db.AIStateV2(ctx, actor, store.AIPolicyV2{Configured: true}, time.Now())
+	if err != nil || !state.ExpiresAt.Equal(expiry) {
+		t.Fatal("floor extended subscription", state, err)
 	}
 }
