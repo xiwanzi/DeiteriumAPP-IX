@@ -1,16 +1,20 @@
 # 当前项目状态
 
-基准：2026-09-09。App 2.0.4（20401）、Web 2.0.4、配套 Go/Core/XConomy 已发布；账号更新提醒已加入 xiwanzi 通知，原始业务与 Mail/Sync 配置保留。见 [2.0.4 部署记录](deployment/deuterium-2.0.4-live.md)。
+基准：2026-09-09。**App 2.0.5（20500）已发布，历史账单与删除/结果浮窗修复已上线，账号通知已推送**，见 [2.0.5](deployment/deuterium-2.0.5-live.md)。网站、Go 与游戏插件保持以下 2.0.4 配套版本。
+
+此前部署：App 2.0.4（20401）、Web 2.0.4、配套 Go/Core/XConomy 已发布；账号更新提醒已加入 xiwanzi 通知，原始业务与 Mail/Sync 配置保留。见 [2.0.4 部署记录](deployment/deuterium-2.0.4-live.md)。
 
 | 部分 | 当前状态 | 依据 |
 | --- | --- | --- |
-| App | 2.0.4（20401），安装退出/启动恢复、统一流水与日统计、最新记录排序、删除按钮与主题修复 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
+| App | 2.0.5（20500），历史账单日期、简洁删除及确认、结果浮窗居中 | [2.0.5](deployment/deuterium-2.0.5-live.md) |
 | 网站 | 2.0.4，公告永久删除、SMTP 配置/提醒、全服和玩家审计、商品发布优化 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
 | 后端 | Go `812f1d1a5056`，统一经济账本读取、SMTP 持久队列与管理员业务查询 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
 | Core / Mail / Sync / XConomy | Core 1.0.1、XConomy .2 已换四服，Mail/Sync 不变；三服已恢复，MEK 停止禁领 | [插件记录](deployment/deuterium-2.0.4-live.md) |
 | 源码维护 | 新主仓库汇总 App/Web/Go/Core/XConomy；Mail、Sync 独立 PR | [归档交接](repository-handoff.md) |
 
 ## 本次验证与历史证据
+
+2.0.5：126 项 Android 单测、Lint 0 错误，已发布 2.0.4 到 2.0.5 系统安装器升级、打开与重开、浅深色完整页面回归通过；公网完整 APK、旧版更新与新版不降级、账号通知、后端健康、三节点重连和账单只读验证通过。
 
 2.0.4：121 项 Android 单测、Lint 0 错误；真实系统安装器、取消和覆盖旧版恢复通过。Go 123 项顶层 race/integration、Web 54 项单测/18 项浏览器流程、Core 29、XConomy 10 项数据库测试及 7 种响应契约通过。实际下载/更新检查/业务只读/节点恢复见 [部署记录](deployment/deuterium-2.0.4-live.md)。SMTP 实际邮箱尚未配置。
 

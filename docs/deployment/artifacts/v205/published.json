@@ -1,0 +1,38 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.5-20500-test",
+    "kind": "APK",
+    "versionName": "2.0.5",
+    "versionCode": 20500,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "修复历史账单因设备时间偏差而读取失败；删除入口统一为简洁红色文字，确认浮窗仅保留取消和红色确认；修复退款成功等结果浮层居中，优化账单日期选择和读取失败提示。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.5-20500-test.apk",
+    "sizeBytes": 23319339,
+    "sha256": "b4a5e27000ed979375047f411b1716356707d6d3b7d11a1355f85f44d8e6b939",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 20499,
+    "channel": "stable",
+    "publishedAt": "2026-09-09T05:26:44Z"
+  },
+  "checks": {
+    "20004": "update to 20500",
+    "20101": "update to 20500",
+    "20200": "update to 20500",
+    "20300": "update to 20500",
+    "20400": "update to 20500",
+    "20401": "update to 20500",
+    "20402": "update to 20500",
+    "20500": "no self/downgrade",
+    "20501": "no self/downgrade"
+  },
+  "accountUpdateNoticeCount": 1,
+  "backendHealth": {
+    "data": {
+      "status": "ready"
+    },
+    "requestId": "req_c4c3f8124ae124aeb05aaf9e9be7543c"
+  },
+  "backendBinaryUnchanged": true,
+  "webDirectoryUnchanged": true
+}
