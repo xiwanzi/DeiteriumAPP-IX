@@ -1,0 +1,23 @@
+{
+  "accountCount": 70,
+  "ordersRead": 10,
+  "legacySakiOrdersRead": 1,
+  "paidPlansEnabled": true,
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": false
+  },
+  "quote": {
+    "kind": "UPGRADE",
+    "totalAmount": "15000.00",
+    "remainingDays": 30,
+    "chargedDays": 30,
+    "billingCycleDays": 30,
+    "paymentRequested": false,
+    "entitlementUnchanged": true
+  },
+  "businessCounts": "COMMISSION\t4\nORDER\t11",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.7-4262edd84c03"
+}

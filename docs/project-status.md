@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-09-10：**App 2.0.7（20700）、Web 2.0.7 与配套 Go 已于 03:22 上线**，源码 `4262edd84c03`（PR #12）。Saki 支持逐日递减、最低 5 天差价的升级，严格保留原到期时间；购买确认展示升级实付与淡色删除线原价，不显示公式。空会话才显示输入框上方套餐入口。用户已开启的套餐配置及 11 笔订单、4 个委托保留，三常驻服在线，MEK 离线。当前维护工作区 `.worktrees/saki-upgrade-checkout`，分支 `release/v207-live`。下方为较早发布记录。 见 [2.0.7 部署记录](deployment/deuterium-2.0.7-live.md)。
+
 2026-09-09：**App 2.0.6（20600）、Web 2.0.6 与配套 Go 已上线**。App/Web 源码 `4d9a001ebd0e`（PR #9），Go 最终源码 `515c87fd4936`（PR #10）。账单、Saki/账号后台、头像裁切、购买订单与通知优化见 [2.0.6 部署记录](deployment/deuterium-2.0.6-live.md)。Saki 售卖仍关闭；本轮工作区 `.worktrees/saki-admin-experience`，分支 `release/v206-live`。下方 2.0.5 及更早状态为历史。
 
 
@@ -11,13 +13,15 @@
 
 | 部分 | 当前状态 | 依据 |
 | --- | --- | --- |
-| App | 2.0.6（20600），大额账单、Saki 套餐与订单、头像和通知 | [2.0.6](deployment/deuterium-2.0.6-live.md) |
-| 网站 | 2.0.6，小祥/账号后台、商店头像裁切与操作间距 | [2.0.6](deployment/deuterium-2.0.6-live.md) |
-| 后端 | Go 515c87fd4936，021 迁移、数字套餐、权限封禁及到账通知 | [2.0.6](deployment/deuterium-2.0.6-live.md) |
+| App | 2.0.7（20700），Saki 升级确认、原价展示与空会话入口 | [2.0.7](deployment/deuterium-2.0.7-live.md) |
+| 网站 | 2.0.7，Saki 升级确认与原价展示 | [2.0.7](deployment/deuterium-2.0.7-live.md) |
+| 后端 | Go 4262edd84c03，升级报价与最低 5 天差价；无新迁移 | [2.0.7](deployment/deuterium-2.0.7-live.md) |
 | 游戏插件 | Core 1.0.1、XConomy .2、Mail/Sync 沿用 2.0.4；三服在线，MEK 离线 | [2.0.4](deployment/deuterium-2.0.4-live.md) |
-| 源码维护 | .worktrees/saki-admin-experience / release/v206-live | [本轮记录](deployment/deuterium-2.0.6-live.md) |
+| 源码维护 | .worktrees/saki-upgrade-checkout / release/v207-live | [本轮记录](deployment/deuterium-2.0.7-live.md) |
 
 ## 本次验证与历史证据
+
+2.0.7：构建、资金竞态/集成、安装更新、原生界面、公网产物及真实升级报价验证见 [2.0.7 部署记录](deployment/deuterium-2.0.7-live.md)。
 
 网页 2.0.5：同一源码候选的 58 项 Web 单测、128 项 Go 竞态/集成测试和 40 项隔离浏览器检查通过；上线新验证包括公网 HTML/JS/CSS 摘要、真实管理预览/聊天头像、只读业务接口、三节点重连和临时会话撤销。现有 1 件官方商品为下架状态，生产购买界面未强行上架验收；没有创建真实付款或游戏邮件。
 

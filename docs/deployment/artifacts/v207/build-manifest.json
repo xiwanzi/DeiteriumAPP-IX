@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+  "pullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/12",
+  "appWebBuildSourceCommit": "ff94c34b96ccbfdeffce738cdeb287cdc1eb3360",
+  "appWebBuildInputsUnchanged": true,
+  "versionName": "2.0.7",
+  "versionCode": 20700,
+  "packageName": "com.deuterium.app.uilab",
+  "signerSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "files": [
+    {
+      "name": "Deuterium-2.0.7-20700-test.apk",
+      "sizeBytes": 23384879,
+      "sha256": "3aa87d0bb88874d9c215ff33d1ff2f9a142b475e55bc98cb754505055e71f808"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 12837024,
+      "sha256": "0cd9c160bf3fc3d514a153d3d83fcaa31743981ea4b3b65d4afdf0db6dbf32c1"
+    },
+    {
+      "name": "web-2.0.7.zip",
+      "sizeBytes": 33678935,
+      "sha256": "820c6d053f772a981640e1c99109ff07315794eedd84dd1e9baf14b45822915f"
+    }
+  ]
+}

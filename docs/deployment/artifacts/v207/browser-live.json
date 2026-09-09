@@ -1,0 +1,12 @@
+{
+  "webVersion": "2.0.7",
+  "upgradeAmount": "15,000.00 信用点",
+  "originalPrice": "原价 20,000.00 信用点",
+  "noFormula": true,
+  "horizontalOverflow": false,
+  "paymentSubmitted": false,
+  "writePaths": [
+    "/api/v1/ai/purchase-quotes"
+  ],
+  "runtimeErrors": []
+}

@@ -1,0 +1,25 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.7-20700-test",
+    "kind": "APK",
+    "versionName": "2.0.7",
+    "versionCode": 20700,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "优化小祥聊天入口与 Saki AI 购买体验；新增升级套餐、原价与实付金额展示，确认购买后顺畅衔接付款动画。套餐升级按剩余天数计费，最后 5 天费用固定，到期时间不变。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.7-20700-test.apk",
+    "sizeBytes": 23384879,
+    "sha256": "3aa87d0bb88874d9c215ff33d1ff2f9a142b475e55bc98cb754505055e71f808",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 20699,
+    "channel": "stable",
+    "publishedAt": "2026-09-09T19:22:32Z"
+  },
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.7-4262edd84c03/dist",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.7-4262edd84c03",
+  "health": {
+    "status": "ready"
+  },
+  "appManifestSha256": "dff001cf0557e2ec2d0719e0bf0f960924b80a072a98f34c8179607725326f67",
+  "publicApkVerified": true
+}
