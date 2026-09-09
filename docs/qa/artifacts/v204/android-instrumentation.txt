@@ -1,0 +1,5 @@
+INSTRUMENTATION_RESULT: delete_buttons_light_dark_render=PASS
+INSTRUMENTATION_RESULT: recent_ledger_order_game_labels_and_daily_totals=PASS
+INSTRUMENTATION_RESULT: refresh_after_transfer_is_not_lost_during_inflight_read=PASS
+INSTRUMENTATION_RESULT: theme_switch_retains_activity_and_composition=PASS
+INSTRUMENTATION_CODE: -1

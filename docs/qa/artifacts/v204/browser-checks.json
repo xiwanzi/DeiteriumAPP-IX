@@ -1,0 +1,25 @@
+{
+  "mode": "isolated browser contract fixtures; backend authority tested separately",
+  "count": 18,
+  "passed": [
+    "game activity appears in full-server ledger",
+    "player scope is visible when drilling into order history",
+    "audited order exposes delivery details without write actions",
+    "unlisted product remains in audit history",
+    "existing management action audit remains accessible",
+    "permanent announcement deletion explains irreversible effect",
+    "cancelling permanent delete does not mutate announcement",
+    "confirmed permanent delete sends one versioned request",
+    "unsaved SMTP edits survive cancelled navigation",
+    "saved SMTP configuration can immediately send a test",
+    "saving recipients preserves hidden SMTP password",
+    "product backdrop cannot discard an edit",
+    "close confirmation preserves edited product title when cancelled",
+    "save-and-publish persists the draft and publishes the returned version",
+    "single brand and category choices are preselected",
+    "single delivery template is preselected",
+    "merchant editor fits mobile viewport",
+    "new admin flows have no JavaScript runtime errors"
+  ],
+  "errors": []
+}

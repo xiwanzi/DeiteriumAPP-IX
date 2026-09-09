@@ -618,7 +618,7 @@ components:
     webSession:
       type: apiKey
       in: cookie
-      name: deuterium_session
+      name: __Host-deuterium_session
       description: 写请求还需要既有 CSRF 与 Origin 校验；开发环境使用 deuterium_dev_session。
   schemas:
     Page:
@@ -649,7 +649,7 @@ components:
     DeleteRequest:
       type: object
       properties:
-        clientRequestId: &id013
+        clientRequestId: &id011
           type: string
           minLength: 1
           maxLength: 128
@@ -699,17 +699,16 @@ components:
         username: &id010
           type: string
           maxLength: 320
-        from: &id011
+        from:
           type: string
-          format: email
-        recipients: &id012
+          description: 尚未配置时为空字符串。
+        recipients:
           type: array
-          minItems: 1
           maxItems: 10
-          uniqueItems: true
           items:
             type: string
             format: email
+          description: 尚未配置时为空数组。
         version: *id005
         passwordConfigured:
           type: boolean
@@ -731,9 +730,18 @@ components:
         port: *id008
         security: *id009
         username: *id010
-        from: *id011
-        recipients: *id012
-        clientRequestId: *id013
+        from:
+          type: string
+          format: email
+        recipients:
+          type: array
+          minItems: 1
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            format: email
+        clientRequestId: *id011
         expectedVersion: *id005
         password:
           type: string
@@ -828,7 +836,7 @@ components:
     EmailTestRequest:
       type: object
       properties:
-        clientRequestId: *id013
+        clientRequestId: *id011
       required:
       - clientRequestId
     EmailTestResponse:
@@ -942,19 +950,19 @@ components:
       type: object
       properties:
         orderId: *id001
-        channel: &id016
+        channel: &id014
           type: string
           enum:
           - OFFICIAL_STORE
           - PLAYER_MARKET
         status: *id001
         fundsStatus: *id001
-        amount: &id015
+        amount: &id013
           type: string
           pattern: ^\d+(\.\d{1,2})?$
         createdAt: *id002
         updatedAt: *id002
-        buyer: &id014
+        buyer: &id012
           type: object
           properties:
             displayName: *id001
@@ -966,8 +974,8 @@ components:
               nullable: true
           required:
           - displayName
-        seller: *id014
-        items: &id017
+        seller: *id012
+        items: &id015
           type: array
           items:
             type: object
@@ -977,9 +985,9 @@ components:
               quantity:
                 type: integer
                 minimum: 1
-              unitPrice: *id015
-        settledAmount: *id015
-        refundedAmount: *id015
+              unitPrice: *id013
+        settledAmount: *id013
+        refundedAmount: *id013
         storeId: *id001
         interventionCaseId: *id001
       required:
@@ -1016,17 +1024,17 @@ components:
           type: object
           properties:
             orderId: *id001
-            channel: *id016
+            channel: *id014
             status: *id001
             fundsStatus: *id001
-            amount: *id015
+            amount: *id013
             createdAt: *id002
             updatedAt: *id002
-            buyer: *id014
-            seller: *id014
-            items: *id017
-            settledAmount: *id015
-            refundedAmount: *id015
+            buyer: *id012
+            seller: *id012
+            items: *id015
+            settledAmount: *id013
+            refundedAmount: *id013
             storeId: *id001
             interventionCaseId:
               type: string
@@ -1068,7 +1076,7 @@ components:
           - product
           - listing
         title: *id001
-        price: *id015
+        price: *id013
         stock:
           type: integer
           nullable: true

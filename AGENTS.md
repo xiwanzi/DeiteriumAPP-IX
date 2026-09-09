@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+本轮候选（2026-09-09）：App/Web 2.0.4、Core 1.0.1 与 XConomy `.2` 已完成本机实现和候选包，**尚未推送或部署**。见 [2.0.4 候选交付](docs/deployment/deuterium-2.0.4-candidate.md)。本轮 GitHub 实测仓库为 PUBLIC，与原私有维护说明不一致，推送范围尚待用户明确。
+
 当前发布（2026-09-09）：App 2.0.3 (20300)，配套 Go 源码 `15bb45dc6625`。先看 [部署记录](docs/deployment/deuterium-2.0.3-live.md)；付款只显示金额二次确认，记录删除为账号级隐藏，公告/AI 支持 Markdown。游戏插件和网站未更换。
 
 先读 `CONTEXT.md`、`docs/project-status.md`、`docs/prd/deuterium-current.md` 和目标模块说明；运行 `git status --short`。本仓库是 2026-09-08 从多工作区整理的新私有维护入口，旧工作区不得自动覆盖回来。

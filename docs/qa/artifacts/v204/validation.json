@@ -1,0 +1,75 @@
+{
+  "android": {
+    "tests": 121,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "core": {
+    "tests": 29,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "xconomy": {
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 29
+  },
+  "browser": {
+    "mode": "isolated browser contract fixtures; backend authority tested separately",
+    "count": 18,
+    "passed": [
+      "game activity appears in full-server ledger",
+      "player scope is visible when drilling into order history",
+      "audited order exposes delivery details without write actions",
+      "unlisted product remains in audit history",
+      "existing management action audit remains accessible",
+      "permanent announcement deletion explains irreversible effect",
+      "cancelling permanent delete does not mutate announcement",
+      "confirmed permanent delete sends one versioned request",
+      "unsaved SMTP edits survive cancelled navigation",
+      "saved SMTP configuration can immediately send a test",
+      "saving recipients preserves hidden SMTP password",
+      "product backdrop cannot discard an edit",
+      "close confirmation preserves edited product title when cancelled",
+      "save-and-publish persists the draft and publishes the returned version",
+      "single brand and category choices are preselected",
+      "single delivery template is preselected",
+      "merchant editor fits mobile viewport",
+      "new admin flows have no JavaScript runtime errors"
+    ],
+    "errors": []
+  },
+  "go": {
+    "pass": 123,
+    "fail": 0,
+    "skip": 1,
+    "packagesFailed": [],
+    "race": true,
+    "integrationDatabase": "loopback MariaDB with per-test random schemas"
+  },
+  "sourceCommit": "018d1e25b0802a5b5130aa3eff4a04b0a612fd73",
+  "web": {
+    "unitTests": 54,
+    "failures": 0,
+    "browserChecks": 18
+  },
+  "contracts": {
+    "walletResponses": 2,
+    "adminResponses": 5,
+    "passed": true
+  },
+  "emulator": {
+    "ledgerAndDailyTotals": true,
+    "refreshCoalescing": true,
+    "themeKeepsActivityAndComposition": true,
+    "deleteLightDark": true
+  },
+  "deployed": false
+}
