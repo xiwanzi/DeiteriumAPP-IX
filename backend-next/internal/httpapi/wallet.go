@@ -43,6 +43,7 @@ func (s *Server) walletRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/wallet/transfers", s.walletTransferCreate)
 	mux.HandleFunc("GET /api/v1/wallet/transfers/{transferId}", s.walletTransferGet)
 	mux.HandleFunc("GET /api/v1/wallet/records", s.walletRecords)
+	mux.HandleFunc("GET /api/v1/admin/transactions", func(w http.ResponseWriter, r *http.Request) { s.walletLedgerHTTPV204(w, r, true) })
 	mux.HandleFunc("GET /api/v1/wallet/records/{recordId}", s.walletRecordGet)
 }
 func (s *Server) walletBalance(w http.ResponseWriter, r *http.Request) {
@@ -280,68 +281,7 @@ func (s *Server) reconcileCoreOperation(ctx context.Context, id string) error {
 	return s.Store.CoreReply(ctx, original.NodeID, id, entry.State, []byte(*entry.Result))
 }
 func (s *Server) walletRecords(w http.ResponseWriter, r *http.Request) {
-	u, err := s.authenticate(r)
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	q := r.URL.Query()
-	direction := q.Get("direction")
-	if direction != "" && direction != "income" && direction != "expense" {
-		failError(w, r, bridge.ErrProtocol)
-		return
-	}
-	end := time.Now().UTC().Add(time.Second)
-	start := end.AddDate(-1, 0, 0)
-	if q.Get("from") != "" {
-		start, err = time.Parse(time.RFC3339, q.Get("from"))
-		if err != nil {
-			failError(w, r, bridge.ErrProtocol)
-			return
-		}
-	}
-	if q.Get("to") != "" {
-		end, err = time.Parse(time.RFC3339, q.Get("to"))
-		if err != nil {
-			failError(w, r, bridge.ErrProtocol)
-			return
-		}
-	}
-	if !start.Before(end) || end.Sub(start) > 366*24*time.Hour {
-		failError(w, r, bridge.ErrProtocol)
-		return
-	}
-	limit := 50
-	if q.Get("limit") != "" {
-		limit, err = strconv.Atoi(q.Get("limit"))
-		if err != nil || limit < 1 || limit > 100 {
-			failError(w, r, bridge.ErrProtocol)
-			return
-		}
-	}
-	records := []any{}
-	var next *string
-	if q.Get("businessType") == "" || q.Get("businessType") == "TRANSFER" {
-		rows, err := s.Store.WalletTransfers(r.Context(), u.User.ServerUUID, direction, start, end, q.Get("cursor"), limit+1)
-		if err != nil {
-			failError(w, r, err)
-			return
-		}
-		if len(rows) > limit {
-			rows = rows[:limit]
-			n := rows[len(rows)-1].ID
-			next = &n
-		}
-		for _, t := range rows {
-			record, e := s.transferRecord(r.Context(), u.User, t, false)
-			if e != nil {
-				failError(w, r, e)
-				return
-			}
-			records = append(records, record)
-		}
-	}
-	writeJSON(w, 200, map[string]any{"requestId": requestID(r), "data": map[string]any{"records": records}, "page": map[string]any{"nextCursor": next}})
+	s.walletLedgerHTTPV204(w, r, false)
 }
 func (s *Server) transferRecord(ctx context.Context, u store.User, t store.WalletTransfer, detail bool) (map[string]any, error) {
 	direction := "expense"
@@ -366,6 +306,10 @@ func (s *Server) transferRecord(ctx context.Context, u store.User, t store.Walle
 	return result, nil
 }
 func (s *Server) walletRecordGet(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.PathValue("recordId"), "econ_") {
+		s.walletLedgerDetailV204(w, r)
+		return
+	}
 	u, err := s.authenticate(r)
 	if err != nil {
 		failError(w, r, err)

@@ -204,6 +204,12 @@ func commerceBaseViewV2(d CommerceRecordV2, viewer string, refund *CommerceRefun
 	return out
 }
 func (s *Store) CommerceViewV2(ctx context.Context, viewer, id string, public bool) (map[string]any, error) {
+	return s.commerceViewV204(ctx, viewer, id, public, false)
+}
+func (s *Store) AdminCommerceViewV204(ctx context.Context, viewer, id string) (map[string]any, error) {
+	return s.commerceViewV204(ctx, viewer, id, false, true)
+}
+func (s *Store) commerceViewV204(ctx context.Context, viewer, id string, public, audit bool) (map[string]any, error) {
 	tx, e := s.DB.BeginTx(ctx, &sql.TxOptions{ReadOnly: true, Isolation: sql.LevelRepeatableRead})
 	if e != nil {
 		return nil, e
@@ -213,7 +219,12 @@ func (s *Store) CommerceViewV2(ctx context.Context, viewer, id string, public bo
 	if e != nil {
 		return nil, e
 	}
-	if e = commercePermissionTxV2(ctx, tx, viewer, d, public); e != nil {
+	if audit {
+		e = requireAuditV204(ctx, tx, viewer)
+	} else {
+		e = commercePermissionTxV2(ctx, tx, viewer, d, public)
+	}
+	if e != nil {
 		return nil, e
 	}
 	var refund *CommerceRefundV2
@@ -285,6 +296,12 @@ func (s *Store) CommerceViewV2(ctx context.Context, viewer, id string, public bo
 		completionAssets = append(completionAssets, asset)
 	}
 	out["completionAssets"] = completionAssets
+	if audit {
+		out["availableActions"] = []string{}
+		out["canHideRecord"] = false
+		out["hiddenFromHistory"] = false
+		out["readOnly"] = true
+	}
 	return out, nil
 }
 func (s *Store) CommerceSnapshotV2(ctx context.Context, viewer, id string, public bool) (CatalogObjectV2, error) {

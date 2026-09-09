@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { confirmNavigation } from "./unsaved-changes.js";
 import {
   ShieldCheck,
   Server,
@@ -44,6 +45,7 @@ export default function ConnectedApp() {
     [requestedConversation, setRequestedConversation] = useState(null);
   const sessionRef = useRef(null),
     clientRef = useRef(null);
+  const currentUrl = useRef(location.href);
   if (!clientRef.current)
     clientRef.current = new DeuteriumClient({
       onSession: (value) => applySession(value),
@@ -77,6 +79,8 @@ export default function ConnectedApp() {
   useEffect(() => {
     restore();
     const pop = () => {
+      if (!confirmNavigation()) { history.pushState({}, "", currentUrl.current); return; }
+      currentUrl.current = location.href;
       setPath(location.pathname);
       setModal(null);
     };
@@ -120,7 +124,9 @@ export default function ConnectedApp() {
     localStorage.setItem("deuterium-web-theme", dark ? "dark" : "light");
   }, [dark]);
   const navigate = (to) => {
+    if (!confirmNavigation()) return;
     if (location.pathname !== to) history.pushState({}, "", to);
+    currentUrl.current = location.href;
     setPath(new URL(to, location.origin).pathname);
     setModal(null);
     window.scrollTo(0, 0);
@@ -237,7 +243,7 @@ export default function ConnectedApp() {
       </AppShell>
       {modal?.type === "about" && (
         <Modal title="Deuterium Web" close={() => setModal(null)}>
-          <h2>2.0.0</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
+          <h2>2.0.4</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
           <p className="muted">账号、聊天和交易以服务器记录为准。</p>
         </Modal>
       )}

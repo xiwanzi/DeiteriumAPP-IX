@@ -35,6 +35,7 @@ func (s *Server) registerSocialV2(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/v1/admin/announcements/{announcementId}", s.socialWriteAnnouncementV2)
 	mux.HandleFunc("POST /api/v1/admin/announcements/{announcementId}/publish", s.socialPublishAnnouncementV2)
 	mux.HandleFunc("POST /api/v1/admin/announcements/{announcementId}/unpublish", s.socialUnpublishAnnouncementV2)
+	mux.HandleFunc("POST /api/v1/admin/announcements/{announcementId}/delete", s.socialDeleteAnnouncementV204)
 	mux.HandleFunc("GET /api/v1/notifications", s.socialNotificationsV2)
 	mux.HandleFunc("POST /api/v1/notifications/read", s.socialReadNotificationsV2)
 	mux.HandleFunc("GET /api/v1/notifications/preferences", s.socialPreferencesV2)
@@ -501,6 +502,28 @@ func (s *Server) socialWriteAnnouncementV2(w http.ResponseWriter, r *http.Reques
 }
 func (s *Server) socialPublishAnnouncementV2(w http.ResponseWriter, r *http.Request) {
 	s.socialChangeAnnouncementV2(w, r, true)
+}
+func (s *Server) socialDeleteAnnouncementV204(w http.ResponseWriter, r *http.Request) {
+	u, err := s.admin(r, "announcements.manage")
+	if err != nil {
+		socialFailureV2(w, r, err)
+		return
+	}
+	var input struct {
+		ClientRequestID string `json:"clientRequestId"`
+		ExpectedVersion int64  `json:"expectedVersion"`
+	}
+	if err = body(w, r, &input); err != nil {
+		socialFailureV2(w, r, err)
+		return
+	}
+	result, err := s.Store.DeleteAnnouncementV204(r.Context(), u.ID, r.PathValue("announcementId"), input.ClientRequestID, input.ExpectedVersion)
+	if err != nil {
+		socialFailureV2(w, r, err)
+		return
+	}
+	s.Hub.Wake()
+	v2Success(w, r, result)
 }
 func (s *Server) socialUnpublishAnnouncementV2(w http.ResponseWriter, r *http.Request) {
 	s.socialChangeAnnouncementV2(w, r, false)

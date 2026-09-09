@@ -47,6 +47,8 @@ public final class FundsEngine {
                 exec(c,"CREATE TABLE IF NOT EXISTS "+prefix+"operations (operation_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,fingerprint CHAR(64) CHARACTER SET ascii NOT NULL,command_type VARCHAR(64) CHARACTER SET ascii NOT NULL,state VARCHAR(16) CHARACTER SET ascii NOT NULL,result MEDIUMTEXT NULL,created_at DATETIME(6) NOT NULL,committed_at DATETIME(6) NULL) ENGINE=InnoDB");
                 exec(c,"CREATE TABLE IF NOT EXISTS "+prefix+"holds (escrow_ref VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,business_ref VARCHAR(128) CHARACTER SET ascii NOT NULL UNIQUE,business_type VARCHAR(24) CHARACTER SET ascii NOT NULL,payer_uuid CHAR(36) CHARACTER SET ascii NOT NULL,payee_uuid CHAR(36) CHARACTER SET ascii NULL,reserved DECIMAL(16,2) NOT NULL,settled DECIMAL(16,2) NOT NULL DEFAULT 0,refunded DECIMAL(16,2) NOT NULL DEFAULT 0,created_at DATETIME(6) NOT NULL,updated_at DATETIME(6) NOT NULL,INDEX ix_payer(payer_uuid)) ENGINE=InnoDB");
                 exec(c,"CREATE TABLE IF NOT EXISTS "+prefix+"ledger (sequence_id BIGINT AUTO_INCREMENT PRIMARY KEY,operation_id VARCHAR(128) CHARACTER SET ascii NOT NULL,player_uuid CHAR(36) CHARACTER SET ascii NOT NULL,business_ref VARCHAR(128) CHARACTER SET ascii NOT NULL,escrow_ref VARCHAR(128) CHARACTER SET ascii NULL,business_type VARCHAR(32) CHARACTER SET ascii NOT NULL,delta DECIMAL(16,2) NOT NULL,before_balance DECIMAL(16,2) NOT NULL,after_balance DECIMAL(16,2) NOT NULL,created_at DATETIME(6) NOT NULL,UNIQUE KEY uq_leg(operation_id,player_uuid),INDEX ix_player(player_uuid,sequence_id)) ENGINE=InnoDB");
+                ensureLedgerIndex(c,"ix_ledger_time","created_at,sequence_id");
+                ensureLedgerIndex(c,"ix_ledger_player_time","player_uuid,created_at,sequence_id");
                 initialized=true;
             } finally {try{exec(c,"DO RELEASE_LOCK(?)",lock);}catch(SQLException ignored){}}
         }catch(SQLException error){throw fail("STORAGE_UNAVAILABLE","经济存储未就绪。",error);}
@@ -80,9 +82,16 @@ public final class FundsEngine {
             try(var s=statement(c,"SELECT business_type,SUM(reserved-settled-refunded) FROM "+prefix+"holds WHERE payer_uuid=? GROUP BY business_type",uuid.toString());var r=s.executeQuery()){
                 while(r.next()){BigDecimal value=money(r.getBigDecimal(2),true);held=held.add(value);String group=switch(r.getString(1)){case "MARKET_ORDER"->"market";case "COMMISSION"->"commissions";default->"store";};breakdown.put(group,value.toPlainString());}
             }
-            return Map.of("currency","CREDIT","amount",a.balance.toPlainString(),"availableAmount",a.balance.toPlainString(),"heldAmount",held.toPlainString(),"heldBreakdown",breakdown,"refreshedAt",Instant.now().toString());
+            return Map.of("currency","CREDIT","amount",a.balance.toPlainString(),"availableAmount",a.balance.toPlainString(),"heldAmount",held.toPlainString(),"heldBreakdown",breakdown,"refreshedAt",Instant.now().toString(),"today",LedgerReader.today(c,prefix,uuid));
         });
     }
+    private void ensureLedgerIndex(Connection c,String name,String columns)throws SQLException{
+        try(var s=statement(c,"SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=? LIMIT 1",prefix+"ledger",name);var r=s.executeQuery()){
+            if(r.next())return;
+        }
+        exec(c,"CREATE INDEX "+name+" ON "+prefix+"ledger ("+columns+")");
+    }
+    public Map<String,Object> records(Map<String,Object> input){initialize();return new LedgerReader(connections,accounts,prefix).records(input);}
     public Map<String,Object> execute(String operation,String command,Map<String,Object> input){
         initialize();identifier(operation);TreeMap<String,Object> fields=new TreeMap<>(input);
         String fingerprint=sha(command+":"+JSON.toJson(fields));Set<UUID> changed=new HashSet<>();

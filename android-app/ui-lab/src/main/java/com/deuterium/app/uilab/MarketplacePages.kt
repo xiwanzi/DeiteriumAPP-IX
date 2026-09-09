@@ -44,7 +44,7 @@ fun MarketPage(book:CommerceBook,query:String,topInset:Dp,onProduct:(String)->Un
                 Text(listing.title,style=MaterialTheme.typography.bodyMedium,maxLines=2,overflow=TextOverflow.Ellipsis)
                 Text(credit(listing.price),Modifier.padding(top=5.dp),fontSize=18.sp,lineHeight=25.sp,fontWeight=androidx.compose.ui.text.font.FontWeight.SemiBold,color=MaterialTheme.colorScheme.primary)
                 Row(Modifier.padding(top=8.dp),verticalAlignment=Alignment.CenterVertically){PlayerAvatar(listing.seller,Modifier.size(21.dp));Text(listing.seller,Modifier.weight(1f).padding(start=6.dp),style=MaterialTheme.typography.bodySmall,maxLines=1);Text(if(!listing.active)"已下架" else if(listing.stock==0)"售罄" else "余${listing.stock}",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-                if(ownOnly&&listing.canHideRecord)PlainButton({deleting=listing},Modifier.align(Alignment.End)){Text("删除记录",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                if(ownOnly&&listing.canHideRecord)DeleteRecordButton({deleting=listing},Modifier.align(Alignment.End))
             }
         }}}
     }

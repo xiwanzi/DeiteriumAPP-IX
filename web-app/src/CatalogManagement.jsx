@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Plus, RefreshCw, Upload, Trash2, ArrowUp } from "lucide-react";
 import { Badge, Button, Empty, Field, Modal, PageHead, Tabs } from "./components.jsx";
 import { credit, id } from "./format.js";
+import ProductForm from "./ProductEditor.jsx";
+import {useUnsavedChanges} from "./unsaved-changes.js";
 import { uploadAsset } from "./assets.js";
 import DeliveryTemplateManagement from "./DeliveryTemplateManagement.jsx";
 import BusinessPages from "./BusinessPages.jsx";
@@ -18,6 +20,7 @@ function useStableMutation() {
 export function ListingForm({ client, user, initial = {}, onSaved }) {
   const [value, setValue] = useState({ title: initial.title || "", subtitle: initial.subtitle || "", description: initial.description || "", categoryCode: initial.categoryCode || "MATERIALS", price: initial.price || "", stock: initial.stock || 1, contactQq: initial.contactQq || user.qq, pickupLocation: initial.pickupLocation || "", workHours: initial.workHours || 1 }),
     [images, setImages] = useState(initial.photos || []), [delivery, setDelivery] = useState(initial.deliveryMethods?.join(",") || "PICKUP"), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  useUnsavedChanges({value,images:images.map(image=>image.assetId),delivery},busy);
   const stable = useStableMutation(), construction = value.categoryCode === "CONSTRUCTION";
   const field = (name, label, props = {}) => <Field key={name} label={label} value={value[name]} onChange={(e) => setValue((old) => ({ ...old, [name]: props.type === "number" ? Number(e.target.value) : e.target.value }))} {...props} />;
   const save = async (event) => {
@@ -75,7 +78,7 @@ export default function CatalogManagement({ client, user }) {
     </>}
     {modal?.type.startsWith("store-") && <Modal title={modal.type === "store-create" ? "创建商店" : "商店资料"} close={() => setModal(null)}><StoreForm client={client} user={user} initial={modal.item || {}} onSaved={async () => { setModal(null); await loadStores(); }} /></Modal>}
     {(modal?.type === "brand" || modal?.type === "category") && <Modal title={modal.type === "brand" ? "新增品牌" : "新增分类"} close={() => setModal(null)}><ClassificationForm client={client} storeId={selected} kind={modal.type} onSaved={async () => { setModal(null); await loadStoreContent(); }} /></Modal>}
-    {modal?.type === "product" && <Modal title={modal.item.productId ? "编辑商品" : "新增商品"} close={() => setModal(null)} wide><ProductForm client={client} storeId={selected} initial={modal.item} brands={brands} categories={categories} templates={templates} onSaved={async () => { setModal(null); await loadStoreContent(); }} /></Modal>}
+    {modal?.type === "product" && <Modal title={modal.item.productId ? "编辑商品" : "新增商品"} close={() => setModal(null)} wide guardClose dismissOnBackdrop={false}><ProductForm client={client} storeId={selected} initial={modal.item} brands={brands} categories={categories} templates={templates} onSaved={async () => { setModal(null); await loadStoreContent(); }} /></Modal>}
     {modal?.type === "templates" && <Modal title="游戏内邮箱交付模板" close={() => setModal(null)} wide><DeliveryTemplateManagement client={client} storeId={selected} onChanged={loadStoreContent}/></Modal>}
     {modal?.type === "orders" && <Modal title="商店订单" close={() => setModal(null)} wide><BusinessPages client={client} user={user} type="ORDER" merchantStoreId={selected}/></Modal>}
     {modal?.type === "unlist" && <Modal title="下架商品" close={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); action(modal.item, "unlist", reason); }}><p>确认下架“{modal.item.draft.title}”？已经成交的订单不受影响。</p><Field label="下架原因"><textarea required minLength={2} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>确认下架</Button></form></Modal>}
@@ -91,34 +94,4 @@ function StoreForm({ client, user, initial, onSaved }) {
 function ClassificationForm({ client, storeId, kind, onSaved }) {
   const [name, setName] = useState(""), [order, setOrder] = useState(0), [busy, setBusy] = useState(false), [error, setError] = useState(""); const stable = useStableMutation();
   return <form onSubmit={async (e) => { e.preventDefault(); setBusy(true); setError(""); try { await client.request(`/api/v1/merchant/stores/${encodeURIComponent(storeId)}/${kind === "brand" ? "brands" : "categories"}`, { method: "POST", body: stable({ name, sortOrder: Number(order), active: true, ...(kind === "brand" ? { logoAssetId: null } : {}) }) }); await onSaved(); } catch (e) { setError(e.message); } finally { setBusy(false); } }}><Field label="名称" value={name} onChange={(e) => setName(e.target.value)} required maxLength={kind === "brand" ? 60 : 40} /><Field label="排序" type="number" min={0} max={9999} value={order} onChange={(e) => setOrder(e.target.value)} />{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>保存</Button></form>;
-}
-
-function ProductForm({ client, storeId, initial, brands, categories, templates, onSaved }) {
-  const d = initial.draft || {}, [value, setValue] = useState({ title: d.title || "", subtitle: d.subtitle || "", description: d.description || "", brandId: d.brandId || "", categoryId: d.categoryId || "", price: d.price || "", deliveryTemplateRef: d.deliveryTemplateRef || "", deliverySummary: d.deliverySummary || "", estimatedDelivery: d.estimatedDelivery || "", inventoryPolicy: d.inventoryPolicy || "FINITE", stock: d.stock ?? 1, limitPerOrder: d.limitPerOrder || 1, posterTone: d.posterTone || "LIGHT", accentColor: d.accentColor || "#4C78BD", sortOrder: d.sortOrder || 0 }),
-    [included, setIncluded] = useState(d.includedItems?.join("\n") || ""), [images, setImages] = useState(initial.draftImages || (d.galleryAssetIds || []).map((assetId) => initial.published?.images?.find((asset) => asset.assetId === assetId) || {assetId,altText:""})), [busy, setBusy] = useState(false), [error, setError] = useState(""); const stable = useStableMutation();
-  useEffect(() => { if (initial.productId && !initial.draftImages && d.galleryAssetIds?.length) { Promise.all(d.galleryAssetIds.map((assetId) => client.request(`/api/v1/assets/${encodeURIComponent(assetId)}`))).then((values) => setImages(values.map((r) => r.data))).catch((e) => setError(e.message)); } }, []);
-  const field = (name, label, props = {}) => <Field key={name} label={label} value={value[name]} onChange={(e) => setValue((old) => ({ ...old, [name]: props.type === "number" ? Number(e.target.value) : e.target.value }))} {...props} />;
-  const save = async (event) => {
-    event.preventDefault(); setBusy(true); setError("");
-    try {
-      if (!images.length) throw new Error("请至少上传一张商品图片。");
-      const content = { ...value, price: moneyInput(value.price), coverAssetId: images[0].assetId, galleryAssetIds: images.map((a) => a.assetId), galleryAltTexts: images.map((a) => a.altText || value.title), contentBlocks: d.contentBlocks || [], includedItems: included.split("\n").map((s) => s.trim()).filter(Boolean), badges: d.badges || [] };
-      const body = stable({ ...(initial.productId ? { expectedVersion: initial.version } : {}), content });
-      await client.request(initial.productId ? `/api/v1/merchant/products/${encodeURIComponent(initial.productId)}` : `/api/v1/merchant/stores/${encodeURIComponent(storeId)}/products`, { method: initial.productId ? "PUT" : "POST", body }); await onSaved();
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
-  };
-  return <form onSubmit={save}><fieldset disabled={busy} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-    {field("title", "商品标题", { required: true, maxLength: 80 })}{field("subtitle", "简介", { required: true, maxLength: 200 })}<Field label="详细介绍"><textarea rows={5} required maxLength={10000} value={value.description} onChange={(e) => setValue({ ...value, description: e.target.value })} /></Field>
-    <Field label="品牌"><select required value={value.brandId} onChange={(e) => setValue({ ...value, brandId: e.target.value })}><option value="">选择品牌</option>{brands.filter((x) => x.active).map((x) => <option key={x.brandId} value={x.brandId}>{x.name}</option>)}</select></Field>
-    <Field label="分类"><select required value={value.categoryId} onChange={(e) => setValue({ ...value, categoryId: e.target.value })}><option value="">选择分类</option>{categories.filter((x) => x.active).map((x) => <option key={x.categoryId} value={x.categoryId}>{x.name}</option>)}</select></Field>
-    {field("price", "售价（信用点）", { required: true, inputMode: "decimal", maxLength: 20 })}
-    <MediaPicker client={client} images={images} onChange={setImages} purpose="STORE_MEDIA" businessType="STORE" businessRef={storeId} max={20} onBusy={setBusy} />
-    <Field label="包含内容（每行一项）"><textarea required rows={3} value={included} onChange={(e) => setIncluded(e.target.value)} /></Field>
-    <Field label="游戏内邮箱交付模板"><select required value={value.deliveryTemplateRef} onChange={(e) => setValue({ ...value, deliveryTemplateRef: e.target.value })}><option value="">选择交付模板</option>{templates.filter((x) => x.active).map((x) => <option key={x.templateRef} value={x.templateRef}>{x.name} · {x.summary}</option>)}</select></Field>
-    {!templates.some((x)=>x.active) && <p className="notice-box">当前商店尚未配置可用的游戏内邮箱交付模板。</p>}
-    {field("deliverySummary", "交付说明", { required: true, maxLength: 500 })}{field("estimatedDelivery", "预计送达", { required: true, maxLength: 150 })}
-    <Field label="库存方式"><select value={value.inventoryPolicy} onChange={(e) => setValue({ ...value, inventoryPolicy: e.target.value })}><option value="FINITE">有限库存</option><option value="UNLIMITED">不限库存</option></select></Field>
-    {field("stock", "库存数量", { type: "number", required: true, min: 0, max: 999999 })}{field("limitPerOrder", "单笔限购", { type: "number", required: true, min: 1, max: 999 })}{field("sortOrder", "排序", { type: "number", required: true, min: 0, max: 99999 })}
-    <Field label="商品展示底色"><select value={value.posterTone} onChange={(e) => setValue({ ...value, posterTone: e.target.value })}><option value="LIGHT">浅色</option><option value="DARK">深色</option></select></Field>{field("accentColor", "强调色", { type: "color" })}
-  </fieldset>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? "正在处理…" : "保存商品草稿"}</Button></form>;
 }

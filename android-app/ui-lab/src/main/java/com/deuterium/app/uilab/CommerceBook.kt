@@ -12,7 +12,7 @@ data class OrderLine(val productId:String,val title:String,val subtitle:String,v
     val image:Int=0,val artKey:String="",val imageUri:String?=null,val imageUris:List<String> = emptyList()) { val total:Long get()=Math.multiplyExact(unitPrice,quantity.toLong()) }
 data class MarketListing(val id:String,val title:String,val subtitle:String,val description:String,val category:String,val price:Long,val stock:Int,
     val seller:String,val qq:String,val methods:Set<DeliveryMethod>,val pickupLocation:String,val artKey:String="",val imageUri:String?=null,val active:Boolean=true,
-    val imageUris:List<String> = emptyList(),val workHours:Int=168,val version:Long=1,val sellerRef:String="",val canHideRecord:Boolean=false) {
+    val imageUris:List<String> = emptyList(),val workHours:Int=168,val version:Long=1,val sellerRef:String="",val canHideRecord:Boolean=false,val createdAt:LocalDateTime=LocalDateTime.MIN) {
     val photos:List<String> get()=imageUris.ifEmpty{listOfNotNull(imageUri)}
     val construction:Boolean get()=category.startsWith("建筑服务")
     val confirmationHours:Int get()=if(construction)workHours else 72

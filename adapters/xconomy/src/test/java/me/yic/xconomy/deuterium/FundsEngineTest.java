@@ -30,6 +30,35 @@ final class FundsEngineTest {
     BigDecimal value(String id)throws Exception{try(Connection c=connection();var s=c.prepareStatement("SELECT balance FROM xconomy WHERE UID=?")){s.setString(1,id);try(var r=s.executeQuery()){assertTrue(r.next());return r.getBigDecimal(1).setScale(2);}}}
     int count(String table)throws Exception{try(Connection c=connection();var r=c.createStatement().executeQuery("SELECT COUNT(*) FROM "+table)){r.next();return r.getInt(1);}}
     Map<String,Object> transfer(String from,String to,String amount){return Map.of("fromUuid",from,"toUuid",to,"amount",amount);}
+    Map<String,Object> ledgerQuery(String player) {
+        return new LinkedHashMap<>(Map.of("playerUuid",player,"from","2020-01-01T00:00:00Z","to","2099-01-01T00:00:00Z","direction","","businessType","","beforeTime","","beforeSequence","0","snapshot","0","limit","25","recordId",""));
+    }
+    @SuppressWarnings("unchecked") List<Map<String,Object>> ledgerRows(Map<String,Object> query){return (List<Map<String,Object>>)engine.records(query).get("records");}
+    @Test void ledgerIncludesNativeAndAppMoneyWithoutDuplicateOrFailedPayments() throws Exception {
+        engine.nativeChange(UUID.fromString(payer),new BigDecimal("5.00"),false,"VAULT","purchase");
+        engine.nativeTransfer(UUID.fromString(payer),UUID.fromString(payee),new BigDecimal("11.00"),new BigDecimal("10.00"),"pay");
+        var request=transfer(payer,payee,"3.00");engine.execute("app_transfer","wallet.transfer",request);engine.execute("app_transfer","wallet.transfer",request);
+        assertThrows(FundsFailure.class,()->engine.execute("failed_transfer","wallet.transfer",transfer(payee,payer,"100.00")));
+        var rows=ledgerRows(ledgerQuery(payer));assertEquals(3,rows.size());
+        assertEquals("APP",rows.get(0).get("source"));assertEquals("3.00",rows.get(0).get("amount"));
+        assertEquals("GAME",rows.get(1).get("source"));assertEquals("11.00",rows.get(1).get("amount"));assertEquals(payee,rows.get(1).get("otherUuid"));
+        assertEquals("GAME",rows.get(2).get("source"));assertEquals("5.00",rows.get(2).get("amount"));
+        var summary=(Map<?,?>)engine.balance(UUID.fromString(payer)).get("today");assertEquals("19.00",summary.get("expense"));assertEquals("0.00",summary.get("income"));
+        var other=ledgerRows(ledgerQuery(payee));assertEquals(2,other.size());assertEquals("income",other.get(0).get("direction"));
+        var game=ledgerQuery(payer);game.put("businessType","GAME");assertEquals(2,ledgerRows(game).size());game.put("businessType","TRANSFER");assertEquals(1,ledgerRows(game).size());
+        var all=ledgerRows(ledgerQuery(""));assertEquals(5,all.size());
+    }
+    @Test void ledgerPagesUseTimeAndSequenceAndExcludeNewWrites() throws Exception {
+        for(int n=0;n<4;n++)engine.nativeChange(UUID.fromString(payer),new BigDecimal("1.00"),true,"TEST","deposit");
+        try(var c=connection()){c.createStatement().executeUpdate("UPDATE xconomy_dc_ledger SET created_at='2026-09-08 12:00:00.000000'");}
+        var query=ledgerQuery(payer);query.put("limit","2");var first=engine.records(query);
+        @SuppressWarnings("unchecked") var rows=(List<Map<String,Object>>)first.get("records");assertEquals(3,rows.size());assertEquals("4",rows.get(0).get("sequence"));
+        query.put("snapshot",first.get("snapshot"));query.put("beforeTime",rows.get(1).get("occurredAt"));query.put("beforeSequence",rows.get(1).get("sequence"));
+        engine.nativeChange(UUID.fromString(payer),new BigDecimal("1.00"),true,"TEST","new deposit");
+        var second=ledgerRows(query);assertEquals(List.of("2","1"),second.stream().map(row->row.get("sequence")).toList());
+        var detail=ledgerQuery(payee);detail.put("recordId","1");assertTrue(ledgerRows(detail).isEmpty());
+        var invalid=ledgerQuery(payer);invalid.put("direction","DROP");assertEquals("INVALID_REQUEST",assertThrows(FundsFailure.class,()->engine.records(invalid)).code());
+    }
     Map<String,Object> reserve(String hold,String kind,String amount,String recipient){var m=new HashMap<String,Object>();m.put("escrowRef",hold);m.put("businessRef","business_"+hold);m.put("businessType",kind);m.put("amount",amount);m.put("currency","CREDIT");m.put("payerUuid",payer);if(recipient!=null)m.put("payeeUuid",recipient);return m;}
     Map<String,Object> release(String hold,String amount){return Map.of("escrowRef",hold,"businessRef","business_"+hold,"amount",amount,"currency","CREDIT");}
     String system(String name){return (String)((Map<?,?>)engine.initializeSystemAccounts().get(name)).get("playerUuid");}
