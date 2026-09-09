@@ -300,9 +300,16 @@ func (s *Store) commerceViewV204(ctx context.Context, viewer, id string, public,
 				if err = json.Unmarshal([]byte(raw), &profile); err != nil {
 					return nil, err
 				}
-				avatar, err := s.AssetForBindingV2(ctx, "STORE_PROFILE", d.StoreID, catalogString(profile, "logoAssetId"))
-				if err != nil {
-					return nil, err
+				var avatar map[string]any
+				if assetID := catalogString(profile, "logoAssetId"); assetID != "" {
+					avatar, err = s.AssetForBindingV2(ctx, "STORE_PROFILE", d.StoreID, assetID)
+					if err != nil {
+						if !errors.Is(err, ErrAssetForbidden) && !errors.Is(err, ErrAssetUnavailable) {
+							return nil, err
+						}
+						// A decorative image must not block access to the order.
+						avatar = nil
+					}
 				}
 				if seller, ok := catalogObject(out["seller"]); ok {
 					seller["avatar"] = avatar
