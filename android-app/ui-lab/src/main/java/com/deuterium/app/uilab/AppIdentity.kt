@@ -17,9 +17,12 @@ import java.io.File
 @Composable
 fun AppLauncherIcon(modifier:Modifier=Modifier) {
     val context=LocalContext.current
-    val bitmap=remember(context) {
-        val drawable=context.applicationInfo.loadIcon(context.packageManager).mutate()
-        Bitmap.createBitmap(256,256,Bitmap.Config.ARGB_8888).also { drawable.setBounds(0,0,256,256);drawable.draw(Canvas(it)) }.asImageBitmap()
+    val launcher=remember(context){LauncherIcons.get(context)}
+    val selected=launcher.current
+    val bitmap=remember(context,selected) {
+        val resource=if(selected==LauncherIconChoice.Default)R.mipmap.ic_launcher else R.mipmap.ic_launcher_anniversary
+        val drawable=checkNotNull(context.getDrawable(resource)).mutate()
+        Bitmap.createBitmap(512,512,Bitmap.Config.ARGB_8888).also { drawable.setBounds(0,0,512,512);drawable.draw(Canvas(it)) }.asImageBitmap()
     }
     Image(bitmap,"Deuterium App 图标",modifier)
 }

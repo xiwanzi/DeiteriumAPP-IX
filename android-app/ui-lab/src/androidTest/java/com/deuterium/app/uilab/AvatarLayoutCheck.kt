@@ -22,7 +22,7 @@ object AvatarLayoutCheck {
         val sizes=ConcurrentHashMap<String,Pair<Int,Int>>()
         try {
             Bitmap.createBitmap(640,640,Bitmap.Config.ARGB_8888).apply{eraseColor(0xff357ed3.toInt())}.let { bitmap->file.outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle() }
-            val activity=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            val activity=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             test.runOnMainSync {
                 Players.add(PlayerProfile(name,avatar=file.toURI().toString()))
                 activity.setContent { MaterialTheme { CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile("avatar_self_fixture",avatar=file.toURI().toString())) { Column(Modifier.fillMaxSize().padding(20.dp)) {

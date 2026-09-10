@@ -15,6 +15,22 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class BackendChatTest {
+    @Test fun iconChangeHintsUseAnOptInHeaderAndDoNotBecomeChatMessages() {
+        val server=MockWebServer();val changed=CountDownLatch(1);var messages=0
+        server.enqueue(MockResponse().withWebSocketUpgrade(object:WebSocketListener(){
+            override fun onOpen(webSocket:WebSocket,response:Response) {
+                webSocket.send(JSONObject().put("type","app.launcher-icon.changed").put("payload",JSONObject().put("version",2)).toString())
+            }
+        }))
+        server.start()
+        val client=BackendChat(OkHttpClient(),server.url("/").toString(),"test-session",{messages++},{_,_->},{},{changed.countDown()})
+        try {
+            client.connect();assertTrue(changed.await(5,TimeUnit.SECONDS))
+            assertEquals("1",server.takeRequest(5,TimeUnit.SECONDS)!!.getHeader("X-Deuterium-Launcher-Icon"))
+            assertEquals(0,messages)
+        } finally {client.close();server.close()}
+    }
+
     @Test fun authenticatedSocketPreservesMessageIdentityAndQuote() = runBlocking {
         val server = MockWebServer()
         val opened = CountDownLatch(1)
@@ -38,6 +54,7 @@ class BackendChatTest {
             val request = server.takeRequest(5, TimeUnit.SECONDS)!!
             assertEquals("/api/v1/chat/ws", request.path)
             assertEquals("Bearer session-private", request.getHeader("Authorization"))
+            assertNull(request.getHeader("X-Deuterium-Launcher-Icon"))
         } finally { client.close(); server.close() }
     }
 

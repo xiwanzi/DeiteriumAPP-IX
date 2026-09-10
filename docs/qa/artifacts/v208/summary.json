@@ -1,0 +1,19 @@
+{
+  "versionName": "2.0.8",
+  "versionCode": 20800,
+  "goRaceAndIntegration": "PASS",
+  "webTests": 60,
+  "androidUnitTests": 129,
+  "androidLintErrors": 0,
+  "nativeInstrumentation": "PASS",
+  "upgradeFrom": 20700,
+  "pinnedPositionRetainedOnApi35": true,
+  "hotSelectionPositionRetainedOnApi35": true,
+  "browserRealBackendPublish": "PASS",
+  "browserOfflineRetrySameRequest": "PASS",
+  "browserConflictRecovery": "PASS",
+  "browserRegularUserDenied": "PASS",
+  "browserDesktopAndMobileLightDark": "PASS",
+  "validationScope": "isolated loopback database and API 35 emulator",
+  "productionDeployed": false
+}

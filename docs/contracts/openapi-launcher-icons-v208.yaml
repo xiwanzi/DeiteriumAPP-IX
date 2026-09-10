@@ -1,0 +1,150 @@
+openapi: 3.1.0
+info:
+  title: Deuterium App Launcher Icons
+  version: 2.0.8
+  description: 内置图标全局选择；详细同步与回退语义见 launcher-icons-v208.md。
+paths:
+  /api/v1/app/launcher-icon:
+    get:
+      operationId: getPublicLauncherIcon
+      summary: 读取当前图标配置
+      security: []
+      responses:
+        '200':
+          description: 持久化的公开配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsResponse'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/launcher-icon:
+    get:
+      operationId: getAdminLauncherIcon
+      summary: 平台管理员读取配置和内置目录
+      security:
+        - bearer: []
+        - webCookie: []
+      responses:
+        '200':
+          description: 当前配置及两款内置图标
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [requestId, serverTime, data]
+                properties:
+                  requestId: {type: string}
+                  serverTime: {type: string, format: date-time}
+                  data:
+                    type: object
+                    required: [settings, icons]
+                    properties:
+                      settings:
+                        $ref: '#/components/schemas/Settings'
+                      icons:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Option'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: publishLauncherIcon
+      summary: 发布图标选择，需要 platform.admin
+      description: 网页 Cookie 请求还需有效 Origin 与 X-CSRF-Token；同一请求体重试保留 clientRequestId。
+      security:
+        - bearer: []
+        - webCookie: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId, expectedVersion, iconId]
+              properties:
+                clientRequestId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                  pattern: '^[A-Za-z0-9_.:-]+$'
+                expectedVersion:
+                  type: integer
+                  minimum: 1
+                iconId:
+                  $ref: '#/components/schemas/IconId'
+      responses:
+        '200':
+          description: 当前写入的配置；重放返回原始成功结果，管理页随后重新读取最新状态。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer}
+    webCookie: {type: apiKey, in: cookie, name: __Host-deuterium_session}
+    csrf: {type: apiKey, in: header, name: X-CSRF-Token}
+  schemas:
+    IconId:
+      type: string
+      enum: [default, anniversary_911]
+    Settings:
+      type: object
+      required: [iconId, version, minAppVersionCode, updatedAt]
+      properties:
+        iconId:
+          $ref: '#/components/schemas/IconId'
+        version: {type: integer, minimum: 1}
+        minAppVersionCode: {type: integer, minimum: 20800}
+        updatedAt: {type: string, format: date-time}
+    Option:
+      type: object
+      required: [id, name, description, minAppVersionCode]
+      properties:
+        id:
+          $ref: '#/components/schemas/IconId'
+        name: {type: string}
+        description: {type: string}
+        minAppVersionCode: {type: integer, minimum: 20800}
+    SettingsResponse:
+      type: object
+      required: [requestId, serverTime, data]
+      properties:
+        requestId: {type: string}
+        serverTime: {type: string, format: date-time}
+        data:
+          $ref: '#/components/schemas/Settings'
+  responses:
+    Error:
+      description: 标准错误外壳。400 INVALID_REQUEST；409 STATE_VERSION_CONFLICT 或幂等内容冲突；其他状态依现有鉴权和服务错误处理。
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [requestId, error]
+            properties:
+              requestId: {type: string}
+              error:
+                type: object
+                required: [code, message, details]
+                properties:
+                  code: {type: string}
+                  message: {type: string}
+                  details: {type: object}

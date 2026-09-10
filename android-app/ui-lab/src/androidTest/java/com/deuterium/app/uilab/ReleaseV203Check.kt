@@ -47,7 +47,7 @@ object ReleaseV203Check {
         val previousPlayers=Players.toList();val previousCatalog=ShopCatalog.toList()
         val image=test.targetContext.cacheDir.resolve("v203-fixture.png")
         val historyGate=CountDownLatch(1)
-        var activity:MainActivity?=null
+        var activity:DeuteriumActivity?=null
         val fixtureContext=object:ContextWrapper(test.targetContext){
             override fun getSharedPreferences(name:String,mode:Int):SharedPreferences=super.getSharedPreferences("qa-v203-$name",mode)
         }
@@ -98,7 +98,7 @@ object ReleaseV203Check {
             val display=LabState(scope,userName="FixtureSelf")
             var screen by mutableStateOf("product");var theme by mutableIntStateOf(1);var flying by mutableStateOf<ShopProduct?>(null)
             val added=AtomicInteger()
-            val host=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            val host=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             activity=host
             val markdown="# 公告与 AI 回复\n\n**重点内容**，普通正文与 ~~已取消~~。\n\n- 第一项\n- 第二项\n\n> 引用说明\n\n```kotlin\nval count = 2\n```\n\n| 商品 | 价格 |\n| --- | --- |\n| 石材 | 12.30 |\n\n[查看详情](https://example.invalid)"
             test.runOnMainSync {

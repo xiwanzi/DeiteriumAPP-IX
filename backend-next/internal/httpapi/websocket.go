@@ -249,6 +249,8 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 	defer poll.Stop()
 	ping := time.NewTicker(20 * time.Second)
 	defer ping.Stop()
+	var iconVersion int64
+	iconUpdates := r.Header.Get("X-Deuterium-Launcher-Icon") == "1"
 	// Query once immediately: covers commits between cursor lookup and subscription.
 	select {
 	case wake <- struct{}{}:
@@ -269,6 +271,16 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 		if _, err = s.Store.Session(ctx, session.TokenHash); err != nil {
 			_ = c.Close(websocket.StatusPolicyViolation, "session expired or revoked")
 			return
+		}
+		// Configuration is durable; the wakeup only accelerates this read. A lost
+		// wakeup or a reconnect is recovered by the existing periodic scan.
+		if iconUpdates {
+			if icon, iconErr := s.Store.LauncherIcon(ctx); iconErr == nil && icon.Version > iconVersion {
+				if sendSocket(ctx, c, "app.launcher-icon.changed", "", map[string]any{"version": icon.Version}) != nil {
+					return
+				}
+				iconVersion = icon.Version
+			}
 		}
 		messages, err := s.Store.Messages(ctx, cursor, true, 50)
 		if err != nil {

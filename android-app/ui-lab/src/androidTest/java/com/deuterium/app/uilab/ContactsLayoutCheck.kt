@@ -25,7 +25,7 @@ object ContactsLayoutCheck {
         val previous=Players.toList()
         val opened=java.util.concurrent.atomic.AtomicReference<String>()
         try{
-            val activity=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            val activity=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             lateinit var state:LabState
             test.runOnMainSync{
                 Players.clear();Players.addAll(listOf("Favorite","Older","Newest","NeverChat").map{PlayerProfile(it,playerRef="fixture_$it")})

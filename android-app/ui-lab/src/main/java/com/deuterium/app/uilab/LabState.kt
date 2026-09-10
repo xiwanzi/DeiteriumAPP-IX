@@ -23,7 +23,7 @@ fun apiCents(value: String): Long = value.toBigDecimal().movePointRight(2).longV
 private fun JSONArray.objects(): List<JSONObject> = (0 until length()).mapNotNull { optJSONObject(it) }
 
 class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> = emptySet(),
-    private val saveFollowed: (Set<String>) -> Unit = {}, val userName: String = "", private val postNotification: (DemoNotice) -> Unit = {}, val api: BackendApi? = null,private val notificationPreferences:NotificationPreferences?=null) {
+    private val saveFollowed: (Set<String>) -> Unit = {}, val userName: String = "", private val postNotification: (DemoNotice) -> Unit = {}, val api: BackendApi? = null,private val notificationPreferences:NotificationPreferences?=null,private val launcherIcons:LauncherIcons?=null) {
     var restoring by mutableStateOf(false)
     var storageMessage by mutableStateOf<String?>(null)
     var profileBio by mutableStateOf("")
@@ -135,7 +135,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
                 if(!connected && !closed) {
                     reconnect?.cancel(); reconnect = scope.launch { delay(4000); runCatching { service.verifySession() }; if(service.signedIn && !closed) openChat() }
                 }
-            } }, { scope.launch { loadChat() } }).also { it.connect() }
+            } }, { scope.launch { loadChat() };launcherIcons?.requestSync() },launcherIcons?.let{icons->{icons.requestSync()}}).also { it.connect() }
     }
     private suspend fun loadChat() {
         runCatching { api!!.request("GET", "/chat/messages?limit=100") }

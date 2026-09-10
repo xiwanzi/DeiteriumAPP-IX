@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 object SakiLayoutCheck {
     fun run(test:Instrumentation){
-        val result=Bundle();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val server=MockWebServer();var host:MainActivity?=null
+        val result=Bundle();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val server=MockWebServer();var host:DeuteriumActivity?=null
         val context=object:ContextWrapper(test.targetContext){override fun getSharedPreferences(name:String,mode:Int):SharedPreferences=super.getSharedPreferences("qa-saki-$name",mode)}
         try{
             val purchases=AtomicInteger();val now=Instant.now().minusSeconds(90);val expiry=Instant.now().plusSeconds(7L*86400+12*3600).toString()
@@ -49,7 +49,7 @@ object SakiLayoutCheck {
             test.runOnMainSync{save.invoke(api,JSONObject().put("token","isolated-saki-fixture").put("user",JSONObject().put("gameId","FixtureSelf").put("playerRef","fixture-self")))}
             val state=LabState(scope,userName="FixtureSelf",api=api)
             var page by mutableStateOf("history");var mode by mutableIntStateOf(1);var font by mutableFloatStateOf(1f);var contacted=false;var animated by mutableStateOf(true)
-            host=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            host=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             val activity=host
             test.runOnMainSync{activity.setContent{LabTheme(mode,animated,false){val backdrop=rememberGraphicsLayer();val density=LocalDensity.current
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface,LocalOverlayBackdrop provides backdrop,LocalDensity provides Density(density.density,font)){

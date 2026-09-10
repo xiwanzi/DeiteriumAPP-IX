@@ -61,6 +61,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAdminEmailV204(mux)
 	s.registerAdminAccountsV206(mux)
 	s.registerAdminCommerceV204(mux)
+	s.registerLauncherIcons(mux)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)

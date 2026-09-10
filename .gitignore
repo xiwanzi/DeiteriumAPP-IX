@@ -13,6 +13,7 @@
 .worktrees/
 external/
 output/
+.playwright-cli/
 delivery/
 deliverables/
 *.log

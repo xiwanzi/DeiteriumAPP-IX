@@ -1,0 +1,46 @@
+[
+  {
+    "path": "/api/v1/app/launcher-icon",
+    "valid": true,
+    "response": {
+      "data": {
+        "iconId": "default",
+        "version": 5,
+        "minAppVersionCode": 20800,
+        "updatedAt": "2026-09-10T02:48:40.463363Z"
+      },
+      "requestId": "req_16b1499f861c5bf8f39e4134a021a224",
+      "serverTime": "2026-09-10T02:50:17.2170792Z"
+    }
+  },
+  {
+    "path": "/api/v1/admin/launcher-icon",
+    "valid": true,
+    "response": {
+      "data": {
+        "icons": [
+          {
+            "id": "default",
+            "name": "默认图标",
+            "description": "白底黑色 · 日常使用",
+            "minAppVersionCode": 20800
+          },
+          {
+            "id": "anniversary_911",
+            "name": "双子节图标",
+            "description": "911双子节 · 周年活动",
+            "minAppVersionCode": 20800
+          }
+        ],
+        "settings": {
+          "iconId": "default",
+          "version": 5,
+          "minAppVersionCode": 20800,
+          "updatedAt": "2026-09-10T02:48:40.463363Z"
+        }
+      },
+      "requestId": "req_fdce1f8ec57e2485291dcde6332bff25",
+      "serverTime": "2026-09-10T02:50:17.221471Z"
+    }
+  }
+]

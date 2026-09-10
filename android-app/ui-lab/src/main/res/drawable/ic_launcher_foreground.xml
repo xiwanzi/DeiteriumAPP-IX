@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#101010"
-        android:fillType="evenOdd"
-        android:pathData="M31.5,30H55.6C69.7,30 79.6,40.1 79.6,54C79.6,67.9 69.7,78 55.6,78H31.5V30ZM37.9,38.8V69.2H54.1C63.6,69.2 70.8,61.7 70.8,54C70.8,46.3 63.6,38.8 54.1,38.8H37.9Z" />
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- 512-unit approved artwork maps to the central 72 units; outer margin is for the launcher. -->
+    <group android:translateX="18" android:translateY="18"
+        android:scaleX="0.140625" android:scaleY="0.140625">
+        <path android:fillColor="#FF000000" android:pathData="M150.367,106.002 A34,34 0,0 1,184.367,140.002 V372.002 A34,34 0,0 1,150.367,406.002 A34,34 0,0 1,116.367,372.002 V140.002 A34,34 0,0 1,150.367,106.002 Z" />
+        <path android:fillColor="#FF000000" android:pathData="M228.367,106.002 C342.367,106.002 416.367,170.002 416.367,256.002 C416.367,342.002 342.367,406.002 228.367,406.002 V336.002 C298.367,336.002 346.367,304.002 346.367,256.002 C346.367,208.002 298.367,176.002 228.367,176.002 Z" />
+    </group>
 </vector>

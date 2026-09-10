@@ -20,6 +20,7 @@ class BackendChat(
     private val onMessage: (JSONObject) -> Unit,
     private val onState: (Boolean, String?) -> Unit,
     private val onOpen: () -> Unit,
+    private val onLauncherIconChanged: (() -> Unit)? = null,
 ) : WebSocketListener() {
     private var socket: WebSocket? = null
     private val pending = ConcurrentHashMap<String, CompletableDeferred<JSONObject>>()
@@ -28,7 +29,7 @@ class BackendChat(
     fun connect() {
         if(stopped) return
         socket = http.newWebSocket(Request.Builder().url("${baseUrl.trimEnd('/')}/api/v1/chat/ws")
-            .header("Authorization", "Bearer $token").build(), this)
+            .header("Authorization", "Bearer $token").apply{if(onLauncherIconChanged!=null)header("X-Deuterium-Launcher-Icon","1")}.build(), this)
     }
     override fun onOpen(webSocket: WebSocket, response: Response) {
         if(stopped) { webSocket.close(1000, "closed"); return }
@@ -38,6 +39,7 @@ class BackendChat(
         val frame = runCatching { JSONObject(text) }.getOrNull() ?: return
         val payload = frame.optJSONObject("payload") ?: return
         when(frame.optString("type")) {
+            "app.launcher-icon.changed" -> onLauncherIconChanged?.invoke()
             "chat.message" -> payload.optJSONObject("message")?.let(onMessage)
             "chat.send.result", "error" -> pending.remove(frame.optString("requestId"))?.complete(payload)
         }
