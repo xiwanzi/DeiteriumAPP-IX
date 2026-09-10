@@ -9,4 +9,8 @@ CREATE TABLE IF NOT EXISTS promotion_redemptions_v209 (
  CONSTRAINT fk_promotion_order FOREIGN KEY (resource_id) REFERENCES commerce_resources_v2(resource_id)
 ) ENGINE=InnoDB;
 
-CREATE INDEX ix_commerce_limits_v209 ON commerce_resources_v2(owner_uuid, channel, created_at);
+SET @dc_promotion_index_ddl = (SELECT IF(COUNT(*)=0,'CREATE INDEX ix_commerce_limits_v209 ON commerce_resources_v2(owner_uuid,channel,created_at)','DO 0') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='commerce_resources_v2' AND INDEX_NAME='ix_commerce_limits_v209');
+PREPARE dc_promotion_index_statement FROM @dc_promotion_index_ddl;
+EXECUTE dc_promotion_index_statement;
+DEALLOCATE PREPARE dc_promotion_index_statement;
+SET @dc_promotion_index_ddl = NULL;

@@ -330,3 +330,23 @@ func TestPromotionAdminFilterUsesAllRecordsAndCouponExpiryBlocksSubmissionV209(t
 		t.Fatal("expired coupon created financial work")
 	}
 }
+
+func TestPromotionInterruptedMigrationResumesWithoutChangingBusinessV209(t *testing.T) {
+	f := newCatalogFixture(t)
+	ctx := context.Background()
+	p, _ := catalogProductFixture(t, f)
+	promotionSaveTestV209(t, f, promotionCouponTestV209())
+	promotionPrepareTestV209(t, f, promotionQuoteTestV209(t, f, p, "migration-quote", 1, "CART"), "migration-order")
+	if _, e := f.s.DB.Exec("DELETE FROM schema_migrations_next WHERE version='023_commerce_promotions.sql'"); e != nil {
+		t.Fatal(e)
+	}
+	if e := f.s.Migrate(ctx); e != nil {
+		t.Fatal("partial DDL could not resume", e)
+	}
+	if e := f.s.Migrate(ctx); e != nil {
+		t.Fatal(e)
+	}
+	if catalogTestCount(t, f.s, "commerce_resources_v2") != 1 || catalogTestCount(t, f.s, "promotion_redemptions_v209") != 1 {
+		t.Fatal("migration modified business")
+	}
+}
