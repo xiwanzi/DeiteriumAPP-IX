@@ -85,7 +85,11 @@
     },
     "qa": "docs/qa/commerce-v209.md",
     "releaseNotes": "docs/deployment/deuterium-2.0.9-candidate.md",
-    "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14",
-    "buildManifest": "docs/deployment/artifacts/v209/build-manifest.json"
+    "sourceCommit": "b1a2122e625b7fbe314cf1c2a796c14c0d7d55d1",
+    "buildManifest": "docs/deployment/artifacts/v209/build-manifest.json",
+    "migrations": [
+      "023_commerce_promotions.sql",
+      "024_coupon_attention.sql"
+    ]
   }
 }

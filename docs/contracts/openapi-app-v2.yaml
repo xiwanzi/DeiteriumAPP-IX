@@ -4,7 +4,7 @@ info:
   version: 2.0.9
   license:
     name: Proprietary
-  description: 2026-09-10 商城 2.0.9 增量：商品折扣与周期限购、自动最优优惠券、信用点邮件交付、购物袋成功清理。其余接口维持已发布兼容行为，详细规则见 commerce-promotions-v209.md。
+  description: 2026-09-10 商城 2.0.9 增量：商品折扣与周期限购、自动最优优惠券、信用点邮件交付、购物袋成功清理及账号级优惠到账提醒。其余接口维持已发布兼容行为，详细规则见 commerce-promotions-v209.md。
 servers:
 - url: /api/v1
 security:
