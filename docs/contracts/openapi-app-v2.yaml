@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: DeuteriumAPP 完整业务接口契约
-  version: 2.0.3
+  version: 2.0.9
   license:
     name: Proprietary
-  description: 2026-09-09 当前契约。2.0.3 增加账号级记录隐藏及可直接发送公共消息的 HTTP 入口；保留 /api/v1 路径及既有业务模型。旧实施标签按各自历史阶段理解，具体已发布能力以部署记录为准。
+  description: 2026-09-10 商城 2.0.9 增量：商品折扣与周期限购、自动最优优惠券、信用点邮件交付、购物袋成功清理。其余接口维持已发布兼容行为，详细规则见 commerce-promotions-v209.md。
 servers:
 - url: /api/v1
 security:
@@ -41,6 +41,125 @@ tags:
 - name: Appearance
   description: 远程外观配置
 paths:
+  /store/coupons:
+    get:
+      tags:
+      - Shop
+      operationId: getStoreCouponsV209
+      summary: 查看我的优惠券
+      description: 仅返回当前玩家有效且未使用的优惠券；过期券不返回。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponListResponseV209'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+  /admin/coupons:
+    get:
+      tags:
+      - Shop
+      operationId: getAdminCouponsV209
+      summary: 搜索与分页管理优惠券
+      description: 仅平台管理员可调用。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCouponListResponseV209'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - ''
+          - ACTIVE
+          - SCHEDULED
+          - EXPIRED
+          - INACTIVE
+    post:
+      tags:
+      - Shop
+      operationId: createCouponV209
+      summary: 创建优惠券活动
+      description: 仅平台管理员可调用。
+      responses:
+        '201':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCouponResponseV209'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponWriteV209'
+  /admin/coupons/{couponId}:
+    parameters:
+    - name: couponId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    put:
+      tags:
+      - Shop
+      operationId: updateCouponV209
+      summary: 更新或停用优惠券，必须传 expectedVersion
+      description: 仅平台管理员可调用。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCouponResponseV209'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponWriteV209'
   /orders/{orderId}/hide:
     post:
       tags: [Orders]
@@ -13888,7 +14007,7 @@ components:
       minLength: 1
       maxLength: 20
       pattern: ^(0|[1-9][0-9]*)(\.[0-9]{1,2})?$
-      description: 信用点十进制字符串，最多两位小数。付款字段必须大于零；不得使用浮点数计算。
+      description: 精确信用点十进制字符串，最多两位小数；商城优惠后实付可为零，其他付款业务仍须为正数。
       example: '680.00'
     MutationRequest:
       type: object
@@ -14161,6 +14280,14 @@ components:
       type: object
       additionalProperties: false
       properties:
+        contentType:
+          type: string
+        retentionStatus:
+          type: string
+        retainUntil:
+          type: string
+          format: date-time
+          nullable: true
         assetId:
           type: string
           minLength: 1
@@ -14482,6 +14609,21 @@ components:
       type: object
       additionalProperties: false
       properties:
+        discountRate:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10000
+          description: 应付比例，单位为万分之一；8500 表示 8.5 折。
+        deliveryCredits:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000
+          default: 0
+          description: 每件商品经游戏内邮箱发放的整数信用点。
+        purchaseLimits:
+          $ref: '#/components/schemas/PurchaseLimitsV209'
         title:
           type: string
           minLength: 1
@@ -14687,6 +14829,8 @@ components:
       type: object
       additionalProperties: false
       properties:
+        effectivePrice:
+          $ref: '#/components/schemas/CreditAmount'
         productId:
           type: string
           minLength: 1
@@ -15033,6 +15177,14 @@ components:
       type: object
       additionalProperties: false
       properties:
+        attachmentCount:
+          type: integer
+          minimum: 0
+          maximum: 32
+        inventoryDomain:
+          type: string
+          minLength: 1
+          maxLength: 128
         templateRef:
           type: string
           minLength: 1
@@ -15530,6 +15682,12 @@ components:
       type: object
       additionalProperties: false
       properties:
+        source:
+          type: string
+          enum:
+          - CART
+          - DIRECT
+          description: 购物袋传 CART；直接购买传 DIRECT。只有 CART 订单在成功后扣除已购数量，缺省兼容旧 App。
         channel:
           type: string
           enum:
@@ -15631,6 +15789,41 @@ components:
       type: object
       additionalProperties: false
       properties:
+        originalTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        productDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        couponDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        discountTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        coupon:
+          $ref: '#/components/schemas/AppliedCouponV209'
+        storeName:
+          type: string
+        storeId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        cartItems:
+          type: array
+          readOnly: true
+          description: 服务端记录的购物袋数量快照；提交仅引用报价 ID。
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              productId:
+                type: string
+                minLength: 1
+                maxLength: 128
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 999
+            required:
+            - productId
+            - quantity
         quoteId:
           type: string
           minLength: 1
@@ -15793,6 +15986,8 @@ components:
       type: object
       additionalProperties: false
       properties:
+        originalUnitPrice:
+          $ref: '#/components/schemas/CreditAmount'
         productId:
           type: string
           minLength: 1
@@ -15954,6 +16149,16 @@ components:
       type: object
       additionalProperties: false
       properties:
+        originalTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        productDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        couponDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        discountTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        coupon:
+          $ref: '#/components/schemas/AppliedCouponV209'
         images:
           type: array
           items:
@@ -18832,6 +19037,16 @@ components:
       type: object
       additionalProperties: false
       properties:
+        originalTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        productDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        couponDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        discountTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        coupon:
+          $ref: '#/components/schemas/AppliedCouponV209'
         orderType:
           type: string
           nullable: true
@@ -21013,7 +21228,521 @@ components:
       - sentAt
       - payload
       description: ''
+    PurchaseLimitsV209:
+      type: object
+      additionalProperties: false
+      description: 按资产 UUID 统计，所有启用的限制同时生效；0 表示不限。北京时间刷新。
+      properties:
+        lifetime:
+          type: integer
+          minimum: 0
+          maximum: 999999
+          default: 0
+        daily:
+          type: integer
+          minimum: 0
+          maximum: 999999
+          default: 0
+        weekly:
+          type: integer
+          minimum: 0
+          maximum: 999999
+          default: 0
+        monthly:
+          type: integer
+          minimum: 0
+          maximum: 999999
+          default: 0
+        dailyTime:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          default: 00:00
+        weeklyTime:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          default: 00:00
+        monthlyTime:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          default: 00:00
+        weeklyDay:
+          type: integer
+          minimum: 1
+          maximum: 7
+          default: 1
+          description: 1 为星期一，7 为星期日。
+        monthlyDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+          default: 1
+          description: 本月没有对应日期时按最后一天。
+    CouponTermsV209:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum:
+          - ORDER
+          - ITEM
+        benefit:
+          type: string
+          enum:
+          - FIXED
+          - PERCENT
+        amountOff:
+          $ref: '#/components/schemas/CreditAmount'
+        discountRate:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10000
+          description: 应付比例，单位为万分之一；8500 表示 8.5 折。
+        minimumSpend:
+          $ref: '#/components/schemas/CreditAmount'
+        maxDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        stackWithProductDiscount:
+          type: boolean
+        storeIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        productIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+      required:
+      - name
+      - type
+      - benefit
+      - amountOff
+      - discountRate
+      - minimumSpend
+      - maxDiscount
+      - stackWithProductDiscount
+      - storeIds
+      - productIds
+      - startsAt
+      - endsAt
+      - active
+    CouponV209:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum:
+          - ORDER
+          - ITEM
+        benefit:
+          type: string
+          enum:
+          - FIXED
+          - PERCENT
+        amountOff:
+          $ref: '#/components/schemas/CreditAmount'
+        discountRate:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10000
+          description: 应付比例，单位为万分之一；8500 表示 8.5 折。
+        minimumSpend:
+          $ref: '#/components/schemas/CreditAmount'
+        maxDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        stackWithProductDiscount:
+          type: boolean
+        storeIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        productIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        couponId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        scopeDescription:
+          type: string
+      required:
+      - name
+      - type
+      - benefit
+      - amountOff
+      - discountRate
+      - minimumSpend
+      - maxDiscount
+      - stackWithProductDiscount
+      - storeIds
+      - productIds
+      - startsAt
+      - endsAt
+      - active
+      - couponId
+      - version
+      - createdAt
+    AdminCouponV209:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum:
+          - ORDER
+          - ITEM
+        benefit:
+          type: string
+          enum:
+          - FIXED
+          - PERCENT
+        amountOff:
+          $ref: '#/components/schemas/CreditAmount'
+        discountRate:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10000
+          description: 应付比例，单位为万分之一；8500 表示 8.5 折。
+        minimumSpend:
+          $ref: '#/components/schemas/CreditAmount'
+        maxDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        stackWithProductDiscount:
+          type: boolean
+        storeIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        productIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        couponId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        scopeDescription:
+          type: string
+        audience:
+          type: string
+          enum:
+          - ALL
+          - PLAYERS
+        playerRefs:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 1000
+          uniqueItems: true
+      required:
+      - name
+      - type
+      - benefit
+      - amountOff
+      - discountRate
+      - minimumSpend
+      - maxDiscount
+      - stackWithProductDiscount
+      - storeIds
+      - productIds
+      - startsAt
+      - endsAt
+      - active
+      - couponId
+      - version
+      - createdAt
+      - audience
+      - playerRefs
+    CouponWriteV209:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum:
+          - ORDER
+          - ITEM
+        benefit:
+          type: string
+          enum:
+          - FIXED
+          - PERCENT
+        amountOff:
+          $ref: '#/components/schemas/CreditAmount'
+        discountRate:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10000
+          description: 应付比例，单位为万分之一；8500 表示 8.5 折。
+        minimumSpend:
+          $ref: '#/components/schemas/CreditAmount'
+        maxDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        stackWithProductDiscount:
+          type: boolean
+        storeIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        productIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 100
+          uniqueItems: true
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        audience:
+          type: string
+          enum:
+          - ALL
+          - PLAYERS
+        playerRefs:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          maxItems: 1000
+          uniqueItems: true
+        clientRequestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        expectedVersion:
+          type: integer
+          minimum: 1
+      required:
+      - name
+      - type
+      - benefit
+      - amountOff
+      - discountRate
+      - minimumSpend
+      - maxDiscount
+      - stackWithProductDiscount
+      - storeIds
+      - productIds
+      - startsAt
+      - endsAt
+      - active
+      - audience
+      - playerRefs
+      - clientRequestId
+    AppliedCouponV209:
+      type: object
+      nullable: true
+      additionalProperties: false
+      properties:
+        couponId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        version:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        type:
+          type: string
+          enum:
+          - ORDER
+          - ITEM
+        productId:
+          type: string
+          description: 单品券作用的商品；整单券为空。
+        productTitle:
+          type: string
+        discountAmount:
+          $ref: '#/components/schemas/CreditAmount'
+        stackWithProductDiscount:
+          type: boolean
+        terms:
+          $ref: '#/components/schemas/CouponTermsV209'
+      required:
+      - couponId
+      - version
+      - name
+      - type
+      - productId
+      - discountAmount
+      - stackWithProductDiscount
+      - terms
+    CouponListResponseV209:
+      type: object
+      additionalProperties: false
+      properties:
+        requestId:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CouponV209'
+        serverTime:
+          type: string
+          format: date-time
+        page:
+          type: object
+          additionalProperties: false
+          properties:
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+          required:
+          - nextCursor
+          - hasMore
+      required:
+      - requestId
+      - data
+      - serverTime
+      - page
+    AdminCouponListResponseV209:
+      type: object
+      additionalProperties: false
+      properties:
+        requestId:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminCouponV209'
+        serverTime:
+          type: string
+          format: date-time
+        page:
+          type: object
+          additionalProperties: false
+          properties:
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+          required:
+          - nextCursor
+          - hasMore
+      required:
+      - requestId
+      - data
+      - serverTime
+      - page
+    AdminCouponResponseV209:
+      type: object
+      additionalProperties: false
+      properties:
+        requestId:
+          type: string
+        data:
+          $ref: '#/components/schemas/AdminCouponV209'
+        serverTime:
+          type: string
+          format: date-time
+      required:
+      - requestId
+      - data
+      - serverTime
+
 x-document-status: contract_delivery_not_backend_deployment
-x-client-version: 2.0.7 (20700)
-x-contract-revision: 2026-09-10-saki-upgrade-five-day-minimum
-x-generated-operation-count: 157
+x-client-version: 2.0.9 (20900)
+x-contract-revision: 2026-09-10-commerce-promotions
+x-generated-operation-count: 161

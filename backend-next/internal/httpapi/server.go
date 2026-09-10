@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/bridge"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/config"
@@ -84,6 +85,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /bridge/v1/connect", s.coreSocket)
 	mux.HandleFunc("GET /api/v1/admin/core/nodes", s.nodes)
 	mux.HandleFunc("GET /api/v1/admin/core/items", s.items)
+	mux.HandleFunc("GET /api/v1/admin/core/items/{itemRef}/versions/{revision}", s.itemVersionV209)
 	s.coreRoutes(mux)
 	s.accountRoutes(mux)
 	s.walletRoutes(mux)
@@ -426,7 +428,12 @@ func (s *Server) items(w http.ResponseWriter, r *http.Request) {
 		}
 		rev = n
 	}
-	items, err := s.Store.CoreItems(r.Context(), ref, rev, 51)
+	query, domain := r.URL.Query().Get("q"), r.URL.Query().Get("inventoryDomain")
+	if !utf8.ValidString(query) || utf8.RuneCountInString(query) > 100 || len(domain) > 128 {
+		failError(w, r, bridge.ErrProtocol)
+		return
+	}
+	items, err := s.Store.CoreItemsSearchV209(r.Context(), ref, rev, 51, query, domain)
 	if err != nil {
 		failError(w, r, err)
 		return

@@ -104,6 +104,20 @@ final class FundsEngineTest {
         assertEquals("RESULT_UNKNOWN",assertThrows(FundsFailure.class,()->faulty.execute("commit_lost","wallet.transfer",transfer(payer,payee,"17.00"))).code());
         assertEquals("COMPLETED",engine.operation("commit_lost").get("state"));faulty.execute("commit_lost","wallet.transfer",transfer(payer,payee,"17.00"));assertEquals(new BigDecimal("983.00"),value(payer));assertEquals(new BigDecimal("17.00"),value(payee));assertEquals(2,count("xconomy_dc_ledger"));
     }
+    @Test void trustedMailCreditsReplayAcrossEnginesWithoutMintingTwice()throws Exception{
+        Field field=ControlledEconomyAPI.class.getDeclaredField("engine");field.setAccessible(true);Object prior=field.get(null);
+        String operation="mailcredit_"+UUID.randomUUID();
+        try{
+            field.set(null,engine);
+            var receipt=ControlledEconomyAPI.rewardMail(operation,UUID.fromString(payee),77);
+            assertEquals("COMPLETED",receipt.get("status"));assertEquals("77.00",receipt.get("amount"));assertEquals(payee,receipt.get("playerUuid"));
+            field.set(null,new FundsEngine(this::connection,"xconomy",ignored->{}));
+            ControlledEconomyAPI.rewardMail(operation,UUID.fromString(payee),77);
+            assertEquals(new BigDecimal("77.00"),value(payee));assertEquals(1,count("xconomy_dc_ledger"));
+            assertEquals("IDEMPOTENCY_CONFLICT",assertThrows(FundsFailure.class,()->ControlledEconomyAPI.rewardMail(operation,UUID.fromString(payee),78)).code());
+            assertEquals("COMMAND_NOT_ALLOWED",assertThrows(FundsFailure.class,()->ControlledEconomyAPI.execute("forged","native.change",Map.of())).code());
+        }finally{field.set(null,prior);}
+    }
     @Test void secondLegSqlFailureRollsBackDebitAndReceipt()throws Exception{
         try(Connection c=connection()){c.createStatement().execute("CREATE TRIGGER reject_payee BEFORE UPDATE ON xconomy FOR EACH ROW BEGIN IF NEW.UID='"+payee+"' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic second leg failure'; END IF; END");}
         assertThrows(FundsFailure.class,()->engine.execute("sql_fail","wallet.transfer",transfer(payer,payee,"10.00")));assertEquals(new BigDecimal("1000.00"),value(payer));assertEquals(ZERO,value(payee));assertEquals(0,count("xconomy_dc_ledger"));assertEquals("NOT_FOUND",engine.operation("sql_fail").get("state"));

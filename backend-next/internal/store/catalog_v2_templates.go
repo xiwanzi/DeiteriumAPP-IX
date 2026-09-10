@@ -14,6 +14,10 @@ func catalogPublicationTemplateIDV2(product string, version int64) string {
 	return "pubtpl_" + Digest([]byte(product + ":" + strconv.FormatInt(version, 10)))[:40]
 }
 func catalogFreezePublicationTemplateV2(ctx context.Context, tx *sql.Tx, product, template CatalogRecordV2, now time.Time) error {
+	attachments, _ := template.Body["attachments"].([]any)
+	if len(attachments) == 0 && catalogNumber(product.Body, "deliveryCredits") == 0 {
+		return catalogError(422, "EMPTY_DELIVERY", "商品至少需要一件实物或附带信用点。")
+	}
 	body := CatalogObjectV2{"productId": product.ID, "productVersion": product.Version + 1, "templateRef": template.ID, "templateVersion": template.Version, "templateContent": template.Body}
 	d := CatalogRecordV2{ID: catalogPublicationTemplateIDV2(product.ID, product.Version+1), Kind: "publication_template", StoreID: product.StoreID, OwnerID: product.OwnerID, Version: 1, Body: body, State: "FROZEN", CreatedAt: now, UpdatedAt: now}
 	return catalogSave(ctx, tx, &d, true)
@@ -47,6 +51,7 @@ func catalogPublishedTemplateV2(ctx context.Context, tx *sql.Tx, product Catalog
 type CatalogNodePolicyV2 struct {
 	InventoryDomain string
 	ClaimEnabled    bool
+	CreditRewards   *bool
 }
 
 var catalogItemRefV2 = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}:[a-z0-9_./-]{1,63}$`)
@@ -63,7 +68,7 @@ func ValidateDeliveryTemplateV2(content CatalogObjectV2) error {
 		return catalogInvalid()
 	}
 	attachments, ok := content["attachments"].([]any)
-	if !ok || len(attachments) < 1 || len(attachments) > 32 {
+	if !ok || len(attachments) > 32 {
 		return catalogInvalid()
 	}
 	seen := map[string]bool{}
@@ -225,6 +230,9 @@ func (s *Store) CatalogDisableTemplateV2(ctx context.Context, user, storeID, id,
 }
 func CatalogTemplateViewV2(d CatalogRecordV2, detail bool) map[string]any {
 	out := map[string]any{"templateRef": d.ID, "name": d.Body["name"], "summary": d.Body["summary"], "active": d.State == "ACTIVE"}
+	attachments, _ := d.Body["attachments"].([]any)
+	out["attachmentCount"] = len(attachments)
+	out["inventoryDomain"] = d.Body["inventoryDomain"]
 	if detail {
 		out["storeId"] = d.StoreID
 		out["version"] = d.Version

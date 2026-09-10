@@ -43,7 +43,7 @@ export function CreationProgress({ client, user, entry, initialResult, onResourc
   </div>;
 }
 
-export default function PurchaseFlow({ client, user, items, channel, listing, previewProducts = [], onResource }) {
+export default function PurchaseFlow({ client, user, items, channel, listing, source = "DIRECT", previewProducts = [], onResource }) {
   const flow = `${channel}:${items.map((item) => item.productId).sort().join(",")}`, pending = Object.values(savedBusiness(user.userId)).find((entry) => entry.flow === flow),
     [entry, setEntry] = useState(pending || null), [result, setResult] = useState(null), [quote, setQuote] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
     [method, setMethod] = useState(channel === "OFFICIAL_STORE" ? "MAILBOX" : listing?.categoryCode === "CONSTRUCTION" ? "WORKSITE" : listing?.deliveryMethods?.[0] || "PICKUP"),
@@ -54,7 +54,7 @@ export default function PurchaseFlow({ client, user, items, channel, listing, pr
   const submitting = useRef(false), request = useRef(null), quoteRequest = useRef(null);
   const getQuote = async (event) => {
     event.preventDefault(); setBusy(true); setError("");
-    try { const body = { channel, items, delivery: { method, ...(method !== "MAILBOX" ? { location: deliveryLocation } : {}), ...(method === "WORKSITE" ? { projectName: project } : {}) } }; const fingerprint = JSON.stringify(body); if (quoteRequest.current?.fingerprint !== fingerprint) quoteRequest.current = { fingerprint, key: id() }; const r = await client.request("/api/v1/checkout/quotes", { method: "POST", body, idempotencyKey: quoteRequest.current.key }); if (!r.data.quoteId || !r.data.version || r.data.totalAmount === undefined) throw new Error("报价结果不完整，请重试。"); setQuote(r.data); const expiration = Date.parse(r.data.expiresAt), serverNow = Date.parse(r.serverTime); setExpiresAt(Number.isFinite(expiration) ? Date.now() + expiration - (Number.isFinite(serverNow) ? serverNow : Date.now()) : null); setNow(Date.now()); }
+    try { const body = { channel, items, source, delivery: { method, ...(method !== "MAILBOX" ? { location: deliveryLocation } : {}), ...(method === "WORKSITE" ? { projectName: project } : {}) } }; const fingerprint = JSON.stringify(body); if (quoteRequest.current?.fingerprint !== fingerprint) quoteRequest.current = { fingerprint, key: id() }; const r = await client.request("/api/v1/checkout/quotes", { method: "POST", body, idempotencyKey: quoteRequest.current.key }); if (!r.data.quoteId || !r.data.version || r.data.totalAmount === undefined) throw new Error("报价结果不完整，请重试。"); setQuote(r.data); const expiration = Date.parse(r.data.expiresAt), serverNow = Date.parse(r.serverTime); setExpiresAt(Number.isFinite(expiration) ? Date.now() + expiration - (Number.isFinite(serverNow) ? serverNow : Date.now()) : null); setNow(Date.now()); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
   const pay = async () => {
@@ -63,7 +63,7 @@ export default function PurchaseFlow({ client, user, items, channel, listing, pr
     const current = request.current;
     try { saveBusiness(user.userId, current); const r = await client.request(current.path, { method: "POST", body: current.body }); setResult(r.data); setEntry(current); }
     catch (e) {
-      if (e.status >= 400 && e.status < 500 && ![408, 429].includes(e.status)) { clearBusiness(user.userId, current.body.clientRequestId); setError(e.message); }
+      if (e.status >= 400 && e.status < 500 && ![408, 429].includes(e.status)) { clearBusiness(user.userId, current.body.clientRequestId); setError(e.message); if (["COUPON_EXPIRED", "COUPON_CHANGED", "COUPON_ALREADY_USED", "STATE_VERSION_CONFLICT", "QUOTE_EXPIRED", "PLAYER_PURCHASE_LIMIT"].includes(e.code)) { setQuote(null); request.current = null; quoteRequest.current = null; } }
       else { setError(e.message); setEntry(current); }
     } finally { submitting.current = false; setBusy(false); }
   };
@@ -72,14 +72,16 @@ export default function PurchaseFlow({ client, user, items, channel, listing, pr
     const product = previewProducts.find((p) => (p.productId || p.listingId) === item.productId) || previewProducts[index];
     const content = product?.content || product;
     const image = product?.images?.[0] || product?.photos?.[0];
-    return <div className="checkout-line" key={item.productId || index}>{image?.url ? <img src={image.url} alt="" /> : <span className="checkout-line-icon"><Package size={22} /></span>}<div><strong>{item.title || content?.title || "商品"}</strong><small>数量 {item.quantity}{(item.unitPrice ?? content?.price) !== undefined ? ` · 单价 ${credit(item.unitPrice ?? content.price)} 信用点` : ""}</small></div><span>× {item.quantity}</span></div>;
+    const unitPrice = item.unitPrice ?? product?.effectivePrice ?? content?.price;
+    return <div className="checkout-line" key={item.productId || index}>{image?.url ? <img src={image.url} alt="" /> : <span className="checkout-line-icon"><Package size={22} /></span>}<div><strong>{item.title || content?.title || "商品"}</strong><small>数量 {item.quantity}{unitPrice !== undefined ? ` · 单价 ${credit(unitPrice)} 信用点` : ""}</small></div><span>× {item.quantity}</span></div>;
   });
   const steps = <ol className="checkout-steps"><li className="complete"><span>1</span>确认商品</li><li className={quote ? "complete" : "active"}><span>2</span>核对交付</li><li className={quote ? "active" : ""}><span>3</span>确认付款</li></ol>;
   const deliveryCard = <div className="checkout-delivery">{method === "MAILBOX" ? <Mail size={22} /> : <ShieldCheck size={22} />}<div><strong>{method === "MAILBOX" ? "游戏内邮箱交付" : "平台担保交易"}</strong><p>{method === "MAILBOX" ? "付款后投递至游戏内邮箱，未领取前可按订单规则申请退款。" : "款项由平台托管，完成履约后才会结算。"}</p></div></div>;
   if (quote) return <div className="checkout-flow">{steps}
-    <div className="checkout-amount"><WalletCards size={25} /><span>本次应付</span><strong>{credit(quote.totalAmount)}</strong><small>信用点</small></div>
+    <div className="checkout-amount"><WalletCards size={25} /><span>本次应付</span><strong>{credit(quote.totalAmount)}</strong><small>信用点</small>{Number(quote.discountTotal) > 0 && <del className="sale-original">{credit(quote.originalTotal)}</del>}</div>
+    {Number(quote.discountTotal) > 0 && <div className="checkout-promotion">{Number(quote.productDiscount) > 0 && <div><span>商品优惠</span><strong>−{credit(quote.productDiscount)}</strong></div>}{quote.coupon && <><div><span>{quote.coupon.name}</span><strong>−{credit(quote.couponDiscount)}</strong></div><span className="coupon-auto"><Check size={14} />已自动选用最优惠的券{quote.coupon.type === "ITEM" ? " · 作用于一件商品" : ""}</span></>}</div>}
     <div className="checkout-lines">{orderLines}</div>{deliveryCard}
-    <dl className="checkout-facts"><div><dt>领取账号</dt><dd>{user.gameId || "当前登录账号"}</dd></div>{method !== "MAILBOX" && <div><dt>交付地点</dt><dd>{deliveryLocation}</dd></div>}{expiresAt !== null && <div><dt>报价有效期</dt><dd>{expired ? "已过期，请重新获取" : `剩余 ${Math.max(0, Math.ceil((expiresAt - now) / 1000))} 秒`}</dd></div>}</dl>
+    <dl className="checkout-facts">{quote.storeName && <div><dt>店铺</dt><dd>{quote.storeName}</dd></div>}<div><dt>领取账号</dt><dd>{user.gameId || "当前登录账号"}</dd></div>{method !== "MAILBOX" && <div><dt>交付地点</dt><dd>{deliveryLocation}</dd></div>}{expiresAt !== null && <div><dt>报价有效期</dt><dd>{expired ? "已过期，请重新获取" : `剩余 ${Math.max(0, Math.ceil((expiresAt - now) / 1000))} 秒`}</dd></div>}</dl>
     {quote.warnings?.length > 0 && <div className="notice-box">{quote.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}
     {error && <p className="auth-error" role="alert">{error}</p>}<div className="checkout-actions"><Button secondary disabled={busy} onClick={() => { setQuote(null); request.current = null; quoteRequest.current = null; }}>{expired ? "重新获取报价" : "返回修改"}</Button><Button disabled={busy || expired} onClick={pay}>{busy ? "正在提交…" : "确认付款"}</Button></div>
   </div>;

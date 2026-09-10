@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-09-10：**2.0.9 候选已完成本机实现与验收，尚未推送/合并/部署**。当前开发入口 `.worktrees/commerce-v209` / `xiwanzi/commerce-v209`，见[候选发布](deployment/deuterium-2.0.9-candidate.md)、[QA](qa/commerce-v209.md)、[增量契约](contracts/commerce-promotions-v209.md)。线上保持 2.0.8，不能把候选安装包当成已上线版本。
+
 2026-09-10：**App 2.0.8（20800）、Web 2.0.8 与配套 Go 已于 11:13 上线**，源码 `6566bb617f8d`（PR #14）。默认弧线 D 与双子节图标已内置，管理员可远程切换；线上默认无横幅。22 笔订单、4 个委托及原配置保留。本轮未重跑测试。当前维护工作区 `.worktrees/launcher-icons-v208`，分支 `release/v208-live`。下方为较早记录。 见 [2.0.8 部署记录](deployment/deuterium-2.0.8-live.md)。
 
 2026-09-10：**App 2.0.7（20700）、Web 2.0.7 与配套 Go 已于 03:22 上线**，源码 `4262edd84c03`（PR #12）。Saki 支持逐日递减、最低 5 天差价的升级，严格保留原到期时间；购买确认展示升级实付与淡色删除线原价，不显示公式。空会话才显示输入框上方套餐入口。用户已开启的套餐配置及 11 笔订单、4 个委托保留，三常驻服在线，MEK 离线。当前维护工作区 `.worktrees/saki-upgrade-checkout`，分支 `release/v207-live`。下方为较早发布记录。 见 [2.0.7 部署记录](deployment/deuterium-2.0.7-live.md)。

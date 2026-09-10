@@ -151,7 +151,7 @@ export function Modal({ title, children, close, wide = false, className = "", gu
     >
       <div className="modal-head">
         <h2 id={label}>{title}</h2>
-        <button className="icon-button" aria-label="关闭弹窗" onClick={requestClose}>
+        <button type="button" className="icon-button" aria-label="关闭弹窗" onClick={requestClose}>
           <X size={20} />
         </button>
       </div>

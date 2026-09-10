@@ -59,7 +59,7 @@ fun SearchPage(area:String,state:LabState,onClose:()->Unit,onOpen:(String)->Unit
                     items(people,key={it.playerRef.ifBlank{it.name}}){person->SearchResult(person.name,"QQ ${person.qq}",{PlayerAvatar(person.name,Modifier.size(47.dp))}){open("player:${person.name}")}}
                     if(people.isNotEmpty()&&directoryError!=null)item{Text("暂时无法联网搜索，已显示本机已有结果",Modifier.padding(12.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                 }
-                else->{val options=listOf(Triple("外观","浅色 深色 柔光玻璃 灵动视效 动态追光 材质细节","appearance"),Triple("个人简介","资料 签名 自我介绍","bio"),Triple("我的订单","退款 购买 收货 验收","orders"),Triple("我的委托","发布 接取 任务 报酬","my-commissions"),Triple("软件更新","关于 版本 APK 资源 下载","about"),Triple("存储空间","缓存 清理 图片 更新 文件 占用","storage"),Triple("账号与安全","头像 密码 账号","account"),Triple("通知","提醒 消息","notifications"),Triple("历史账单","收支 钱包","bills:all"))
+                else->{val options=listOf(Triple("外观","浅色 深色 柔光玻璃 灵动视效 动态追光 材质细节","appearance"),Triple("个人简介","资料 签名 自我介绍","bio"),Triple("我的订单","退款 购买 收货 验收","orders"),Triple("我的委托","发布 接取 任务 报酬","my-commissions"),Triple("软件更新","关于 版本 APK 资源 下载","about"),Triple("存储空间","缓存 清理 图片 更新 文件 占用","storage"),Triple("账号与安全","头像 密码 账号","account"),Triple("通知","提醒 消息","notifications"),Triple("我的优惠","优惠券 折扣 满减","coupons"),Triple("我的钱包","账单 收支 历史 余额 转账","wallet"))
                     val results=options.filter{it.first.contains(query,true)||it.second.contains(query,true)};if(results.isEmpty())item{SearchEmpty()}
                     items(results){entry->SettingsGroup{SettingsRow(entry.first,Icons.Outlined.ChevronRight){open(entry.third)}}}
                 }

@@ -131,6 +131,15 @@ func (c *commerceTestCore) Execute(_ context.Context, actor, key, command string
 		hash := store.Digest([]byte(fmt.Sprint(p["snapshotJson"])))
 		value := map[string]any{"source": "deuterium-commerce", "deliveryId": p["deliveryId"], "orderId": plan["orderId"], "recipientUuid": plan["recipientUuid"], "snapshotSha256": hash, "inventoryDomain": plan["inventoryDomain"], "allowedServerIds": plan["allowedServerIds"], "mailId": "mail_test", "revision": 1, "status": "CREATED"}
 		if command == "mailbox.revoke" {
+			var revoked map[string]any
+			if c.mailMode == "revoked" {
+				revoked = map[string]any{}
+				for k, v := range value {
+					revoked[k] = v
+				}
+				revoked["status"] = "REVOKED"
+				revoked["revision"] = 2
+			}
 			if c.mailMode == "notfound" {
 				r.Data = map[string]any{"code": "NOT_FOUND"}
 				c.result[id] = r
@@ -142,6 +151,10 @@ func (c *commerceTestCore) Execute(_ context.Context, actor, key, command string
 			value["operationId"] = id
 			value["cancelledAt"] = time.Now().Unix()
 			value["proofKind"] = "CANCELLED_BEFORE_CREATE"
+			if revoked != nil {
+				value["proofKind"] = "REVOKED_MAIL"
+				value["mailReceipt"] = revoked
+			}
 			if c.mailMode == "wrong-tombstone" {
 				value["recipientUuid"] = commerceTestRevenue
 			}

@@ -60,7 +60,21 @@ type CoreItemListing struct {
 }
 
 func (s *Store) CoreItems(ctx context.Context, ref string, rev int64, limit int) (out []CoreItemListing, err error) {
-	rows, err := s.DB.QueryContext(ctx, `SELECT v.metadata,COALESCE(h.catalog_version,0),COALESCE(h.latest_revision,v.revision),COALESCE(h.archived,false) FROM item_versions v LEFT JOIN core_catalog_heads h ON h.item_ref=v.item_ref WHERE v.item_ref>? OR(v.item_ref=? AND v.revision>?) ORDER BY v.item_ref,v.revision LIMIT ?`, ref, ref, rev, limit)
+	return s.CoreItemsSearchV209(ctx, ref, rev, limit, "", "")
+}
+func (s *Store) CoreItemsSearchV209(ctx context.Context, ref string, rev int64, limit int, query, domain string) (out []CoreItemListing, err error) {
+	q := `SELECT v.metadata,COALESCE(h.catalog_version,0),COALESCE(h.latest_revision,v.revision),COALESCE(h.archived,false) FROM item_versions v LEFT JOIN core_catalog_heads h ON h.item_ref=v.item_ref WHERE (v.item_ref>? OR(v.item_ref=? AND v.revision>?))`
+	args := []any{ref, ref, rev}
+	if query != "" {
+		q += " AND (INSTR(LOWER(v.item_ref),LOWER(?))>0 OR INSTR(LOWER(JSON_UNQUOTE(JSON_EXTRACT(v.metadata,'$.displayName'))),LOWER(?))>0)"
+		args = append(args, query, query)
+	}
+	if domain != "" {
+		q += " AND JSON_UNQUOTE(JSON_EXTRACT(v.metadata,'$.inventoryDomain'))=?"
+		args = append(args, domain)
+	}
+	args = append(args, limit)
+	rows, err := s.DB.QueryContext(ctx, q+" ORDER BY v.item_ref,v.revision LIMIT ?", args...)
 	if err != nil {
 		return
 	}

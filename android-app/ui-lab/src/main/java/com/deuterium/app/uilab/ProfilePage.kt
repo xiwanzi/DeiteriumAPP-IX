@@ -35,12 +35,12 @@ fun SettingsDivider(){HorizontalDivider(Modifier.padding(start=62.dp),color=Mate
 fun ProfilePage(state:LabState,avatar:String?,userName:String,topInset:Dp,query:String,onOpen:(String)->Unit,onAvatar:()->Unit) {
     fun match(vararg words:String)=query.isBlank()||words.any{it.contains(query,true)}
     LazyColumn(contentPadding=PaddingValues(start=16.dp,end=16.dp,top=topInset,bottom=115.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {
-        if(!match("账号","头像","个人资料",userName,"钱包","余额","转账","订单","商城订单","市场订单","退款","发布","出售","上架","账单","收支","历史","外观","浅色","深色","自动","玻璃","动效","通知","消息","提醒","安全","密码","存储","空间","缓存","清理","关于","版本"))item{Text("没有找到相关设置",Modifier.fillMaxWidth().padding(vertical=36.dp),textAlign=androidx.compose.ui.text.style.TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        if(!match("账号","头像","个人资料",userName,"钱包","余额","转账","订单","商城订单","市场订单","退款","发布","出售","上架","账单","收支","历史","优惠","优惠券","折扣","满减","外观","浅色","深色","自动","玻璃","动效","通知","消息","提醒","安全","密码","存储","空间","缓存","清理","关于","版本"))item{Text("没有找到相关设置",Modifier.fillMaxWidth().padding(vertical=36.dp),textAlign=androidx.compose.ui.text.style.TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(match("账号","头像","个人资料",userName))item { SettingsGroup {
             Row(Modifier.fillMaxWidth().clickable{onOpen("account")}.padding(20.dp),verticalAlignment=Alignment.CenterVertically){LocalAvatar(avatar,userName,Modifier.size(63.dp).clickable(onClick=onAvatar));Column(Modifier.weight(1f).padding(start=16.dp)){Text(userName,style=MaterialTheme.typography.titleLarge);Text(state.profileBio.ifBlank{"添加个人简介"},Modifier.padding(top=5.dp).clickable{onOpen("bio")},maxLines=1,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)};Icon(Icons.Outlined.ChevronRight,null,tint=MaterialTheme.colorScheme.onSurfaceVariant)}
         } }
         item { SettingsGroup {
-            if(match("钱包","余额","转账"))SettingsRow("我的钱包",Icons.Outlined.AccountBalanceWallet,Color(0xFF222226),if(state.balanceKnown)credit(state.balance) else "等待同步"){onOpen("wallet")}
+            if(match("钱包","余额","转账","账单","收支","历史"))SettingsRow("我的钱包",Icons.Outlined.AccountBalanceWallet,Color(0xFF222226),if(state.balanceKnown)credit(state.balance) else "等待同步"){onOpen("wallet")}
             if(query.isBlank())SettingsDivider()
             if(match("订单","商城订单","市场订单","退款"))SettingsRow("我的订单",Icons.Outlined.ShoppingBag,Color(0xFF007AFF)){onOpen("orders")}
             if(query.isBlank())SettingsDivider()
@@ -48,7 +48,7 @@ fun ProfilePage(state:LabState,avatar:String?,userName:String,topInset:Dp,query:
             if(query.isBlank())SettingsDivider()
             if(match("发布","出售","上架"))SettingsRow("我发布的",Icons.Outlined.Inventory2,Color(0xFFFF9500)){onOpen("listings")}
             if(query.isBlank())SettingsDivider()
-            if(match("账单","收支","历史"))SettingsRow("历史账单",Icons.Outlined.ReceiptLong,Color(0xFF34AADC)){onOpen("bills:all")}
+            if(match("优惠","优惠券","折扣","满减"))SettingsRow("我的优惠",Icons.Outlined.ConfirmationNumber,Color(0xFF34AADC)){onOpen("coupons")}
         } }
         item { SettingsGroup {
             if(match("外观","浅色","深色","自动","玻璃","动效"))SettingsRow("外观",Icons.Outlined.Contrast,Color(0xFF8E6BE8)){onOpen("appearance")}

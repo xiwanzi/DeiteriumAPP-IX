@@ -97,11 +97,20 @@ func TestCommerceCoreAdapterRequiresMailDomainAndFrozenCluster(t *testing.T) {
 		s.Core.Connect(id, func(context.Context, string, any) error { return nil })
 		s.Core.SetStatus(id, []byte(`{"storageHealthy":true,"mailbox":{"available":true,"commerceReady":true,"clusterId":"cluster"}}`))
 	}
-	node, err := a.selectNode(context.Background(), "mailbox.create", map[string]any{"inventoryDomain": "survival", "allowedServerIds": []string{"amiya"}})
+	payload := map[string]any{"inventoryDomain": "survival", "allowedServerIds": []string{"amiya"}, "snapshotJson": `{"creditAmount":0}`}
+	node, err := a.selectNode(context.Background(), "mailbox.create", payload)
 	if err != nil || node != "amiya" {
 		t.Fatal(node, err)
 	}
-	if _, err = a.selectNode(context.Background(), "mailbox.create", map[string]any{"inventoryDomain": "survival", "allowedServerIds": []string{"login"}}); err == nil {
+	payload["snapshotJson"] = `{"creditAmount":20}`
+	if _, err = a.selectNode(context.Background(), "mailbox.create", payload); err == nil {
+		t.Fatal("credit delivery routed to an old node")
+	}
+	s.Core.SetStatus("amiya", []byte(`{"storageHealthy":true,"mailbox":{"available":true,"commerceReady":true,"clusterId":"cluster","apiVersion":3,"creditRewards":true}}`))
+	if node, err = a.selectNode(context.Background(), "mailbox.create", payload); err != nil || node != "amiya" {
+		t.Fatal("credit-capable node rejected", node, err)
+	}
+	if _, err = a.selectNode(context.Background(), "mailbox.create", map[string]any{"inventoryDomain": "survival", "allowedServerIds": []string{"login"}, "snapshotJson": `{"creditAmount":0}`}); err == nil {
 		t.Fatal("incompatible claim scope accepted")
 	}
 	if _, err = a.selectNode(context.Background(), "mailbox.revoke", map[string]any{"deliveryId": "missing", "orderId": "order", "expectedSnapshotSha256": "hash"}); err == nil {

@@ -196,8 +196,11 @@ func ValidateCatalogContentV2(kind string, o CatalogObjectV2) error {
 			return catalogInvalid()
 		}
 	case "product":
-		if !catalogFields(o, "title subtitle description brandId categoryId price coverAssetId galleryAssetIds galleryAltTexts contentBlocks includedItems deliveryTemplateRef deliverySummary estimatedDelivery inventoryPolicy stock limitPerOrder posterTone accentColor badges sortOrder", "mailTitle mailBody") {
+		if !catalogFields(o, "title subtitle description brandId categoryId price coverAssetId galleryAssetIds galleryAltTexts contentBlocks includedItems deliveryTemplateRef deliverySummary estimatedDelivery inventoryPolicy stock limitPerOrder posterTone accentColor badges sortOrder", "mailTitle mailBody discountRate purchaseLimits deliveryCredits") {
 			return catalogInvalid()
+		}
+		if e := validateProductPromotionV209(o); e != nil {
+			return e
 		}
 		if e := validateProductMail(o); e != nil {
 			return e
@@ -409,7 +412,10 @@ func CatalogMutationInputV2(input CatalogObjectV2, content bool, version bool, e
 	return catalogString(input, "clientRequestId"), catalogNumber(input, "expectedVersion"), obj, nil
 }
 func CatalogQuoteInputV2(input CatalogObjectV2) error {
-	if !catalogFields(input, "channel items delivery", "") || !catalogEnum(input["channel"], "OFFICIAL_STORE", "PLAYER_MARKET") {
+	if !catalogFields(input, "channel items delivery", "source") || !catalogEnum(input["channel"], "OFFICIAL_STORE", "PLAYER_MARKET") {
+		return catalogInvalid()
+	}
+	if source, has := input["source"]; has && !catalogEnum(source, "CART", "DIRECT") {
 		return catalogInvalid()
 	}
 	items, ok := input["items"].([]any)

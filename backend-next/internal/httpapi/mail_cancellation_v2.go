@@ -28,6 +28,7 @@ type mailCancellationSnapshotV2 struct {
 	Attachments      []json.RawMessage `json:"attachments"`
 	TemplateRef      string            `json:"templateRef,omitempty"`
 	TemplateRevision int64             `json:"templateRevision,omitempty"`
+	CreditAmount     int64             `json:"creditAmount,omitempty"`
 }
 
 type mailCancellationProofV2 struct {
@@ -51,7 +52,7 @@ func parseMailCancellationV2(raw []byte) (mailCancellationRequestV2, mailCancell
 	if bridge.Decode(raw, &request) != nil || request.Source != "deuterium-commerce" || !bridge.ValidMessageID(request.DeliveryID) || !bridge.ValidMessageID(request.OrderID) || len(request.SnapshotJSON) > 24000 || strings.TrimSpace(request.ReasonCode) == "" || len(request.ReasonCode) > 192 || store.Digest([]byte(request.SnapshotJSON)) != request.ExpectedSnapshotSHA256 || bridge.Decode([]byte(request.SnapshotJSON), &snapshot) != nil {
 		return request, snapshot, bridge.ErrProtocol
 	}
-	if snapshot.SchemaVersion != 1 || snapshot.OrderID != request.OrderID || !identity.ValidUUID(snapshot.RecipientUUID) || !config.NodeID.MatchString(snapshot.InventoryDomain) || len(snapshot.Attachments) == 0 || len(snapshot.Attachments) > 32 || !validMailCancellationScopeV2(snapshot.AllowedServerIDs) {
+	if snapshot.SchemaVersion != 1 || snapshot.OrderID != request.OrderID || !identity.ValidUUID(snapshot.RecipientUUID) || !config.NodeID.MatchString(snapshot.InventoryDomain) || snapshot.Attachments == nil || (len(snapshot.Attachments) == 0 && snapshot.CreditAmount == 0) || snapshot.CreditAmount < 0 || snapshot.CreditAmount > 1000000000000 || len(snapshot.Attachments) > 32 || !validMailCancellationScopeV2(snapshot.AllowedServerIDs) {
 		return request, snapshot, bridge.ErrProtocol
 	}
 	return request, snapshot, nil

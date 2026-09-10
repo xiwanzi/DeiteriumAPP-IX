@@ -32,7 +32,12 @@ public final class MailboxAdapter implements CoreMailbox {
     @Override public JsonObject capabilities() {
         try {
             MailboxIntegration.Capabilities c = service().capabilities();
-            JsonObject result = Json.tree(c); result.addProperty("available", true); result.addProperty("commerceReady", c.commerceReady()); return result;
+            JsonObject result = Json.tree(c); result.addProperty("available", true); result.addProperty("commerceReady", c.commerceReady());
+            if (c.apiVersion() >= 3) {
+                var barrier = Bukkit.getServicesManager().load(cafe.deuterium.mail.api.MailPlayerDataBarrier.class);
+                result.addProperty("creditRewards", barrier != null && barrier.creditRewardsAvailable());
+            }
+            return result;
         } catch (Exception | LinkageError unavailable) { return Json.tree(Map.of("available", false, "commerceReady", false, "reason", "MAILBOX_UNAVAILABLE")); }
     }
     @Override public JsonObject execute(String operation, String type, JsonObject payload) {
@@ -79,7 +84,7 @@ public final class MailboxAdapter implements CoreMailbox {
         if (!Checks.sha(snapshotJson.getBytes(StandardCharsets.UTF_8)).equals(snapshotHash))
             throw CoreFailure.invalid("取消请求的原订单快照摘要不一致。");
         JsonObject snapshot = Json.object(snapshotJson, 24000);
-        Json.fields(snapshot, "schemaVersion", "orderId", "recipientUuid", "inventoryDomain", "allowedServerIds", "attachments", "templateRef", "templateRevision");
+        Json.fields(snapshot, "schemaVersion", "orderId", "recipientUuid", "inventoryDomain", "allowedServerIds", "attachments", "templateRef", "templateRevision", "creditAmount");
         String order = Checks.operationId(Json.string(payload, "orderId"));
         String recipientText = Json.string(snapshot, "recipientUuid");
         UUID recipient = UUID.fromString(recipientText);
@@ -102,7 +107,7 @@ public final class MailboxAdapter implements CoreMailbox {
         String snapshotHash = hash(Json.string(payload, "snapshotSha256"));
         if (!Checks.sha(snapshotJson.getBytes(StandardCharsets.UTF_8)).equals(snapshotHash)) throw CoreFailure.invalid("订单快照摘要不一致。");
         JsonObject snapshot = Json.object(snapshotJson, 24000);
-        Json.fields(snapshot, "schemaVersion", "orderId", "recipientUuid", "inventoryDomain", "allowedServerIds", "attachments", "templateRef", "templateRevision");
+        Json.fields(snapshot, "schemaVersion", "orderId", "recipientUuid", "inventoryDomain", "allowedServerIds", "attachments", "templateRef", "templateRevision", "creditAmount");
         if (Json.integer(snapshot, "schemaVersion") != 1) throw CoreFailure.invalid("不支持的订单快照版本。");
         String order = Checks.operationId(Json.string(payload, "orderId")), domain = Checks.node(Json.string(payload, "inventoryDomain"));
         String recipientText = Json.string(payload, "recipientUuid");
@@ -114,7 +119,9 @@ public final class MailboxAdapter implements CoreMailbox {
         if (!servers.equals(strings(snapshot.getAsJsonArray("allowedServerIds"))) || servers.isEmpty() || servers.size() > 32 || new HashSet<>(servers).size() != servers.size())
             throw CoreFailure.invalid("邮件领取范围不正确。");
         JsonArray attachments = snapshot.getAsJsonArray("attachments");
-        if (attachments == null || attachments.isEmpty() || attachments.size() > 32) throw CoreFailure.invalid("附件数量必须为 1–32。");
+        long credits = snapshot.has("creditAmount") ? Json.integer(snapshot, "creditAmount") : 0L;
+        if (credits < 0 || credits > 1000000000000L) throw CoreFailure.invalid("信用点数量超出范围。");
+        if (attachments == null || (attachments.isEmpty() && credits == 0) || attachments.size() > 32) throw CoreFailure.invalid("请配置实物或信用点附件。");
         Set<String> seen = new HashSet<>(); List<MailboxItem> resolved = new ArrayList<>(); long totalBytes = 0;
         for (JsonElement value : attachments) {
             JsonObject attachment = value.getAsJsonObject(); Json.fields(attachment, "itemRef", "revision", "quantity", "payloadSha256");
@@ -131,9 +138,13 @@ public final class MailboxAdapter implements CoreMailbox {
             if (totalBytes > 8388608 || bytes.length > config.get().maxItemBytes()) throw CoreFailure.invalid("邮件物品体积超限。");
             resolved.add(new MailboxItem(ref, revision, quantity, item.payloadSha256(), item.codec(), bytes, item.itemId(), item.displayName(), item.compatibleServerIds()));
         }
-        return new MailboxIntegration.Create(operation, Checks.operationId(Json.string(payload, "deliveryId")), order, recipient,
+        if (credits == 0) return new MailboxIntegration.Create(operation, Checks.operationId(Json.string(payload, "deliveryId")), order, recipient,
                 source(payload), Checks.text(Json.string(payload, "title"), 1024, false), Checks.text(Json.string(payload, "body"), 4096, true),
                 Checks.text(Json.string(payload, "sender"), 512, false), snapshotJson, snapshotHash, resolved, servers, domain);
+        if (service().capabilities().apiVersion() < 3) throw new CoreFailure("MAILBOX_UNAVAILABLE", "邮箱尚未支持商城信用点交付。");
+        return new MailboxIntegration.Create(operation, Checks.operationId(Json.string(payload, "deliveryId")), order, recipient,
+                source(payload), Checks.text(Json.string(payload, "title"), 1024, false), Checks.text(Json.string(payload, "body"), 4096, true),
+                Checks.text(Json.string(payload, "sender"), 512, false), snapshotJson, snapshotHash, resolved, servers, domain, credits);
     }
     private static String source(JsonObject payload) {
         String source = Json.string(payload, "source");

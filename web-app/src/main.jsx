@@ -5,6 +5,7 @@ import './styles.css';
 import './v2.css';
 import './admin-v204.css';
 import './desktop-admin.css';
+import './commerce-v209.css';
 
 // Older preview URLs now follow the same authenticated service path.
 if (location.pathname === '/preview' || location.pathname.startsWith('/preview/')) {

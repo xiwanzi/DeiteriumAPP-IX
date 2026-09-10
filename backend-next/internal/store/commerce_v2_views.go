@@ -171,6 +171,11 @@ func commerceBaseViewV2(d CommerceRecordV2, viewer string, refund *CommerceRefun
 	for _, k := range strings.Fields(fields) {
 		out[k] = d.Body[k]
 	}
+	for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon"} {
+		if value, present := d.Body[k]; present {
+			out[k] = value
+		}
+	}
 	out["completionDescription"] = catalogString(d.Body, "completionDescription")
 	completionIDs := catalogIDs(d.Body, "completionAssetIds")
 	if completionIDs == nil {

@@ -103,6 +103,7 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
                 val result=root?.optJSONObject("data") ?: root?.optJSONArray("data")?.let { JSONObject().put("items", it) }
                     ?: throw ApiFailure("INVALID_RESPONSE", "服务器响应格式不正确")
                 root?.optJSONObject("page")?.let{result.put("_page",it)}
+                root?.optString("serverTime")?.takeIf{it.isNotBlank()}?.let{result.put("_serverTime",it)}
                 if(!authenticated||token==requestToken)RemoteImageUrls.remember(result,imageScope,refreshPath=path.takeIf{method=="GET"})
                 result
             }

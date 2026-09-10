@@ -25,6 +25,31 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     var error by mutableStateOf<String?>(null);private set
     var cartVersion by mutableLongStateOf(0);private set
     var cartBusy by mutableStateOf(false);private set
+    val coupons=mutableStateListOf<StoreCoupon>()
+    var couponError by mutableStateOf<String?>(null);private set
+    var couponsLoading by mutableStateOf(false);private set
+    var hasMoreCoupons by mutableStateOf(false);private set
+    private var couponCursor:String?=null
+    private var couponRevision=0L
+    private var couponClock=Instant.now()
+    private var couponClockNanos=System.nanoTime()
+    fun couponNow():Instant=couponClock.plusNanos((System.nanoTime()-couponClockNanos).coerceAtLeast(0))
+    suspend fun refreshCoupons(more:Boolean=false) {
+        val revision=++couponRevision;couponsLoading=true
+        val scope=api.financialScope()
+        runCatching{
+                val value=api.request("GET","/store/coupons?limit=50"+(if(more&&couponCursor!=null)"&cursor=${java.net.URLEncoder.encode(couponCursor,"UTF-8")}" else ""))
+                scope.verifyCurrent(api.financialScope())
+                val items=value.array("items");val next=(0 until items.length()).map{storeCoupon(items.getJSONObject(it))}
+                value to next
+            }.onSuccess{(value,next)->
+                if(revision!=couponRevision)return@onSuccess
+                if(!more)coupons.clear();coupons.addAll(next.filter{item->coupons.none{it.id==item.id}})
+                couponCursor=value.optJSONObject("_page")?.optString("nextCursor")?.takeUnless{it.isBlank()||it=="null"};hasMoreCoupons=couponCursor!=null
+                couponClock=runCatching{Instant.parse(value.getString("_serverTime"))}.getOrDefault(Instant.now());couponClockNanos=System.nanoTime();couponError=null
+            }.onFailure{if(revision==couponRevision)couponError=it.message}
+        if(revision==couponRevision)couponsLoading=false
+    }
     private val cartLock=Mutex()
     private val categories=mutableMapOf<String,String>()
     private val brands=mutableMapOf<String,String>()
@@ -41,10 +66,11 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     }
     private fun product(value:JSONObject):ShopProduct {
         val c=value.getJSONObject("content")
-        return ShopProduct(value.getString("productId"),c.getString("title"),categories[c.optString("categoryId")] ?: "商城商品",c.getString("subtitle"),apiCents(c.getString("price")),
+        return ShopProduct(value.getString("productId"),c.getString("title"),categories[c.optString("categoryId")] ?: "商城商品",c.getString("subtitle"),apiCents(value.optString("effectivePrice",c.getString("price"))),
             runCatching{Color(android.graphics.Color.parseColor(c.optString("accentColor")))}.getOrDefault(Color(0xFFEDF1F4)),darkArt=c.optString("posterTone")=="DARK",
             contents=c.array("includedItems").strings(),brand=brands[c.optString("brandId")] ?: "Deuterium",photos=c.array("galleryAssetIds").strings().map{"asset:$it"},description=c.getString("description"),
-            deliverySummary=c.getString("deliverySummary"),estimatedDelivery=c.getString("estimatedDelivery"),version=value.getLong("version"),stock=if(value.isNull("availableStock"))999 else value.getInt("availableStock"),limit=c.optInt("limitPerOrder",9))
+            deliverySummary=c.getString("deliverySummary"),estimatedDelivery=c.getString("estimatedDelivery"),version=value.getLong("version"),stock=if(value.isNull("availableStock"))999 else value.getInt("availableStock"),limit=c.optInt("limitPerOrder",9),
+            originalPrice=apiCents(c.getString("price")),deliveryCredits=c.optLong("deliveryCredits"),purchaseLimits=productLimitDescriptions(c.optJSONObject("purchaseLimits")),storeId=value.optString("storeId"))
     }
     suspend fun refreshProduct(id:String){runCatching{api.request("GET","/store/products/$id")}.onSuccess{value->val p=product(value);val index=ShopCatalog.indexOfFirst{it.id==id};if(index>=0)ShopCatalog[index]=p else ShopCatalog.add(p)}.onFailure{report(it)}}
     suspend fun refreshMarket(){
@@ -92,7 +118,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
         }.getOrElse{report(it);false}}finally{cartBusy=false}
     }
     suspend fun quoteStore(items:List<Pair<ShopProduct,Int>>,quoteKey:String):JSONObject?=runCatching{
-        api.request("POST","/checkout/quotes",JSONObject().put("channel","OFFICIAL_STORE").put("items",JSONArray(items.map{(p,count)->JSONObject().put("productId",p.id).put("quantity",count).put("expectedProductVersion",p.version)}))
+        api.request("POST","/checkout/quotes",JSONObject().put("channel","OFFICIAL_STORE").put("source","CART").put("items",JSONArray(items.map{(p,count)->JSONObject().put("productId",p.id).put("quantity",count).put("expectedProductVersion",p.version)}))
             .put("delivery",JSONObject().put("method","MAILBOX").put("location","").put("projectName","")),idempotencyKey=quoteKey).also{checkoutSummary(it)}
     }.getOrElse{report(it);null}
     suspend fun quoteMarket(listing:MarketListing,count:Int,method:DeliveryMethod,location:String,project:String,quoteKey:String):JSONObject?=runCatching{
@@ -103,14 +129,15 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     private fun putOrder(value:JSONObject):String {
         val id=value.getString("orderId");if(value.optBoolean("hiddenFromHistory")){state.commerce.orders.removeAll{it.id==id};return id};val refund=value.optJSONObject("refund");val delivery=value.getJSONObject("delivery");val seller=value.getJSONObject("seller");val buyer=value.getJSONObject("buyer")
         val items=value.getJSONArray("items");val lines=(0 until items.length()).map{index->val item=items.getJSONObject(index);val photos=item.array("photoAssetIds").strings().map{"asset:$it"};OrderLine(item.getString("productId"),item.getString("title"),item.optString("subtitle"),apiCents(item.getString("unitPrice")),item.getInt("quantity"),image=if(value.optString("orderType")=="AI_SUBSCRIPTION")R.drawable.xiaoxiang_avatar else 0,imageUri=photos.firstOrNull(),imageUris=photos)}
-        require(lines.sumOf{it.total}==apiCents(value.getString("amount"))){"服务器订单金额与快照不一致"}
+        val amounts=checkoutAmounts(value,lines.fold(0L){sum,line->Math.addExact(sum,line.total)},"amount")
         val stage=when(value.getString("status")){"SHIPPED"->OrderStage.Shipped;"WORK_COMPLETED"->OrderStage.Completed;"CONFIRMED"->OrderStage.Confirmed;"AWAITING_CLAIM"->OrderStage.AwaitingClaim;"CLAIMED"->OrderStage.Claimed;else->OrderStage.AwaitingShipment}
         val order=CommerceOrder(id,id,if(value.getString("channel")=="OFFICIAL_STORE")OrderChannel.Official else OrderChannel.Market,buyer.getString("displayName"),seller.getString("displayName"),seller.optString("contactQq").takeUnless{it=="null"}.orEmpty(),lines,deliveryMethod(delivery.getString("method")),delivery.optString("location"),date(value,"createdAt")!!,stage,
             refund=when{value.optString("status")=="REFUNDED"->RefundState.Approved;refund?.optString("status") in listOf("REQUESTED","PROCESSING")->RefundState.Requested;refund?.optString("status")=="APPROVED"->RefundState.Approved;refund?.optString("status")=="REJECTED"->RefundState.Rejected;else->RefundState.None},refundReason=refund?.optString("reason").orEmpty(),
             shippedAt=date(value,"shippedAt"),finishedAt=date(value,"confirmedAt"),construction=value.optBoolean("construction"),confirmationHours=value.optInt("confirmationHours",72),projectName=delivery.optString("projectName"),
             deadlineMillis=value.optString("autoConfirmAt").takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).toEpochMilli()},pausedMillis=if(value.isNull("pausedRemainingSeconds"))null else value.optLong("pausedRemainingSeconds")*1000,
             refundAttempts=value.optInt("refundAttemptsUsed"),refundRequestedAt=refund?.let{date(it,"requestedAt")},refundResolvedAt=refund?.let{date(it,"resolvedAt")},automatic=value.optBoolean("automatic"),completedAt=date(value,"workCompletedAt"),rejectionReason=refund?.optString("rejectionReason").orEmpty(),
-            serverStatus=value.getString("status"),fundsStatus=value.getString("fundsStatus"),serverActions=value.array("availableActions").strings().toSet(),version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"),isSaki=value.optString("orderType")=="AI_SUBSCRIPTION",sellerAvatarUri=seller.optJSONObject("avatar")?.optString("url"),aiExpiresAt=date(value,"aiExpiresAt"))
+            serverStatus=value.getString("status"),fundsStatus=value.getString("fundsStatus"),serverActions=value.array("availableActions").strings().toSet(),version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"),isSaki=value.optString("orderType")=="AI_SUBSCRIPTION",sellerAvatarUri=seller.optJSONObject("avatar")?.optString("url"),aiExpiresAt=date(value,"aiExpiresAt"),
+            paidAmount=amounts.total,originalAmount=amounts.originalTotal,productDiscount=amounts.productDiscount,couponDiscount=amounts.couponDiscount,couponName=value.optJSONObject("coupon")?.optString("name"))
         val index=state.commerce.orders.indexOfFirst{it.id==id};if(index>=0)state.commerce.orders[index]=order else state.commerce.orders.add(0,order)
         state.commerce.orders.sortWith(compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id})
         serverOrders[id]=value;return id

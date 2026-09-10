@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.Dp
 
 data class ShopProduct(val id: String, val name: String, val category: String, val subtitle: String, val price: Long, val color: Color,
     val image: Int = 0, val darkArt: Boolean = false, val contents: List<String> = emptyList(), val brand:String="Deuterium",val gallery:List<Int> = emptyList(),val poster:Boolean=true,
-    val photos:List<String> = emptyList(),val description:String="",val deliverySummary:String="游戏内邮箱",val estimatedDelivery:String="以服务器交付进度为准",val version:Long=1,val stock:Int=0,val limit:Int=9)
+    val photos:List<String> = emptyList(),val description:String="",val deliverySummary:String="游戏内邮箱",val estimatedDelivery:String="以服务器交付进度为准",val version:Long=1,val stock:Int=0,val limit:Int=9,
+    val originalPrice:Long=price,val deliveryCredits:Long=0,val purchaseLimits:List<String> = emptyList(),val storeId:String="")
 @Composable
 fun ProductArt(kind: String, modifier: Modifier = Modifier) {
     Canvas(modifier) {

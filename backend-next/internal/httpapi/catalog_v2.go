@@ -181,6 +181,7 @@ func (s *Server) registerCatalogV2(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/store/products", s.catalogListV2("product", false))
 	mux.HandleFunc("GET /api/v1/store/products/{productId}", s.catalogGetV2("product", false))
 	mux.HandleFunc("GET /api/v1/store/cart", s.catalogCartReadV2)
+	s.registerPromotionsV209(mux)
 	mux.HandleFunc("PUT /api/v1/store/cart/items/{productId}", s.catalogCartWriteV2(false))
 	mux.HandleFunc("POST /api/v1/store/cart/items/{productId}/remove", s.catalogCartWriteV2(true))
 	mux.HandleFunc("POST /api/v1/checkout/quotes", s.catalogQuoteV2)
@@ -538,13 +539,14 @@ func (s *Server) catalogTemplatesV2(w http.ResponseWriter, r *http.Request) {
 		catalogFailV2(w, r, e)
 		return
 	}
-	scope := "delivery-templates:" + r.PathValue("storeId") + ":" + u.User.ID
+	query := r.URL.Query().Get("q")
+	scope := "delivery-templates:" + r.PathValue("storeId") + ":" + u.User.ID + ":" + query
 	before, e := store.CatalogParseCursorV2(scope, r.URL.Query().Get("cursor"))
 	if e != nil {
 		catalogFailV2(w, r, e)
 		return
 	}
-	rows, e := s.Store.CatalogListV2(r.Context(), u.User.ID, store.CatalogFilterV2{Kind: "delivery_template", StoreID: r.PathValue("storeId"), Management: true, Limit: limit + 1, Before: before})
+	rows, e := s.Store.CatalogListV2(r.Context(), u.User.ID, store.CatalogFilterV2{Kind: "delivery_template", StoreID: r.PathValue("storeId"), Management: true, Query: query, Limit: limit + 1, Before: before})
 	if e != nil {
 		catalogFailV2(w, r, e)
 		return

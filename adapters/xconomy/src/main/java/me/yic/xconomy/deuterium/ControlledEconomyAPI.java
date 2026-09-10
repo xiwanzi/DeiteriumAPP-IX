@@ -42,6 +42,14 @@ public final class ControlledEconomyAPI {
         return engine().execute(operation,command,payload);
     }
     public static Map<String,Object> queryOperation(String id){return engine().operation(id);}
+    /** Trusted Mail bridge only; never added to the network execute allowlist. */
+    public static Map<String,Object> rewardMail(String operation,UUID player,long credits){
+        if(operation==null||!operation.matches("mailcredit_[0-9a-f-]{36}")||player==null||credits<1||credits>1000000000000L)
+            throw new FundsFailure("INVALID_REQUEST","无效邮件信用点请求。");
+        return engine().execute(operation,"native.change",Map.of("playerUuid",player.toString(),
+                "amount",BigDecimal.valueOf(credits).setScale(2).toPlainString(),"mode","ADD",
+                "nativeType","MAIL_REWARD","nativeCommand","mail.claim"));
+    }
     public static BigDecimal nativeChange(UUID id,BigDecimal amount,Boolean add,String type,String command){return engine().nativeChange(id,DataFormat.formatBigDecimal(amount),add,type,command);}
     public static void nativePay(UUID from,UUID to,BigDecimal debit,BigDecimal credit,String command){engine().nativeTransfer(from,to,DataFormat.formatBigDecimal(debit),DataFormat.formatBigDecimal(credit),command);}
     public static void nativeBulk(Collection<UUID> ids,BigDecimal amount,Boolean add,String type,String command){engine().nativeBulk(ids,DataFormat.formatBigDecimal(amount),add,type,command);}

@@ -175,7 +175,7 @@ export default function AppShell({
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.8
+              Deuterium · 2.0.9
             </button>
             {!managing && <button className="top-search" onClick={onSearch}>
               <Search size={17} />
@@ -224,7 +224,7 @@ export default function AppShell({
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.8 <b>·</b> Deuterium ID
+              Web 2.0.9 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}

@@ -5,7 +5,7 @@ import { credit, transferAmount } from "./format.js";
 import { publicConfig, backendOrigin } from "../gateway.mjs";
 
 test("release configuration cannot activate a demo login without an upstream", () => {
-  assert.deepEqual(publicConfig(null), { mode: "connected", version: "2.0.8", configured: false });
+  assert.deepEqual(publicConfig(null), { mode: "connected", version: "2.0.9", configured: false });
   assert.equal(publicConfig(backendOrigin("http://127.0.0.1:8080")).mode, "connected");
 });
 

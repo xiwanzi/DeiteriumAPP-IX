@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ArrowLeft, Smartphone, ImageOff, Mail, ShoppingBag, Check, Moon, Sun } from "lucide-react";
 import { Badge } from "./components.jsx";
 import { credit } from "./format.js";
+import { salePrice } from "./promotions.js";
 import { centeredCrop, productImageFrame, defaultMailBody } from "./product-preview.js";
 
 const modes = [["detail", "商品详情"], ["poster", "推荐海报"], ["grid", "双列卡片"], ["bag", "购物袋"]];
@@ -9,7 +10,7 @@ export default function ProductPreview({ value, images, included, brand, categor
   const [view, setView] = useState("phone"), [mode, setMode] = useState("detail"), [phoneWidth, setPhoneWidth] = useState(393), [dark, setDark] = useState(false), [imageIndex, setImageIndex] = useState(0), [dimensions, setDimensions] = useState({}), [failed, setFailed] = useState({});
   const selectedIndex = mode === "detail" ? Math.min(imageIndex, Math.max(0, images.length - 1)) : 0;
   const asset = images[selectedIndex], src = asset?.url, size = dimensions[src], frame = productImageFrame(mode, phoneWidth), crop = size && centeredCrop(size[0], size[1], ...frame);
-  const title = value.title || "商品标题", price = credit(value.price || "0"), scale = 320 / phoneWidth;
+  const title = value.title || "商品标题", price = credit(salePrice(value.price, value.discountRate || 10000)), scale = 320 / phoneWidth;
   const photo = (className = "", style = {}) => <div className={`preview-photo ${className}`} style={style}>{src && !failed[src] ? <img src={src} alt={asset.altText || title} onLoad={(e) => { const img = e.currentTarget; setDimensions((old) => old[src]?.[0] === img.naturalWidth && old[src]?.[1] === img.naturalHeight ? old : { ...old, [src]: [img.naturalWidth, img.naturalHeight] }); }} onError={() => setFailed((old) => ({ ...old, [src]: true }))} /> : <span><ImageOff size={26} />{src ? "图片加载失败" : "添加图片后预览"}</span>}</div>;
   return <aside className="product-preview" aria-label="App 实时预览">
     <div className="preview-heading"><div><Smartphone size={18} /><strong>App 实时预览</strong></div><Badge tone="sage">随编辑更新</Badge></div>
