@@ -1,6 +1,6 @@
 # 当前项目状态
 
-2026-09-10：**2.0.9 候选已完成本机实现与验收，尚未推送/合并/部署**。新券合并浮窗、前台轻提示与账号级去重也已完成。当前开发入口 `.worktrees/commerce-v209` / `xiwanzi/commerce-v209`，见[候选发布](deployment/deuterium-2.0.9-candidate.md)、[QA](qa/commerce-v209.md)、[增量契约](contracts/commerce-promotions-v209.md)。线上保持 2.0.8，不能把候选安装包当成已上线版本。
+2026-09-10：**2.0.9 候选已完成本机实现与验收，尚未推送/合并/部署**。新券合并浮窗、前台轻提示、账号级去重，以及管理端草稿与批量发放也已完成。当前开发入口 `.worktrees/commerce-v209` / `xiwanzi/commerce-v209`，见[候选发布](deployment/deuterium-2.0.9-candidate.md)、[QA](qa/commerce-v209.md)、[增量契约](contracts/commerce-promotions-v209.md)。线上保持 2.0.8，不能把候选安装包当成已上线版本。
 
 2026-09-10：**App 2.0.8（20800）、Web 2.0.8 与配套 Go 已于 11:13 上线**，源码 `6566bb617f8d`（PR #14）。默认弧线 D 与双子节图标已内置，管理员可远程切换；线上默认无横幅。22 笔订单、4 个委托及原配置保留。本轮未重跑测试。当前维护工作区 `.worktrees/launcher-icons-v208`，分支 `release/v208-live`。下方为较早记录。 见 [2.0.8 部署记录](deployment/deuterium-2.0.8-live.md)。
 

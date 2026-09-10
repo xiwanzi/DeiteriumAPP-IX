@@ -1,8 +1,8 @@
 {
   "release": "2.0.9",
   "status": "VERIFIED_NOT_DEPLOYED",
-  "builtAt": "2026-09-10T07:02:49.644566+00:00",
-  "sourceCommit": "b1a2122e625b7fbe314cf1c2a796c14c0d7d55d1",
+  "builtAt": "2026-09-10T07:48:11.817450+00:00",
+  "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8",
   "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
   "android": {
     "packageName": "com.deuterium.app.uilab",
@@ -27,15 +27,15 @@
   "files": [
     {
       "name": "Deuterium-2.0.9-20900-test.apk",
-      "sizeBytes": 25168073,
-      "sha256": "ff5c89976b05f638701f5b48eab1db533917dfd25259362505c3b4eeeb5d1179",
-      "sourceCommit": "b1a2122e625b7fbe314cf1c2a796c14c0d7d55d1"
+      "sizeBytes": 25168577,
+      "sha256": "a5f197773999521343ec607fe39d3ccce8f86e639922155c849ecc8c45859103",
+      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
     },
     {
       "name": "deuterium-linux-amd64",
-      "sizeBytes": 18449266,
-      "sha256": "2ef10485eff8b5d78069c44f9b8a19df72131ea8bb0f012791cf7914e7f04bd5",
-      "sourceCommit": "b1a2122e625b7fbe314cf1c2a796c14c0d7d55d1"
+      "sizeBytes": 12996768,
+      "sha256": "9e98e943d79ee39b284e41829ff23235f35bdf8394b12ed0601e220874704c95",
+      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
     },
     {
       "name": "Deuterium-Core-1.0.2.jar",
@@ -63,9 +63,9 @@
     },
     {
       "name": "web-2.0.9.zip",
-      "sizeBytes": 33693742,
-      "sha256": "6bfe4f2f39eb545b2b7313244a2c0c28375319ba315da021ee19cc7a7a957be2",
-      "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14"
+      "sizeBytes": 33695546,
+      "sha256": "8815c9d7077e16d84b30cf54363b9c6f20480c53955f6dfe1505a5a58e7c07c6",
+      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
     },
     {
       "name": "XConomy-2.26.3-deuterium.3-source.zip",

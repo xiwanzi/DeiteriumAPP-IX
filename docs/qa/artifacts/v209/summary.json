@@ -2,7 +2,7 @@
   "date": "2026-09-10",
   "release": "2.0.9",
   "status": "VERIFIED_NOT_DEPLOYED",
-  "sourceCommit": "b1a2122e625b7fbe314cf1c2a796c14c0d7d55d1",
+  "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8",
   "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
   "tests": {
     "android": 135,
