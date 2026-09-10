@@ -1,0 +1,8 @@
+{
+  "serviceStopped": true,
+  "stoppedAt": "2026-09-10T08:23:31.457986+00:00",
+  "finalSqlSha256": "287e60cf29de061408b80c97bc944a3cfb45d0e137275a2c7e84cb5b44b9dee2",
+  "finalSqlBytes": 1084276,
+  "businessCounts": "COMMISSION\t4\nORDER\t22",
+  "commerceMaxSequence": 26
+}

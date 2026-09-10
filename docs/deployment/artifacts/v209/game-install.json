@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "at": "2026-09-10T08:26:53Z",
+  "newJars": {
+    "Deuterium-Core-1.0.2.jar": "73f56b601f463f6ea32a7a635cf5c87be10662017fc3d6b8e1bc5935328811e6",
+    "XConomy-Bukkit-2.26.3-deuterium.3.jar": "1ef530a30e7522431bdc27dc8eaa5cecae4a9988f99e05ae336b45020afc23db",
+    "deuterium-mail-0.6.2.jar": "aa89ebf7275550c1f185b9b20c9f9d6fc127c345fc49d4aee30072903c17e222",
+    "deuterium-mail-bridge-0.6.1.jar": "0fbf5f2de6fb529bb82bccc53dd02373eb641db8bbad5254841ee02a535f6c82"
+  },
+  "configFilesChanged": 0,
+  "allNodesStopped": true
+}

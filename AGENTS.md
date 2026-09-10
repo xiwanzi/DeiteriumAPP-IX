@@ -1,6 +1,6 @@
 # Deuterium IX 工程约定
 
-2026-09-10：**2.0.9 已完成本机实现与验收，尚未发布**。维护工作区 `.worktrees/commerce-v209`，分支 `xiwanzi/commerce-v209`；包含商城结算修复、多物品交付、折扣/限购/优惠券及“我的优惠”入口，并已追加新券合并浮窗、前台轻提示、账号级提醒去重，以及优惠券草稿与勾选批量发放。配套 Core 1.0.2、Mail 0.6.2/API3、Bridge 0.6.1、XConomy .3 一并准备。先读[候选记录](docs/deployment/deuterium-2.0.9-candidate.md)和[验收](docs/qa/commerce-v209.md)；线上仍为下方 2.0.8，发布需本轮授权。
+2026-09-10：**App 2.0.9（20901）、Web 2.0.9、配套 Go/Core 1.0.2、Mail 0.6.2/API3、Bridge 0.6.1 与 XConomy .3 已于 16:36 上线**。主源码 `e4e4c4b7791c`（PR #16），Mail `67db93749bf9`（PR #2）。支持优惠券草稿与批量发放、同批提醒去重、折扣/周期限购及组合交付；22 笔订单、4 个委托和原配置保留，三常驻服恢复，MEK 继续停止禁领。维护工作区 `.worktrees/commerce-v209`，分支 `xiwanzi/release-v209-live`。见[部署记录](docs/deployment/deuterium-2.0.9-live.md)。下方为较早记录。
 
 2026-09-10：**App 2.0.8（20800）、Web 2.0.8 与配套 Go 已于 11:13 上线**，源码 `6566bb617f8d`（PR #14）。默认弧线 D 与双子节图标已内置，管理员可远程切换；线上默认无横幅。22 笔订单、4 个委托及原配置保留。本轮未重跑测试。当前维护工作区 `.worktrees/launcher-icons-v208`，分支 `release/v208-live`。下方为较早记录。 见 [2.0.8 部署记录](docs/deployment/deuterium-2.0.8-live.md)。
 

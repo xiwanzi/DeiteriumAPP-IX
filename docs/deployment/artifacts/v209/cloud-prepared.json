@@ -1,0 +1,16 @@
+{
+  "paths": {
+    "stage": "/opt/deuterium/releases/staged-v209-e4e4c4b7791c",
+    "backend": "/opt/deuterium/releases/release-2.0.9-e4e4c4b7791c",
+    "web": "/var/www/deuterium/releases/web-2.0.9-e4e4c4b7791c",
+    "backup": "/var/backups/deuterium/release-2.0.9-20260910-e4e4c4b7791c"
+  },
+  "sqlSha256": "08da1f560dfe22f64c0331c9075c52f4f04af5b254c84dea89fc00f15aacdb9f",
+  "sqlBytes": 1082382,
+  "configHashes": {
+    "config.json": "aeb88e7905824aa60310d194d2010b11e1933dc568660f6185c8ec904004b413",
+    "backend.env": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+    "releases.json": "843b975671cd81ba86a7016d93848d199429d53abd0109fd6dda880c855074c5"
+  },
+  "liveServiceChanged": false
+}

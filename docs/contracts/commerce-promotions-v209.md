@@ -1,6 +1,6 @@
 # 商城 2.0.9 增量契约
 
-2026-09-10，适用于本轮实现，尚未表示生产部署。App 2.0.9（20900）、Web 2.0.9、配套 Go；信用点交付需要 Core 1.0.2、Mail 0.6.2（API 3）、Mail Bridge 0.6.1 与 XConomy 2.26.3-deuterium.3。Mail UI 沿用 0.6.0。
+2026-09-10，已随 [2.0.9 正式发布](../deployment/deuterium-2.0.9-live.md)。App 2.0.9（20901）、Web 2.0.9、配套 Go；信用点交付配套 Core 1.0.2、Mail 0.6.2（API 3）、Mail Bridge 0.6.1 与 XConomy 2.26.3-deuterium.3。Mail UI 沿用实服 0.6.0 文件。
 
 ## 商品与交付
 

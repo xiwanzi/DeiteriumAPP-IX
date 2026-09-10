@@ -1,0 +1,14 @@
+{
+  "paths": {
+    "stage": "/opt/deuterium/releases/staged-v209-e4e4c4b7791c",
+    "backend": "/opt/deuterium/releases/release-2.0.9-e4e4c4b7791c",
+    "web": "/var/www/deuterium/releases/web-2.0.9-e4e4c4b7791c",
+    "backup": "/var/backups/deuterium/release-2.0.9-20260910-e4e4c4b7791c"
+  },
+  "verifiedFiles": [
+    "Deuterium-2.0.9-20901-test.apk",
+    "deuterium-linux-amd64",
+    "web-2.0.9.zip"
+  ],
+  "liveServiceChanged": false
+}

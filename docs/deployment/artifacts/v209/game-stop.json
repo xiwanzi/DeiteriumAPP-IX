@@ -1,0 +1,88 @@
+{
+  "ok": true,
+  "at": "2026-09-10T08:23:57Z",
+  "states": {
+    "login": {
+      "node": "login",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    },
+    "amiya": {
+      "node": "amiya",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    },
+    "odyssey": {
+      "node": "odyssey",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    },
+    "mek": {
+      "node": "mek",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    }
+  },
+  "accepted": [
+    {
+      "ok": true,
+      "node": "login",
+      "action": "stop",
+      "before": {
+        "node": "login",
+        "status": 3,
+        "state": "RUNNING",
+        "pid": 8380
+      },
+      "after": {
+        "node": "login",
+        "status": 1,
+        "state": "STOPPING",
+        "pid": 8380
+      },
+      "accepted": true
+    },
+    {
+      "ok": true,
+      "node": "odyssey",
+      "action": "stop",
+      "before": {
+        "node": "odyssey",
+        "status": 3,
+        "state": "RUNNING",
+        "pid": 28116
+      },
+      "after": {
+        "node": "odyssey",
+        "status": 1,
+        "state": "STOPPING",
+        "pid": 28116
+      },
+      "accepted": true
+    },
+    {
+      "ok": true,
+      "node": "amiya",
+      "action": "stop",
+      "before": {
+        "node": "amiya",
+        "status": 3,
+        "state": "RUNNING",
+        "pid": 49292
+      },
+      "after": {
+        "node": "amiya",
+        "status": 1,
+        "state": "STOPPING",
+        "pid": 49292
+      },
+      "accepted": true
+    }
+  ],
+  "portsClosed": true,
+  "originalJavaAndWrapperProcessesExited": true
+}

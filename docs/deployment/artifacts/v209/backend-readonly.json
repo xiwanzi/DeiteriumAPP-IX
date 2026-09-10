@@ -1,0 +1,34 @@
+{
+  "ordersRead": 21,
+  "orderDetailsReadable": true,
+  "walletReadable": true,
+  "productsRead": 1,
+  "couponCount": 0,
+  "attentionCount": 0,
+  "draftCount": 0,
+  "sakiPaidEnabled": true,
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": false
+  },
+  "mailboxCapabilities": {
+    "amiya": {
+      "available": true,
+      "commerceReady": true,
+      "apiVersion": 3,
+      "creditRewards": true,
+      "clusterId": "deuterium-production"
+    },
+    "odyssey": {
+      "available": true,
+      "commerceReady": true,
+      "apiVersion": 3,
+      "creditRewards": true,
+      "clusterId": "deuterium-production"
+    }
+  },
+  "businessCounts": "COMMISSION\t4\nORDER\t22",
+  "businessMutationsRequested": 0
+}
