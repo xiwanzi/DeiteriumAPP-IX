@@ -75,26 +75,13 @@ func (s *Store) SaveCouponV209(ctx context.Context, actor, id, key string, expec
 	if e := validateCouponV209(content); e != nil {
 		return CatalogRecordV2{}, e
 	}
+	content = promotionCopyV209(content)
 	raw, e := s.catalogMutation(ctx, actor, key, "coupon:"+id, CatalogObjectV2{"expectedVersion": expected, "content": content}, func(tx *sql.Tx) (any, error) {
 		if e := requirePlatformAdminTxV206(ctx, tx, actor); e != nil {
 			return nil, e
 		}
-		for _, kind := range []string{"store", "product"} {
-			for _, ref := range catalogIDs(content, kind+"Ids") {
-				if _, e := catalogRecordTx(ctx, tx, ref, kind, false); e != nil {
-					return nil, e
-				}
-			}
-		}
-		refs, _ := catalogRefs(content["playerRefs"], 0, 1000)
-		for _, ref := range refs {
-			var n int
-			if e := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE player_ref=? AND status='active'", ref).Scan(&n); e != nil {
-				return nil, e
-			}
-			if n != 1 {
-				return nil, catalogError(422, "COUPON_PLAYER_UNAVAILABLE", "指定玩家不存在或账号不可用。")
-			}
+		if e := validateCouponReferencesV209(ctx, tx, []CatalogObjectV2{content}); e != nil {
+			return nil, e
 		}
 		now := time.Now().UTC()
 		var d CatalogRecordV2
@@ -111,8 +98,11 @@ func (s *Store) SaveCouponV209(ctx context.Context, actor, id, key string, expec
 			}
 			d.Version++
 		}
+		draft := id == "" || d.State == "DRAFT"
 		d.Body, d.UpdatedAt, d.State = content, now, "INACTIVE"
-		if active, _ := content["active"].(bool); active {
+		if draft {
+			d.State, d.Body["active"] = "DRAFT", false
+		} else if active, _ := content["active"].(bool); active {
 			d.State = "ACTIVE"
 		}
 		if e := catalogSave(ctx, tx, &d, id == ""); e != nil {
@@ -124,7 +114,11 @@ func (s *Store) SaveCouponV209(ctx context.Context, actor, id, key string, expec
 }
 
 func CouponViewV209(d CatalogRecordV2, admin bool) CatalogObjectV2 {
-	view := CatalogObjectV2{"couponId": d.ID, "version": d.Version, "createdAt": d.CreatedAt}
+	publication := "PUBLISHED"
+	if d.State == "DRAFT" {
+		publication = "DRAFT"
+	}
+	view := CatalogObjectV2{"couponId": d.ID, "version": d.Version, "createdAt": d.CreatedAt, "publicationState": publication, "releaseBatchId": nil, "releasedAt": nil}
 	for k, v := range d.Body {
 		if admin || (k != "playerRefs" && k != "audience") {
 			view[k] = v
@@ -134,6 +128,10 @@ func CouponViewV209(d CatalogRecordV2, admin bool) CatalogObjectV2 {
 }
 
 func (s *Store) CouponViewsV209(ctx context.Context, records []CatalogRecordV2, admin bool) ([]any, error) {
+	releases, e := s.couponReleaseInfoV209(ctx, records)
+	if e != nil {
+		return nil, e
+	}
 	names := map[string]string{}
 	for _, record := range records {
 		for _, field := range []string{"storeIds", "productIds"} {
@@ -169,6 +167,9 @@ func (s *Store) CouponViewsV209(ctx context.Context, records []CatalogRecordV2, 
 	result := []any{}
 	for _, record := range records {
 		view := CouponViewV209(record, admin)
+		if release, ok := releases[record.ID]; ok {
+			view["releaseBatchId"], view["releasedAt"] = release.BatchID, release.ReleasedAt
+		}
 		labels := []string{}
 		for _, field := range []string{"storeIds", "productIds"} {
 			ids := catalogIDs(record.Body, field)
@@ -239,7 +240,7 @@ func (s *Store) couponsFilteredV209(ctx context.Context, actor string, admin boo
 	if limit < 1 || limit > 100 || !catalogText(query, 0, 100) {
 		return nil, "", false, catalogInvalid()
 	}
-	if !catalogEnum(status, "", "ACTIVE", "SCHEDULED", "EXPIRED", "INACTIVE") || (!admin && status != "") {
+	if !catalogEnum(status, "", "DRAFT", "ACTIVE", "SCHEDULED", "EXPIRED", "INACTIVE") || (!admin && status != "") {
 		return nil, "", false, catalogInvalid()
 	}
 	after := int64(0)
@@ -280,6 +281,8 @@ func (s *Store) couponsFilteredV209(ctx context.Context, actor string, admin boo
 	if admin && status != "" {
 		now := time.Now().UTC().Format(time.RFC3339)
 		switch status {
+		case "DRAFT":
+			where += " AND state='DRAFT'"
 		case "ACTIVE":
 			where += " AND state='ACTIVE' AND JSON_UNQUOTE(JSON_EXTRACT(body,'$.startsAt'))<=? AND JSON_UNQUOTE(JSON_EXTRACT(body,'$.endsAt'))>?"
 			args = append(args, now, now)
@@ -290,7 +293,7 @@ func (s *Store) couponsFilteredV209(ctx context.Context, actor string, admin boo
 			where += " AND state='ACTIVE' AND JSON_UNQUOTE(JSON_EXTRACT(body,'$.endsAt'))<=?"
 			args = append(args, now)
 		case "INACTIVE":
-			where += " AND state<>'ACTIVE'"
+			where += " AND state='INACTIVE'"
 		}
 	}
 	if strings.TrimSpace(query) != "" {

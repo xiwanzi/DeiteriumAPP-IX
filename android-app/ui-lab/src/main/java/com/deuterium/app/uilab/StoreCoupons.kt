@@ -22,7 +22,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 data class StoreCoupon(val id:String,val name:String,val type:String,val benefit:String,val amountOff:Long,val rate:Int,
-    val minimumSpend:Long,val maxDiscount:Long,val stack:Boolean,val scope:String,val startsAt:Instant,val endsAt:Instant,val restricted:Boolean=false) {
+    val minimumSpend:Long,val maxDiscount:Long,val stack:Boolean,val scope:String,val startsAt:Instant,val endsAt:Instant,val restricted:Boolean=false,val releaseBatchId:String?=null) {
     fun visible(now:Instant)=!now.isBefore(startsAt)&&now.isBefore(endsAt)
     val benefitText:String get()=if(benefit=="FIXED")"减 ${credit(amountOff)}" else "${java.math.BigDecimal(rate).divide(java.math.BigDecimal(1000)).stripTrailingZeros().toPlainString()} 折"
     val conditions:String get()=(if(minimumSpend>0)"满 ${credit(minimumSpend)} 信用点可用" else "无门槛")+(if(benefit=="PERCENT"&&maxDiscount>0)" · 最多减 ${credit(maxDiscount)}" else "")
@@ -36,7 +36,8 @@ fun storeCoupon(value:JSONObject):StoreCoupon {
     return StoreCoupon(value.getString("couponId"),value.getString("name"),value.getString("type"),value.getString("benefit"),
         apiCents(value.getString("amountOff")),value.getInt("discountRate"),apiCents(value.getString("minimumSpend")),
         apiCents(value.getString("maxDiscount")),value.getBoolean("stackWithProductDiscount"),scope,
-        Instant.parse(value.getString("startsAt")),Instant.parse(value.getString("endsAt")),shops>0||products>0)
+        Instant.parse(value.getString("startsAt")),Instant.parse(value.getString("endsAt")),shops>0||products>0,
+        value.optString("releaseBatchId").takeUnless{it.isBlank()||it=="null"})
 }
 
 fun productLimitDescriptions(value:JSONObject?):List<String> {

@@ -27,3 +27,20 @@ export function couponDate(value) {
 export function activeCoupons(coupons, now = Date.now()) {
   return coupons.filter((coupon) => coupon.active && Date.parse(coupon.startsAt) <= now && Date.parse(coupon.endsAt) > now);
 }
+
+export function couponStatus(coupon, now = Date.now()) {
+  if (coupon.publicationState === "DRAFT") return "草稿";
+  if (!coupon.active) return "已停用";
+  if (Date.parse(coupon.endsAt) <= now) return "已结束";
+  return Date.parse(coupon.startsAt) > now ? "未开始" : "进行中";
+}
+
+export function couponPublishSelection(coupons) {
+  if (!coupons.length || coupons.length > 100) throw new Error("每批请选择 1–100 张草稿。");
+  const seen = new Set();
+  return coupons.map((coupon) => {
+    if (coupon.publicationState !== "DRAFT" || !coupon.couponId || !Number.isSafeInteger(coupon.version) || coupon.version < 1 || seen.has(coupon.couponId)) throw new Error("所选草稿已变化，请刷新后重新选择。");
+    seen.add(coupon.couponId);
+    return { couponId: coupon.couponId, expectedVersion: coupon.version };
+  }).sort((a, b) => a.couponId.localeCompare(b.couponId));
+}

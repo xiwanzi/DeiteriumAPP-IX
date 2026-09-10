@@ -6,7 +6,7 @@
   "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
   "tests": {
     "android": 135,
-    "web": 63,
+    "web": 65,
     "core": 29,
     "xconomy": 11,
     "mailPlugin": 164,
@@ -17,7 +17,7 @@
   "skipped": 0,
   "goRaceIntegration": "PASS",
   "migrationResume": "PASS",
-  "openapiActualResponses": 6,
+  "openapiActualResponses": 7,
   "nativeChecks": [
     "coupons_light_dark_large_text",
     "expired_coupon_removed",
@@ -49,5 +49,18 @@
     "expired_dialog_removed",
     "actual_dialog_font_scaling"
   ],
-  "couponAttentionMigration": "024_coupon_attention.sql"
+  "couponAttentionMigration": "024_coupon_attention.sql",
+  "couponBatchChecks": [
+    "draft_hidden_from_players",
+    "atomic_publication",
+    "replayed_request_same_batch",
+    "stale_and_expired_all_or_none",
+    "concurrent_single_publication",
+    "batch_pagination_complete",
+    "future_member_no_repeat",
+    "native_offline_batch_journal",
+    "web_draft_save_select_publish",
+    "mobile_412_no_overflow"
+  ],
+  "couponBatchMigration": "025_coupon_batches.sql"
 }

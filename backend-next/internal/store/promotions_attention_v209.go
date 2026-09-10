@@ -13,6 +13,10 @@ func (s *Store) CouponAttentionV209(ctx context.Context, actor, cursor string, l
 	if e != nil {
 		return nil, "", false, e
 	}
+	records, e = s.expandCouponBatchAttentionV209(ctx, actor, records)
+	if e != nil {
+		return nil, "", false, e
+	}
 	views, e := s.CouponViewsV209(ctx, records, false)
 	if e != nil || len(records) == 0 {
 		return views, next, more, e
@@ -22,8 +26,14 @@ func (s *Store) CouponAttentionV209(ctx context.Context, actor, cursor string, l
 		args = append(args, record.ID)
 		marks = append(marks, "?")
 	}
+	batchArgs := append([]any(nil), args...)
+	args = append(args, batchArgs...)
 	rows, e := s.DB.QueryContext(ctx, `SELECT a.coupon_id FROM promotion_attention_v209 a
- JOIN identities i ON i.server_uuid=a.owner_uuid WHERE i.id=? AND a.coupon_id IN (`+strings.Join(marks, ",")+`)`, args...)
+ JOIN identities i ON i.server_uuid=a.owner_uuid WHERE i.id=? AND a.coupon_id IN (`+strings.Join(marks, ",")+`)
+ UNION SELECT target.coupon_id FROM promotion_coupon_batches_v209 target
+ JOIN promotion_coupon_batches_v209 sibling ON sibling.batch_id=target.batch_id
+ JOIN promotion_attention_v209 a ON a.coupon_id=sibling.coupon_id
+ JOIN identities i ON i.server_uuid=a.owner_uuid WHERE i.id=? AND target.coupon_id IN (`+strings.Join(marks, ",")+`)`, args...)
 	if e != nil {
 		return nil, "", false, e
 	}

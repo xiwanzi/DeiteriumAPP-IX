@@ -153,6 +153,7 @@ paths:
         schema:
           type: string
           enum:
+          - DRAFT
           - ''
           - ACTIVE
           - SCHEDULED
@@ -162,8 +163,8 @@ paths:
       tags:
       - Shop
       operationId: createCouponV209
-      summary: 创建优惠券活动
-      description: 仅平台管理员可调用。
+      summary: 保存新的优惠券草稿
+      description: 新建券始终是 DRAFT，不对玩家开放，不触发提醒；在草稿列表选择后统一发布。
       responses:
         '201':
           description: 成功
@@ -177,6 +178,30 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CouponWriteV209'
+  /admin/coupons/publish:
+    post:
+      tags:
+      - Admin
+      operationId: publishCouponDraftsV209
+      summary: 统一发布勾选的优惠券草稿
+      description: 按版本锁定 1–100 张不同的草稿，检查受众/范围/有效期，在同一事务中全部发布。任一失败均不发布其余草稿。相同请求标识与内容重试返回同一批次。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponPublicationRequestV209'
+      responses:
+        '200':
+          description: 整批发布完成
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponPublicationResponseV209'
+        '409':
+          description: 所选草稿已变化或已发布；本次未部分发放。
+        '422':
+          description: 有效期或受众/范围不可用；本次未部分发放。
   /admin/coupons/{couponId}:
     parameters:
     - name: couponId
@@ -21460,6 +21485,20 @@ components:
           format: date-time
         scopeDescription:
           type: string
+        publicationState:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          description: 草稿仅管理员可见；新建与草稿保存不发放。
+        releaseBatchId:
+          type: string
+          nullable: true
+          description: 批量发布的稳定标识，旧券及草稿可为空。
+        releasedAt:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - name
       - type
@@ -21558,6 +21597,20 @@ components:
             maxLength: 128
           maxItems: 1000
           uniqueItems: true
+        publicationState:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          description: 草稿仅管理员可见；新建与草稿保存不发放。
+        releaseBatchId:
+          type: string
+          nullable: true
+          description: 批量发布的稳定标识，旧券及草稿可为空。
+        releasedAt:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - name
       - type
@@ -21633,6 +21686,7 @@ components:
           format: date-time
         active:
           type: boolean
+          description: 仅控制已发布券的启停；新建和草稿编辑始终保持草稿。
         audience:
           type: string
           enum:
@@ -21781,6 +21835,20 @@ components:
           type: string
         announced:
           type: boolean
+        publicationState:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          description: 草稿仅管理员可见；新建与草稿保存不发放。
+        releaseBatchId:
+          type: string
+          nullable: true
+          description: 批量发布的稳定标识，旧券及草稿可为空。
+        releasedAt:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - name
       - type
@@ -21870,6 +21938,67 @@ components:
       - requestId
       - data
       - serverTime
+    CouponPublicationRequestV209:
+      type: object
+      additionalProperties: false
+      properties:
+        clientRequestId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        coupons:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              couponId:
+                type: string
+                minLength: 1
+                maxLength: 128
+              expectedVersion:
+                type: integer
+                minimum: 1
+            required:
+            - couponId
+            - expectedVersion
+      required:
+      - clientRequestId
+      - coupons
+    CouponPublicationResponseV209:
+      type: object
+      additionalProperties: false
+      properties:
+        requestId:
+          type: string
+        serverTime:
+          type: string
+          format: date-time
+        data:
+          type: object
+          additionalProperties: false
+          properties:
+            releaseBatchId:
+              type: string
+            releasedAt:
+              type: string
+              format: date-time
+            coupons:
+              type: array
+              minItems: 1
+              maxItems: 100
+              items:
+                $ref: '#/components/schemas/AdminCouponV209'
+          required:
+          - releaseBatchId
+          - releasedAt
+          - coupons
+      required:
+      - requestId
+      - serverTime
+      - data
     CouponListResponseV209:
       type: object
       additionalProperties: false

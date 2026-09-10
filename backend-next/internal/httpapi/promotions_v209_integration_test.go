@@ -45,7 +45,11 @@ func promotionSaveTestV209(t *testing.T, f catalogFixture, c store.CatalogObject
 	if e != nil {
 		t.Fatal(e)
 	}
-	return d
+	batch, e := f.s.PublishCouponDraftsV209(context.Background(), f.admin.ID, store.ID("publish_coupons_"), []store.CouponDraftSelectionV209{{CouponID: d.ID, ExpectedVersion: d.Version}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	return batch.Coupons[0]
 }
 func promotionPrepareTestV209(t *testing.T, f catalogFixture, q store.CatalogObjectV2, key string) store.CommerceMutationV2 {
 	t.Helper()

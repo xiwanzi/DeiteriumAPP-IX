@@ -66,7 +66,23 @@
 .coupon-card-footer { padding-top: 15px; border-top: 1px solid var(--border); display: grid; gap: 7px; color: var(--muted); font-size: 11px; }
 .coupon-auto { display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-size: 12px; }
 .coupon-row-list { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-.coupon-admin-row { display: grid; grid-template-columns: minmax(190px, 2fr) minmax(120px, 1fr) minmax(180px, 1.3fr) auto; align-items: center; gap: 24px; padding: 22px; border-bottom: 1px solid var(--border); }
+.coupon-admin-row { display: grid; grid-template-columns: 22px minmax(160px, 2fr) minmax(110px, 1fr) minmax(180px, 1.3fr) auto; align-items: center; gap: 20px; padding: 22px; border-bottom: 1px solid var(--border); }
+.coupon-admin-row.selected { background: color-mix(in srgb, var(--blue) 5%, var(--surface)); }
+.coupon-row-select { color: var(--muted); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: -11px; }
+.coupon-row-select:has(input) { cursor: pointer; }
+.coupon-row-select input, .coupon-select-all input { appearance: auto; accent-color: var(--blue); width: 18px; height: 18px; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; }
+.coupon-selection-bar { position: sticky; top: 84px; z-index: 4; display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 14px 18px; margin: 18px 0; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: 0 8px 24px #00000008; font-size: 13px; }
+.coupon-select-all { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.coupon-selection-bar > span { color: var(--muted); }
+.coupon-selection-bar > div { display: flex; gap: 10px; margin-left: auto; }
+.coupon-batch-intro, .coupon-batch-note { color: var(--muted); font-size: 13px; line-height: 1.8; }
+.coupon-batch-review { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin: 20px 0; }
+.coupon-batch-review > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border-bottom: 1px solid var(--border); }
+.coupon-batch-review > div:last-child { border-bottom: 0; }
+.coupon-batch-review > div > div { display: grid; gap: 6px; min-width: 0; }
+.coupon-batch-review strong { font-size: 14px; overflow-wrap: anywhere; }
+.coupon-batch-review span, .coupon-batch-review small { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.coupon-batch-review b { color: var(--blue); font-size: 20px; flex-shrink: 0; }
 .coupon-admin-row:last-child { border-bottom: 0; }
 .coupon-admin-row h3 { font-size: 15px; margin: 8px 0; }
 .coupon-admin-row p, .coupon-admin-row small { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 0; }
@@ -81,5 +97,6 @@
 .checkout-promotion > div > span { min-width: 0; overflow-wrap: anywhere; }
 .checkout-promotion > div > strong { flex-shrink: 0; white-space: nowrap; }
 .coupon-card h3, .coupon-admin-row h3 { overflow-wrap: anywhere; }
-@media (max-width: 900px) { .promotion-form-layout { grid-template-columns: minmax(0, 1fr); } .promotion-preview { position: static; max-width: 450px; width: 100%; margin: 0 auto; } .coupon-admin-row { grid-template-columns: minmax(0, 1fr) auto; gap: 16px; } }
+@media (max-width: 900px) { .promotion-form-layout { grid-template-columns: minmax(0, 1fr); } .promotion-preview { position: static; max-width: 450px; width: 100%; margin: 0 auto; } .coupon-admin-row { grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; padding: 18px; } .coupon-row-summary { grid-column: 2; }.coupon-row-edit { grid-column: 3; grid-row: 1; }.coupon-row-benefit { grid-column: 2 / -1; }.coupon-row-audience { grid-column: 2 / -1; } }
+@media (max-width: 520px) { .coupon-selection-bar { top: 70px; gap: 12px; }.coupon-selection-bar > div { flex-basis: 100%; justify-content: flex-end; }.coupon-batch-review > div { align-items: flex-start; flex-wrap: wrap; }.coupon-batch-review b { font-size: 18px; } }
 @media (max-width: 520px) { .picker-footer { flex-wrap: wrap; } .picker-footer > span { flex-basis: 100%; } .limit-reset { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .template-toolbar { flex-wrap: wrap; } .template-attachment { gap: 10px; flex-wrap: wrap; } .template-attachment > div:first-child { flex-basis: calc(100% - 55px); } .template-attachment .field { width: calc(100% - 58px); } .promotion-editor-section { padding: 18px; } }

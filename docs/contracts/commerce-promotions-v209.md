@@ -38,10 +38,17 @@
 | `GET /store/coupons/attention` | 当前玩家有效、未使用且未查看的券，支持 `limit`、`cursor`；每条增加 `announced` |
 | `POST /store/coupons/attention` | 确认实际展示的一批券，提交 `couponIds`（1–100 个唯一 ID）及 `viewed` |
 | `GET /admin/coupons` | 平台管理员搜索与分页；可用 `status=ACTIVE/SCHEDULED/EXPIRED/INACTIVE` |
-| `POST /admin/coupons` | 平台管理员创建活动，必须有 `clientRequestId` |
-| `PUT /admin/coupons/{couponId}` | 编辑/停用活动，必须有 `clientRequestId`、`expectedVersion` |
+| `POST /admin/coupons` | 平台管理员保存新草稿，必须有 `clientRequestId`；保存不发放 |
+| `PUT /admin/coupons/{couponId}` | 保存草稿或编辑/停用已发布活动，必须有 `clientRequestId`、`expectedVersion` |
+| `POST /admin/coupons/publish` | 勾选 1–100 张不同草稿，按版本整批发布；必须有固定 `clientRequestId` |
 
 创建/修改字段为 `name`、`type`（ORDER/ITEM）、`benefit`（FIXED/PERCENT）、`amountOff`、`discountRate`、`minimumSpend`、`maxDiscount`、`stackWithProductDiscount`、`audience`（ALL/PLAYERS）、`playerRefs`、`storeIds`、`productIds`、`startsAt`、`endsAt`、`active`。金额字段用十进制字符串；限额 0 表示无上限，门槛 0 表示无门槛。单品券只允许 PERCENT；整单券可立减或打折。
+
+新建券始终为 `publicationState=DRAFT`，`active=false`；编辑草稿仍保持草稿，不能通过提交 `active=true` 提前发放。管理员列表支持 `status=DRAFT`，与已发布后停用的券区分。草稿可以保存完整但已过期的配置，发布时必须先修正。
+
+批量发布请求为 `{"clientRequestId":"...","coupons":[{"couponId":"...","expectedVersion":1}]}`。服务端按稳定顺序锁定全部所选券，检查草稿状态/版本、配置、范围、受众与未结束的有效期，然后在同一事务中启用全部券并写入一个 `releaseBatchId`。任一失败均不部分发放；重复请求返回同一批次，两个管理员并发发布同一组草稿只成功一次。短暂事务冲突会回滚后有限重试，不产生外部操作。
+
+发布响应包含 `releaseBatchId`、`releasedAt` 与 `coupons`；券列表新增这两个只读字段及 `publicationState`。每张券只属于一个发布批次，已发布券不能退回草稿重复发放，编辑/停用仍保留原批次。旧券没有批次时继续按单券去重。每张券保留自己配置的优惠、受众、起止时间；发布时间不延长或重置有效期。
 
 ALL 活动在有效期内对所有已注册及后来注册的玩家生效，无需主动领取；PLAYERS 必须选择已绑定玩家的稳定 `playerRef`。每个活动每个资产 UUID 一张、一次使用。玩家接口和订单优惠快照不包含其他获券玩家的名单。
 
@@ -54,6 +61,10 @@ ALL 活动在有效期内对所有已注册及后来注册的玩家生效，无�
 ### 到账提醒与查看
 
 `GET /store/coupons/attention` 不修改权益或提醒状态，返回的券同样满足有效期、当前受众、未使用规则。`announced=false` 表示新券尚未提醒；已提醒但未查看仍返回，供“我的优惠”红点使用。全员券对后来注册玩家自动具有未提醒状态。
+
+同一批次任意一张券已向该玩家提醒后，同批其他券的 `announced` 也为 true；查看状态仍按单券保存，不把未查看的同批券直接隐藏。即使先提醒的券已过期，或同批另一张之后才生效，也不会再次提醒该批；新生效券仍正常出现在优惠页和未查看红点中。
+
+提醒分页会补齐本页命中的批次中对该玩家有效、未使用且未查看的成员，因此单页条数可能超过 `limit`；游标仍按基础记录推进，客户端按券 ID 去重后整体展示，避免草稿创建时间分散或发布恰逢分页时将同批拆开。客户端待同步确认也记录批次标识，断网时同批后续成员不会重复弹出。
 
 确认状态按 `(couponId, owner_uuid)` 唯一保存：`viewed=false` 只表示已展示浮窗/提醒条，`viewed=true` 同时表示已提醒与已查看，响应为 `data.acknowledged=true`。状态只前进，不回退，重复请求和两个设备并发确认安全。确认不减少券额度、不占用券、不触发交易；确认仅接受自己的受众范围，不公开其他玩家记录。券在展示与确认之间过期、被停用或使用，仍可保留原提醒确认；未开始活动不提前确认。
 
@@ -88,5 +99,7 @@ Mail 通过公开 API 接收与快照一致的 `creditAmount`，保留旧 Create
 新增迁移 `023_commerce_promotions.sql`，只建立优惠占用表与订单查询索引。已存在的表/索引会跳过，DDL 中断后可幂等续跑，已验证重试不改变订单与券占用。商品/券配置扩展既有 JSON 内容，旧商品缺省无折扣、无新限购、无附带信用点。上线前备份，使用专用维护连接执行迁移，运行账号不增加 DDL 权限。
 
 提醒增加 `024_coupon_attention.sql`，仅创建账号级提醒/查看记录表与索引；可重复执行建表，不回填用户券或批量创建通知。回退 App/Go 时保留此表，不删除已有提醒记录。
+
+草稿发布增加 `025_coupon_batches.sql`，只创建券与发布批次的唯一关联表；已有券不自动改成草稿、不补发。正式更新必须在新 Go 运行前依次完成 023、024、025。回退保留批次关系和提醒记录，防止重复发放或重复提醒。
 
 回退前停用优惠活动及新增信用点商品，妥善处理未完成的新订单；保留新表、业务和原始快照。需要保留新资金/邮箱适配直到相关订单结束。不能整库覆盖、复用新请求键或降级安装以抹掉业务；APK 回退需更高 versionCode 的兼容修正版。

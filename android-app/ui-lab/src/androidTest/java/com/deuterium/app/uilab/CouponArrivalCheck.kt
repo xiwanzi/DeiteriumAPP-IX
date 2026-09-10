@@ -36,7 +36,7 @@ object CouponArrivalCheck {
             val clock=AtomicReference(Instant.now());val coupons=CopyOnWriteArrayList<JSONObject>()
             val receipts=ConcurrentHashMap<String,Int>();val failAck=AtomicBoolean(true)
             fun coupon(id:String,name:String,restricted:Boolean=false)=JSONObject().put("couponId",id).put("name",name).put("type",if(restricted)"ITEM" else "ORDER").put("benefit",if(restricted)"PERCENT" else "FIXED").put("amountOff","20.00").put("discountRate",8500).put("minimumSpend",if(restricted)"0.00" else "100.00").put("maxDiscount",if(restricted)"50.00" else "0.00").put("stackWithProductDiscount",true).put("storeIds",JSONArray().apply{if(restricted)put("store_eos")}).put("productIds",JSONArray()).put("scopeDescription",if(restricted)"EOS Lab旗舰店 · 全部商品" else "全部店铺 · 全部商品").put("startsAt",clock.get().minusSeconds(10).toString()).put("endsAt",clock.get().plusSeconds(7200).toString())
-            coupons.add(coupon("coupon_one","初见礼遇"))
+            coupons.add(coupon("coupon_one","初见礼遇").put("releaseBatchId","batch_first"))
             server.dispatcher=object:Dispatcher(){override fun dispatch(request:RecordedRequest):MockResponse {
                 val path=request.requestUrl!!.encodedPath.removePrefix("/api/v1")
                 val owner=request.getHeader("Authorization").orEmpty()
@@ -49,7 +49,9 @@ object CouponArrivalCheck {
                     }
                     path=="/store/coupons/attention"||path=="/store/coupons" -> JSONArray().apply {
                         coupons.forEach{coupon->val level=receipts["$owner:${coupon.getString("couponId")}"] ?: 0
-                            if(Instant.parse(coupon.getString("endsAt")).isAfter(clock.get())&&(path=="/store/coupons"||level<2))put(JSONObject(coupon.toString()).put("announced",level>0))}
+                            val batch=coupon.optString("releaseBatchId")
+                            val batchShown=batch.isNotBlank()&&batch!="null"&&coupons.any{it.optString("releaseBatchId")==batch&&(receipts["$owner:${it.getString("couponId")}"] ?: 0)>0}
+                            if(!Instant.parse(coupon.getString("startsAt")).isAfter(clock.get())&&Instant.parse(coupon.getString("endsAt")).isAfter(clock.get())&&(path=="/store/coupons"||level<2))put(JSONObject(coupon.toString()).put("announced",level>0||batchShown))}
                     }
                     else -> return MockResponse().setResponseCode(404).setBody("{}")
                 }
@@ -97,19 +99,24 @@ object CouponArrivalCheck {
             // Ack remains unavailable; reconstruct all app state against the old server response.
             test.runOnMainSync{state=LabState(scope,userName="FixtureSelf",api=api);theme=1;glass=true;motion=true}
             refresh();Thread.sleep(850);check(node("收到新的优惠")==null);check(!state.commerce.network!!.couponAttention.hasUnread)
+            val later=coupon("coupon_one_later","同批稍后生效的礼遇").put("releaseBatchId","batch_first")
+            coupons.add(later);refresh()
+            check(state.commerce.network!!.couponAttention.arrivals.isEmpty());check(state.commerce.network!!.couponAttention.hasUnread)
+            test.runOnMainSync{state.commerce.network!!.couponAttention.mark(listOf(storeCoupon(later)),viewed=true)}
+            result.putString("same_batch_does_not_repeat_after_recreation","PASS")
             failAck.set(false);runBlocking{withContext(Dispatchers.Main){state.commerce.network!!.couponAttention.flush()}}
             check(receipts["Bearer FixtureSelf:coupon_one"]==2)
             result.putString("offline_ack_survives_recreation_and_syncs","PASS")
             login("FixtureOther");val other=CouponAttention(api)
-            runBlocking{withContext(Dispatchers.Main){check(other.refresh());check(other.arrivals.size==1)}}
+            runBlocking{withContext(Dispatchers.Main){check(other.refresh());check(other.arrivals.size==2)}}
             login("FixtureSelf")
             result.putString("account_receipts_are_isolated","PASS")
-            coupons.add(coupon("coupon_two","探索者单品礼遇",true));coupons.add(coupon("coupon_three","周末满减礼遇"))
+            coupons.add(coupon("coupon_two","探索者单品礼遇",true).put("releaseBatchId","batch_multi"));coupons.add(coupon("coupon_three","周末满减礼遇").put("releaseBatchId","batch_multi"))
             test.runOnMainSync{state=LabState(scope,userName="FixtureSelf",api=api)}
             waitFor("grouped arrival"){node("收到 2 份新优惠")!=null};check(node("好的")!=null&&node("去看看")!=null);shot("multiple-light")
             test.runOnMainSync{theme=2;font=1.4f};shot("multiple-dark-large-text")
             test.runOnMainSync{theme=1;font=1f}
-            click("去看看");waitFor("coupon wallet"){node("为你准备的优惠")!=null&&node("探索者单品礼遇")!=null};waitFor("wallet marked read"){!state.commerce.network!!.couponAttention.hasUnread}
+            click("去看看");waitFor("coupon wallet"){node("为你准备的优惠")!=null&&state.commerce.network!!.coupons.any{it.id=="coupon_two"}};waitFor("wallet marked read"){!state.commerce.network!!.couponAttention.hasUnread}
             check(page=="coupons");result.putString("grouped_popup_navigation_and_badge_read","PASS")
             click("返回")
             coupons.add(coupon("coupon_four","午后惊喜"));refresh()

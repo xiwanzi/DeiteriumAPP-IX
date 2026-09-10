@@ -9,7 +9,7 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.time.Instant
 
-internal data class CouponReceipt(val level:Int,val endsAt:Instant,val pending:Boolean)
+internal data class CouponReceipt(val level:Int,val endsAt:Instant,val pending:Boolean,val releaseBatchId:String?=null)
 
 /** Server receipts synchronize devices; the small journal survives an offline ack. */
 class CouponAttention(private val api:BackendApi) {
@@ -22,14 +22,17 @@ class CouponAttention(private val api:BackendApi) {
     private var clockNanos=System.nanoTime()
     var now by mutableStateOf(serverClock);private set
     val unread:List<StoreCoupon> get()=available.filter{it.visible(now)&&(receipts[it.id]?.level ?: 0)<2}
-    val arrivals:List<StoreCoupon> get()=unread.filter{announced[it.id]!=true&&(receipts[it.id]?.level ?: 0)<1}
+    val arrivals:List<StoreCoupon> get() {
+        val shownBatches=receipts.values.mapNotNull{it.releaseBatchId}.toSet()
+        return unread.filter{announced[it.id]!=true&&(receipts[it.id]?.level ?: 0)<1&&(it.releaseBatchId==null||it.releaseBatchId !in shownBatches)}
+    }
     val hasUnread:Boolean get()=unread.isNotEmpty()
 
     init {
         val saved=api.couponReceipts(owner)
         saved.keys().forEach{id->runCatching {
             val row=saved.getJSONObject(id)
-            CouponReceipt(row.getInt("level").coerceIn(1,2),Instant.parse(row.getString("endsAt")),row.getBoolean("pending"))
+            CouponReceipt(row.getInt("level").coerceIn(1,2),Instant.parse(row.getString("endsAt")),row.getBoolean("pending"),row.optString("releaseBatchId").takeUnless{it.isBlank()||it=="null"})
         }.getOrNull()?.let{receipts[id]=it}}
     }
 
@@ -73,7 +76,7 @@ class CouponAttention(private val api:BackendApi) {
         var changed=false
         for(coupon in coupons) {
             if((receipts[coupon.id]?.level ?: 0)>=level)continue
-            receipts[coupon.id]=CouponReceipt(level,coupon.endsAt,true);changed=true
+            receipts[coupon.id]=CouponReceipt(level,coupon.endsAt,true,coupon.releaseBatchId);changed=true
         }
         if(changed)persist()
     }
@@ -99,7 +102,7 @@ class CouponAttention(private val api:BackendApi) {
 
     private fun persist() {
         val value=JSONObject()
-        receipts.forEach{(id,receipt)->value.put(id,JSONObject().put("level",receipt.level).put("endsAt",receipt.endsAt.toString()).put("pending",receipt.pending))}
+        receipts.forEach{(id,receipt)->value.put(id,JSONObject().put("level",receipt.level).put("endsAt",receipt.endsAt.toString()).put("pending",receipt.pending).put("releaseBatchId",receipt.releaseBatchId))}
         api.saveCouponReceipts(owner,value)
     }
 }
