@@ -1,0 +1,28 @@
+{
+  "versionName": "2.0.9",
+  "versionCode": 20901,
+  "publishedAt": "2026-09-10T08:36:22Z",
+  "updateChecks": {
+    "20004": "20901 available",
+    "20101": "20901 available",
+    "20200": "20901 available",
+    "20300": "20901 available",
+    "20401": "20901 available",
+    "20500": "20901 available",
+    "20600": "20901 available",
+    "20700": "20901 available",
+    "20800": "20901 available",
+    "20900": "20901 available",
+    "20901": "no downgrade/self update",
+    "20902": "no downgrade/self update"
+  },
+  "apkBytes": 23574133,
+  "apkSha256": "f802da8962508a80d52211a177d433718902df865e47e2069f86be7ea9f8cffd",
+  "webVersion": "2.0.9",
+  "webAssetsVerified": [
+    "/assets/default-BHF8S-gD.svg",
+    "/assets/index-2tT3I-Dn.js",
+    "/assets/index--pZCU96t.css"
+  ],
+  "htmlCacheControl": "no-cache"
+}

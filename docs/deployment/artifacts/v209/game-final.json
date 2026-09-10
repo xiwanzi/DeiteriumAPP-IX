@@ -1,0 +1,55 @@
+{
+  "verifiedAt": "2026-09-10T08:40:23Z",
+  "states": {
+    "login": {
+      "node": "login",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 50824
+    },
+    "amiya": {
+      "node": "amiya",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 48768
+    },
+    "odyssey": {
+      "node": "odyssey",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 452
+    },
+    "mek": {
+      "node": "mek",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    }
+  },
+  "newJarHashes": {
+    "Deuterium-Core-1.0.2.jar": "73f56b601f463f6ea32a7a635cf5c87be10662017fc3d6b8e1bc5935328811e6",
+    "XConomy-Bukkit-2.26.3-deuterium.3.jar": "1ef530a30e7522431bdc27dc8eaa5cecae4a9988f99e05ae336b45020afc23db",
+    "deuterium-mail-0.6.2.jar": "aa89ebf7275550c1f185b9b20c9f9d6fc127c345fc49d4aee30072903c17e222",
+    "deuterium-mail-bridge-0.6.1.jar": "0fbf5f2de6fb529bb82bccc53dd02373eb641db8bbad5254841ee02a535f6c82"
+  },
+  "preservedJarHashes": {
+    "plugins/YouerModSync-0.7-deuterium.3.jar": "376411646a903bcdb53808b68d94673f9a7f5ea9e47fde4e15957395517a9151",
+    "mods/deuterium-mail-ui-neoforge-1.21.1-0.6.0.jar": "45928f1099aa6925aeabf049e4d768b3d0dad7b03d45b259e585257ee5ea0410"
+  },
+  "configFilesUnchanged": true,
+  "mailGateways": {
+    "login": [
+      "[16:28:04] [Server thread/INFO] [DeuteriumMailBridge]: Authoritative mailbox gateway registered (protocol 3).",
+      "[16:28:04] [Server thread/INFO] [DeuteriumMailBridge]: Authoritative OP mail gateway registered (admin protocol 6)."
+    ],
+    "amiya": [
+      "[16:27:59] [Server thread/INFO] [DeuteriumMailBridge]: Authoritative mailbox gateway registered (protocol 3).",
+      "[16:27:59] [Server thread/INFO] [DeuteriumMailBridge]: Authoritative OP mail gateway registered (admin protocol 6)."
+    ],
+    "odyssey": [
+      "[16:27:53] [Server thread/INFO] [DeuteriumMailBridge]: Authoritative mailbox gateway registered (protocol 3).",
+      "[16:27:53] [Server thread/INFO] [DeuteriumMailBridge]: Authoritative OP mail gateway registered (admin protocol 6)."
+    ]
+  },
+  "mekStoppedAndClaimDisabled": true
+}

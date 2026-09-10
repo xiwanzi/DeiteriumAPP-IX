@@ -1,5 +1,7 @@
 {
   "name": "Deuterium-2.0.9-complete.zip",
-  "sizeBytes": 80030512,
-  "sha256": "0d01c25cebdcf443dfbe918c4152a0f74972092ab30cd7beac7beb5cdf606d4c"
+  "sizeBytes": 80030080,
+  "sha256": "14b779884868e6a77e5ace7a888cc7873b5b2848d6096933b40ef679927cdff1",
+  "status": "PUBLISHED",
+  "versionCode": 20901
 }

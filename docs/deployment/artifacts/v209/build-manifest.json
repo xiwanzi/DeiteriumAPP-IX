@@ -1,14 +1,14 @@
 {
   "release": "2.0.9",
-  "status": "VERIFIED_NOT_DEPLOYED",
-  "builtAt": "2026-09-10T07:48:11.817450+00:00",
-  "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8",
-  "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
+  "status": "PUBLISHED",
+  "sourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
+  "mailSourceCommit": "67db93749bf97527ec3072214777c87e68e3132f",
   "android": {
     "packageName": "com.deuterium.app.uilab",
-    "versionCode": 20900,
+    "versionCode": 20901,
     "versionName": "2.0.9",
-    "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3"
+    "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.9-20901-test.apk"
   },
   "go": {
     "os": "linux",
@@ -26,15 +26,21 @@
   },
   "files": [
     {
-      "name": "Deuterium-2.0.9-20900-test.apk",
-      "sizeBytes": 25168577,
-      "sha256": "a5f197773999521343ec607fe39d3ccce8f86e639922155c849ecc8c45859103",
-      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
+      "name": "Deuterium-2.0.9-20901-test.apk",
+      "sizeBytes": 23574133,
+      "sha256": "f802da8962508a80d52211a177d433718902df865e47e2069f86be7ea9f8cffd",
+      "sourceCommit": "63aa97df614883a9b45b0effbc2b0014cefc5c0c"
     },
     {
       "name": "deuterium-linux-amd64",
       "sizeBytes": 12996768,
-      "sha256": "9e98e943d79ee39b284e41829ff23235f35bdf8394b12ed0601e220874704c95",
+      "sha256": "28067d019656b3b7e7c5cf2528b2eb96b1fa7eb07a812231129261a7b5f63fca",
+      "sourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106"
+    },
+    {
+      "name": "web-2.0.9.zip",
+      "sizeBytes": 33695546,
+      "sha256": "8815c9d7077e16d84b30cf54363b9c6f20480c53955f6dfe1505a5a58e7c07c6",
       "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
     },
     {
@@ -62,16 +68,19 @@
       "sourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
     {
-      "name": "web-2.0.9.zip",
-      "sizeBytes": 33695546,
-      "sha256": "8815c9d7077e16d84b30cf54363b9c6f20480c53955f6dfe1505a5a58e7c07c6",
-      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
-    },
-    {
       "name": "XConomy-2.26.3-deuterium.3-source.zip",
       "sizeBytes": 349376,
       "sha256": "7acff9e265404def923dc4807bc5f6f2b9fd24aaa454a957e9b118243e9b125c",
       "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14"
     }
-  ]
+  ],
+  "publishedAt": "2026-09-10T08:36:22Z",
+  "pullRequest": 16,
+  "mailPullRequest": 2,
+  "migrations": [
+    "023_commerce_promotions.sql",
+    "024_coupon_attention.sql",
+    "025_coupon_batches.sql"
+  ],
+  "assembledAt": "2026-09-10T08:53:47.304522+00:00"
 }

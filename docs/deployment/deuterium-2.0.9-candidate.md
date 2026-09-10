@@ -1,6 +1,6 @@
 # Deuterium 2.0.9 候选发布记录
 
-2026-09-10，**实现、构建与本机验收完成，尚未推送、合并或部署**。线上仍以 2.0.8 的已发布记录为准。
+2026-09-10 16:36 已完成正式发布，最终版本为 2.0.9（20901），见[上线记录](deuterium-2.0.9-live.md)。下文保留候选阶段的组成与发布计划。
 
 维护工作区 `.worktrees/commerce-v209`，分支 `xiwanzi/commerce-v209`。独立 Mail 分支 `xiwanzi/commerce-preview-credits`，源码 `2d69462c9a2bf705abb430b88dcad0437c387b24`。主仓库源码、交付文件大小与 SHA-256 以 [build-manifest.json](artifacts/v209/build-manifest.json) 为准。
 

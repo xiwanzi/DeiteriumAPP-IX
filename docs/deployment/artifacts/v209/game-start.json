@@ -1,0 +1,58 @@
+{
+  "ok": true,
+  "at": "2026-09-10T08:28:10Z",
+  "states": {
+    "login": {
+      "node": "login",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 50824
+    },
+    "amiya": {
+      "node": "amiya",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 48768
+    },
+    "odyssey": {
+      "node": "odyssey",
+      "status": 3,
+      "state": "RUNNING",
+      "pid": 452
+    },
+    "mek": {
+      "node": "mek",
+      "status": 0,
+      "state": "STOPPED",
+      "pid": 0
+    }
+  },
+  "protocolStatus": [
+    {
+      "node": "login",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "amiya",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "odyssey",
+      "online": true,
+      "players": 0,
+      "version": "Youer 1.21.1",
+      "protocol": 767
+    },
+    {
+      "node": "mek",
+      "online": false,
+      "error": "unreachable"
+    }
+  ]
+}

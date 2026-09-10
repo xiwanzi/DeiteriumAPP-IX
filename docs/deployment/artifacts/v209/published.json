@@ -1,0 +1,25 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.9-20901-test",
+    "kind": "APK",
+    "versionName": "2.0.9",
+    "versionCode": 20901,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "修复支付店名和购物袋结算；新增商品折扣、周期限购与信用点交付。优惠券支持草稿批量发放、自动最优优惠和到账合并提醒；交付模板支持多物品与搜索，改善邮件中的模组物品预览。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.9-20901-test.apk",
+    "sizeBytes": 23574133,
+    "sha256": "f802da8962508a80d52211a177d433718902df865e47e2069f86be7ea9f8cffd",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 20900,
+    "channel": "stable",
+    "publishedAt": "2026-09-10T08:36:22Z"
+  },
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.9-e4e4c4b7791c/dist",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.9-e4e4c4b7791c",
+  "health": {
+    "status": "ready"
+  },
+  "appManifestSha256": "4882f77812f82008cd20778f3a6078681b20028aba354991cec502dca1d91c46",
+  "publicApkVerified": true
+}

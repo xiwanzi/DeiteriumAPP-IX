@@ -1,7 +1,7 @@
 {
   "date": "2026-09-10",
   "release": "2.0.9",
-  "status": "VERIFIED_NOT_DEPLOYED",
+  "status": "PUBLISHED",
   "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8",
   "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
   "tests": {
@@ -62,5 +62,7 @@
     "web_draft_save_select_publish",
     "mobile_412_no_overflow"
   ],
-  "couponBatchMigration": "025_coupon_batches.sql"
+  "couponBatchMigration": "025_coupon_batches.sql",
+  "publishedSourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
+  "publishedAndroidVersionCode": 20901
 }
