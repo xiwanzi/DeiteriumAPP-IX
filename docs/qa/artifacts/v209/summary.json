@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-10",
+  "release": "2.0.9",
+  "status": "VERIFIED_NOT_DEPLOYED",
+  "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14",
+  "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
+  "tests": {
+    "android": 134,
+    "web": 63,
+    "core": 29,
+    "xconomy": 11,
+    "mailPlugin": 164,
+    "mailBridge": 11,
+    "mailContract": 16
+  },
+  "failures": 0,
+  "skipped": 0,
+  "goRaceIntegration": "PASS",
+  "migrationResume": "PASS",
+  "openapiActualResponses": 4,
+  "nativeChecks": [
+    "coupons_light_dark_large_text",
+    "expired_coupon_removed",
+    "profile_my_offers_entry",
+    "renamed_store_payment",
+    "single_payment",
+    "cart_cleared"
+  ],
+  "webChecks": [
+    "coupon_form_saved",
+    "global_item_search",
+    "global_template_search",
+    "multiple_attachments_saved",
+    "discount_limits_credits_published",
+    "automatic_best_coupon",
+    "payment_and_cart_clear"
+  ],
+  "screenWidths": [
+    1440,
+    412
+  ],
+  "liveGameClientVerified": false
+}

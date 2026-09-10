@@ -6,7 +6,7 @@
 
 | 对象 | 本轮结果 |
 | --- | --- |
-| Go | `go test -race -tags integration ./...` 全量通过；随后修改的测试样例及边界亦在最终全量运行覆盖 |
+| Go | `go test -race -tags integration ./...` 全量通过；随后新增的迁移中断恢复保护通过真实数据库及竞态定向回归 |
 | Android | 134 项 JVM 单测，0 失败；App/独立测试 APK 构建、`lintDebug` 通过，Lint 无错误 |
 | Web | 63 项单测，0 失败；Vite 生产构建通过 |
 | Core 1.0.2 | Maven verify，29 项测试，0 失败、0 跳过 |
