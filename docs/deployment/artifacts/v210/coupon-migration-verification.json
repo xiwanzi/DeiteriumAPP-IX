@@ -1,0 +1,7 @@
+{
+  "remainingCouponHolds": 0,
+  "remainingRefundedCouponHolds": 0,
+  "catalogCounts": "brand\tACTIVE\t1\ncategory\tACTIVE\t1\ncoupon\tINACTIVE\t1\ndelivery_template\tACTIVE\t2\nlisting\tACTIVE\t4\nlisting\tUNLISTED\t1\nproduct\tACTIVE\t1\nproduct\tUNLISTED\t1\npublication_template\tFROZEN\t6\nstore\tACTIVE\t2",
+  "accountCount": 70,
+  "historicalRefundedHoldsReleased": 1
+}

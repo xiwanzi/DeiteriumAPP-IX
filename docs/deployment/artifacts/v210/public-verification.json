@@ -1,0 +1,28 @@
+{
+  "versionName": "2.0.10",
+  "versionCode": 21000,
+  "publishedAt": "2026-09-10T18:38:40Z",
+  "updateChecks": {
+    "20004": "21000 available",
+    "20101": "21000 available",
+    "20200": "21000 available",
+    "20300": "21000 available",
+    "20401": "21000 available",
+    "20500": "21000 available",
+    "20600": "21000 available",
+    "20700": "21000 available",
+    "20800": "21000 available",
+    "20901": "21000 available",
+    "21000": "no downgrade/self update",
+    "21001": "no downgrade/self update"
+  },
+  "apkBytes": 23557745,
+  "apkSha256": "22a99ec7a1fdcf0182f124c8d9ba70d1c4ccc3953340f4d1755a22fbe26c65d5",
+  "webVersion": "2.0.10",
+  "webAssetsVerified": [
+    "/assets/default-BHF8S-gD.svg",
+    "/assets/index-BkQObpSR.js",
+    "/assets/index-Cq2v3nMY.css"
+  ],
+  "htmlCacheControl": "no-cache"
+}

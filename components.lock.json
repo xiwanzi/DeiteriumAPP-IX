@@ -1,33 +1,34 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-10",
+  "baselineDate": "2026-09-11",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.9",
-      "versionCode": 20901,
-      "sourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
-      "publishedSha256": "f802da8962508a80d52211a177d433718902df865e47e2069f86be7ea9f8cffd",
-      "buildSourceCommit": "63aa97df614883a9b45b0effbc2b0014cefc5c0c"
+      "version": "2.0.10",
+      "versionCode": 21000,
+      "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
+      "publishedSha256": "22a99ec7a1fdcf0182f124c8d9ba70d1c4ccc3953340f4d1755a22fbe26c65d5",
+      "buildSourceCommit": "555bf1614fadc8108176f400c62ed8ec0e6514f4",
+      "publishedSourceCommit": "65c08a290896601c6254369792e4223216ebee8e"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.9",
-      "sourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
-      "publishedSourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
-      "publishedArchiveSha256": "8815c9d7077e16d84b30cf54363b9c6f20480c53955f6dfe1505a5a58e7c07c6",
-      "buildSourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
+      "version": "2.0.10",
+      "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
+      "publishedSourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
+      "publishedArchiveSha256": "f4113bbc987c6bac1b270719a114ecae24d552c38cd4161c7f75958aa7ae6db1",
+      "buildSourceCommit": "555bf1614fadc8108176f400c62ed8ec0e6514f4"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
-      "publishedSourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
-      "publishedSha256": "28067d019656b3b7e7c5cf2528b2eb96b1fa7eb07a812231129261a7b5f63fca",
-      "buildSourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106"
+      "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
+      "publishedSourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
+      "publishedSha256": "1fa7b3dc691bc80cf7a579be832cec1465724225b8afbfb845b66b03d2666ee3",
+      "buildSourceCommit": "65c08a290896601c6254369792e4223216ebee8e"
     },
     {
       "name": "core",
@@ -74,10 +75,10 @@
     }
   ],
   "currentRelease": {
-    "version": "2.0.9",
-    "androidVersionCode": 20901,
+    "version": "2.0.10",
+    "androidVersionCode": 21000,
     "status": "PUBLISHED",
-    "branch": "xiwanzi/release-v209-live",
+    "branch": "xiwanzi/release-v210-live",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
@@ -90,15 +91,13 @@
       "pullRequest": 2,
       "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
-    "qa": "docs/qa/commerce-v209.md",
-    "releaseNotes": "docs/deployment/deuterium-2.0.9-live.md",
-    "sourceCommit": "e4e4c4b7791c6e1c9888bccbf52dcaeadc761106",
-    "buildManifest": "docs/deployment/artifacts/v209/build-manifest.json",
+    "qa": "docs/qa/commerce-refunds-performance.md",
+    "releaseNotes": "docs/deployment/deuterium-2.0.10-live.md",
+    "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
+    "buildManifest": "docs/deployment/artifacts/v210/build-manifest.json",
     "migrations": [
-      "023_commerce_promotions.sql",
-      "024_coupon_attention.sql",
-      "025_coupon_batches.sql"
+      "026_refunded_coupon_release.sql"
     ],
-    "publishedAt": "2026-09-10T08:36:22Z"
+    "publishedAt": "2026-09-10T18:38:40Z"
   }
 }
