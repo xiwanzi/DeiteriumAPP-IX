@@ -1,0 +1,35 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.8-20800-test",
+    "kind": "APK",
+    "versionName": "2.0.8",
+    "versionCode": 20800,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "全新默认应用图标，内置双子节周年活动图标；支持管理端远程切换、在线通知与启动补同步，优化管理端图标预览与操作体验。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.8-20800-test.apk",
+    "sizeBytes": 25062134,
+    "sha256": "62fd90d6cf2c7842283bb77e410d8e299560d169ef711d69637a7d693fca9bfa",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 20799,
+    "channel": "stable",
+    "publishedAt": "2026-09-10T03:13:20Z"
+  },
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.8-6566bb617f8d",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.8-6566bb617f8d/dist",
+  "health": {
+    "status": "ready"
+  },
+  "defaultIcon": {
+    "iconId": "default",
+    "version": 1,
+    "minAppVersionCode": 20800,
+    "updatedAt": "2026-09-10T03:13:20.417355Z"
+  },
+  "migrations": "18",
+  "businessCounts": "COMMISSION\t4\nORDER\t22",
+  "configUnchanged": true,
+  "environmentUnchanged": true,
+  "backupDirectory": "/var/backups/deuterium/release-2.0.8-20260910-6566bb617f8d",
+  "appManifestSha256": "843b975671cd81ba86a7016d93848d199429d53abd0109fd6dda880c855074c5"
+}

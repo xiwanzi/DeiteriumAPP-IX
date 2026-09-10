@@ -6,34 +6,28 @@
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.7",
-      "versionCode": 20700,
-      "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
-      "publishedSha256": "3aa87d0bb88874d9c215ff33d1ff2f9a142b475e55bc98cb754505055e71f808",
-      "buildSourceCommit": "ff94c34b96ccbfdeffce738cdeb287cdc1eb3360",
-      "developmentVersion": "2.0.8",
-      "developmentVersionCode": 20800,
-      "developmentBranch": "feat/launcher-icons-v208"
+      "version": "2.0.8",
+      "versionCode": 20800,
+      "sourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36",
+      "publishedSha256": "62fd90d6cf2c7842283bb77e410d8e299560d169ef711d69637a7d693fca9bfa",
+      "buildSourceCommit": "dad2905eae783d03a39016239650114fe4e27852"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.7",
-      "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
-      "publishedSourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
-      "publishedArchiveSha256": "820c6d053f772a981640e1c99109ff07315794eedd84dd1e9baf14b45822915f",
-      "buildSourceCommit": "ff94c34b96ccbfdeffce738cdeb287cdc1eb3360",
-      "developmentVersion": "2.0.8",
-      "developmentBranch": "feat/launcher-icons-v208"
+      "version": "2.0.8",
+      "sourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36",
+      "publishedSourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36",
+      "publishedArchiveSha256": "2ac3933a8512e4fcd811b8dd70f421107d9a8659738835c16eb201dc4347609a",
+      "buildSourceCommit": "dad2905eae783d03a39016239650114fe4e27852"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
-      "publishedSourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
-      "publishedSha256": "0cd9c160bf3fc3d514a153d3d83fcaa31743981ea4b3b65d4afdf0db6dbf32c1",
-      "buildSourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
-      "developmentBranch": "feat/launcher-icons-v208"
+      "sourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36",
+      "publishedSourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36",
+      "publishedSha256": "d46df3c7650530046166592a4e4531d58fa4bea83e57d5d9d4fc5b8d8bb20280",
+      "buildSourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36"
     },
     {
       "name": "core",

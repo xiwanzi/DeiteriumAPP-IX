@@ -1,0 +1,39 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.7-4262edd84c03",
+  "backendSha256": "0cd9c160bf3fc3d514a153d3d83fcaa31743981ea4b3b65d4afdf0db6dbf32c1",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.7-4262edd84c03/dist",
+  "service": "active",
+  "health": {
+    "status": "ready"
+  },
+  "serverTime": "2026-09-10T03:08:19Z",
+  "migrations": {
+    "001_foundation.sql": "8c06aa76dc35447e851817d68dc8a8b870702f549542e22a4a71938c587e3a82",
+    "002_core_runtime.sql": "791d2d07cc1d473e7ae726fb2573a503d5c05e3a292404e4106720b80e0c69c4",
+    "003_game_verification.sql": "59afb9e32bea352b05a97627dec8d04b77831ae8432901cb0bfee427001f48c5",
+    "004_wallet.sql": "bbfb877f930a124c6059d6c04881c5b0b32204fe42527a0dbdfaa1494f9b395f",
+    "005_core_recovery_indexes.sql": "36021c519b9b31ccf92a7021f3a2082d9f77b7270dc6d9102428a85313ec1ccb",
+    "010_social_v2.sql": "9bbacb96b3189ba2aea9cf2445523ebce56177b94b56bd4d4dc3920e2894c332",
+    "011_catalog_v2.sql": "28e53fa6466413d8beebd71214f902a539d7f6f26c8078c7107f7905658bf95c",
+    "012_assets_v2.sql": "deb0c73c2f08d53088aadd48971a96dae0608e05f089b33e9900878ee2c56597",
+    "013_commerce_v2.sql": "556e39d842517f2a36d90b744e534c8e94f41a91b9b627180ea078c8525da310",
+    "014_social_reconcile.sql": "826d853ac6851fbe7606260d1dea3b46f7b24d4e04c7936092694a50c8b814b0",
+    "015_public_chat_metadata.sql": "f29d4aaefedf147ae48fad2e704582b93d8089bcb82f5ee087c674cf00c88731",
+    "016_ai_v2.sql": "bbad6ceb9f69d92051841229f0baa87f2c01c0ddfa6ff05d9933dc2d3a467ece",
+    "017_admin_audit.sql": "dc483b8b43cf438f62350ef45550332b360a6405f7c4a8b3708d28fef05085bc",
+    "018_asset_lifecycle.sql": "8d504f2b932c9bfb9e39d169d5d5da61bc6502d91723e7f97460d0bae79aacfa",
+    "019_record_visibility.sql": "82a9a915b14078e91d8f6a09b33c002d7a16a4fd5f002575c81a5d4123ae3c7a",
+    "020_admin_email_v204.sql": "eb0fbd39f46f357fab2e89abe34c656ce76f0437d2447131ca491f1efac68d7f",
+    "021_saki_admin.sql": "e08319d5660367e38106db47586e51f003e104344ce4aeca56953c4950d0ce8f"
+  },
+  "pendingMigrations": [
+    "022_launcher_icons.sql"
+  ],
+  "configSha256": "aeb88e7905824aa60310d194d2010b11e1933dc568660f6185c8ec904004b413",
+  "environmentSha256": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+  "appManifestSha256": "dff001cf0557e2ec2d0719e0bf0f960924b80a072a98f34c8179607725326f67",
+  "appVersionCode": 20700,
+  "webVersion": "2.0.7",
+  "businessCounts": "COMMISSION\t4\nORDER\t22",
+  "activeFinancialOperations": "0"
+}

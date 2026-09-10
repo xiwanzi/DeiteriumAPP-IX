@@ -1,0 +1,33 @@
+{
+  "status": "published",
+  "productionDeployed": true,
+  "sourceCommit": "6566bb617f8d079723bfd0c4876ece598d89ee36",
+  "versionName": "2.0.8",
+  "versionCode": 20800,
+  "packageName": "com.deuterium.app.uilab",
+  "createdAt": "2026-09-10T02:59:49.727930+00:00",
+  "signerSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "files": [
+    {
+      "name": "Deuterium-2.0.8-20800-test.apk",
+      "sizeBytes": 25062134,
+      "sha256": "62fd90d6cf2c7842283bb77e410d8e299560d169ef711d69637a7d693fca9bfa"
+    },
+    {
+      "name": "web-2.0.8.zip",
+      "sizeBytes": 33685205,
+      "sha256": "2ac3933a8512e4fcd811b8dd70f421107d9a8659738835c16eb201dc4347609a"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 12849312,
+      "sha256": "d46df3c7650530046166592a4e4531d58fa4bea83e57d5d9d4fc5b8d8bb20280"
+    }
+  ],
+  "appWebBuildSourceCommit": "dad2905eae783d03a39016239650114fe4e27852",
+  "appWebBuildInputsUnchanged": true,
+  "pullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/14",
+  "publishedAt": "2026-09-10T03:13:20Z",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.8-6566bb617f8d",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.8-6566bb617f8d/dist"
+}
