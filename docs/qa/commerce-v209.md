@@ -6,13 +6,13 @@
 
 | 对象 | 本轮结果 |
 | --- | --- |
-| Go | `go test -race -tags integration ./...` 全量通过；随后新增的迁移中断恢复保护通过真实数据库及竞态定向回归 |
-| Android | 134 项 JVM 单测，0 失败；App/独立测试 APK 构建、`lintDebug` 通过，Lint 无错误 |
+| Go | 加入提醒功能后重新运行 `go test -race -tags integration ./...` 全量通过；HTTP 集成包 292.5 秒，包含提醒并发确认与迁移 |
+| Android | 135 项 JVM 单测，0 失败；App/独立测试 APK 构建、`lintDebug` 通过，Lint 无错误 |
 | Web | 63 项单测，0 失败；Vite 生产构建通过 |
 | Core 1.0.2 | Maven verify，29 项测试，0 失败、0 跳过 |
 | XConomy .3 | 真实隔离 MariaDB 的 11 项测试通过，无跳过；可信邮件信用点 API 跨引擎重试只增记一次 |
 | Mail 0.6.2 | 真实隔离 MariaDB 的插件 164 项、桥接器 11 项、契约 16 项测试通过，无跳过；架构检查通过 |
-| OpenAPI | 4 份实际隔离 HTTP 响应通过当前契约验证：玩家券、后台券、商品列表、成交订单列表 |
+| OpenAPI | 原 4 份实际隔离 HTTP 响应通过；新增未查看提醒列表、提醒确认 2 份实际响应均通过严格契约校验 |
 
 Go 新增覆盖商品金额舍入、折扣/券择优、单品仅一件、门槛范围、优惠封顶、全额抵扣、玩家隔离、新注册玩家、过期与版本变化、并发占券和限购、失败释放、重复请求、退款与购物袋、真实店名快照。每日/每周刷新边界、月末与闰年处理已验证。信用点节点能力在创建订单前检查，免费订单的真实邮件证据不会因异常回执而释放奖励额度。
 
@@ -28,6 +28,18 @@ Mail 覆盖完整预览字节、防修改副本、信用点与摘要一致、仅
 - “我的”页出现“我的优惠”，原历史账单快捷行移除，点击打开优惠券页；钱包账单代码保持原入口。
 - 20900 覆盖安装成功。签名证书 SHA-256 与已发布 20800 一致：`04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3`。
 
+### 追加：新券提醒
+
+- 实际 `CouponArrivalHost` 与优惠页连接隔离 HTTP，验证启动未完成时不显示、已有付款浮层打开时排队、浮层关闭后合并提醒。
+- 简明满减券只有“好的”；多券同时提供“好的 / 去看看”，跳转实际优惠页并清除已加载券的红点。
+- 前台新增显示可点击的玻璃提醒条，不弹阻断浮窗；关闭玻璃与动效时仍保持可读与可操作。
+- 浅色、深色与 1.4 倍字号截图检查；额外检查无障碍节点高度，确认字号实际作用于独立浮窗。浮窗内容可滚动，底部按钮保持可见。
+- 确认接口持续失败时，关闭并重建 App 状态仍不重复弹窗；恢复连接后同步已查看状态。账号切换不会串用确认记录。
+- 缓存券达到服务端截止时刻后，浮窗和红点直接消失。
+- 真实 MariaDB 验证：GET 不消耗提醒/权益、两设备并发确认不回退状态、重复确认安全、其他玩家隔离、分页、新注册账号、过期券过滤和错误请求拒绝。
+
+此追加仅更新 Android/Go 与接口文档；Web/Core/Mail/XConomy 使用此前已验证的同一产物，本次没有重复运行这些组件的构建。
+
 ## 网页实际流程
 
 独立浏览器连接真实 Go HTTP 与随机 MariaDB 测试库；Core 使用隔离传输替身，预览图片使用本地既有素材。
@@ -42,6 +54,8 @@ Mail 覆盖完整预览字节、防修改副本、信用点与摘要一致、仅
 ## 预览
 
 [App 浅色](artifacts/v209/coupon-app-light.png) · [App 深色](artifacts/v209/coupon-app-dark.png) · [后台浅色](artifacts/v209/coupon-admin-light.png) · [后台深色](artifacts/v209/coupon-admin-dark.png) · [后台窄屏](artifacts/v209/coupon-admin-mobile.png) · [自动优惠结算](artifacts/v209/checkout-auto-best.png)
+
+[单券浮窗](artifacts/v209/arrival-single-light.png) · [多券浮窗](artifacts/v209/arrival-multiple-light.png) · [深色大字号](artifacts/v209/arrival-multiple-dark-large.png) · [前台轻提示](artifacts/v209/arrival-banner.png)
 
 ## 验证边界
 

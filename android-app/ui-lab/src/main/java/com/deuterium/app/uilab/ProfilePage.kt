@@ -14,11 +14,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.*
 
 @Composable
 fun SettingsRow(title:String,icon:ImageVector,color:Color=MaterialTheme.colorScheme.primary,detail:String="",badge:Boolean=false,onClick:()->Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick=onClick).padding(horizontal=18.dp,vertical=15.dp),verticalAlignment=Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().semantics{if(badge)stateDescription="有新内容"}.clickable(onClick=onClick).padding(horizontal=18.dp,vertical=15.dp),verticalAlignment=Alignment.CenterVertically) {
         Box(Modifier.size(31.dp).background(color,RoundedCornerShape(8.dp)),contentAlignment=Alignment.Center){Icon(icon,null,Modifier.size(21.dp),tint=Color.White)}
         Text(title,Modifier.weight(1f).padding(horizontal=13.dp),style=MaterialTheme.typography.bodyLarge)
         if(badge)Box(Modifier.padding(end=8.dp).size(7.dp).background(MaterialTheme.colorScheme.error,CircleShape))
@@ -48,7 +50,7 @@ fun ProfilePage(state:LabState,avatar:String?,userName:String,topInset:Dp,query:
             if(query.isBlank())SettingsDivider()
             if(match("发布","出售","上架"))SettingsRow("我发布的",Icons.Outlined.Inventory2,Color(0xFFFF9500)){onOpen("listings")}
             if(query.isBlank())SettingsDivider()
-            if(match("优惠","优惠券","折扣","满减"))SettingsRow("我的优惠",Icons.Outlined.ConfirmationNumber,Color(0xFF34AADC)){onOpen("coupons")}
+            if(match("优惠","优惠券","折扣","满减"))SettingsRow("我的优惠",Icons.Outlined.ConfirmationNumber,Color(0xFF34AADC),badge=state.commerce.network?.couponAttention?.hasUnread==true){onOpen("coupons")}
         } }
         item { SettingsGroup {
             if(match("外观","浅色","深色","自动","玻璃","动效"))SettingsRow("外观",Icons.Outlined.Contrast,Color(0xFF8E6BE8)){onOpen("appearance")}

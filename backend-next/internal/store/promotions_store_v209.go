@@ -232,6 +232,10 @@ func (s *Store) CouponsV209(ctx context.Context, actor string, admin bool, query
 }
 
 func (s *Store) CouponsFilteredV209(ctx context.Context, actor string, admin bool, query, cursor string, limit int, status string) ([]CatalogRecordV2, string, bool, error) {
+	return s.couponsFilteredV209(ctx, actor, admin, query, cursor, limit, status, false)
+}
+
+func (s *Store) couponsFilteredV209(ctx context.Context, actor string, admin bool, query, cursor string, limit int, status string, attention bool) ([]CatalogRecordV2, string, bool, error) {
 	if limit < 1 || limit > 100 || !catalogText(query, 0, 100) {
 		return nil, "", false, catalogInvalid()
 	}
@@ -264,6 +268,10 @@ func (s *Store) CouponsFilteredV209(ctx context.Context, actor string, admin boo
 		filter, values := promotionEligibilitySQLV209(u, time.Now().UTC())
 		where += filter
 		args = append(args, values...)
+		if attention {
+			where += " AND NOT EXISTS(SELECT 1 FROM promotion_attention_v209 a WHERE a.coupon_id=catalog_records_v2.resource_id AND a.owner_uuid=? AND a.viewed_at IS NOT NULL)"
+			args = append(args, u.ServerUUID)
+		}
 	}
 	if after > 0 {
 		where += " AND sequence_id<?"

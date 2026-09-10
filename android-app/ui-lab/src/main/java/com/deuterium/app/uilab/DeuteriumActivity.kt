@@ -198,6 +198,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     val sensorManager=remember{context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager}
     val sensorAvailable=remember{listOf(Sensor.TYPE_GAME_ROTATION_VECTOR,Sensor.TYPE_ROTATION_VECTOR,Sensor.TYPE_ACCELEROMETER).any{sensorManager.getDefaultSensor(it)!=null}}
     val saved=rememberSaveableStateHolder();val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
+    val overlays=remember{IosOverlayRegistry()}
     val density=LocalDensity.current;val ime=WindowInsets.ime;val keyboard=ime.getBottom(density)>0
     val statusTop=WindowInsets.statusBars.asPaddingValues().calculateTopPadding();val compactTop=statusTop+48.dp
     val compactFadeBottom=compactTop+24.dp
@@ -227,7 +228,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"
         route?.startsWith("market-product:")==true->"商品详情";else->destination.title
     }
-    CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop) {
+    CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalIosOverlayRegistry provides overlays) {
         Box(Modifier.fillMaxSize().then(if(route==null)Modifier.nestedScroll(connection) else Modifier)) {
             Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)) {
                 GlassAtmosphere(Modifier.recordGlassBackdrop(atmosphere))
@@ -294,6 +295,9 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                 }
             }
             if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,buildSet{if(updates?.hasUpdates==true)add(Destination.Profile.ordinal);if(state.hasUnreadMessages)add(Destination.Info.ordinal)}){destination=Destination.entries[it]}}
+            state.commerce.network?.couponAttention?.let{attention->
+                CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize(),allowPopup=route==null)
+            }
             flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}
             AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {
                 state.notice?.let{notice->LiquidGlass(Modifier.fillMaxWidth(),backdrop=backdrop,onClick={goToNotice(notice.route)}){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.NotificationsNone,null,tint=MaterialTheme.colorScheme.primary);Column(Modifier.weight(1f).padding(horizontal=10.dp)){Text(notice.title,style=MaterialTheme.typography.titleMedium);Text(notice.body,style=MaterialTheme.typography.bodySmall,maxLines=2)};IconButton({state.notice=null},Modifier.size(36.dp)){Icon(Icons.Outlined.Close,"关闭提醒",Modifier.size(18.dp))}}}}

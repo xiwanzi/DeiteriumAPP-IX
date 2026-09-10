@@ -6,6 +6,14 @@ import org.junit.Test
 import java.time.Instant
 
 class StorePromotionsTest {
+    @Test fun arrivalActionsFollowTheAmountOfInformation() {
+        val coupon=StoreCoupon("one","开业礼遇","ORDER","FIXED",2000,10000,10000,0,true,"全部店铺 · 全部商品",Instant.EPOCH,Instant.MAX)
+        assertFalse(couponArrivalNeedsDetails(listOf(coupon)))
+        assertTrue(couponArrivalNeedsDetails(listOf(coupon,coupon.copy(id="two"))))
+        assertTrue(couponArrivalNeedsDetails(listOf(coupon.copy(restricted=true))))
+        assertTrue(couponArrivalNeedsDetails(listOf(coupon.copy(type="ITEM",benefit="PERCENT",rate=8500))))
+        assertTrue(couponArrivalNeedsDetails(listOf(coupon.copy(name="跨越星海的探索者专属开业特别礼遇限时满减优惠券限时活动专享"))))
+    }
     private fun quote()=JSONObject("""{"channel":"OFFICIAL_STORE","totalAmount":"14.76","originalTotal":"22.20","productDiscount":"4.44","couponDiscount":"3.00","discountTotal":"7.44","storeName":"EOS Lab旗舰店","coupon":{"name":"开业礼遇"},"items":[{"title":"探索补给包","quantity":2,"unitPrice":"8.88","subtotal":"17.76"}]}""")
 
     @Test fun discountedQuoteAndOrderUseTheSameExactAmounts() {

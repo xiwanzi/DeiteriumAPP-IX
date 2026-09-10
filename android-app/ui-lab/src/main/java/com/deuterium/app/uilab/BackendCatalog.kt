@@ -20,6 +20,7 @@ fun methodCode(method:DeliveryMethod)=when(method){DeliveryMethod.Door->"DOOR";D
 fun deliveryMethod(code:String)=when(code){"DOOR"->DeliveryMethod.Door;"PICKUP"->DeliveryMethod.Pickup;"WORKSITE"->DeliveryMethod.Worksite;else->DeliveryMethod.Mailbox}
 
 class BackendCatalog(private val api:BackendApi,private val state:LabState) {
+    val couponAttention=CouponAttention(api)
     var shopError by mutableStateOf<String?>(null);private set
     var marketError by mutableStateOf<String?>(null);private set
     var error by mutableStateOf<String?>(null);private set

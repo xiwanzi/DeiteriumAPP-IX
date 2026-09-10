@@ -16,6 +16,7 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        if(options.getString("couponArrivals")=="true"){CouponArrivalCheck.run(this);return}
         if(options.getString("commercePromotions")=="true"){CommercePromotionsCheck.run(this);return}
         options.getString("launcherIconSelect")?.let{LauncherIconCheck.select(this,it);return}
         if(options.getString("launcherIcons")=="true"){LauncherIconCheck.run(this);return}

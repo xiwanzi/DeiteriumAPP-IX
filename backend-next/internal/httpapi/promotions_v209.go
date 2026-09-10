@@ -26,6 +26,8 @@ func (s *Server) itemVersionV209(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) registerPromotionsV209(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/store/coupons", s.couponsV209(false))
+	mux.HandleFunc("GET /api/v1/store/coupons/attention", s.couponAttentionV209)
+	mux.HandleFunc("POST /api/v1/store/coupons/attention", s.acknowledgeCouponAttentionV209)
 	mux.HandleFunc("GET /api/v1/admin/coupons", s.couponsV209(true))
 	mux.HandleFunc("POST /api/v1/admin/coupons", s.saveCouponV209)
 	mux.HandleFunc("PUT /api/v1/admin/coupons/{couponId}", s.saveCouponV209)

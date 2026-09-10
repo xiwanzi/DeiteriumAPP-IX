@@ -5,7 +5,7 @@
   "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14",
   "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
   "tests": {
-    "android": 134,
+    "android": 135,
     "web": 63,
     "core": 29,
     "xconomy": 11,
@@ -17,7 +17,7 @@
   "skipped": 0,
   "goRaceIntegration": "PASS",
   "migrationResume": "PASS",
-  "openapiActualResponses": 4,
+  "openapiActualResponses": 6,
   "nativeChecks": [
     "coupons_light_dark_large_text",
     "expired_coupon_removed",
@@ -39,5 +39,15 @@
     1440,
     412
   ],
-  "liveGameClientVerified": false
+  "liveGameClientVerified": false,
+  "couponArrivalChecks": [
+    "single_and_multiple_actions",
+    "startup_and_overlay_deferral",
+    "offline_ack_recreation",
+    "account_isolation",
+    "foreground_banner",
+    "expired_dialog_removed",
+    "actual_dialog_font_scaling"
+  ],
+  "couponAttentionMigration": "024_coupon_attention.sql"
 }

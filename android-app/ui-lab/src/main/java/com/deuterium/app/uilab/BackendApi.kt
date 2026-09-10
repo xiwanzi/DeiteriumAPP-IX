@@ -138,6 +138,11 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     }
     fun shownNotices():Set<String> = prefs.getStringSet("shown-notices:$playerRef",emptySet()).orEmpty().toSet()
     fun saveShownNotices(ids:Set<String>){prefs.edit().putStringSet("shown-notices:$playerRef",ids.toList().takeLast(200).toSet()).apply()}
+    internal fun couponReceipts(scope:FinancialScope):JSONObject = prefs.getString("coupon-receipts:${scope.origin}:${scope.owner}",null)?.let{runCatching{JSONObject(it)}.getOrNull()} ?: JSONObject()
+    internal fun saveCouponReceipts(scope:FinancialScope,value:JSONObject) {
+        scope.verifyCurrent(financialScope())
+        prefs.edit().putString("coupon-receipts:${scope.origin}:${scope.owner}",value.toString()).apply()
+    }
     fun uploadState(key:String):JSONObject? = prefs.getString("upload:$playerRef:$key",null)?.let{runCatching{JSONObject(it)}.getOrNull()}
     fun saveUploadState(key:String,value:JSONObject){prefs.edit().putString("upload:$playerRef:$key",value.toString()).commit()}
     fun clearUploadState(key:String){prefs.edit().remove("upload:$playerRef:$key").apply()}
