@@ -23,7 +23,7 @@ class LabNotifications(private val context: Context) {
         val preferences=NotificationPreferences(context,userName)
         if(!preferences.permits(event.topic))return
         val preview=preferences.get("showPreviews")
-        val intent=Intent(context,MainActivity::class.java).putExtra("route",event.route).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val intent=Intent(context,DeuteriumActivity::class.java).putExtra("route",event.route).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pending=PendingIntent.getActivity(context,event.id.toInt(),intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val notification=NotificationCompat.Builder(context,if(event.route=="wallet")"wallet" else if(event.route.startsWith("order:")||event.route.startsWith("refund:")||event.route.startsWith("commission:"))"orders" else "messages")
             .setSmallIcon(R.drawable.ic_notification).setContentTitle(if(preview)event.title else "Deuterium 通知").setContentText(if(preview)event.body else "你有一条新的提醒")

@@ -1,0 +1,10 @@
+{
+  "before": "[314,861][519,1134]",
+  "after": [
+    {
+      "text": "Deuterium",
+      "content-desc": "Deuterium",
+      "bounds": "[314,861][519,1134]"
+    }
+  ]
+}

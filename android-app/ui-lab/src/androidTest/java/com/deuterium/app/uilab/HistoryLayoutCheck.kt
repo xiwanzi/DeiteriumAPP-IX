@@ -28,7 +28,7 @@ import kotlin.math.abs
 object HistoryLayoutCheck {
     fun run(test:Instrumentation) {
         val result=Bundle();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
-        val server=MockWebServer();var host:MainActivity?=null
+        val server=MockWebServer();var host:DeuteriumActivity?=null
         val context=object:ContextWrapper(test.targetContext){override fun getSharedPreferences(name:String,mode:Int):SharedPreferences=super.getSharedPreferences("qa-history-$name",mode)}
         try {
             val requests=Collections.synchronizedList(mutableListOf<String>());val failNext=AtomicBoolean(false)
@@ -52,7 +52,7 @@ object HistoryLayoutCheck {
             book.orders.add(CommerceOrder("fixture-order","fixture-key",OrderChannel.Official,"FixtureSelf","Deuterium 官方商店","",listOf(OrderLine("fixture-product","测试商品","",1234500,1)),DeliveryMethod.Mailbox,"",LocalDateTime.now(),OrderStage.AwaitingClaim,refund=RefundState.Approved,canHideRecord=true,serverStatus="REFUNDED"))
             var screen by mutableStateOf("history");var mode by mutableIntStateOf(1);var feedback by mutableStateOf(false);var dialog by mutableStateOf(false)
             var attempts=0;var deleted=false
-            host=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            host=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             val activity=host
             test.runOnMainSync{activity.setContent{LabTheme(mode,false,false){val backdrop=rememberGraphicsLayer();CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface,LocalOverlayBackdrop provides backdrop){
                 Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop).background(MaterialTheme.colorScheme.background)) {

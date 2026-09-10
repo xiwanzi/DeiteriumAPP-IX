@@ -19,7 +19,7 @@ class LabSession : ViewModel() {
         clearSession()
         val newScope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
         scope=newScope
-        val state=LabState(newScope,followed,saveFollowed,name,notify,BackendApi.get(context),NotificationPreferences(context,name))
+        val state=LabState(newScope,followed,saveFollowed,name,notify,BackendApi.get(context),NotificationPreferences(context,name),LauncherIcons.get(context))
         current=state;state.restoring=true
         newScope.launch {
             // Old ui-lab snapshots contain simulated money and must never enter a live session.

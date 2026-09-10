@@ -16,6 +16,8 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        options.getString("launcherIconSelect")?.let{LauncherIconCheck.select(this,it);return}
+        if(options.getString("launcherIcons")=="true"){LauncherIconCheck.run(this);return}
         if(options.getString("sakiLayout")=="true"){SakiLayoutCheck.run(this);return}
         if(options.getString("historyLayout")=="true"){HistoryLayoutCheck.run(this);return}
         if(options.getString("installerHandoff")=="true"){InstallerHandoffCheck.run(this);return}

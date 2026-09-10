@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.os.Bundle
 import android.widget.Toast
@@ -52,7 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.*
 
-class MainActivity : ComponentActivity() {
+class DeuteriumActivity : ComponentActivity() {
     private var incomingRoute by mutableStateOf<String?>(null)
     private var nativeLaunchReady by mutableStateOf(false)
     private fun syncSystemTheme(theme:Int) {
@@ -79,6 +81,13 @@ class MainActivity : ComponentActivity() {
         prefs.edit().remove("dynamic").remove("accent").apply()
         prefs.edit().remove("demoSignedIn").remove("demoUser").apply()
         val api=BackendApi.get(this)
+        val launcherIcons=LauncherIcons.get(this)
+        lifecycleScope.launch {
+            launcherIcons.restore()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while(isActive){launcherIcons.sync();delay(30_000)}
+            }
+        }
         val images=AppImages.get(this)
         if(api.signedIn)prefs.getString("avatar:${api.userName}",null)?.let{source->lifecycleScope.launch{runCatching{images.bitmap(source,256)}}}
         val materialStore=GlassSettingsStore(prefs)
@@ -105,8 +114,8 @@ class MainActivity : ComponentActivity() {
             var params by remember { mutableStateOf(materialStore.load()) }
             var paymentAssetsReady by remember { mutableStateOf(FacePayAssets.movie!=null) }
             LaunchedEffect(Unit) {
-                PaymentSound.prepare(this@MainActivity)
-                runCatching { FacePayAssets.load(this@MainActivity) }
+                PaymentSound.prepare(this@DeuteriumActivity)
+                runCatching { FacePayAssets.load(this@DeuteriumActivity) }
                 paymentAssetsReady=true
             }
             val scope = rememberCoroutineScope()
@@ -114,7 +123,7 @@ class MainActivity : ComponentActivity() {
                 if(uri != null) scope.launch {
                     val copied = withContext(Dispatchers.IO) {
                         runCatching {
-                            val target = AppStorage.imageWorkFile(this@MainActivity,"avatar-${System.currentTimeMillis()}.img")
+                            val target = AppStorage.imageWorkFile(this@DeuteriumActivity,"avatar-${System.currentTimeMillis()}.img")
                             contentResolver.openInputStream(uri)?.use { input ->
                                 target.outputStream().use { output ->
                                     val buffer = ByteArray(8192); var total = 0L
@@ -125,7 +134,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     copied.onSuccess { cropSource = it }
-                        .onFailure { Toast.makeText(this@MainActivity,it.message ?: "图片读取失败",Toast.LENGTH_SHORT).show() }
+                        .onFailure { Toast.makeText(this@DeuteriumActivity,it.message ?: "图片读取失败",Toast.LENGTH_SHORT).show() }
                 }
             }
             LabTheme(theme, motion, true, params.overlay) {
@@ -146,13 +155,13 @@ class MainActivity : ComponentActivity() {
                         { glass = it; prefs.edit().putBoolean("glass",it).apply() },
                         { params = it; materialStore.save(it) },
                         { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                        { scope.launch { runCatching{api.logout()}.onSuccess{session.clearSession()}.onFailure{Toast.makeText(this@MainActivity,it.message ?: "退出失败，请重试",Toast.LENGTH_LONG).show()} } },
+                        { scope.launch { runCatching{api.logout()}.onSuccess{session.clearSession()}.onFailure{Toast.makeText(this@DeuteriumActivity,it.message ?: "退出失败，请重试",Toast.LENGTH_LONG).show()} } },
                         prefs.getStringSet("followed:$userName",emptySet())?.toSet() ?: emptySet(),
                         { prefs.edit().putStringSet("followed:$userName",it).apply() },
                         tilt,{tilt=it;prefs.edit().putBoolean("tilt",it).apply()},overlayGlass,{overlayGlass=it;prefs.edit().putBoolean("overlayGlass",it).apply()},incomingRoute,{incomingRoute=null;intent.removeExtra("route")},session
                     )
                     cropSource?.let { source ->
-                        fun releaseSource(){cropSource=null;scope.launch(Dispatchers.IO){AppStorage.removeImageWorkFile(this@MainActivity,source)}}
+                        fun releaseSource(){cropSource=null;scope.launch(Dispatchers.IO){AppStorage.removeImageWorkFile(this@DeuteriumActivity,source)}}
                         AvatarCropper(source,::releaseSource){avatar=it;prefs.edit().putString("avatar:$userName",it).apply();releaseSource()}
                     }
                     AppLaunchOverlay(paymentAssetsReady&&(!signedIn||session.readyFor(userName)),motion,session,nativeLaunchReady)

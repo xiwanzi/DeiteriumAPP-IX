@@ -1,0 +1,8 @@
+batch_roundtrip_and_foreground_survival=PASS
+persisted_selection=PASS
+result=PASS
+offline_unknown_and_stale_do_not_revert=PASS
+default_and_legacy_component=PASS
+anniversary_entry_opens_same_activity=PASS
+final_default=PASS
+individual_api_roundtrip=PASS

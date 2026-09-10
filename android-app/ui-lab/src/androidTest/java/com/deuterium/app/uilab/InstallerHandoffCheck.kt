@@ -24,7 +24,7 @@ object InstallerHandoffCheck {
             check(info.packageName==context.packageName&&info.longVersionCode>installed.longVersionCode)
             check(context.packageManager.canRequestPackageInstalls()){"Emulator must explicitly allow this test's installation source"}
             server.enqueue(MockResponse().setHeader("Content-Type","application/vnd.android.package-archive").setBody(Buffer().write(file.readBytes())));server.start()
-            val activity=test.startActivitySync(Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            val activity=test.startActivitySync(Intent(context,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             lateinit var updates:AppUpdates
             test.runOnMainSync{updates=ViewModelProvider(activity)[AppUpdates::class.java]}
             fun waitFor(label:String,condition:()->Boolean){repeat(250){if(condition())return;Thread.sleep(100)};error(label)}

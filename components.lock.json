@@ -1,33 +1,39 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-09",
+  "baselineDate": "2026-09-10",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.6",
-      "versionCode": 20600,
-      "sourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
-      "publishedSha256": "3b45ddd407aab468b346367604d5c62bbda996543bbf3b4a6a8db7cae2075645",
-      "buildSourceCommit": "1f8ada46265a9fea736ccf6f76449532fa98f3b4"
+      "version": "2.0.7",
+      "versionCode": 20700,
+      "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+      "publishedSha256": "3aa87d0bb88874d9c215ff33d1ff2f9a142b475e55bc98cb754505055e71f808",
+      "buildSourceCommit": "ff94c34b96ccbfdeffce738cdeb287cdc1eb3360",
+      "developmentVersion": "2.0.8",
+      "developmentVersionCode": 20800,
+      "developmentBranch": "feat/launcher-icons-v208"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.6",
-      "sourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
-      "publishedSourceCommit": "4d9a001ebd0e3210ea73a49498ec61a63afd5d03",
-      "publishedArchiveSha256": "aff795fd2097d3197c5e14c7507357cf67254c8e8f252f8d182c7e01cd0e135d",
-      "buildSourceCommit": "1f8ada46265a9fea736ccf6f76449532fa98f3b4"
+      "version": "2.0.7",
+      "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+      "publishedSourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+      "publishedArchiveSha256": "820c6d053f772a981640e1c99109ff07315794eedd84dd1e9baf14b45822915f",
+      "buildSourceCommit": "ff94c34b96ccbfdeffce738cdeb287cdc1eb3360",
+      "developmentVersion": "2.0.8",
+      "developmentBranch": "feat/launcher-icons-v208"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e",
-      "publishedSourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e",
-      "publishedSha256": "7d8a8c0336a2222c78dc3b9672110617eac8249498ff2916bfd73e586744d10c",
-      "buildSourceCommit": "515c87fd49366523a3d7af421cb1fef37267a27e"
+      "sourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+      "publishedSourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+      "publishedSha256": "0cd9c160bf3fc3d514a153d3d83fcaa31743981ea4b3b65d4afdf0db6dbf32c1",
+      "buildSourceCommit": "4262edd84c030f443a6187c41deadb1bacb39519",
+      "developmentBranch": "feat/launcher-icons-v208"
     },
     {
       "name": "core",

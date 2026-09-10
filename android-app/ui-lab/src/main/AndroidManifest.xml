@@ -11,7 +11,6 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:label="Deuterium"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DeuteriumLab">
         <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true">
@@ -21,15 +20,34 @@
             <intent-filter><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /></intent-filter>
         </receiver>
         <activity
-            android:name=".MainActivity"
+            android:name=".DeuteriumActivity"
             android:launchMode="singleTop"
             android:configChanges="uiMode"
-            android:exported="true"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize">
+        </activity>
+        <!-- Preserve the previously installed desktop component name during the alias migration. -->
+        <activity-alias
+            android:name=".MainActivity"
+            android:targetActivity=".DeuteriumActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherAnniversary"
+            android:targetActivity=".DeuteriumActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_anniversary">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
     </application>
 </manifest>

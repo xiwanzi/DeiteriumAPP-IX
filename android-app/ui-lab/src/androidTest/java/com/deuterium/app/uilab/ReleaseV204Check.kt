@@ -30,7 +30,7 @@ object ReleaseV204Check {
     fun run(test:Instrumentation) {
         val result=Bundle();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val server=MockWebServer()
         val fixtureContext=object:ContextWrapper(test.targetContext){override fun getSharedPreferences(name:String,mode:Int):SharedPreferences=super.getSharedPreferences("qa-v204-$name",mode)}
-        var host:MainActivity?=null
+        var host:DeuteriumActivity?=null
         val previousTheme=test.targetContext.getSharedPreferences("ui-lab",0).getInt("theme",1)
         try {
             val requests=Collections.synchronizedList(mutableListOf<String>())
@@ -50,7 +50,7 @@ object ReleaseV204Check {
             val remember=BackendApi::class.java.getDeclaredMethod("rememberSession",JSONObject::class.java).apply{isAccessible=true}
             test.runOnMainSync{remember.invoke(api,JSONObject().put("token","v204-fixture-token").put("user",JSONObject().put("gameId","FixtureSelf").put("playerRef","fixture-self")))}
             val state=LabState(scope,userName="FixtureSelf",api=api)
-            host=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            host=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             val activity=host
             var theme by mutableIntStateOf(1);var screen by mutableStateOf("wallet");var compositions=0
             test.runOnMainSync{activity.setContent{remember{compositions++;Any()};LabTheme(theme,false,false){CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onSurface){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){

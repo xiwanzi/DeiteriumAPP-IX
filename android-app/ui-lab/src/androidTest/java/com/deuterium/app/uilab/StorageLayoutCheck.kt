@@ -40,7 +40,7 @@ object StorageLayoutCheck {
             download.writeBytes(ByteArray(2*1024*1024))
             val before=runBlocking{AppStorage.measure(context)}
             check(before.images>0&&before.updates>=download.length()&&before.temporary>=512*1024)
-            val activity=test.startActivitySync(Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            val activity=test.startActivitySync(Intent(context,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             test.runOnMainSync{
                 val updates=ViewModelProvider(activity)[AppUpdates::class.java]
                 updates.initialize()

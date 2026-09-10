@@ -18,7 +18,7 @@ object PaymentTimingCheck {
     fun run(test:Instrumentation){
         val report=Bundle()
         try{
-            val activity=test.startActivitySync(Intent(test.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+            val activity=test.startActivitySync(Intent(test.targetContext,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             fun contains(node:AccessibilityNodeInfo?,text:String):Boolean{
                 if(node==null)return false
                 if(node.text?.contains(text)==true)return true

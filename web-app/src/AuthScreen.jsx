@@ -1,3 +1,4 @@
+import launcherIcon from "./assets/launcher-icons/default.svg";
 import React, { useState, useEffect } from "react";
 import {
   ArrowRight,
@@ -93,7 +94,7 @@ export default function AuthScreen({
     <div className="auth-page">
       <header className="auth-header">
         <a href="/" className="auth-brand">
-          <img src={media("app-icon.svg")} alt="Deuterium App 图标" />
+          <img src={launcherIcon} alt="Deuterium App 图标" />
           <span>
             Deuterium <small>ID</small>
           </span>
@@ -174,7 +175,7 @@ export default function AuthScreen({
               </button>
             )}
             <div className="auth-emblem">
-              <img src={media("app-icon.svg")} alt="Deuterium" />
+              <img src={launcherIcon} alt="Deuterium" />
             </div>
             <p className="eyebrow">ONE ID. YOUR WHOLE WORLD.</p>
             <h1>

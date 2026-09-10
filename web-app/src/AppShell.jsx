@@ -1,3 +1,4 @@
+import launcherIcon from "./assets/launcher-icons/default.svg";
 import React, { useEffect, useState } from "react";
 import {
   Store,
@@ -86,7 +87,7 @@ export default function AppShell({
           onClick={(e) => link(e, "/")}
           title="Deuterium"
         >
-          <img src={media("app-icon.svg")} alt="Deuterium App 图标" />
+          <img src={launcherIcon} alt="Deuterium App 图标" />
           <span>
             Deuterium<small>{managing ? "官方管理工作台" : "属于我们的世界"}</small>
           </span>
@@ -174,7 +175,7 @@ export default function AppShell({
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.7
+              Deuterium · 2.0.8
             </button>
             {!managing && <button className="top-search" onClick={onSearch}>
               <Search size={17} />
@@ -223,7 +224,7 @@ export default function AppShell({
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.7 <b>·</b> Deuterium ID
+              Web 2.0.8 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}
