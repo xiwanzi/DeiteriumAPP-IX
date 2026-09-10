@@ -70,18 +70,20 @@
   ],
   "pendingRelease": {
     "version": "2.0.9",
-    "androidVersionCode": 20900,
+    "androidVersionCode": 20901,
     "status": "VERIFIED_NOT_DEPLOYED",
     "branch": "xiwanzi/commerce-v209",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
       "repository": "https://github.com/Deuterium-IX/Deuterium-Mail",
-      "commit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
+      "commit": "67db93749bf97527ec3072214777c87e68e3132f",
       "version": "0.6.2",
       "apiVersion": 3,
       "bridgeVersion": "0.6.1",
-      "uiVersion": "0.6.0"
+      "uiVersion": "0.6.0",
+      "pullRequest": 2,
+      "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
     "qa": "docs/qa/commerce-v209.md",
     "releaseNotes": "docs/deployment/deuterium-2.0.9-candidate.md",

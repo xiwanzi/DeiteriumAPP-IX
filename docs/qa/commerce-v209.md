@@ -1,6 +1,8 @@
 # 商城 2.0.9 验收
 
-2026-09-10。对象为 `xiwanzi/commerce-v209` 的 App 20900、Web 2.0.9、配套 Go/Core/XConomy，及独立 Mail 源码 `2d69462c9a2bf705abb430b88dcad0437c387b24`。本记录是本轮验证，不代表生产部署。
+2026-09-10。对象为 `xiwanzi/commerce-v209` 的 App 20900 候选及 20901 发布包、Web 2.0.9、配套 Go/Core/XConomy，及独立 Mail 源码 `2d69462c9a2bf705abb430b88dcad0437c387b24`。本记录是本轮验证，不代表生产部署。
+
+20901 仅提高版本码，保证 20900 候选可以更新；重新通过构建、135 项 JVM 单测、签名校验、覆盖安装与桌面启动。APK 条目完整，解压后只有版本相关的 DEX 与 AndroidManifest 发生变化。
 
 ## 自动验证
 
