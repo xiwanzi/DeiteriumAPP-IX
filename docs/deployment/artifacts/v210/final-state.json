@@ -1,0 +1,10 @@
+{
+  "service": "active",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.10-65c08a290896",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.10-65c08a290896/dist",
+  "runningExecutable": "/opt/deuterium/releases/release-2.0.10-65c08a290896/deuterium",
+  "configAndEnvironmentUnchanged": true,
+  "businessCounts": "COMMISSION\t4\nORDER\t26",
+  "migrationCount": 22,
+  "temporarySessionRevoked": true
+}

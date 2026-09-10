@@ -1,5 +1,7 @@
 # 商城 2.0.9 增量契约
 
+2026-09-11 02:38：本轮修正已随 App/Web 2.0.10（21000）及配套 Go 发布，账号提醒已推送；见[实际部署记录](../deployment/deuterium-2.0.10-live.md)。下方“尚未部署/等待确认”为发布前快照。
+
 2026-09-11 本机修正：优惠到账改为统一应用内通知，新增券/商品删除及全额退款返券。下述新行为尚未部署，见[本轮计划](../plans/commerce-refunds-performance.md)与[验收记录](../qa/commerce-refunds-performance.md)。
 
 2026-09-10，已随 [2.0.9 正式发布](../deployment/deuterium-2.0.9-live.md)。App 2.0.9（20901）、Web 2.0.9、配套 Go；信用点交付配套 Core 1.0.2、Mail 0.6.2（API 3）、Mail Bridge 0.6.1 与 XConomy 2.26.3-deuterium.3。Mail UI 沿用实服 0.6.0 文件。
