@@ -122,12 +122,13 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
         }
     }
     private fun put(value:JSONObject){
-        val id=value.getString("messageId");val list=state.conversation(key)
+        val id=value.getString("messageId")
         val mine=value.getString("role")=="user"
         val at=Instant.parse(value.getString("createdAt")).atZone(ZoneId.systemDefault())
         val line=ChatLine(UUID.nameUUIDFromBytes(id.toByteArray()).mostSignificantBits,if(mine)"你" else assistantName,value.getString("content"),mine,at.format(DateTimeFormatter.ofPattern("HH:mm")),remoteId=id,serverAt=at.toInstant().toEpochMilli(),aiStatus=value.optString("status","completed"),sources=sources(value.optJSONArray("sources")),searchUsed=value.optBoolean("searchUsed"))
-        val index=list.indexOfFirst{it.remoteId==id};if(index>=0)list[index]=line else list.add(line)
+        putLine(line)
     }
+    private fun putLine(line:ChatLine){val list=state.conversation(key);val index=list.indexOfFirst{it.remoteId==line.remoteId};if(index>=0)list[index]=line else list.add(line)}
     suspend fun refresh(){
         if(busy||api.playerRef!=owner)return
         runCatching{
@@ -162,19 +163,22 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
         val pending=saved ?: JSONObject().put("clientMessageId",UUID.randomUUID().toString()).put("content",content).put("draft",raw)
         val request=JSONObject().put("clientMessageId",pending.getString("clientMessageId")).put("content",content)
         lastRequestId=pending.getString("clientMessageId")
-        api.savePendingAI(owner,pending);recoveredDraft=raw;busy=true;state.directPending[key]=true;state.directErrors.remove(key);statusText="正在连接 AI…"
+        recoveredDraft=raw;busy=true;state.directPending[key]=true;state.directErrors.remove(key);statusText="正在连接 AI…"
         var assistantId=pending.optString("assistantMessageId");var answer="";var responseSources=emptyList<AiSource>();var createdAt=Instant.now().toString()
+        var partialBase:ChatLine?=null;var partialZone:ZoneId?=null;var partialLocale:java.util.Locale?=null
         fun partial(status:String="streaming"){
             if(assistantId.isBlank())return
-            val value=JSONObject().put("messageId",assistantId).put("conversationId",conversationId).put("role","assistant").put("content",answer).put("createdAt",createdAt).put("status",status)
-                .put("sources",JSONArray(responseSources.map{JSONObject().put("title",it.title).put("url",it.url).put("origin",it.origin)}))
-            put(value)
+            val zone=ZoneId.systemDefault();val locale=java.util.Locale.getDefault()
+            val base=partialBase?.takeIf{it.remoteId==assistantId&&it.name==assistantName&&partialZone==zone&&partialLocale==locale}
+                ?: aiReplyTemplate(assistantId,assistantName,createdAt,zone,locale).also{partialBase=it;partialZone=zone;partialLocale=locale}
+            putLine(base.copy(text=answer,aiStatus=status,sources=responseSources))
         }
         return try{
+            api.savePendingAI(owner,pending)
             stream(request){event,data->
                 if(api.playerRef!=owner)throw ApiFailure("UNAUTHORIZED","登录账号已变化")
                 when(event){
-                    "meta"->{val current=data.getString("conversationId");if(conversationId!=current){state.conversation(key).clear();conversationId=current};data.optJSONObject("quota")?.let(::quota);data.optJSONObject("userMessage")?.let{createdAt=it.getString("createdAt");put(it)};assistantId=data.optString("assistantMessageId").takeUnless{it=="null"}.orEmpty();pending.put("assistantMessageId",assistantId);api.savePendingAI(owner,pending);answer=""}
+                    "meta"->{val current=data.getString("conversationId");if(conversationId!=current){state.conversation(key).clear();conversationId=current};data.optJSONObject("quota")?.let(::quota);data.optJSONObject("userMessage")?.let{createdAt=it.getString("createdAt");put(it)};assistantId=data.optString("assistantMessageId").takeUnless{it=="null"}.orEmpty();pending.put("assistantMessageId",assistantId);api.savePendingAI(owner,pending);answer="";partialBase=null}
                     "status"->statusText=when(data.optString("status")){"queued"->"请求已受理…";"searching"->"正在查找联网资料…";else->"正在生成回复…"}
                     "delta"->{answer+=data.getString("content");partial()}
                     "sources"->{responseSources=sources(data.optJSONArray("sources"));if(answer.isNotEmpty())partial()}
@@ -189,7 +193,7 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             state.directErrors[key]=failure.message ?: "连接中断，已保留回复，可继续查看";false
         }finally{busy=false;state.directPending[key]=false}
     }
-    private suspend fun stream(input:JSONObject,onEvent:(String,JSONObject)->Unit):Unit=suspendCancellableCoroutine{continuation->
+    private suspend fun stream(input:JSONObject,onEvent:suspend (String,JSONObject)->Unit):Unit=suspendCancellableCoroutine{continuation->
         val credential=api.token ?: run{continuation.resumeWithException(ApiFailure("UNAUTHORIZED","请重新登录"));return@suspendCancellableCoroutine}
         val call=http.newCall(Request.Builder().url(api.baseUrl+"/api/v1/ai/chat/stream").header("Authorization","Bearer $credential").header("Accept","text/event-stream")
             .post(input.toString().toRequestBody("application/json; charset=utf-8".toMediaType())).build())
@@ -205,4 +209,10 @@ class BackendAI(private val api:BackendApi,private val state:LabState) {
             }
         })
     }
+}
+
+internal fun aiReplyTemplate(id:String,name:String,createdAt:String,zone:ZoneId,locale:java.util.Locale):ChatLine {
+    val at=Instant.parse(createdAt).atZone(zone)
+    return ChatLine(UUID.nameUUIDFromBytes(id.toByteArray()).mostSignificantBits,name,"",false,
+        at.format(DateTimeFormatter.ofPattern("HH:mm",locale)),remoteId=id,serverAt=at.toInstant().toEpochMilli())
 }

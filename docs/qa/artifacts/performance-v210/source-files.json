@@ -1,0 +1,526 @@
+[
+  {
+    "path": "android-app/settings.gradle.kts",
+    "sha256": "a000a810860ae8beb2eaec65cc21bdd32824cde08f9a42a8e2aa4829c94b0181"
+  },
+  {
+    "path": "android-app/ui-lab/build.gradle.kts",
+    "sha256": "edd7bd9eaa8d3b73950d69b21a75e99715abaa562f5ef774b8c0926c4395b37d"
+  },
+  {
+    "path": "android-app/ui-lab/proguard-rules.pro",
+    "sha256": "b7f57ff87c54c55e9837dbcffe72d9611d06d1830fcf1124981b2ef17b3b73cd"
+  },
+  {
+    "path": "android-app/ui-lab/proguard-test-rules.pro",
+    "sha256": "97a23ce03141e46ae5986c35bc16b51352dd7f0d59b98f7b3a1bbe45d4e0c7b4"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/AndroidManifest.xml",
+    "sha256": "16b4b926dddb3f1dde6928f11ab9c5fcf91ae7d2ba7d4e2a3a7d06cb30c06e09"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/baseline-prof.txt",
+    "sha256": "9332a147862b1b0d9002f3e1449e83d68ca66d64bbcaccd867ee3f61e4b10961"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AdaptiveMoney.kt",
+    "sha256": "14d540db122a1336a77550f99e5a7856570517d38e64b4c31f5cc6e2c4ed3624"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppIdentity.kt",
+    "sha256": "e8aa11c0cd597cee7673c33bf80be7999d389575a5e6ea8d60a551a6dc3799f0"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppImages.kt",
+    "sha256": "eb507744c637f0d2f6827b8af83f00bb771acbf17c57421945a01594972916ba"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppLaunchOverlay.kt",
+    "sha256": "b764d5d2e305a15ef30bcb1723e4034982279259b5f2e40cfec643eea3a230e1"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppStorage.kt",
+    "sha256": "90712191aa741e96abadc6690561a3e57c4c9f750c8ca3a21f08430cd0f47690"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppUpdates.kt",
+    "sha256": "4dd54738b9d60c34cff6050ba63ce9a6c6e5173d35a0d278aee744318f88c4a7"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AuthPages.kt",
+    "sha256": "778008cae92e5057ff1478ab93216074bcee66eeed535c72a7af4a3523f625be"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AvatarCropper.kt",
+    "sha256": "100e05439ef151bed698aa3054ae28a8c3d8858590e298dfa1d4165a45d72f4e"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendAI.kt",
+    "sha256": "d8313048ecdd54f9e97dec9026da35c633e7cdaef6b7d5a2ef0fd50ea84d8fc4"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendApi.kt",
+    "sha256": "1de8e37dec20cda04d6f21ba1d0c50e00a3734ab6340938ce7f8eda356cb47e2"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendAssets.kt",
+    "sha256": "f88e3abeefa5fcac8a3807431e84eb07404e6b48a39b10c83ba485a4835698f5"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendCatalog.kt",
+    "sha256": "31eb164a5f47d956235c1aada7e96cb8ad2716fbcc1b4279b6772b6fe348797e"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendChat.kt",
+    "sha256": "b696f10581796924621ef096188fad0b7111e88e2edb4f9f265a0bf1e94515f3"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendCommissions.kt",
+    "sha256": "b5effbd0c7bc8d961d7a5f07e305656f6a6a7fe5eda3f15cec4ec7646fe693e5"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendInterventions.kt",
+    "sha256": "7cfa869c4cc9c0e6c61719940362f359d2a31e7039092983744348f852b3af40"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BillHistoryPage.kt",
+    "sha256": "1d6534e097642b8a708b27ec97e0e3cd799a22dadac631519ebcd1b71329f5a6"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BillHistoryQuery.kt",
+    "sha256": "fb6e1c6275b0856d8f44466bc65e40f0f01aa6c7187b5105c85f662a18029eba"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CachedPhoto.kt",
+    "sha256": "8fd8dcb6e40f4580b1d1bf588d9c6ce89ab6a731a4dcc31f80bb1f2eedb204c9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CalendarRangeSheet.kt",
+    "sha256": "22cb41abc766489b745db46e1db022246993d7253520f9ff8d73c64219301540"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ChatInteractions.kt",
+    "sha256": "bb40e2d6bd4c8ff602809038b61962553d77f5481dad47d9d260d8af3e9ddd7a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CheckoutSummary.kt",
+    "sha256": "5a34d085a099f76c8546de61fee542b514810e4a1144f0f9054659d620a33d8a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CollapsingChrome.kt",
+    "sha256": "fce141f31178968c0d017cf6c7497aa365ff682354131dbc485abe16e73dbe39"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommerceBook.kt",
+    "sha256": "208395d2925173711cf5a2bf8f4f028e7aa09a81bbb8dcf38b39146f325601e9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommissionBook.kt",
+    "sha256": "f23f6ba35ef795ab2bf3e2f2bb5db0f993020e74602319b775ab2ec17feb86e6"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommissionPages.kt",
+    "sha256": "335614df483b369faeaa2257b48754ecf57b64f3863e0475ef0a8d457ae56594"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ConcurrentRefresh.kt",
+    "sha256": "fce9ad967ea6e32799c0c14d475a03a603cbc357ea76d11c96e8acb0dbfdf78c"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ConversationPages.kt",
+    "sha256": "1474ebe2925834ba822e48711f5b0650dc8969f3b9b96df04206bb8e91f55dc4"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CouponArrivalHost.kt",
+    "sha256": "38e5d34e2350e75fce539ab44403d13642ac38b499fa96860e906dd8b311ac0b"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CouponAttention.kt",
+    "sha256": "d6c4547939c1f510266821a332fa40ee9adc99f9ef333a1890d70ca604cc77c8"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeleteRecordDialog.kt",
+    "sha256": "4a32be1837fd46352effadb647a71985bc17944cdd3469b6e9c05e6776aa11c3"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DemoPlayers.kt",
+    "sha256": "3a2ce0ba0ae49ce684af6d1a91c862ffaf653274d41f60c0147cefe1070e2986"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumActivity.kt",
+    "sha256": "a7d9604dc73269b6d2671d9747375afdf7dd276fb19197e495487ef6d6b1be4d"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumIcons.kt",
+    "sha256": "841476fd7a437c0ee66b434bbcf3f85b7f4df0568a164364a3d199aa557399af"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeviceTilt.kt",
+    "sha256": "127fcd2b9ff5d819525513c928bef94394161994329b755d318a52a8ac94d2df"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/EventPages.kt",
+    "sha256": "04b584a6830591c5a24a03baa6eec8de755c5a87813de1b6d4943ec0f0e7ac4b"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/FacePayAssets.kt",
+    "sha256": "57338000d5ba05932bee834617befc4078ec264ac85fb73002c8ddaec2158a8f"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassParameters.kt",
+    "sha256": "dee9231fff2da4c352d9d21dca93a0b95144a1dbb7cd0f13713e5a37d483869a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassSettingsStore.kt",
+    "sha256": "6f2a86958f9da7d340c33604c44a82de3cada71023ab11024731ac70508f1ea1"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassTuner.kt",
+    "sha256": "249f55df22bcffed848877bdc3e0e1f6e3786b4f573bdbb1173b0496b5225cd3"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GradientGlassHeader.kt",
+    "sha256": "35074eb0a3685ed4beea112c8b13eb14a21659f236a600873c6cc56ad1056570"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ImageCacheStore.kt",
+    "sha256": "4f237316c908ec36711b3a6cce6009c487662f732d062afc6dd04abd6d0bbe82"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InAppNoticeCard.kt",
+    "sha256": "97145840103d8e3e4002f8a823fe015a2b5d88c515ab52032b01a1b94c89fc15"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InformationPages.kt",
+    "sha256": "67d5d79ba9bf879e19c9ae73f1f1e13b56ac3924d289d8dac9ec31a7136b6a94"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InstallCompletionReceiver.kt",
+    "sha256": "542334aeb1291aca6db2bd38025f036f40d7904f70ce0f132d5d6617116a3f19"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InterventionCase.kt",
+    "sha256": "36d1568c81b2993bc5292a2e94ce2f1c5eb552185f7fbbf7724b37ef49b7c675"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InterventionPages.kt",
+    "sha256": "7cc86f38ab50d6a7c5f3f41dbc575f5fc76acb6a726cba3307deb355ad3d3bc2"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosControls.kt",
+    "sha256": "1a980cf7fd99fda14a219794896aa53b0ca1155648fe4221436ac3e937e09112"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosOverlayHost.kt",
+    "sha256": "f2a8998451200a4b1dc129b5c0d16f5a1823ac19c145abd74818f341185a8dce"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabNotifications.kt",
+    "sha256": "f08cba96d0ff3faea00d84adffe026cbec7a5ba56119b13b0c3fa450418b9c0e"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabSession.kt",
+    "sha256": "30dc46db1919740233eabd7cf24604b140e47c13fdaa63193dbcd618028f5f4b"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabState.kt",
+    "sha256": "0c14305cadaf575fec9bdf669383f8aa49de834e5d11d9fe92ee259c86defcbb"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabTheme.kt",
+    "sha256": "6c6587ae8eab9ec45c8b1e3d938c2261fe85b003076fce05c411271006e4e1cc"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LauncherIconPolicy.kt",
+    "sha256": "a00fdba280e583054954b1c11caea39912dbdc994e9978343ada9ed157084753"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LauncherIcons.kt",
+    "sha256": "9e7ce6d62c10fc76c4d353ea2ff69e63c2866fb0628c6b9dd50af1170dcf28c2"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LedgerRecords.kt",
+    "sha256": "d5493bc91c2911b5ba3aabfb26dd0e0988db70c37cbf57bcaf9c7692ed1a8bee"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LiquidGlass.kt",
+    "sha256": "8d0a766a56d72390f00217402c5d460e918f5a923581b85f19938d540e9cfa76"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ListingPhotoEditor.kt",
+    "sha256": "b5f5a15597fe701f3ae6c285cd0f0f5f67c72bb4776a9891ed7707694d5b6102"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LocalAvatar.kt",
+    "sha256": "bb7a71e75f073a29b480300dde78032fed45e29d2c331f8e4e4cd28230d31d83"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarkdownBody.kt",
+    "sha256": "92e7ecf7372eddf16a2d5aaff544751bc3adf4acc978d4f942a00bc78dd3efb1"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarketCategories.kt",
+    "sha256": "b9e3ad8b32915eba896a743a0927933a84c3835b9a0e2804bc370d6cf51f00ec"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarketplacePages.kt",
+    "sha256": "9d4abc3341a296e1236650a9192c45ed0afba65a842c01d21bae0beb6ea441b0"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MastercardPlayback.kt",
+    "sha256": "8e26e8900321d770e9e0378d2e4c83db7dfad7e2e7c9217cd9715c5ceff78fa3"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MessageActions.kt",
+    "sha256": "c2379019df01e3bd57a241715afc31896b1d8cc39803ecc1fcff6fad99b63402"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MessageComposer.kt",
+    "sha256": "87312c7a406fc59d694de60f43a778b11852b9ba13aa67dc2602c0a6dcba74b9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MovingGlassNav.kt",
+    "sha256": "afee8cbd34e33de9d9285b1343b12fc90aa42ee75fd37a52455de5031434a02c"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/NotificationPage.kt",
+    "sha256": "107b77cb6bbb4a6f25366eb6510931c56b4262cf441464c58cd51ae6815056e3"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/NotificationPreferences.kt",
+    "sha256": "0a46bcba2dabd3ee5697e44d0afab5e9f3dc607af793c32af3bf154c8178fd83"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/OrderedRecords.kt",
+    "sha256": "93e685cfa9a0169701304146d3de171d5959616a097094818efdc4ebc6457db0"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/OrderPages.kt",
+    "sha256": "bf8945e04ffc08cd7098c95b01a9816cc7c158320a338dc06d8baefda25abb95"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentConfirmation.kt",
+    "sha256": "ebff6fdcfb3c43ac526dddf4ac0c71b6fcd88d8380ccec27515ac4b9baa9a956"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentExperience.kt",
+    "sha256": "ccf817d2bea5ddc7a5873bbbfc6c1f589b3c2677303139db7bb65458986e1097"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PendingOperationRecovery.kt",
+    "sha256": "88dd27860393fc56713893f4caaf39887bcdf404e9865186c76b1dd8ebfe8498"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PendingPreferences.kt",
+    "sha256": "2be7f83ec506c0f9dc4dac73da1e66719af675f7996c2e69174731142d88e945"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PlayerProfilePage.kt",
+    "sha256": "d2c4917e2bc5c01266c2e0f19c6d8ec7bf679b11768e46318bf6c56889070d43"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProductMedia.kt",
+    "sha256": "e24fa4ec972567dcd1cfdb07af8a73892a3c11acf4679376649fe78f9c7062c6"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProfilePage.kt",
+    "sha256": "99a49a27fd9ce3be3664bbfc30186c0fbb9512d07dae40b1ed0bb1c268064b0c"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RecentContacts.kt",
+    "sha256": "084345cc6aed2668da53cffb9f25cf5be768ed5bde262454e41c9fd1d2f0b2e9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RefinedField.kt",
+    "sha256": "b8d97c8833d1e74ee72ee1903109b2a0e2ccde94f37742fb157616799c5e72df"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RefundPages.kt",
+    "sha256": "f7b5f66824318e7a82c0c3c557d9c32700c0de10f7886beadd471a9a770d476c"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RemoteImageUrls.kt",
+    "sha256": "8b89baada312621a962d19198c938ed2884bb84ed5959c9b97c68f918fa0fa68"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SakiPlansPage.kt",
+    "sha256": "4af10d799f0e0be1399620bb855dbcd19b75884cf9a396c6efc9b37b5d4555cd"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SakiPurchaseCheckout.kt",
+    "sha256": "f0fc471e00be12e4e415aaf4d800c3ee086b492523d11a9378aec82c15437c82"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SearchPage.kt",
+    "sha256": "8b9581f4783a09900844c3e446f34444aec0fa6839667ad61741ebdc82c229c9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ShopPage.kt",
+    "sha256": "6effe71c7e1df7ed65ae4038611deac049827f825d83173120e299c0eb45e9e1"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SoftGlassSurface.kt",
+    "sha256": "c73e6afefd9ce7b7fa6441aa2c331f3335d320e760b5edf858f0aae37d4c1585"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/StorageFiles.kt",
+    "sha256": "a6e79adac3a3aa78450090e3a831e60043985f5e1667099c4c4df27b0cea8aa2"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/StoragePage.kt",
+    "sha256": "63e658dcd0ea1798110193a4f114aa74eb8d617126f0632dd6582cd675d1404c"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/StoreCoupons.kt",
+    "sha256": "80f09b490c651baf065bb54facb776adf683f9c2be09aa69d931ca708ac6b135"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/Storefront.kt",
+    "sha256": "3ca843f329b818af833dd77a4ebec94fc23379ac01dbcb58781fe2e271964211"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/TransactionDetails.kt",
+    "sha256": "f7b640942e7ee95ae56bfd8658369a8c57863740090d6bbdb3172d0356aafde1"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/TransferFlow.kt",
+    "sha256": "d19ade0083a996aabb1c308b8b91630108b163bef6f55137474c0dbc99549da0"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/UpdateFiles.kt",
+    "sha256": "fba5e3f3b473f27ca2267a90c89992bcf92e197beaa40504e128c9d31a85d20a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/UpdatePage.kt",
+    "sha256": "1601f8fab16a888f3f45598b1a27e3ea1945f4351ed2042d8c7c33c370860c42"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/WalletPage.kt",
+    "sha256": "cb317caa69f06fa854d50ffa514beabc14a80a72cedf6550b7b40c28b331e789"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/anim/overlay_enter.xml",
+    "sha256": "a309eec56649a15d528057ae2438109b893e15c2aa686b4ba06afc2bb36a3834"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/anim/overlay_exit.xml",
+    "sha256": "e86d757e959bbd04837f084380d08de564e7ccc0e1c37434b5cf4eacc41366bb"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_anniversary_foreground.xml",
+    "sha256": "59092655f0db3ec59249a3597352908a110a68ebf7c835d5c286d9da1315acd3"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_background.xml",
+    "sha256": "81fa0ce9ce809de7023fab227d095e25534365a75cb4c788c0ad3b2434772cb6"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_foreground.xml",
+    "sha256": "2eabe4aabe896d4b01d031d2ca29d9164a9c30f1af238874a7b8eca531556f94"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable/ic_notification.xml",
+    "sha256": "19e9c08a4a67dbcb0a2574268936f3f31aa0a70aab8088bd1625e47f2e71346a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable/version_launch_mark.xml",
+    "sha256": "651770d300e787967b4310bba6b4464573b05f7ccaec7f386dcc3297d1db38b9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable-nodpi/deuterium_brand.png",
+    "sha256": "ec172a734ae949a84fe93a4c25958d74652319a8c2d6c640f2e25b26f62ab4db"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable-nodpi/face_pay_atlas.png",
+    "sha256": "f3543679fe15e2d713918c72216ebf8966348756543e9da73df9ab1c35762957"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable-nodpi/ic_launcher_anniversary_art.png",
+    "sha256": "3a10e6d75fb45bc3049a4689f0ec17aebac7c3f7387887e99e5c129d4ee054b7"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/drawable-nodpi/xiaoxiang_avatar.png",
+    "sha256": "135267b1b12b53de9050104374c22ff805f2bd8700b8c4b72676f87abe1a0fbf"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+    "sha256": "0c3dfad5310dc2d325479d6eac829a6ef251db9c6468d529ec10d4cfa0126476"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher_anniversary.xml",
+    "sha256": "0723b4d17a1ddb069ee30d2963eaf1a5b508eed5868e5fbb57cd8570d73545b9"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+    "sha256": "0c3dfad5310dc2d325479d6eac829a6ef251db9c6468d529ec10d4cfa0126476"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v33/ic_launcher.xml",
+    "sha256": "c83c425cc19d7f44ac6c986abda72e0e819bf40a2d2aa73d95416f81738a054f"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v33/ic_launcher_anniversary.xml",
+    "sha256": "ff61a1e271c3771e50b5107623cf0485aacc3e76a3de3aba1f25e32128432aa1"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v33/ic_launcher_round.xml",
+    "sha256": "c83c425cc19d7f44ac6c986abda72e0e819bf40a2d2aa73d95416f81738a054f"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/raw/face_pay_frames.json",
+    "sha256": "b578d213917e25ad431d2eefed65bbd009bd118f1d73927b2c364636756f7d2b"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/raw/face_pay_success.wav",
+    "sha256": "3c6bcea5e73910e36100f266cd8c3fd8afe60f592329e2757cfcb2bc49f90c25"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/raw/mastercard_checkout.mp3",
+    "sha256": "5479836c93d326dcdb202ebc23f5c8ba8207ffaaff0426ed5d8c07078ee5e53f"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/raw/mastercard_frames.json",
+    "sha256": "565c537407010d7b59fddce3b9c2f07f6d35137c44a7a3bf424eda21cb7671c0"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/raw/mastercard_timing.json",
+    "sha256": "142d7761c3797eb318f7250b4fadc5518281a9b8f9e1e50195a03e6bd3a9d03d"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/values/colors.xml",
+    "sha256": "a66ff6dac596df78a17891e7973764195a2132f47bb72a10b71297f1413f2a53"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/values/launch.xml",
+    "sha256": "c36ac2648623e369232a2b440554d9be8debde7f38849afe118aad82c4fca823"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/values/styles.xml",
+    "sha256": "baea58c7b47d0f225e640cfb9b9799dc7375f289c619c33de7cfea5c8818ee1b"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/values/update_config.xml",
+    "sha256": "7e016509a258d68e706a70eb833aada5acd0d2bcd5df623042ccf9b6a04dbd27"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/values-night/launch.xml",
+    "sha256": "dec47ee8a71843f92668431d5c09184e4673dc7d1b27cc72b72e20efcf025b89"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/values-v31/launch.xml",
+    "sha256": "b136c2c86822a4ae1b20a8548f5a425c848176522b7c5641a972404d3c437d4a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/xml/data_extraction_rules.xml",
+    "sha256": "3e6cdb665081de607ec79fb683f0d3f4ffd5998bb38a41b6d2f9410f1b9fa15a"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/xml/update_file_paths.xml",
+    "sha256": "c1e489ba9acb08598bbf6bf32c466bab8f8b71021346df81f13146092fcefc3c"
+  },
+  {
+    "path": "android-app/ui-lab/src/main/res/xml/update_network_security.xml",
+    "sha256": "b2528934338d049097d1f0568e7f021a59ce5321ab0727ee58525c05a0e02072"
+  }
+]

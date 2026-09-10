@@ -47,7 +47,9 @@ fun BillHistoryPage(state:LabState,initial:String,topInset:Dp,onRecord:(LedgerEn
         finally{if(current==generation)loading=false}
     }
     LaunchedEffect(start,end,type,refresh){remoteRows=emptyList();cursor=null;load()}
-    val rows=(if(state.api==null)state.ledger else remoteRows).filter { it.at.toLocalDate().toEpochDay() in start..end && (type=="all" || if(type=="income")it.amount>0 else it.amount<0) }.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id})
+    val rows by remember(state,start,end,type){derivedStateOf{(if(state.api==null)state.ledger else remoteRows).filter { it.at.toLocalDate().toEpochDay() in start..end && (type=="all" || if(type=="income")it.amount>0 else it.amount<0) }.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id})}}
+    val days=remember(rows){rows.groupBy{it.at.toLocalDate()}}
+    val totals=remember(rows){rows.filter{it.amount>0}.sumOf{it.amount} to rows.filter{it.amount<0}.sumOf{-it.amount}}
     val format=DateTimeFormatter.ofPattern("MM月dd日")
     LazyColumn(contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset,bottom=40.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
         item { Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) { listOf("all" to "全部","income" to "收入","expense" to "支出").forEach { (id,title)->ChoiceChip(type==id,{type=id},label={Text(title)}) } } }
@@ -61,11 +63,11 @@ fun BillHistoryPage(state:LabState,initial:String,topInset:Dp,onRecord:(LedgerEn
         } }
         if(rows.isNotEmpty() || (!loading && error==null))item { LabCard {
             Text("${if(cursor!=null)"已加载 " else ""}${rows.size} 笔交易 · 北京时间",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            LedgerTotals(rows.filter{it.amount>0}.sumOf{it.amount},rows.filter{it.amount<0}.sumOf{-it.amount})
+            LedgerTotals(totals.first,totals.second)
         } }
         error?.let{message->item{Text(message,color=MaterialTheme.colorScheme.error);PlainButton({if(rows.isEmpty())refresh++ else scope.launch{load(true)}},enabled=!loading){Text("重新读取")}}}
         if(rows.isEmpty()&&!loading&&error==null)item { Text("所选范围内暂无账单",Modifier.fillMaxWidth().padding(vertical=50.dp),textAlign=androidx.compose.ui.text.style.TextAlign.Center,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-        rows.groupBy{it.at.toLocalDate()}.forEach { (date,records)->
+        days.forEach { (date,records)->
             item(key="date-$date"){Text(date.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),Modifier.padding(top=18.dp,bottom=4.dp),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             items(records,key={it.id}) { LedgerRow(it,{onRecord(it)}) }
         }

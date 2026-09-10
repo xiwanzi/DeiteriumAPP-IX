@@ -1,0 +1,28 @@
+Broadcasting: Intent { act=androidx.profileinstaller.action.SKIP_FILE flg=0x400000 cmp=com.deuterium.app.uilab/androidx.profileinstaller.ProfileInstallReceiver (has extras) }
+Broadcast completed: result=11
+Broadcasting: Intent { act=androidx.profileinstaller.action.INSTALL_PROFILE flg=0x400000 cmp=com.deuterium.app.uilab/androidx.profileinstaller.ProfileInstallReceiver }
+Broadcast completed: result=1
+Success
+
+
+>   [com.deuterium.app.uilab]
+>     path: /data/app/~~49xNPTFxMwvbMTS0iojKRw==/com.deuterium.app.uilab-jvDnAGXlNAsXeJ4Qv2RB0g==/base.apk
+>       x86_64: [status=speed-profile] [reason=cmdline] [primary-abi]
+>         [location is /data/app/~~49xNPTFxMwvbMTS0iojKRw==/com.deuterium.app.uilab-jvDnAGXlNAsXeJ4Qv2RB0g==/oat/x86_64/base.odex]
+>   [com.deuterium.app.uilab.test]
+>     path: /data/app/~~ktqliNBXPZ37JRRV_DIjwA==/com.deuterium.app.uilab.test-0f3zUSf7x2AYH8zTBsg7_Q==/base.apk
+        x86_64: [status=verify] [reason=install] [primary-abi]
+>         [location is /data/app/~~ktqliNBXPZ37JRRV_DIjwA==/com.deuterium.app.uilab.test-0f3zUSf7x2AYH8zTBsg7_Q==/oat/x86_64/base.odex]
+>       used by other apps: [com.deuterium.app.uilab (isa=x86_64)]
+    [com.google.android.adservices.api]
+      path: /apex/com.android.adservices/priv-app/AdServicesApkGoogle@350820260/AdServicesApkGoogle.apk
+        x86_64: [status=verify] [reason=first-boot] [primary-abi]
+
+
+Starting: Intent { cmp=com.deuterium.app.uilab/.DeuteriumActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.deuterium.app.uilab/.DeuteriumActivity
+TotalTime: 258
+WaitTime: 261
+Complete

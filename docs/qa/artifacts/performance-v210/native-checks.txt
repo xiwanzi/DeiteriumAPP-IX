@@ -1,0 +1,24 @@
+performanceIO
+INSTRUMENTATION_RESULT: account_change_during_disk_write=PASS
+INSTRUMENTATION_RESULT: double_tap_during_disk_write_submits_once=PASS
+INSTRUMENTATION_RESULT: off_main_commit_and_recovery_barrier=PASS
+INSTRUMENTATION_RESULT: overlapping_catalog_reads_coalesce_but_later_refresh_stays_fresh=PASS
+INSTRUMENTATION_CODE: -1
+
+imageCache
+INSTRUMENTATION_RESULT: disk_memory_signature_reuse=PASS
+INSTRUMENTATION_RESULT: private_evidence_and_clear=PASS
+INSTRUMENTATION_RESULT: target_size_and_retention=PASS
+INSTRUMENTATION_CODE: -1
+
+contactsLayout
+INSTRUMENTATION_RESULT: history_filter_favorites_and_live_recency=PASS
+INSTRUMENTATION_RESULT: search_unmessaged_player=PASS
+INSTRUMENTATION_CODE: -1
+
+paymentTiming
+INSTRUMENTATION_RESULT: failure=PASS
+INSTRUMENTATION_RESULT: fast=PASS
+INSTRUMENTATION_RESULT: recovered=PASS
+INSTRUMENTATION_RESULT: slow=PASS
+INSTRUMENTATION_CODE: -1

@@ -1,4 +1,13 @@
 pluginManagement {
+    buildscript {
+        repositories {
+            maven { url=uri("https://maven.aliyun.com/repository/google") }
+            google()
+            mavenCentral()
+        }
+        // Kotlin 2.3 metadata requires R8 >= 8.13.19. Keep AGP and runtime UI libraries unchanged.
+        dependencies { classpath("com.android.tools:r8:8.13.19") }
+    }
     repositories {
         maven {
             url = uri("https://maven.aliyun.com/repository/google")

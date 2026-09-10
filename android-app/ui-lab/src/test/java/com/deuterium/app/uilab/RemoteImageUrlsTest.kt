@@ -5,6 +5,9 @@ import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class RemoteImageUrlsTest {
     private val scope=FinancialScope("image-viewer","https://server.example")
@@ -28,5 +31,36 @@ class RemoteImageUrlsTest {
         for(url in listOf("http://s3.example/a","https://user:password@s3.example/a","file:///a"))assertFalse(RemoteImageUrls.safe(url))
         RemoteImageUrls.remember(view("unready","https://s3.example/a").put("status","VERIFYING"),scope)
         assertNull(RemoteImageUrls.resolve(scope,"asset:unready"))
+    }
+
+    @Test fun oneResponseKeepsSequentialRetentionAndRefreshPathInheritance() {
+        RemoteImageUrls.clear()
+        val expiry="2099-02-01T00:00:00Z"
+        RemoteImageUrls.remember(JSONArray()
+            .put(view("same","https://s3.example/one").put("retainUntil",expiry))
+            .put(view("same","https://s3.example/two")),scope,refreshPath="/orders/original")
+        assertEquals(Instant.parse(expiry),RemoteImageUrls.access(scope,"asset:same")!!.retainUntil)
+        assertEquals("https://s3.example/two",RemoteImageUrls.resolve(scope,"asset:same"))
+        RemoteImageUrls.remember(view("same","https://s3.example/three"),scope)
+        assertEquals("/orders/original",RemoteImageUrls.refreshPath(scope,"asset:same"))
+        RemoteImageUrls.remember(view("same","https://s3.example/four").put("retainUntil",JSONObject.NULL),scope)
+        assertNull(RemoteImageUrls.access(scope,"asset:same")!!.retainUntil)
+    }
+
+    @Test fun imageReadsDoNotWaitForResponseTraversalAndClearCannotResurrectOldEntries() {
+        RemoteImageUrls.clear();RemoteImageUrls.remember(view("visible","https://s3.example/old"),scope)
+        val entered=CountDownLatch(1);val resume=CountDownLatch(1)
+        val slow=object:JSONObject(){override fun keys():MutableIterator<String>{entered.countDown();check(resume.await(5,TimeUnit.SECONDS));return super.keys()}}
+            .put("photos",JSONArray().put(view("visible","https://s3.example/stale")))
+        val workers=Executors.newFixedThreadPool(2)
+        try {
+            val parsing=workers.submit{RemoteImageUrls.remember(slow,scope)}
+            assertTrue(entered.await(5,TimeUnit.SECONDS))
+            val read=workers.submit<String?>{RemoteImageUrls.resolve(scope,"asset:visible")}
+            assertEquals("https://s3.example/old",read.get(1,TimeUnit.SECONDS))
+            workers.submit{RemoteImageUrls.clear()}.get(1,TimeUnit.SECONDS)
+            resume.countDown();parsing.get(5,TimeUnit.SECONDS)
+            assertNull(RemoteImageUrls.resolve(scope,"asset:visible"))
+        } finally {resume.countDown();workers.shutdownNow()}
     }
 }

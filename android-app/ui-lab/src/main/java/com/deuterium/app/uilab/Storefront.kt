@@ -34,10 +34,12 @@ val ShopCatalog=mutableStateListOf<ShopProduct>()
 fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String) {
     var category by rememberSaveable { mutableStateOf("全部") }
     LaunchedEffect(Unit){state.commerce.network?.refreshStore()}
-    val products=ShopCatalog.filter{(category=="全部"||it.brand==category||it.category==category)&&(query.isBlank()||it.name.contains(query,true)||it.category.contains(query,true)||it.brand.contains(query,true))}
+    val products by remember(category,query){derivedStateOf{ShopCatalog.filter{(category=="全部"||it.brand==category||it.category==category)&&(query.isBlank()||it.name.contains(query,true)||it.category.contains(query,true)||it.brand.contains(query,true))}}}
+    val categories by remember{derivedStateOf{listOf("全部")+ShopCatalog.map{it.category}.distinct()}}
+    val rows=remember(products){products.chunked(2)}
     LazyColumn(contentPadding=PaddingValues(top=topInset,bottom=115.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {
         item { Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            (listOf("全部")+ShopCatalog.map{it.category}.distinct()).forEach{label->ChoiceChip(category==label,{category=label},{Text(label)})}
+            categories.forEach{label->ChoiceChip(category==label,{category=label},{Text(label)})}
         } }
         state.commerce.network?.shopError?.let{error->item{Text(error,Modifier.padding(horizontal=24.dp),color=MaterialTheme.colorScheme.error)}}
         if(products.isEmpty())item{Text(if(query.isBlank())"暂无上架商品" else "未找到相关商品",Modifier.padding(28.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
@@ -45,7 +47,7 @@ fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String) {
             item { Text(if(query.isBlank())"新品推荐" else "搜索结果",Modifier.padding(horizontal=24.dp),style=MaterialTheme.typography.titleLarge) }
             item { LazyRow(contentPadding=PaddingValues(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)){items(products,key={it.id}){ProductPoster(it,Modifier.width(308.dp).height(405.dp)){onProduct(it.id)}}} }
             item { Text("探索更多",Modifier.padding(horizontal=24.dp,vertical=6.dp),style=MaterialTheme.typography.titleLarge) }
-            items(products.chunked(2)){row->Row(Modifier.padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){
+            items(rows){row->Row(Modifier.padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){
                 row.forEach{product->Surface(onClick={onProduct(product.id)},modifier=Modifier.weight(1f),shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface){Column{
                     ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().height(170.dp),scale=ContentScale.Crop)
                     Column(Modifier.padding(16.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium,minLines=2);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))}

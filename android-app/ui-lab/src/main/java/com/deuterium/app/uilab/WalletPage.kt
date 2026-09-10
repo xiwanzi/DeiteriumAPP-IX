@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 fun WalletPage(state: LabState, onTransfer: () -> Unit, onRecord: (LedgerEntry) -> Unit, topInset: Dp = 12.dp, onBills: (String) -> Unit = {}) {
     LaunchedEffect(state){state.refresh()}
     val motion = LocalMotion.current
+    val recent by remember(state){derivedStateOf{state.ledger.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id}).take(8)}}
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset, bottom = 118.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item(key = "balance") { BalanceCard(state, onTransfer) }
@@ -53,7 +54,7 @@ fun WalletPage(state: LabState, onTransfer: () -> Unit, onRecord: (LedgerEntry) 
                 PlainButton({ onBills("all") }) { Text("历史账单") }
             }
         }
-        items(state.ledger.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id}).take(8), key = { it.id }) { record ->
+        items(recent, key = { it.id }) { record ->
             LedgerRow(record, onClick = { onRecord(record) }, modifier = if(motion) Modifier.animateItem() else Modifier)
         }
         item { Text("所有收支均可在历史账单中查看。", Modifier.fillMaxWidth().padding(vertical = 8.dp),

@@ -1,0 +1,731 @@
+{
+  "recordedAt": "2026-09-11T03:13:42.803889+08:00",
+  "appVersion": "2.0.10",
+  "versionCode": 21000,
+  "releaseSource": "65c08a290896601c6254369792e4223216ebee8e",
+  "reviewHead": "ad8a8efd2a0b00375b159274aae8a52055a58b88",
+  "androidChangesSinceRelease": [],
+  "scope": "current ui-lab main sources and resources only",
+  "constraint": "Keep the same visible result at the same logical animation progress, timing parameters, image quality, material parameters, hit targets, scrolling, and business event order. No simplification or approximate replacement.",
+  "kotlinFileCount": 91,
+  "visualEquivalenceTestPerformed": false,
+  "performanceRuntimeTestPerformed": false,
+  "note": "Source provenance and reference parameters only; no runtime screenshot, frame, or heap validation is claimed.",
+  "files": [
+    {
+      "path": "android-app/ui-lab/src/main/AndroidManifest.xml",
+      "bytes": 2712,
+      "sha256": "16b4b926dddb3f1dde6928f11ab9c5fcf91ae7d2ba7d4e2a3a7d06cb30c06e09"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AdaptiveMoney.kt",
+      "bytes": 2864,
+      "sha256": "14d540db122a1336a77550f99e5a7856570517d38e64b4c31f5cc6e2c4ed3624"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppIdentity.kt",
+      "bytes": 2310,
+      "sha256": "782f0569af88f27ac221b3f47ba1a2c10d4e6e414a25d819f0b2c016509b621b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppImages.kt",
+      "bytes": 7020,
+      "sha256": "eb507744c637f0d2f6827b8af83f00bb771acbf17c57421945a01594972916ba"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppLaunchOverlay.kt",
+      "bytes": 4316,
+      "sha256": "b764d5d2e305a15ef30bcb1723e4034982279259b5f2e40cfec643eea3a230e1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppStorage.kt",
+      "bytes": 3215,
+      "sha256": "90712191aa741e96abadc6690561a3e57c4c9f750c8ca3a21f08430cd0f47690"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppUpdates.kt",
+      "bytes": 19845,
+      "sha256": "4dd54738b9d60c34cff6050ba63ce9a6c6e5173d35a0d278aee744318f88c4a7"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AuthPages.kt",
+      "bytes": 12796,
+      "sha256": "778008cae92e5057ff1478ab93216074bcee66eeed535c72a7af4a3523f625be"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AvatarCropper.kt",
+      "bytes": 8452,
+      "sha256": "100e05439ef151bed698aa3054ae28a8c3d8858590e298dfa1d4165a45d72f4e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendAI.kt",
+      "bytes": 17195,
+      "sha256": "920bdaf12a268df7bc57ac6fa4eda1b3f3c773d82d86716415566293d8906f40"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendApi.kt",
+      "bytes": 12329,
+      "sha256": "3aa4add3408e2434b8b21b4283b9daf38b14c331c695b03558d25347b24ac034"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendAssets.kt",
+      "bytes": 7106,
+      "sha256": "f88e3abeefa5fcac8a3807431e84eb07404e6b48a39b10c83ba485a4835698f5"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendCatalog.kt",
+      "bytes": 23001,
+      "sha256": "6f73bbc7409848cf312dc1d8fdb5678464f50a384103069d9a7569e6f6d7cc1c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendChat.kt",
+      "bytes": 4145,
+      "sha256": "b696f10581796924621ef096188fad0b7111e88e2edb4f9f265a0bf1e94515f3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendCommissions.kt",
+      "bytes": 10118,
+      "sha256": "6afda7f84f8ca10a437e70fd23734f0471b1e50023363aa401a9b967c4ebe5e7"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BackendInterventions.kt",
+      "bytes": 5866,
+      "sha256": "7cfa869c4cc9c0e6c61719940362f359d2a31e7039092983744348f852b3af40"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BillHistoryPage.kt",
+      "bytes": 5742,
+      "sha256": "6b9a2587f63931cdf2de804a1e4bef1d74b8d4d51bd72feb6a9cafc948f126a8"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/BillHistoryQuery.kt",
+      "bytes": 1056,
+      "sha256": "fb6e1c6275b0856d8f44466bc65e40f0f01aa6c7187b5105c85f662a18029eba"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CachedPhoto.kt",
+      "bytes": 2167,
+      "sha256": "8fd8dcb6e40f4580b1d1bf588d9c6ce89ab6a731a4dcc31f80bb1f2eedb204c9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CalendarRangeSheet.kt",
+      "bytes": 4194,
+      "sha256": "22cb41abc766489b745db46e1db022246993d7253520f9ff8d73c64219301540"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ChatInteractions.kt",
+      "bytes": 3149,
+      "sha256": "bb40e2d6bd4c8ff602809038b61962553d77f5481dad47d9d260d8af3e9ddd7a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CheckoutSummary.kt",
+      "bytes": 2601,
+      "sha256": "5a34d085a099f76c8546de61fee542b514810e4a1144f0f9054659d620a33d8a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CollapsingChrome.kt",
+      "bytes": 4361,
+      "sha256": "fce141f31178968c0d017cf6c7497aa365ff682354131dbc485abe16e73dbe39"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommerceBook.kt",
+      "bytes": 25107,
+      "sha256": "208395d2925173711cf5a2bf8f4f028e7aa09a81bbb8dcf38b39146f325601e9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommissionBook.kt",
+      "bytes": 16262,
+      "sha256": "f23f6ba35ef795ab2bf3e2f2bb5db0f993020e74602319b775ab2ec17feb86e6"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CommissionPages.kt",
+      "bytes": 21675,
+      "sha256": "474ed77cef2f05255d29e542c3d64d2f941259f49f5249e6488409ed22ac9149"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ConversationPages.kt",
+      "bytes": 13333,
+      "sha256": "1474ebe2925834ba822e48711f5b0650dc8969f3b9b96df04206bb8e91f55dc4"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CouponArrivalHost.kt",
+      "bytes": 2845,
+      "sha256": "38e5d34e2350e75fce539ab44403d13642ac38b499fa96860e906dd8b311ac0b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/CouponAttention.kt",
+      "bytes": 5475,
+      "sha256": "d6c4547939c1f510266821a332fa40ee9adc99f9ef333a1890d70ca604cc77c8"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeleteRecordDialog.kt",
+      "bytes": 2186,
+      "sha256": "4a32be1837fd46352effadb647a71985bc17944cdd3469b6e9c05e6776aa11c3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DemoPlayers.kt",
+      "bytes": 1120,
+      "sha256": "3a2ce0ba0ae49ce684af6d1a91c862ffaf653274d41f60c0147cefe1070e2986"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumActivity.kt",
+      "bytes": 31296,
+      "sha256": "eb22f01da88367f665eb56e82ad487af1e6c55cab5f9290b35e95c0e30fd9f1b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumIcons.kt",
+      "bytes": 2741,
+      "sha256": "841476fd7a437c0ee66b434bbcf3f85b7f4df0568a164364a3d199aa557399af"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeviceTilt.kt",
+      "bytes": 2658,
+      "sha256": "127fcd2b9ff5d819525513c928bef94394161994329b755d318a52a8ac94d2df"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/EventPages.kt",
+      "bytes": 5285,
+      "sha256": "04b584a6830591c5a24a03baa6eec8de755c5a87813de1b6d4943ec0f0e7ac4b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/FacePayAssets.kt",
+      "bytes": 4088,
+      "sha256": "57338000d5ba05932bee834617befc4078ec264ac85fb73002c8ddaec2158a8f"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassParameters.kt",
+      "bytes": 806,
+      "sha256": "dee9231fff2da4c352d9d21dca93a0b95144a1dbb7cd0f13713e5a37d483869a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassSettingsStore.kt",
+      "bytes": 1936,
+      "sha256": "6f2a86958f9da7d340c33604c44a82de3cada71023ab11024731ac70508f1ea1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassTuner.kt",
+      "bytes": 4799,
+      "sha256": "249f55df22bcffed848877bdc3e0e1f6e3786b4f573bdbb1173b0496b5225cd3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GradientGlassHeader.kt",
+      "bytes": 2532,
+      "sha256": "35074eb0a3685ed4beea112c8b13eb14a21659f236a600873c6cc56ad1056570"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ImageCacheStore.kt",
+      "bytes": 11641,
+      "sha256": "4f237316c908ec36711b3a6cce6009c487662f732d062afc6dd04abd6d0bbe82"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InAppNoticeCard.kt",
+      "bytes": 1603,
+      "sha256": "97145840103d8e3e4002f8a823fe015a2b5d88c515ab52032b01a1b94c89fc15"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InformationPages.kt",
+      "bytes": 15214,
+      "sha256": "1fc61bc33749a6d0b12600fc91c41722a674199cec8fd8a2478eabdc232ac08a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InstallCompletionReceiver.kt",
+      "bytes": 1053,
+      "sha256": "542334aeb1291aca6db2bd38025f036f40d7904f70ce0f132d5d6617116a3f19"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InterventionCase.kt",
+      "bytes": 3504,
+      "sha256": "36d1568c81b2993bc5292a2e94ce2f1c5eb552185f7fbbf7724b37ef49b7c675"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/InterventionPages.kt",
+      "bytes": 11227,
+      "sha256": "7cc86f38ab50d6a7c5f3f41dbc575f5fc76acb6a726cba3307deb355ad3d3bc2"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosControls.kt",
+      "bytes": 8260,
+      "sha256": "2cda5b2a233c002d12deaa5121c3ceabaf310c2e4e78b70f8dff466c559e4d8c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosOverlayHost.kt",
+      "bytes": 1582,
+      "sha256": "f2a8998451200a4b1dc129b5c0d16f5a1823ac19c145abd74818f341185a8dce"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabNotifications.kt",
+      "bytes": 2810,
+      "sha256": "f08cba96d0ff3faea00d84adffe026cbec7a5ba56119b13b0c3fa450418b9c0e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabSession.kt",
+      "bytes": 1700,
+      "sha256": "30dc46db1919740233eabd7cf24604b140e47c13fdaa63193dbcd618028f5f4b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabState.kt",
+      "bytes": 35047,
+      "sha256": "e7f917e1ff1810717d899680f5b3949b45deec3eb3ddc859cca701cd3f350c86"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabTheme.kt",
+      "bytes": 5524,
+      "sha256": "6c6587ae8eab9ec45c8b1e3d938c2261fe85b003076fce05c411271006e4e1cc"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LauncherIconPolicy.kt",
+      "bytes": 1298,
+      "sha256": "a00fdba280e583054954b1c11caea39912dbdc994e9978343ada9ed157084753"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LauncherIcons.kt",
+      "bytes": 6028,
+      "sha256": "9e7ce6d62c10fc76c4d353ea2ff69e63c2866fb0628c6b9dd50af1170dcf28c2"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LedgerRecords.kt",
+      "bytes": 1457,
+      "sha256": "d5493bc91c2911b5ba3aabfb26dd0e0988db70c37cbf57bcaf9c7692ed1a8bee"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LiquidGlass.kt",
+      "bytes": 7824,
+      "sha256": "717a2a36832a99cf7a6dc16fa486c153402ed2b095236463165c2b62eb17aca1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ListingPhotoEditor.kt",
+      "bytes": 5676,
+      "sha256": "b5f5a15597fe701f3ae6c285cd0f0f5f67c72bb4776a9891ed7707694d5b6102"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LocalAvatar.kt",
+      "bytes": 1303,
+      "sha256": "bb7a71e75f073a29b480300dde78032fed45e29d2c331f8e4e4cd28230d31d83"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarkdownBody.kt",
+      "bytes": 3920,
+      "sha256": "92e7ecf7372eddf16a2d5aaff544751bc3adf4acc978d4f942a00bc78dd3efb1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarketCategories.kt",
+      "bytes": 3403,
+      "sha256": "b9e3ad8b32915eba896a743a0927933a84c3835b9a0e2804bc370d6cf51f00ec"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MarketplacePages.kt",
+      "bytes": 19175,
+      "sha256": "b4b5c10146231d384b476ea12f2826a916282cb48938eeb6f9dece1310e5b011"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MastercardPlayback.kt",
+      "bytes": 4986,
+      "sha256": "8e26e8900321d770e9e0378d2e4c83db7dfad7e2e7c9217cd9715c5ceff78fa3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MessageActions.kt",
+      "bytes": 5263,
+      "sha256": "c2379019df01e3bd57a241715afc31896b1d8cc39803ecc1fcff6fad99b63402"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MessageComposer.kt",
+      "bytes": 2530,
+      "sha256": "87312c7a406fc59d694de60f43a778b11852b9ba13aa67dc2602c0a6dcba74b9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MovingGlassNav.kt",
+      "bytes": 3899,
+      "sha256": "d3795812243950e4a8402c086ce93552b44eeff3a7c961f22200c56f0c753a2b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/NotificationPage.kt",
+      "bytes": 2827,
+      "sha256": "107b77cb6bbb4a6f25366eb6510931c56b4262cf441464c58cd51ae6815056e3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/NotificationPreferences.kt",
+      "bytes": 2606,
+      "sha256": "b189f1d147962c223d6aee41326c75b6c91d24654af43b791b1bcc5b4cf3bcf8"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/OrderPages.kt",
+      "bytes": 22464,
+      "sha256": "19ed14cc8be560748f6ae3542229eb1c2eaa387594c9272f98b1950835463411"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentConfirmation.kt",
+      "bytes": 3476,
+      "sha256": "ebff6fdcfb3c43ac526dddf4ac0c71b6fcd88d8380ccec27515ac4b9baa9a956"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentExperience.kt",
+      "bytes": 5055,
+      "sha256": "ccf817d2bea5ddc7a5873bbbfc6c1f589b3c2677303139db7bb65458986e1097"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PendingOperationRecovery.kt",
+      "bytes": 3191,
+      "sha256": "452ba079f3c0f3ad5422665ebe6a6ab3e638e86bf06c9fe515834cbbb80dba8d"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PlayerProfilePage.kt",
+      "bytes": 5092,
+      "sha256": "d2c4917e2bc5c01266c2e0f19c6d8ec7bf679b11768e46318bf6c56889070d43"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProductMedia.kt",
+      "bytes": 4730,
+      "sha256": "47bc422812d4dc8bad0061dfdcedfa1c283fe49da4b213e8d54902388893c060"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProfilePage.kt",
+      "bytes": 10919,
+      "sha256": "99a49a27fd9ce3be3664bbfc30186c0fbb9512d07dae40b1ed0bb1c268064b0c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RecentContacts.kt",
+      "bytes": 871,
+      "sha256": "d8ebb80def67ea72c9514a983c917f8768cd6e34ea8bc94ee0f66bbe9b45ddcb"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RefinedField.kt",
+      "bytes": 4118,
+      "sha256": "b8d97c8833d1e74ee72ee1903109b2a0e2ccde94f37742fb157616799c5e72df"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RefundPages.kt",
+      "bytes": 10291,
+      "sha256": "f7b5f66824318e7a82c0c3c557d9c32700c0de10f7886beadd471a9a770d476c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/RemoteImageUrls.kt",
+      "bytes": 3154,
+      "sha256": "2f948d1ad9fc867e6c8d16c0fc80d122d91e4986ba84c080c84857bcb1a66705"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SakiPlansPage.kt",
+      "bytes": 9657,
+      "sha256": "4af10d799f0e0be1399620bb855dbcd19b75884cf9a396c6efc9b37b5d4555cd"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SakiPurchaseCheckout.kt",
+      "bytes": 10437,
+      "sha256": "f0fc471e00be12e4e415aaf4d800c3ee086b492523d11a9378aec82c15437c82"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SearchPage.kt",
+      "bytes": 8021,
+      "sha256": "8b9581f4783a09900844c3e446f34444aec0fa6839667ad61741ebdc82c229c9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ShopPage.kt",
+      "bytes": 4882,
+      "sha256": "6effe71c7e1df7ed65ae4038611deac049827f825d83173120e299c0eb45e9e1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SoftGlassSurface.kt",
+      "bytes": 782,
+      "sha256": "c73e6afefd9ce7b7fa6441aa2c331f3335d320e760b5edf858f0aae37d4c1585"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/StorageFiles.kt",
+      "bytes": 3111,
+      "sha256": "a6e79adac3a3aa78450090e3a831e60043985f5e1667099c4c4df27b0cea8aa2"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/StoragePage.kt",
+      "bytes": 12924,
+      "sha256": "63e658dcd0ea1798110193a4f114aa74eb8d617126f0632dd6582cd675d1404c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/StoreCoupons.kt",
+      "bytes": 8427,
+      "sha256": "80f09b490c651baf065bb54facb776adf683f9c2be09aa69d931ca708ac6b135"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/Storefront.kt",
+      "bytes": 19132,
+      "sha256": "ace5710cd16027c528ff1c7e4ec46ec92b7e554b31c08a02cddf01795ae3433e"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/TransactionDetails.kt",
+      "bytes": 4899,
+      "sha256": "f7b640942e7ee95ae56bfd8658369a8c57863740090d6bbdb3172d0356aafde1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/TransferFlow.kt",
+      "bytes": 7923,
+      "sha256": "d19ade0083a996aabb1c308b8b91630108b163bef6f55137474c0dbc99549da0"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/UpdateFiles.kt",
+      "bytes": 3953,
+      "sha256": "fba5e3f3b473f27ca2267a90c89992bcf92e197beaa40504e128c9d31a85d20a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/UpdatePage.kt",
+      "bytes": 8887,
+      "sha256": "1601f8fab16a888f3f45598b1a27e3ea1945f4351ed2042d8c7c33c370860c42"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/WalletPage.kt",
+      "bytes": 10930,
+      "sha256": "3d8ab16b8c7bfcf9303c7a427875ccf58afee688bb409763bd65f994014b5f07"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/anim/overlay_enter.xml",
+      "bytes": 247,
+      "sha256": "a309eec56649a15d528057ae2438109b893e15c2aa686b4ba06afc2bb36a3834"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/anim/overlay_exit.xml",
+      "bytes": 247,
+      "sha256": "e86d757e959bbd04837f084380d08de564e7ccc0e1c37434b5cf4eacc41366bb"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_anniversary_foreground.xml",
+      "bytes": 223,
+      "sha256": "59092655f0db3ec59249a3597352908a110a68ebf7c835d5c286d9da1315acd3"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_background.xml",
+      "bytes": 210,
+      "sha256": "81fa0ce9ce809de7023fab227d095e25534365a75cb4c788c0ad3b2434772cb6"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_launcher_foreground.xml",
+      "bytes": 983,
+      "sha256": "2eabe4aabe896d4b01d031d2ca29d9164a9c30f1af238874a7b8eca531556f94"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/ic_notification.xml",
+      "bytes": 382,
+      "sha256": "19e9c08a4a67dbcb0a2574268936f3f31aa0a70aab8088bd1625e47f2e71346a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable/version_launch_mark.xml",
+      "bytes": 277,
+      "sha256": "651770d300e787967b4310bba6b4464573b05f7ccaec7f386dcc3297d1db38b9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/deuterium_brand.png",
+      "bytes": 1819447,
+      "sha256": "ec172a734ae949a84fe93a4c25958d74652319a8c2d6c640f2e25b26f62ab4db"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/face_pay_atlas.png",
+      "bytes": 610922,
+      "sha256": "f3543679fe15e2d713918c72216ebf8966348756543e9da73df9ab1c35762957"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/ic_launcher_anniversary_art.png",
+      "bytes": 87881,
+      "sha256": "3a10e6d75fb45bc3049a4689f0ec17aebac7c3f7387887e99e5c129d4ee054b7"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/drawable-nodpi/xiaoxiang_avatar.png",
+      "bytes": 296037,
+      "sha256": "135267b1b12b53de9050104374c22ff805f2bd8700b8c4b72676f87abe1a0fbf"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "bytes": 278,
+      "sha256": "0c3dfad5310dc2d325479d6eac829a6ef251db9c6468d529ec10d4cfa0126476"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher_anniversary.xml",
+      "bytes": 290,
+      "sha256": "0723b4d17a1ddb069ee30d2963eaf1a5b508eed5868e5fbb57cd8570d73545b9"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "bytes": 278,
+      "sha256": "0c3dfad5310dc2d325479d6eac829a6ef251db9c6468d529ec10d4cfa0126476"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v33/ic_launcher.xml",
+      "bytes": 350,
+      "sha256": "c83c425cc19d7f44ac6c986abda72e0e819bf40a2d2aa73d95416f81738a054f"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v33/ic_launcher_anniversary.xml",
+      "bytes": 362,
+      "sha256": "ff61a1e271c3771e50b5107623cf0485aacc3e76a3de3aba1f25e32128432aa1"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/mipmap-anydpi-v33/ic_launcher_round.xml",
+      "bytes": 350,
+      "sha256": "c83c425cc19d7f44ac6c986abda72e0e819bf40a2d2aa73d95416f81738a054f"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/face_pay_frames.json",
+      "bytes": 1786,
+      "sha256": "b578d213917e25ad431d2eefed65bbd009bd118f1d73927b2c364636756f7d2b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/face_pay_success.wav",
+      "bytes": 74958,
+      "sha256": "3c6bcea5e73910e36100f266cd8c3fd8afe60f592329e2757cfcb2bc49f90c25"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/mastercard_checkout.mp3",
+      "bytes": 62528,
+      "sha256": "5479836c93d326dcdb202ebc23f5c8ba8207ffaaff0426ed5d8c07078ee5e53f"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/mastercard_frames.json",
+      "bytes": 114450,
+      "sha256": "565c537407010d7b59fddce3b9c2f07f6d35137c44a7a3bf424eda21cb7671c0"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/raw/mastercard_timing.json",
+      "bytes": 1425,
+      "sha256": "142d7761c3797eb318f7250b4fadc5518281a9b8f9e1e50195a03e6bd3a9d03d"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/colors.xml",
+      "bytes": 125,
+      "sha256": "a66ff6dac596df78a17891e7973764195a2132f47bb72a10b71297f1413f2a53"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/launch.xml",
+      "bytes": 491,
+      "sha256": "c36ac2648623e369232a2b440554d9be8debde7f38849afe118aad82c4fca823"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/styles.xml",
+      "bytes": 750,
+      "sha256": "baea58c7b47d0f225e640cfb9b9799dc7375f289c619c33de7cfea5c8818ee1b"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values/update_config.xml",
+      "bytes": 130,
+      "sha256": "7e016509a258d68e706a70eb833aada5acd0d2bcd5df623042ccf9b6a04dbd27"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values-night/launch.xml",
+      "bytes": 155,
+      "sha256": "dec47ee8a71843f92668431d5c09184e4673dc7d1b27cc72b72e20efcf025b89"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/values-v31/launch.xml",
+      "bytes": 607,
+      "sha256": "b136c2c86822a4ae1b20a8548f5a425c848176522b7c5641a972404d3c437d4a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/xml/data_extraction_rules.xml",
+      "bytes": 367,
+      "sha256": "3e6cdb665081de607ec79fb683f0d3f4ffd5998bb38a41b6d2f9410f1b9fa15a"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/xml/update_file_paths.xml",
+      "bytes": 121,
+      "sha256": "c1e489ba9acb08598bbf6bf32c466bab8f8b71021346df81f13146092fcefc3c"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/xml/update_network_security.xml",
+      "bytes": 142,
+      "sha256": "b2528934338d049097d1f0568e7f021a59ce5321ab0727ee58525c05a0e02072"
+    }
+  ],
+  "effectSourceExcerpts": [
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppLaunchOverlay.kt",
+      "startLine": 28,
+      "endLine": 43,
+      "source": "fun AppLaunchOverlay(ready:Boolean,motion:Boolean,session:LabSession,nativeReady:Boolean) {\n    var visible by remember { mutableStateOf(!session.launchFinished||!ready) }\n    var started by remember { mutableLongStateOf(SystemClock.uptimeMillis()) }\n    val opacity=remember { Animatable(if(visible)1f else 0f) }\n    val arrival=remember { Animatable(if(session.launchFinished)1f else 0f) }\n    LaunchedEffect(nativeReady) {\n        if(nativeReady){started=SystemClock.uptimeMillis();if(motion)arrival.animateTo(1f,tween(620,easing=FastOutSlowInEasing)) else arrival.snapTo(1f)}\n    }\n    LaunchedEffect(ready,nativeReady) {\n        if(!nativeReady)return@LaunchedEffect\n        if(!ready){visible=true;opacity.snapTo(1f)}\n        else if(visible) {\n            withFrameNanos { };withFrameNanos { }\n            if(!session.launchFinished)delay(((if(motion)620L else 100L)-(SystemClock.uptimeMillis()-started)).coerceAtLeast(0))\n            opacity.animateTo(0f,tween(if(motion)320 else 100,easing=FastOutSlowInEasing))\n            visible=false;session.launchFinished=true"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/AppLaunchOverlay.kt",
+      "startLine": 50,
+      "endLine": 69,
+      "source": "    Box(Modifier.fillMaxSize().graphicsLayer { alpha=opacity.value }.background(MaterialTheme.colorScheme.background)\n        .pointerInput(Unit){awaitPointerEventScope{while(true)awaitPointerEvent().changes.forEach{it.consume()}}}\n        .semantics{paneTitle=\"正在打开 Deuterium\";liveRegion=LiveRegionMode.Polite},contentAlignment=Alignment.Center) {\n        LoginVersionBadge(Modifier.size(104.dp).graphicsLayer{\n            translationY=(-94).dp.toPx()*arrival.value\n            val initialScale=192f/104f\n            val scale=initialScale+(1f-initialScale)*arrival.value;scaleX=scale;scaleY=scale\n        })\n        Column(horizontalAlignment=Alignment.CenterHorizontally,modifier=Modifier.offset(y=25.dp).graphicsLayer{\n            alpha=arrival.value;translationY=(1f-arrival.value)*8.dp.toPx()\n        }) {\n            Text(\"Deuterium\",fontSize=29.sp,fontWeight=FontWeight.SemiBold,letterSpacing=(-.6).sp)\n            Text(\"与你的世界，保持连接\",Modifier.padding(top=9.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)\n            Canvas(Modifier.padding(top=31.dp).size(62.dp,3.dp)) {\n                drawLine(ink.copy(alpha=.12f),Offset(0f,center.y),Offset(size.width,center.y),size.height,StrokeCap.Round)\n                val x=if(motion)(.15f+.7f*(.5f-.5f*kotlin.math.cos(orbit*2f*Math.PI).toFloat()))*size.width else size.width*.5f\n                drawLine(ink.copy(alpha=.55f),Offset(x-size.width*.12f,center.y),Offset(x+size.width*.12f,center.y),size.height,StrokeCap.Round)\n            }\n        }\n        Text(\"Deuterium IX\",Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom=36.dp).graphicsLayer{alpha=arrival.value},style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.65f),letterSpacing=2.sp)"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumActivity.kt",
+      "startLine": 213,
+      "endLine": 214,
+      "source": "    val flightProgress=remember{Animatable(1f)}\n    LaunchedEffect(flight){if(flight!=null){flightProgress.snapTo(0f);if(motion)flightProgress.animateTo(1f,tween(650,easing=FastOutSlowInEasing))else flightProgress.snapTo(1f);flight=null}}"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumActivity.kt",
+      "startLine": 235,
+      "endLine": 237,
+      "source": "                AnimatedContent(page,modifier=Modifier.fillMaxSize(),transitionSpec={if(motion)(fadeIn(tween(180,25))+slideInHorizontally(tween(260,easing=FastOutSlowInEasing)){it/14}) togetherWith fadeOut(tween(130)) else EnterTransition.None togetherWith ExitTransition.None},label=\"pages\"){current->\n                    saved.SaveableStateProvider(current) {\n                        val inset=if(current in Destination.entries.map{it.name})statusTop+184.dp-chromeFor(current).offset.dp else secondaryContentTop"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumActivity.kt",
+      "startLine": 297,
+      "endLine": 302,
+      "source": "            if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,buildSet{if(updates?.hasUpdates==true)add(Destination.Profile.ordinal);if(state.hasUnreadMessages)add(Destination.Info.ordinal)}){destination=Destination.entries[it]}}\n            state.commerce.network?.couponAttention?.let{attention->\n                CouponArrivalHost(attention,session.launchFinished&&route!=\"coupons\"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open(\"coupons\")},Modifier.fillMaxSize())\n            }\n            flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}\n            AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/ProductMedia.kt",
+      "startLine": 39,
+      "endLine": 46,
+      "source": "fun ShoppingBagFlight(product:ShopProduct,start:Offset,end:Offset,progress:Float) {\n    ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(72.dp).graphicsLayer{\n        val t=progress.coerceIn(0f,1f)\n        val arc=kotlin.math.sin(t*Math.PI).toFloat()\n        val current=start+(end-start)*t+Offset(-90f*arc,-100f*arc)\n        translationX=current.x-size.width/2;translationY=current.y-size.height/2\n        scaleX=1f-.78f*t;scaleY=scaleX;alpha=1f-.4f*t\n    }.clip(RoundedCornerShape(16.dp)),scale=ContentScale.Crop)"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/MovingGlassNav.kt",
+      "startLine": 24,
+      "endLine": 51,
+      "source": "fun MovingGlassNav(labels:List<String>,icons:List<ImageVector>,selected:Int,enabled:Boolean,badges:Set<Int> = emptySet(),onSelect:(Int)->Unit) {\n    val motion=LocalMotion.current\n    var dragging by remember { mutableStateOf(false) }\n    var dragPosition by remember { mutableFloatStateOf(selected.toFloat()) }\n    var dragSpeed by remember { mutableFloatStateOf(0f) }\n    val target=if(dragging)dragPosition else selected.toFloat()\n    val position by animateFloatAsState(target,if(!motion||dragging)snap() else spring(.72f,380f),label=\"navigation-position\")\n    val stretch by animateFloatAsState(if(motion) (abs(target-position)*.30f+if(dragging).15f+dragSpeed else 0f).coerceIn(0f,.68f) else 0f,\n        spring(.70f,450f),label=\"navigation-stretch\")\n    val latestSelect by rememberUpdatedState(onSelect)\n    BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal=6.dp)) {\n        val cell=maxWidth/labels.size\n        val cellPx=with(LocalDensity.current){cell.toPx()}\n        Box(Modifier.offset(x=(cell-60.dp)/2,y=7.dp).width(60.dp).height(34.dp).graphicsLayer {\n            translationX=cellPx*position;scaleX=1f+stretch;scaleY=1f-stretch*.17f\n        }.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha=.84f),CircleShape))\n        Row(Modifier.fillMaxSize().pointerInput(enabled,cellPx) {\n            if(enabled) detectHorizontalDragGestures(onDragStart={dragging=true;dragPosition=(it.x/cellPx-.5f).coerceIn(0f,labels.lastIndex.toFloat())},\n                onDragEnd={latestSelect(dragPosition.roundToInt().coerceIn(labels.indices));dragging=false;dragSpeed=0f},\n                onDragCancel={dragging=false;dragSpeed=0f}) {change,amount->\n                change.consume();dragPosition=(dragPosition+amount/cellPx).coerceIn(0f,labels.lastIndex.toFloat());dragSpeed=(abs(amount)/cellPx).coerceAtMost(.3f)\n            }\n        },verticalAlignment=Alignment.CenterVertically) {\n            labels.forEachIndexed { index,title ->\n                Column(Modifier.weight(1f).clip(RoundedCornerShape(24.dp)).selectable(index==selected,interactionSource=remember{MutableInteractionSource()},indication=null,enabled=enabled,role=Role.Tab,onClick={latestSelect(index)}).padding(vertical=7.dp),horizontalAlignment=Alignment.CenterHorizontally) {\n                    Box(Modifier.size(60.dp,34.dp),contentAlignment=Alignment.Center){Icon(icons[index],null,Modifier.size(22.dp),tint=if(index==selected)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha=.78f));if(index in badges)Box(Modifier.align(Alignment.TopEnd).padding(end=11.dp,top=3.dp).size(6.dp).background(MaterialTheme.colorScheme.error,CircleShape))}\n                    Text(title,Modifier.padding(top=3.dp),style=MaterialTheme.typography.labelMedium,color=if(index==selected)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha=.78f))\n                }"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosControls.kt",
+      "startLine": 45,
+      "endLine": 59,
+      "source": "fun IosSwitch(checked:Boolean,onCheckedChange:(Boolean)->Unit,modifier:Modifier=Modifier,enabled:Boolean=true) {\n    val position by animateFloatAsState(if(checked)1f else 0f,if(LocalMotion.current)spring(.8f,600f) else snap(),label=\"toggle\")\n    Box(modifier.size(55.dp,44.dp).toggleable(checked,enabled=enabled,role=Role.Switch,onValueChange=onCheckedChange).alpha(if(enabled)1f else .35f),contentAlignment=Alignment.Center) {\n        Box(Modifier.size(51.dp,31.dp).background(lerp(MaterialTheme.colorScheme.surfaceVariant,Color(0xFF34C759),position),CircleShape))\n        Box(Modifier.align(Alignment.CenterStart).offset(x=(4+20*position).dp).size(27.dp).shadow(2.dp,CircleShape).background(Color.White,CircleShape))\n    }\n}\n\n@Composable\nfun SegmentedControl(labels:List<String>,selected:Int,onSelect:(Int)->Unit,modifier:Modifier=Modifier) {\n    val position by animateFloatAsState(selected.toFloat(),if(LocalMotion.current)spring(.85f,500f) else snap(),label=\"segment\")\n    BoxWithConstraints(modifier.fillMaxWidth().height(38.dp).clip(RoundedCornerShape(11.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.8f)).padding(3.dp)) {\n        val cell=maxWidth/labels.size\n        Box(Modifier.width(cell).fillMaxHeight().graphicsLayer{translationX=cell.toPx()*position}.shadow(1.dp,RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surface,RoundedCornerShape(8.dp)))\n        Row(Modifier.fillMaxSize()){labels.forEachIndexed { index,title -> Box(Modifier.weight(1f).fillMaxHeight().selectable(selected==index,role=Role.Tab,onClick={onSelect(index)}),contentAlignment=Alignment.Center){Text(title,style=MaterialTheme.typography.bodyMedium,fontWeight=if(index==selected)FontWeight.SemiBold else FontWeight.Normal)} }}"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LabTheme.kt",
+      "startLine": 55,
+      "endLine": 63,
+      "source": "fun MotionButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,shape:Shape=CircleShape,colors:ButtonColors=ButtonDefaults.buttonColors(),content:@Composable RowScope.()->Unit) {\n    val source=remember{MutableInteractionSource()};val pressed by source.collectIsPressedAsState()\n    val scale by animateFloatAsState(if(pressed).97f else 1f,if(LocalMotion.current)spring(.8f,650f) else snap(),label=\"button-press\")\n    val background=if(enabled)colors.containerColor else colors.disabledContainerColor\n    val foreground=if(enabled)colors.contentColor else colors.disabledContentColor\n    Row(modifier.heightIn(min=48.dp).graphicsLayer{scaleX=scale;scaleY=scale}.clip(shape).background(background)\n        .clickable(interactionSource=source,indication=null,enabled=enabled,role=Role.Button,onClick=onClick).padding(horizontal=20.dp,vertical=10.dp),\n        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.Center) {\n        CompositionLocalProvider(LocalContentColor provides foreground){ProvideTextStyle(MaterialTheme.typography.labelLarge){content()}}"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentExperience.kt",
+      "startLine": 24,
+      "endLine": 45,
+      "source": "fun PaymentExperience(amount:Long,recipient:String,successTitle:String,onCommit:suspend ()->Boolean,autoCloseOnSuccess:Boolean=false,embedded:Boolean=false,errorMessage:String?=null,confirmed:Boolean?=null,onClose:()->Unit) {\n    var result by rememberSaveable { mutableStateOf<Boolean?>(null) }\n    var authenticated by rememberSaveable{mutableStateOf(false)}\n    val scanUntil by rememberSaveable { mutableLongStateOf(android.os.SystemClock.elapsedRealtime()+kotlin.random.Random.nextLong(1000L,3001L)) }\n    var completed by rememberSaveable { mutableStateOf(false) }\n    var commitError by rememberSaveable{mutableStateOf<String?>(null)}\n    // A recovered success is authoritative, but does not skip the remaining visual scan.\n    LaunchedEffect(confirmed){if(confirmed==true)result=true}\n    val commit by rememberUpdatedState(onCommit)\n    LaunchedEffect(Unit){if(!authenticated){delay((scanUntil-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0));authenticated=true}}\n    // The caller has already confirmed payment. Persist an early response immediately\n    // so recreating the page during its scan cannot submit an already-finished payment again.\n    LaunchedEffect(Unit){\n        if(result==null&&confirmed!=true){\n            try{val outcome=commit();if(result!=true)result=outcome}\n            catch(cancelled:kotlinx.coroutines.CancellationException){throw cancelled}\n            catch(error:Exception){if(result!=true){commitError=error.message ?: \"结果待确认，请在钱包或订单中查看\";result=false}}\n        }\n    }\n    val visibleResult=if(authenticated)result else null\n    val close by rememberUpdatedState(onClose)\n    LaunchedEffect(completed,result) { if(completed&&result==true&&autoCloseOnSuccess){delay(850);close()} }"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/PaymentConfirmation.kt",
+      "startLine": 20,
+      "endLine": 64,
+      "source": "fun PaymentConfirmation(modifier:Modifier,play:Boolean=true,waiting:Boolean=false,authenticating:Boolean=false,onComplete:()->Unit) {\n    val context=LocalContext.current\n    var movie by remember { mutableStateOf(FacePayAssets.movie) }\n    LaunchedEffect(Unit) { PaymentSound.prepare(context);movie=FacePayAssets.load(context) }\n    val frame=remember { Animatable(if(authenticating)0f else 21f) }\n    val motion=LocalMotion.current\n    val haptic=LocalHapticFeedback.current\n    val complete by rememberUpdatedState(onComplete)\n    var sounded by rememberSaveable { mutableStateOf(false) }\n    LaunchedEffect(play,waiting,authenticating,motion) {\n        if(!play){frame.snapTo(27f);return@LaunchedEffect}\n        if(authenticating){\n            if(motion)frame.animateTo(5f,tween(180,easing=LinearEasing)) else frame.snapTo(0f)\n            return@LaunchedEffect\n        }\n        if(waiting) {\n            if(!motion){frame.snapTo(21f);return@LaunchedEffect}\n            frame.animateTo(21f,tween(((21f-frame.value).coerceAtLeast(0f)*33.333f).roundToInt(),easing=LinearEasing))\n            while(isActive){frame.snapTo(9f);frame.animateTo(21f,tween(400,easing=LinearEasing))}\n            return@LaunchedEffect\n        }\n        if(motion)frame.animateTo(27f,tween(((27f-frame.value).coerceAtLeast(0f)*33.333f).roundToInt(),easing=LinearEasing))\n        else frame.snapTo(27f)\n        delay(if(motion)140 else 70)\n        if(!sounded){sounded=true;PaymentSound.confirm();haptic.performHapticFeedback(HapticFeedbackType.Confirm)}\n        delay(if(motion)130 else 70)\n        complete()\n    }\n    Canvas(modifier) {\n        val asset=movie ?: return@Canvas\n        val index=frame.value.roundToInt().coerceIn(0,asset.frames.lastIndex)\n        val layers=asset.frames[index]\n        val side=minOf(size.width,size.height,188.dp.toPx())\n        if(index<22) {\n            val tile=asset.viewport.roundToInt()\n            drawImage(asset.atlas,srcOffset=androidx.compose.ui.unit.IntOffset(index%6*tile,index/6*tile),srcSize=androidx.compose.ui.unit.IntSize(tile,tile),\n                dstOffset=androidx.compose.ui.unit.IntOffset(((size.width-side)*.5f).roundToInt(),((size.height-side)*.5f).roundToInt()),\n                dstSize=androidx.compose.ui.unit.IntSize(side.roundToInt(),side.roundToInt()),filterQuality=androidx.compose.ui.graphics.FilterQuality.High)\n            return@Canvas\n        }\n        translate((size.width-side)*.5f,(size.height-side)*.5f) {\n            scale(side/asset.viewport,pivot=androidx.compose.ui.geometry.Offset.Zero) {\n                layers.forEach { drawPath(it.path,it.color) }\n            }\n        }"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/SakiPurchaseCheckout.kt",
+      "startLine": 59,
+      "endLine": 62,
+      "source": "        AnimatedContent(paying,Modifier.fillMaxSize(),contentAlignment=Alignment.BottomCenter,\n            transitionSpec={\n                (fadeIn(tween(if(motion)240 else 0,if(motion)60 else 0))+slideInVertically(tween(if(motion)320 else 0)){it/18}) togetherWith\n                    (fadeOut(tween(if(motion)150 else 0))+slideOutVertically(tween(if(motion)220 else 0)){it/24})"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/GlassParameters.kt",
+      "startLine": 6,
+      "endLine": 25,
+      "source": "@Immutable\ndata class GlassParameters(\n    val blur: Float = 36f,\n    val opacity: Float = .65f,\n    val refraction: Float = 24f,\n    val highlight: Float = .30f\n)\n\n@Immutable\ndata class HeaderGlassParameters(val blur:Float=18f,val fade:Float=32f)\n\n@Immutable\ndata class GlassMaterials(\n    val bottomBar:GlassParameters=GlassParameters(4f,.12f,24f,.30f),\n    val overlay:GlassParameters=GlassParameters(36f,.65f,24f,.30f),\n    val header:HeaderGlassParameters=HeaderGlassParameters()\n)\n\nval LocalGlassParameters = staticCompositionLocalOf { GlassParameters() }\nval LocalHeaderGlassParameters = staticCompositionLocalOf { HeaderGlassParameters() }"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeviceTilt.kt",
+      "startLine": 29,
+      "endLine": 49,
+      "source": "            override fun onSensorChanged(event: SensorEvent) {\n                val value = if(event.sensor.type == Sensor.TYPE_ACCELEROMETER) Offset(-event.values[0]/6f, event.values[1]/6f)\n                else {\n                    SensorManager.getRotationMatrixFromVector(matrix, event.values)\n                    SensorManager.getOrientation(matrix, angles)\n                    Offset(angles[2], -angles[1])\n                }\n                if(baseline == null) baseline = value\n                val relative = value - baseline!!\n                val target = Offset(relative.x.coerceIn(-1f, 1f), relative.y.coerceIn(-1f, 1f))\n                output.value += (target-output.value)*.14f\n            }\n        }\n        fun stop() { manager.unregisterListener(listener); baseline = null; output.value = Offset.Zero }\n        fun start() { if(enabled && sensor != null) manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI) }\n        val observer = LifecycleEventObserver { _, event ->\n            when(event) { Lifecycle.Event.ON_RESUME -> start(); Lifecycle.Event.ON_PAUSE -> stop(); else -> Unit }\n        }\n        owner.lifecycle.addObserver(observer)\n        if(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) start()\n        onDispose { owner.lifecycle.removeObserver(observer); stop() }"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/IosOverlayHost.kt",
+      "startLine": 16,
+      "endLine": 32,
+      "source": "fun IosOverlayHost(onDismissRequest:()->Unit,content:@Composable ()->Unit) {\n    val motion=LocalMotion.current\n    val density=LocalDensity.current\n    val registry=LocalIosOverlayRegistry.current\n    DisposableEffect(registry){registry?.let{it.count++};onDispose{registry?.let{it.count--}}}\n    Dialog(onDismissRequest,properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=false)) {\n        val view=LocalView.current\n        val window=(view.parent as? DialogWindowProvider)?.window\n        DisposableEffect(window,motion) {\n            window?.apply {\n                setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))\n                setDimAmount(.18f)\n                setWindowAnimations(if(motion)R.style.Animation_DeuteriumOverlay else 0)\n            }\n            onDispose{}\n        }\n        CompositionLocalProvider(LocalDensity provides density){content()}"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/anim/overlay_enter.xml",
+      "source": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<alpha xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    android:fromAlpha=\"0\" android:toAlpha=\"1\" android:duration=\"180\"\n    android:interpolator=\"@android:interpolator/fast_out_slow_in\" />\n"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/res/anim/overlay_exit.xml",
+      "source": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<alpha xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    android:fromAlpha=\"1\" android:toAlpha=\"0\" android:duration=\"130\"\n    android:interpolator=\"@android:interpolator/fast_out_slow_in\" />\n"
+    }
+  ]
+}

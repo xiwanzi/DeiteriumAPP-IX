@@ -14,6 +14,7 @@ import java.time.ZoneId
 private fun JSONArray.strings()=(0 until length()).map{getString(it)}
 private fun JSONObject.array(name:String)=optJSONArray(name) ?: JSONArray()
 private fun amount(cents:Long)=java.math.BigDecimal(cents).movePointLeft(2).toPlainString()
+private val newestOrderFirst=compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id}
 fun categoryCode(label:String)=when(marketCategoryLabel(label)){"建材"->"MATERIALS";"装备"->"EQUIPMENT";"补给"->"SUPPLIES";"装饰"->"DECORATION";"建筑服务"->"CONSTRUCTION";else->"OTHER"}
 fun categoryName(code:String)=when(code){"MATERIALS"->"建材";"EQUIPMENT"->"装备";"SUPPLIES"->"补给";"DECORATION"->"装饰";"CONSTRUCTION"->"建筑服务";else->"其他"}
 fun methodCode(method:DeliveryMethod)=when(method){DeliveryMethod.Door->"DOOR";DeliveryMethod.Pickup->"PICKUP";DeliveryMethod.Worksite->"WORKSITE";DeliveryMethod.Mailbox->"MAILBOX"}
@@ -52,17 +53,25 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
         if(revision==couponRevision)couponsLoading=false
     }
     private val cartLock=Mutex()
+    private val orderSubmission=Mutex()
+    private val storeRefresh=ConcurrentRefresh()
     private val categories=mutableMapOf<String,String>()
     private val brands=mutableMapOf<String,String>()
     private var visibilityRevision=0L
     private val serverOrders=mutableMapOf<String,JSONObject>()
     private fun report(failure:Throwable){error=failure.message ?: "服务暂不可用";state.storageMessage=error}
     suspend fun refreshStore(){
+        val requestScope=api.financialScope()
         runCatching{
-            runCatching{api.listAll("/store/categories").forEach{categories[it.getString("categoryId")]=it.getString("name")}}
-            runCatching{api.listAll("/store/brands").forEach{brands[it.getString("brandId")]=it.getString("name")}}
-            api.listAll("/store/products").map(::product)
-        }.onSuccess{ShopCatalog.clear();ShopCatalog.addAll(it);shopError=null}.onFailure{shopError=it.message}
+            storeRefresh.run {
+                runCatching{api.listAll("/store/categories").forEach{categories[it.getString("categoryId")]=it.getString("name")}}
+                runCatching{api.listAll("/store/brands").forEach{brands[it.getString("brandId")]=it.getString("name")}}
+                val products=api.listAll("/store/products").map(::product)
+                requestScope.verifyCurrent(api.financialScope())
+                ShopCatalog.clear();ShopCatalog.addAll(products);shopError=null
+            }
+        }.onFailure{shopError=it.message}
+        // Cart refresh remains per caller; a concurrent cart edit must still be observed.
         refreshCart()
     }
     private fun product(value:JSONObject):ShopProduct {
@@ -139,13 +148,17 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             refundAttempts=value.optInt("refundAttemptsUsed"),refundRequestedAt=refund?.let{date(it,"requestedAt")},refundResolvedAt=refund?.let{date(it,"resolvedAt")},automatic=value.optBoolean("automatic"),completedAt=date(value,"workCompletedAt"),rejectionReason=refund?.optString("rejectionReason").orEmpty(),
             serverStatus=value.getString("status"),fundsStatus=value.getString("fundsStatus"),serverActions=value.array("availableActions").strings().toSet(),version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"),isSaki=value.optString("orderType")=="AI_SUBSCRIPTION",sellerAvatarUri=seller.optJSONObject("avatar")?.optString("url"),aiExpiresAt=date(value,"aiExpiresAt"),
             paidAmount=amounts.total,originalAmount=amounts.originalTotal,productDiscount=amounts.productDiscount,couponDiscount=amounts.couponDiscount,couponName=value.optJSONObject("coupon")?.optString("name"))
-        val index=state.commerce.orders.indexOfFirst{it.id==id};if(index>=0)state.commerce.orders[index]=order else state.commerce.orders.add(0,order)
-        state.commerce.orders.sortWith(compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id})
+        val index=state.commerce.orders.indexOfFirst{it.id==id}
+        state.commerce.orders.replaceInOrder(index,order,newestOrderFirst)
         serverOrders[id]=value;return id
     }
     suspend fun refreshOrders(){val revision=visibilityRevision;runCatching{api.listAll("/orders")}.onSuccess{values->if(revision!=visibilityRevision)return@onSuccess;state.commerce.orders.clear();values.forEach{putOrder(it)}}.onFailure{report(it)}}
     suspend fun refreshOrder(id:String){val revision=visibilityRevision;runCatching{var value=api.request("GET","/orders/$id");value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"}?.let{operationId->runCatching{api.request("GET","/operations/$operationId")}.onSuccess{op->if(op.optString("status") in setOf("COMPLETED","FAILED"))value=api.request("GET","/orders/$id")}};value}.onSuccess{value->if(revision==visibilityRevision)putOrder(value);value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"}?.let{state.interventions?.refresh(it)}}.onFailure{report(it)}}
     suspend fun createOrder(quote:JSONObject,key:String):String? {
+        if(!orderSubmission.tryLock())return null
+        return try { createOrderLocked(quote,key) } finally { orderSubmission.unlock() }
+    }
+    private suspend fun createOrderLocked(quote:JSONObject,key:String):String? {
         val requestScope=api.financialScope()
         val official=quote.getString("channel")=="OFFICIAL_STORE";val kind=if(official)"STORE_PURCHASE" else "MARKET_PURCHASE"
         if(api.pendingOperation(kind)!=null){report(ApiFailure("RESULT_UNKNOWN","上一笔交易结果待确认，请先查看订单"));recoverOrder(kind);return null}

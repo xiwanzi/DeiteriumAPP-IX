@@ -1,0 +1,6 @@
+com.deuterium.app.uilab.DerivedListsTest:.
+com.deuterium.app.uilab.AnimationEquivalenceTest:.
+
+Time: 19.848
+
+OK (2 tests)

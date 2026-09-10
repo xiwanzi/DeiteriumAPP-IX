@@ -1,0 +1,103 @@
+{
+  "date": "2026-09-11",
+  "branch": "xiwanzi/performance-equivalence-v210",
+  "baseCommit": "ad8a8efd2a0b00375b159274aae8a52055a58b88",
+  "releasedAndroidSource": "65c08a290896601c6254369792e4223216ebee8e",
+  "baselineRebuiltApkSha256": "df077406407a1a07ad14762136ba6be08e4e89803af1e88dc941744febaf81a4",
+  "publishedApkSha256": "22a99ec7a1fdcf0182f124c8d9ba70d1c4ccc3953340f4d1755a22fbe26c65d5",
+  "versionName": "2.0.10",
+  "versionCode": 21000,
+  "package": "com.deuterium.app.uilab",
+  "debuggable": false,
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "artifact": {
+    "file": "ui-lab-performance.apk",
+    "bytes": 8875538,
+    "sha256": "78d5b52f3d821d516361fb4dce9f532c5bf8e5b083309c95bf91553d04dacdaf",
+    "dex": [
+      {
+        "name": "classes.dex",
+        "bytes": 12037264
+      },
+      {
+        "name": "classes2.dex",
+        "bytes": 4440400
+      }
+    ],
+    "dexBytes": 16477664,
+    "profiles": [
+      {
+        "name": "assets/dexopt/baseline.prof",
+        "bytes": 11018
+      },
+      {
+        "name": "assets/dexopt/baseline.profm",
+        "bytes": 1318
+      }
+    ],
+    "testFixturesAbsent": [
+      "PerformanceVisualCheck",
+      "PerformanceIoCheck",
+      "AnimationEquivalenceTest",
+      "LegacyIosSwitch"
+    ],
+    "sizeReductionPercent": 62.324331127618535
+  },
+  "jvm": {
+    "tests": 149,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "nativeChecks": {
+    "performanceIO": [
+      "account_change_during_disk_write",
+      "double_tap_during_disk_write_submits_once",
+      "off_main_commit_and_recovery_barrier",
+      "overlapping_catalog_reads_coalesce_but_later_refresh_stays_fresh"
+    ],
+    "imageCache": [
+      "disk_memory_signature_reuse",
+      "private_evidence_and_clear",
+      "target_size_and_retention"
+    ],
+    "contactsLayout": [
+      "history_filter_favorites_and_live_recency",
+      "search_unmessaged_player"
+    ],
+    "paymentTiming": [
+      "failure",
+      "fast",
+      "recovered",
+      "slow"
+    ]
+  },
+  "visual": {
+    "scenes": 68,
+    "differentScenes": 0
+  },
+  "animation": {
+    "comparisons": 96,
+    "differentPixels": 0,
+    "clock": "controlled-compose-clock"
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 24,
+    "unsupportedCustomLintApiWarnings": 5
+  },
+  "device": {
+    "kind": "dedicated-emulator",
+    "api": 35,
+    "resolution": "720x1280",
+    "densityDpi": 240
+  },
+  "profile": {
+    "rules": "manually curated app rules plus dependency profiles",
+    "installResult": 1,
+    "dexoptStatus": "speed-profile",
+    "reason": "cmdline"
+  },
+  "deployed": false,
+  "physicalDeviceFrameTimingMeasured": false
+}

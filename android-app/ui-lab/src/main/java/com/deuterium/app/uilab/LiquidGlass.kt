@@ -61,12 +61,6 @@ fun LiquidGlass(
         .then(if(onClick == null) Modifier else Modifier.clickable(onClick = onClick))
         .drawWithCache {
             val corner = radius.toPx()
-            val rim = Brush.linearGradient(listOf(
-                Color.White.copy(alpha = (if(dark) .65f else 1f) * parameters.highlight),
-                Color.White.copy(alpha = .16f * parameters.highlight),
-                Color(0xFFABD8C5).copy(alpha = .55f * parameters.highlight),
-                Color.White.copy(alpha = .78f * parameters.highlight)
-            ), start = Offset.Zero, end = Offset(size.width, size.height))
             val sheen = Brush.linearGradient(listOf(Color.White.copy(alpha = (if(dark) .16f else .46f) * parameters.highlight), Color.Transparent, Color.White.copy(alpha = .05f * parameters.highlight)))
             frost.renderEffect = if(enabled && Build.VERSION.SDK_INT >= 31) {
                 val blur = if(parameters.blur > .1f) RenderEffect.createBlurEffect(parameters.blur.dp.toPx(), parameters.blur.dp.toPx(), Shader.TileMode.CLAMP) else null
@@ -126,13 +120,13 @@ fun GlassAtmosphere(modifier: Modifier = Modifier) {
     val dark = MaterialTheme.colorScheme.background.red < .5f
     val base = MaterialTheme.colorScheme.background
     val accent = MaterialTheme.colorScheme.primary
-    Canvas(modifier.fillMaxSize()) {
-        drawRect(base)
-        drawRect(Brush.radialGradient(listOf(accent.copy(alpha = if(dark) .03f else .025f), Color.Transparent),
-            center = Offset(size.width * .95f, size.height * .15f), radius = size.width * .95f))
-        drawRect(Brush.radialGradient(listOf(Color(0xFFE2C599).copy(alpha = if(dark) .02f else .03f), Color.Transparent),
-            center = Offset(size.width * .04f, size.height * .63f), radius = size.width * .9f))
-        drawRect(Brush.radialGradient(listOf(Color(0xFF98A8DC).copy(alpha = if(dark) .025f else .025f), Color.Transparent),
-            center = Offset(size.width, size.height * .95f), radius = size.width * .9f))
-    }
+    Spacer(modifier.fillMaxSize().drawWithCache {
+        val first=Brush.radialGradient(listOf(accent.copy(alpha = if(dark) .03f else .025f), Color.Transparent),
+            center = Offset(size.width * .95f, size.height * .15f), radius = size.width * .95f)
+        val second=Brush.radialGradient(listOf(Color(0xFFE2C599).copy(alpha = if(dark) .02f else .03f), Color.Transparent),
+            center = Offset(size.width * .04f, size.height * .63f), radius = size.width * .9f)
+        val third=Brush.radialGradient(listOf(Color(0xFF98A8DC).copy(alpha = if(dark) .025f else .025f), Color.Transparent),
+            center = Offset(size.width, size.height * .95f), radius = size.width * .9f)
+        onDrawBehind { drawRect(base);drawRect(first);drawRect(second);drawRect(third) }
+    })
 }

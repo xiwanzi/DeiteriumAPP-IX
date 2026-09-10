@@ -21,6 +21,7 @@ data class Announcement(val id: String, val title: String, val content: String, 
 fun credit(cents: Long): String = String.format(Locale.US, "%,.2f", cents / 100.0)
 fun apiCents(value: String): Long = value.toBigDecimal().movePointRight(2).longValueExact()
 private fun JSONArray.objects(): List<JSONObject> = (0 until length()).mapNotNull { optJSONObject(it) }
+private val chatChronology=compareBy<ChatLine>{it.serverAt}
 
 class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> = emptySet(),
     private val saveFollowed: (Set<String>) -> Unit = {}, val userName: String = "", private val postNotification: (DemoNotice) -> Unit = {}, val api: BackendApi? = null,private val notificationPreferences:NotificationPreferences?=null,private val launcherIcons:LauncherIcons?=null) {
@@ -43,6 +44,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     var activeTransferKey by mutableStateOf<String?>(null);private set
     var completedTransferKey by mutableStateOf<String?>(null);private set
     private var transferRecovering=false
+    private val transferSubmission=kotlinx.coroutines.sync.Mutex()
+    private val forwarding=mutableSetOf<String>()
     var chatReplyTo by mutableStateOf<ChatReply?>(null)
     var chatDraft by mutableStateOf(TextFieldValue(""))
     var chatReplyPending by mutableStateOf(false)
@@ -158,8 +161,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         val at=sentAt.atZone(ZoneId.systemDefault()).toLocalDateTime()
         val reply = value.optJSONObject("reply")?.let { ChatReply(it.optString("messageId").hashCode().toLong(), it.optJSONObject("sender")?.optString("gameId").orEmpty(), if(it.optString("availability")=="UNAVAILABLE")"原消息不可见" else it.optString("content"), it.optString("messageId")) }
         val forwarded=value.optJSONObject("forwarded")?.let{ChatReply(it.optString("messageId").hashCode().toLong(),it.optJSONObject("sender")?.optString("gameId").orEmpty(),it.optString("content"),it.optString("messageId"))}
-        target.add(ChatLine(++serial, if(mine) "你" else name, value.optString("content"), mine, at.format(DateTimeFormatter.ofPattern("HH:mm")), reply, id, sentAt.toEpochMilli(),forwarded))
-        target.sortBy { it.serverAt }
+        target.insertInOrder(ChatLine(++serial, if(mine) "你" else name, value.optString("content"), mine, at.format(DateTimeFormatter.ofPattern("HH:mm")), reply, id, sentAt.toEpochMilli(),forwarded),chatChronology)
         val mentions=value.optJSONArray("mentionedPlayerRefs")
         val mentioned=mentions!=null&&(0 until mentions.length()).any{mentions.optString(it)==api?.playerRef}
         if(notify && !mine && (name in followed || mentioned)) {
@@ -177,10 +179,10 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         uncertainMessage = Triple(clientId, text, replyId)
         val refs = api?.pendingChat()?.takeIf{it.optString("clientId")==clientId}?.optJSONArray("mentionedPlayerRefs")
             ?: JSONArray(Regex("@([A-Za-z0-9_]+)").findAll(text).mapNotNull { match -> Players.find { it.name == match.groupValues[1] }?.playerRef?.takeIf { it.isNotBlank() } }.toList())
-        api?.savePendingChat(JSONObject().put("clientId", clientId).put("content", text).put("reply", replyId.orEmpty()).put("mentionedPlayerRefs",refs))
         chatReplyPending = true
         scope.launch {
             runCatching {
+                api?.savePendingChat(JSONObject().put("clientId", clientId).put("content", text).put("reply", replyId.orEmpty()).put("mentionedPlayerRefs",refs))
                 val request=JSONObject().put("clientMessageId",clientId).put("content",text).put("mentionedPlayerRefs",refs)
                 replyId?.let{request.put("replyToMessageId",it)}
                 api?.request("POST","/chat/messages",request) ?: throw ApiFailure("CHAT_DISCONNECTED", "消息连接暂不可用")
@@ -223,6 +225,11 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }
     }
     suspend fun transfer(name: String, cents: Long, note: String,requestId:String?=null,confirmedRecipientRef:String?=null): Boolean {
+        if(!transferSubmission.tryLock())return false
+        return try { transferLocked(name,cents,note,requestId,confirmedRecipientRef) }
+        finally { transferSubmission.unlock() }
+    }
+    private suspend fun transferLocked(name:String,cents:Long,note:String,requestId:String?,confirmedRecipientRef:String?):Boolean {
         val service = api ?: return false
         val requestScope=service.financialScope()
         val recipientRef=confirmedRecipientRef?.takeIf{it.isNotBlank()} ?: Players.find { it.name == name && it.playerRef.isNotBlank() }?.playerRef ?: return false
@@ -266,7 +273,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }
         report(it); false
     }
-    private fun handleTransfer(value: JSONObject, request: JSONObject,requestScope:FinancialScope): Boolean {
+    private suspend fun handleTransfer(value: JSONObject, request: JSONObject,requestScope:FinancialScope): Boolean {
         val pending=if(value.optString("status") in setOf("success","failed"))null else JSONObject().put("request",request).put("transferId",value.optString("transferId"))
         api?.saveTransfer(pending,requestScope)
         requestScope.verifyCurrent(api!!.financialScope())
@@ -393,8 +400,9 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         val previous=service.pendingDirect(other.playerRef)
         val request=previous ?: JSONObject().put("clientMessageId",UUID.randomUUID().toString()).put("content",text.trim()).apply { replyTo?.remoteId?.takeIf{it.isNotBlank()}?.let{put("replyToMessageId",it)} }
         if(request.getString("content")!=text.trim()||(replyTo!=null&&request.optString("replyToMessageId")!=replyTo.remoteId)){storageMessage="上一条私聊结果待确认，请先重试原消息";return false}
-        service.savePendingDirect(other.playerRef,request);directPending[name]=true
+        directPending[name]=true
         return try { runCatching {
+            service.savePendingDirect(other.playerRef,request)
             val id=conversationIds[name] ?: service.request("POST","/chat/conversations",JSONObject()
                 .put("clientRequestId",UUID.nameUUIDFromBytes("${service.playerRef}:${other.playerRef}".toByteArray()).toString()).put("otherPlayerRef",other.playerRef)).getString("conversationId").also{conversationIds[name]=it}
             val value=service.request("POST","/chat/conversations/$id/messages",request)
@@ -404,6 +412,11 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }finally{directPending[name]=false}
     }
     suspend fun forwardMessage(line:ChatLine,sourceName:String?,targetName:String):Boolean {
+        if(!forwarding.add(targetName))return false
+        return try { forwardMessageLocked(line,sourceName,targetName) }
+        finally { forwarding.remove(targetName) }
+    }
+    private suspend fun forwardMessageLocked(line:ChatLine,sourceName:String?,targetName:String):Boolean {
         val service=api ?: return false
         val other=Players.find{it.name==targetName&&it.playerRef.isNotBlank()} ?: return false
         val sourceId=sourceName?.let{conversationIds[it]}

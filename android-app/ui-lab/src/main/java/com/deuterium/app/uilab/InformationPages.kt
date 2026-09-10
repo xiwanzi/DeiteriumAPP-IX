@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 @Composable
 fun InfoPage(state:LabState,topInset:Dp,query:String,onOpen:(String)->Unit) {
     LaunchedEffect(state){while(true){state.refreshContacts();delay(15000)}}
+    val people by remember(state,query){derivedStateOf{recentContacts(searchPlayers(query),state.followed.toSet(),state.directChats,searchMode=query.isNotBlank())}}
     LazyColumn(contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset,bottom=120.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
         if(query.isBlank()) {
             item { Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface) { Column {
@@ -48,7 +49,6 @@ fun InfoPage(state:LabState,topInset:Dp,query:String,onOpen:(String)->Unit) {
             } } }
         }
         item { Text("联系人",Modifier.padding(start=4.dp),style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-        val people=recentContacts(searchPlayers(query),state.followed.toSet(),state.directChats,searchMode=query.isNotBlank())
         if(people.isEmpty())item{Text(if(query.isNotBlank())"没有找到联系人" else state.contactsError ?: if(!state.contactsKnown)"正在同步联系人…" else "还没有私聊记录，搜索玩家开始聊天",Modifier.padding(20.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
         item { Surface(shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface) { Column {
             people.forEachIndexed { index,entry ->key(entry.person.playerRef.ifBlank{entry.person.name}){

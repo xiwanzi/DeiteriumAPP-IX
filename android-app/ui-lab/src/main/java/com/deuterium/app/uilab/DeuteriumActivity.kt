@@ -94,6 +94,11 @@ class DeuteriumActivity : ComponentActivity() {
         val session = androidx.lifecycle.ViewModelProvider(this)[LabSession::class.java]
         val updates=androidx.lifecycle.ViewModelProvider(this)[AppUpdates::class.java]
         updates.initialize()
+        lifecycleScope.launch {
+            try { prewarmVersionBadge(this@DeuteriumActivity,updates.resourceDirectory) }
+            catch(cancelled:CancellationException){throw cancelled}
+            catch(_:Exception){ /* The visible image request retains its normal fallback. */ }
+        }
         setContent {
             var theme by rememberSaveable { mutableIntStateOf(prefs.getInt("theme", 1)) }
             var motion by rememberSaveable { mutableStateOf(prefs.getBoolean("motion", true)) }
@@ -298,7 +303,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
             state.commerce.network?.couponAttention?.let{attention->
                 CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize())
             }
-            flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}
+            flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter){flightProgress.value}}
             AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {
                 state.notice?.let{notice->InAppNoticeCard(notice.title,notice.body,{goToNotice(notice.route)},{state.notice=null},backdrop=backdrop)}
             }

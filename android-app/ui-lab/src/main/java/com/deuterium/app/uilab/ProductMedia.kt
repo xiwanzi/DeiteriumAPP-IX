@@ -37,8 +37,13 @@ fun ServerAssetImage(source:String?,description:String,modifier:Modifier=Modifie
 
 @Composable
 fun ShoppingBagFlight(product:ShopProduct,start:Offset,end:Offset,progress:Float) {
+    ShoppingBagFlight(product,start,end){progress}
+}
+
+@Composable
+fun ShoppingBagFlight(product:ShopProduct,start:Offset,end:Offset,progress:()->Float) {
     ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(72.dp).graphicsLayer{
-        val t=progress.coerceIn(0f,1f)
+        val t=progress().coerceIn(0f,1f)
         val arc=kotlin.math.sin(t*Math.PI).toFloat()
         val current=start+(end-start)*t+Offset(-90f*arc,-100f*arc)
         translationX=current.x-size.width/2;translationY=current.y-size.height/2
