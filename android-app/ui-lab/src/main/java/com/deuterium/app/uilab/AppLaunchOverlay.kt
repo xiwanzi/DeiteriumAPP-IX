@@ -50,7 +50,8 @@ fun AppLaunchOverlay(ready:Boolean,motion:Boolean,session:LabSession,nativeReady
     Box(Modifier.fillMaxSize().graphicsLayer { alpha=opacity.value }.background(MaterialTheme.colorScheme.background)
         .pointerInput(Unit){awaitPointerEventScope{while(true)awaitPointerEvent().changes.forEach{it.consume()}}}
         .semantics{paneTitle="正在打开 Deuterium";liveRegion=LiveRegionMode.Polite},contentAlignment=Alignment.Center) {
-        LoginVersionBadge(Modifier.size(104.dp).offset(y=(-94f*arrival.value).dp).graphicsLayer{
+        LoginVersionBadge(Modifier.size(104.dp).graphicsLayer{
+            translationY=(-94).dp.toPx()*arrival.value
             val initialScale=192f/104f
             val scale=initialScale+(1f-initialScale)*arrival.value;scaleX=scale;scaleY=scale
         })

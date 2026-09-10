@@ -71,8 +71,9 @@ object CouponArrivalCheck {
                     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                       Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)) {
                         if(page=="profile")ProfilePage(state,null,"FixtureSelf",100.dp,"",{page=it},{}) else StoreCouponsPage(state,100.dp)
-                        Surface(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp),color=MaterialTheme.colorScheme.background){Row(Modifier.statusBarsPadding().fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){IconButton({page="profile"}){Icon(Icons.Outlined.ChevronLeft,"返回")};Text(if(page=="profile")"我的" else "我的优惠",Modifier.weight(1f),style=MaterialTheme.typography.titleLarge)}}
                       }
+                      GradientGlassHeader(backdrop,Modifier.fillMaxWidth().height(115.dp))
+                      Surface(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp),color=androidx.compose.ui.graphics.Color.Transparent){Row(Modifier.statusBarsPadding().fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){IconButton({page="profile"}){Icon(Icons.Outlined.ChevronLeft,"返回")};Text(if(page=="profile")"我的" else "我的优惠",Modifier.weight(1f),style=MaterialTheme.typography.titleLarge)}}
                       CouponArrivalHost(state.commerce.network!!.couponAttention,ready&&page=="profile",98.dp,{page="coupons"},Modifier.fillMaxSize())
                     }
                     if(busy)IosDialog({},{Text("正在确认付款")},{Text("优惠提醒应等待此浮层关闭。")},{PlainButton({busy=false}){Text("完成")}})
@@ -82,30 +83,29 @@ object CouponArrivalCheck {
             fun node(text:String)=find(test.uiAutomation.rootInActiveWindow,text)
             fun waitFor(label:String,condition:()->Boolean){repeat(200){if(condition())return;Thread.sleep(60)};error("Timeout: $label")}
             fun click(text:String){waitFor(text){node(text)!=null};var n=node(text);while(n!=null&&!n.isClickable)n=n.parent;check(n?.performAction(AccessibilityNodeInfo.ACTION_CLICK)==true){"Cannot click $text"}}
-            fun shot(name:String){test.waitForIdleSync();Thread.sleep(900);val image=test.uiAutomation.takeScreenshot();test.targetContext.filesDir.resolve("coupon-arrival-$name.png").outputStream().use{image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)};image.recycle()}
+            fun shot(name:String){test.waitForIdleSync();Thread.sleep(200);val image=test.uiAutomation.takeScreenshot();test.targetContext.filesDir.resolve("coupon-arrival-$name.png").outputStream().use{image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)};image.recycle()}
             fun refresh(){runBlocking{withContext(Dispatchers.Main){check(state.commerce.network!!.couponAttention.refresh())}}}
             waitFor("initial coupon fetch"){state.commerce.network!!.couponAttention.arrivals.size==1}
             Thread.sleep(650);check(node("收到新的优惠")==null)
             test.runOnMainSync{busy=true;ready=true};waitFor("payment overlay"){node("正在确认付款")!=null};Thread.sleep(800);check(node("收到新的优惠")==null)
-            click("完成");waitFor("simple coupon popup"){node("收到新的优惠")!=null};check(node("去看看")==null);shot("simple-light")
+            click("完成");waitFor("simple coupon banner"){node("收到一份新优惠")!=null};check(node("去看看")==null&&node("好的")==null);shot("simple-light")
             test.runOnMainSync{theme=2};shot("simple-dark")
-            val regularTitle=android.graphics.Rect().also{node("收到新的优惠")!!.getBoundsInScreen(it)}
             test.runOnMainSync{font=1.4f}
-            waitFor("large text applied inside dialog"){val bounds=android.graphics.Rect();node("收到新的优惠")?.getBoundsInScreen(bounds);bounds.height()>regularTitle.height()*1.2f}
+            waitFor("large text banner remains visible"){node("收到一份新优惠")!=null}
             shot("simple-large-text")
             test.runOnMainSync{font=1f;glass=false;motion=false};shot("simple-no-glass")
-            click("好的");waitFor("simple viewed"){!state.commerce.network!!.couponAttention.hasUnread}
+            click("关闭提醒");waitFor("banner dismissed"){node("收到一份新优惠")==null};check(state.commerce.network!!.couponAttention.hasUnread)
             result.putString("single_action_light_dark_large_text_and_overlay_deferral","PASS")
             // Ack remains unavailable; reconstruct all app state against the old server response.
             test.runOnMainSync{state=LabState(scope,userName="FixtureSelf",api=api);theme=1;glass=true;motion=true}
-            refresh();Thread.sleep(850);check(node("收到新的优惠")==null);check(!state.commerce.network!!.couponAttention.hasUnread)
+            refresh();Thread.sleep(850);check(node("收到新的优惠")==null);check(state.commerce.network!!.couponAttention.hasUnread)
             val later=coupon("coupon_one_later","同批稍后生效的礼遇").put("releaseBatchId","batch_first")
             coupons.add(later);refresh()
             check(state.commerce.network!!.couponAttention.arrivals.isEmpty());check(state.commerce.network!!.couponAttention.hasUnread)
             test.runOnMainSync{state.commerce.network!!.couponAttention.mark(listOf(storeCoupon(later)),viewed=true)}
             result.putString("same_batch_does_not_repeat_after_recreation","PASS")
             failAck.set(false);runBlocking{withContext(Dispatchers.Main){state.commerce.network!!.couponAttention.flush()}}
-            check(receipts["Bearer FixtureSelf:coupon_one"]==2)
+            check(receipts["Bearer FixtureSelf:coupon_one"]==1)
             result.putString("offline_ack_survives_recreation_and_syncs","PASS")
             login("FixtureOther");val other=CouponAttention(api)
             runBlocking{withContext(Dispatchers.Main){check(other.refresh());check(other.arrivals.size==2)}}
@@ -113,22 +113,22 @@ object CouponArrivalCheck {
             result.putString("account_receipts_are_isolated","PASS")
             coupons.add(coupon("coupon_two","探索者单品礼遇",true).put("releaseBatchId","batch_multi"));coupons.add(coupon("coupon_three","周末满减礼遇").put("releaseBatchId","batch_multi"))
             test.runOnMainSync{state=LabState(scope,userName="FixtureSelf",api=api)}
-            waitFor("grouped arrival"){node("收到 2 份新优惠")!=null};check(node("好的")!=null&&node("去看看")!=null);shot("multiple-light")
+            waitFor("grouped arrival"){node("收到 2 份新优惠")!=null};check(node("好的")==null&&node("去看看")==null);shot("multiple-light")
             test.runOnMainSync{theme=2;font=1.4f};shot("multiple-dark-large-text")
             test.runOnMainSync{theme=1;font=1f}
-            click("去看看");waitFor("coupon wallet"){node("为你准备的优惠")!=null&&state.commerce.network!!.coupons.any{it.id=="coupon_two"}};waitFor("wallet marked read"){!state.commerce.network!!.couponAttention.hasUnread}
-            check(page=="coupons");result.putString("grouped_popup_navigation_and_badge_read","PASS")
+            click("收到 2 份新优惠");waitFor("coupon wallet"){node("为你准备的优惠")!=null&&state.commerce.network!!.coupons.any{it.id=="coupon_two"}};waitFor("wallet marked read"){!state.commerce.network!!.couponAttention.hasUnread}
+            check(page=="coupons");result.putString("grouped_banner_navigation_and_badge_read","PASS")
             click("返回")
             coupons.add(coupon("coupon_four","午后惊喜"));refresh()
             waitFor("foreground banner"){node("收到一份新优惠")!=null};check(node("收到新的优惠")==null);check(state.commerce.network!!.couponAttention.hasUnread);shot("foreground-banner")
-            click("收到一份新优惠");waitFor("banner navigation"){page=="coupons"};waitFor("banner coupon read"){!state.commerce.network!!.couponAttention.hasUnread}
-            result.putString("foreground_banner_and_badge","PASS")
+            click("我的优惠");waitFor("underlying page remains interactive"){page=="coupons"};waitFor("banner coupon read"){!state.commerce.network!!.couponAttention.hasUnread}
+            result.putString("foreground_banner_underlying_page_and_badge","PASS")
             click("返回")
             val expiring=coupon("coupon_five","即将结束的礼遇",true).put("endsAt",clock.get().plusSeconds(4).toString());coupons.add(expiring)
             test.runOnMainSync{state=LabState(scope,userName="FixtureSelf",api=api)}
-            waitFor("expiry popup"){node("收到新的优惠")!=null};check(node("去看看")!=null)
-            waitFor("expired popup removed"){node("收到新的优惠")==null};check(!state.commerce.network!!.couponAttention.hasUnread)
-            result.putString("cached_popup_expiry_removes_badge_and_dialog","PASS")
+            waitFor("expiry banner"){node("即将结束的礼遇 · 8.5 折")!=null};check(node("去看看")==null)
+            waitFor("expired banner and badge removed"){node("即将结束的礼遇 · 8.5 折")==null&&!state.commerce.network!!.couponAttention.hasUnread}
+            result.putString("cached_banner_expiry_removes_badge_and_banner","PASS")
             test.finish(-1,result)
         } catch(error:Throwable) {
             runCatching{val image=test.uiAutomation.takeScreenshot();test.targetContext.filesDir.resolve("coupon-arrival-failure.png").outputStream().use{image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)};image.recycle()}

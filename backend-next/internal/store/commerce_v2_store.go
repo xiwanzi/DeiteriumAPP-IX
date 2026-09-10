@@ -326,7 +326,7 @@ func commerceSetDeadlineV2(d *CommerceRecordV2, kind string, deadline time.Time)
 	}
 }
 func commerceReleaseStockV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2) error {
-	if e := promotionReleaseUnusedV209(ctx, tx, d.ID); e != nil {
+	if e := promotionReleaseV209(ctx, tx, d); e != nil {
 		return e
 	}
 	rows, e := tx.QueryContext(ctx, "SELECT product_id,quantity FROM commerce_stock_holds_v2 WHERE resource_id=? AND state IN ('RESERVED','PURCHASED') ORDER BY product_id", d.ID)

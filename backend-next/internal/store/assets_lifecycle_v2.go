@@ -48,7 +48,7 @@ func (s *Store) assetCurrentUseTxV2(ctx context.Context, tx *sql.Tx, kind, ref s
 		if err != nil {
 			return true, err
 		}
-		return state != "UNLISTED" && state != "ARCHIVED" && state != "INACTIVE", nil
+		return state != "UNLISTED" && state != "ARCHIVED" && state != "INACTIVE" && state != "DELETED", nil
 	case "COMMISSION", "ORDER_COMPLETION", "COMMISSION_COMPLETION":
 		return assetCommerceCurrentTxV2(ctx, tx, ref)
 	case "ORDER_SNAPSHOT", "COMMISSION_SNAPSHOT":

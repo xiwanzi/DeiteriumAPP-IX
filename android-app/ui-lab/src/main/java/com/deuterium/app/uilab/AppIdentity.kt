@@ -1,14 +1,12 @@
 package com.deuterium.app.uilab
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -30,17 +28,19 @@ fun AppLauncherIcon(modifier:Modifier=Modifier) {
 /** The version badge is shared by login and the launch transition; resource packs can update it. */
 @Composable
 fun LoginVersionBadge(modifier:Modifier=Modifier) {
+    val context=LocalContext.current
     val directory=LocalAppUpdates.current?.resourceDirectory
-    val bitmap by produceState<Bitmap?>(null,directory) {
-        value=withContext(Dispatchers.IO) {
-            directory?.let { File(it,"images/deuterium-brand.png") }?.takeIf { it.isFile }?.let { file->
-                val options=BitmapFactory.Options().apply { inJustDecodeBounds=true }
-                BitmapFactory.decodeFile(file.path,options);options.inJustDecodeBounds=false;options.inSampleSize=1
-                while(options.outWidth/options.inSampleSize>512||options.outHeight/options.inSampleSize>512)options.inSampleSize*=2
-                BitmapFactory.decodeFile(file.path,options)
-            }
+    val images=remember(context){AppImages.get(context)}
+    var failed by remember(directory){mutableStateOf(false)}
+    val source by produceState<Any>(R.drawable.deuterium_brand,directory,failed) {
+        value=if(failed)R.drawable.deuterium_brand else withContext(Dispatchers.IO) {
+            directory?.let{File(it,"images/deuterium-brand.png")}?.takeIf{it.isFile} ?: R.drawable.deuterium_brand
         }
     }
-    if(bitmap!=null)Image(bitmap!!.asImageBitmap(),"Deuterium 版本标",modifier)
-    else Image(painterResource(R.drawable.deuterium_brand),"Deuterium 版本标",modifier)
+    val request=remember(context,source) {
+        coil3.request.ImageRequest.Builder(context).data(source).size(768,768).build()
+    }
+    // The launch badge scales up to 192dp. Decode off the UI thread and share
+    // the bounded result between launch and login through the existing loader.
+    coil3.compose.AsyncImage(request,"Deuterium 版本标",imageLoader=images.loader,modifier=modifier,onError={if(source is File)failed=true})
 }

@@ -93,6 +93,9 @@ func (s *Store) SaveCouponV209(ctx context.Context, actor, id, key string, expec
 			if e != nil {
 				return nil, e
 			}
+			if d.State == "DELETED" {
+				return nil, catalogNotFound()
+			}
 			if d.Version != expected {
 				return nil, catalogVersion()
 			}
@@ -256,7 +259,7 @@ func (s *Store) couponsFilteredV209(ctx context.Context, actor string, admin boo
 		return nil, "", false, e
 	}
 	defer tx.Rollback()
-	where, args := " WHERE kind='coupon'", []any{}
+	where, args := " WHERE kind='coupon' AND state<>'DELETED'", []any{}
 	if admin {
 		if e := promotionAdminV209(ctx, tx, actor); e != nil {
 			return nil, "", false, e

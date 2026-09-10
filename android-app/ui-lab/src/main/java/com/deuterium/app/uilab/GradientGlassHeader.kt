@@ -14,8 +14,10 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.ceil
 
-/** Full-scene Gaussian sampling and one continuous, zero-slope fade across the complete header. */
+/** Sample the header plus a blur margin, with a continuous fade across the complete header. */
 @Composable
 fun GradientGlassHeader(backdrop:GraphicsLayer,modifier:Modifier=Modifier) {
     val parameters=LocalHeaderGlassParameters.current
@@ -31,7 +33,10 @@ fun GradientGlassHeader(backdrop:GraphicsLayer,modifier:Modifier=Modifier) {
         maskLayer.clip=true
         onDrawBehind {
             if(backdrop.size.width>0&&backdrop.size.height>0){
-                frost.record(size=backdrop.size){drawLayer(backdrop)}
+                // Preserve neighboring pixels for the blur without filtering the whole screen.
+                val margin=if(Build.VERSION.SDK_INT>=31)ceil(parameters.blur.dp.toPx()*3f).toInt() else 0
+                val sample=IntSize(backdrop.size.width,minOf(backdrop.size.height,ceil(size.height).toInt()+margin))
+                frost.record(size=sample){drawLayer(backdrop)}
                 maskLayer.record{drawLayer(frost);drawRect(mask,blendMode=BlendMode.DstIn)}
                 drawLayer(maskLayer)
             }

@@ -208,6 +208,7 @@ func (s *Server) registerCatalogV2(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/merchant/stores/{storeId}/products", s.catalogContentWriteV2("product", true, false))
 	mux.HandleFunc("GET /api/v1/merchant/products/{productId}", s.catalogGetV2("product", true))
 	mux.HandleFunc("PUT /api/v1/merchant/products/{productId}", s.catalogContentWriteV2("product", false, false))
+	mux.HandleFunc("POST /api/v1/merchant/products/{productId}/delete", s.deleteCatalogEntry("product"))
 	for _, action := range []string{"publish", "unlist", "archive", "stock-adjustments"} {
 		mux.HandleFunc("POST /api/v1/merchant/products/{productId}/"+action, s.catalogActionV2("product", action))
 	}
