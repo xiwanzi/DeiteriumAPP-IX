@@ -12,16 +12,17 @@ import LauncherIconSettings from "./LauncherIconSettings.jsx";
 import AiSettings from "./AiSettings.jsx";
 import AccountManagement from "./AccountManagement.jsx";
 import CatalogManagement from "./CatalogManagement.jsx";
+import CouponManagement from "./CouponManagement.jsx";
 import { useUnsavedChanges } from "./unsaved-changes.js";
 
 export default function OfficialAdmin({ client, user, navigate, search = "" }) {
   const permissions = user.permissions || [], all = permissions.includes("platform.admin"),
-    tabs = [...(all || permissions.includes("intervention.manage") ? ["平台介入"] : []), ...(all || permissions.includes("announcements.manage") ? ["公告管理"] : []), ...(all || permissions.includes("audit.read") ? ["管理审计"] : []), ...(all ? ["小祥设置", "账号与权限", "邮件提醒", "应用图标"] : []), "商店管理", ...(all || permissions.includes("core.read") ? ["Core 管理"] : [])],
-    requested = {interventions:"平台介入",announcements:"公告管理",audit:"管理审计",email:"邮件提醒",ai:"小祥设置",accounts:"账号与权限",core:"Core 管理","launcher-icon":"应用图标"}[new URLSearchParams(search).get("section")],
+    tabs = [...(all || permissions.includes("intervention.manage") ? ["平台介入"] : []), ...(all || permissions.includes("announcements.manage") ? ["公告管理"] : []), ...(all || permissions.includes("audit.read") ? ["管理审计"] : []), ...(all ? ["小祥设置", "账号与权限", "邮件提醒", "应用图标", "优惠券"] : []), "商店管理", ...(all || permissions.includes("core.read") ? ["Core 管理"] : [])],
+    requested = {interventions:"平台介入",announcements:"公告管理",audit:"管理审计",email:"邮件提醒",ai:"小祥设置",accounts:"账号与权限",core:"Core 管理",coupons:"优惠券","launcher-icon":"应用图标"}[new URLSearchParams(search).get("section")],
     tab = tabs.includes(requested) ? requested : tabs[0], [pending, setPending] = useState(0);
   useEffect(() => { if (!all && !permissions.includes("intervention.manage")) return; let alive = true; const load = async () => { try { const r = await client.request("/api/v1/admin/interventions/summary"); if (alive) setPending(r.data.pending); } catch {} }; load(); const timer = setInterval(load, 15000); return () => { alive = false; clearInterval(timer); }; }, [client, all, permissions.join(",")]);
   return <>{pending > 0 && tab !== "平台介入" && <div className="intervention-alert" role="status"><span><strong>{pending} 起平台介入</strong>需要继续跟进</span><Button secondary onClick={() => navigate("/admin?section=interventions")}>查看案件</Button></div>}
-    {tab === "应用图标" ? <LauncherIconSettings client={client} /> : tab === "小祥设置" ? <AiSettings client={client} /> : tab === "账号与权限" ? <AccountManagement client={client} user={user} /> : tab === "Core 管理" ? <CoreAdmin client={client} /> : tab === "公告管理" ? <AnnouncementManagement client={client} /> : tab === "平台介入" ? <InterventionManagement client={client} user={user} /> : tab === "管理审计" ? <TradeAudit client={client} /> : tab === "邮件提醒" ? <EmailSettings client={client} /> : <CatalogManagement client={client} user={user} />}
+    {tab === "优惠券" ? <CouponManagement client={client} /> : tab === "应用图标" ? <LauncherIconSettings client={client} /> : tab === "小祥设置" ? <AiSettings client={client} /> : tab === "账号与权限" ? <AccountManagement client={client} user={user} /> : tab === "Core 管理" ? <CoreAdmin client={client} /> : tab === "公告管理" ? <AnnouncementManagement client={client} /> : tab === "平台介入" ? <InterventionManagement client={client} user={user} /> : tab === "管理审计" ? <TradeAudit client={client} /> : tab === "邮件提醒" ? <EmailSettings client={client} /> : <CatalogManagement client={client} user={user} />}
   </>;
 }
 

@@ -698,7 +698,11 @@ func (s *Store) CatalogViewV2(ctx context.Context, viewer string, d CatalogRecor
 			if state == "DRAFT" {
 				state = "UNLISTED"
 			}
-			published = map[string]any{"productId": d.ID, "storeId": d.StoreID, "version": d.PublishedVersion, "content": d.Published, "images": images, "visibility": state, "availableStock": d.Stock, "publishedAt": d.PublishedAt, "updatedAt": d.UpdatedAt}
+			effective, e := promotionPriceV209(d.Published)
+			if e != nil {
+				return nil, e
+			}
+			published = map[string]any{"productId": d.ID, "storeId": d.StoreID, "version": d.PublishedVersion, "content": d.Published, "effectivePrice": catalogMoneyString(effective), "images": images, "visibility": state, "availableStock": d.Stock, "publishedAt": d.PublishedAt, "updatedAt": d.UpdatedAt}
 		}
 		if !management {
 			if published == nil {
@@ -880,6 +884,10 @@ func (s *Store) CatalogQuoteV2(ctx context.Context, user, key string, input Cata
 		if channel == "PLAYER_MARKET" {
 			kind = "listing"
 		}
+		owner, e := commerceUserTxV2(ctx, tx, user, true)
+		if e != nil {
+			return nil, e
+		}
 		for _, v := range sorted {
 			o, _ := catalogObject(v)
 			id := catalogString(o, "productId")
@@ -920,6 +928,11 @@ func (s *Store) CatalogQuoteV2(ctx context.Context, user, key string, input Cata
 			if kind == "product" && quantity > catalogNumber(content, "limitPerOrder") {
 				return nil, catalogError(422, "PURCHASE_LIMIT", "数量超过单笔限购。")
 			}
+			if kind == "product" {
+				if e := promotionCheckLimitsV209(ctx, tx, owner.ServerUUID, d, quantity, now); e != nil {
+					return nil, e
+				}
+			}
 			if kind == "listing" {
 				methods, _ := catalogStrings(content["deliveryMethods"], 1, 2, 1, 16, true)
 				matched := false
@@ -936,6 +949,12 @@ func (s *Store) CatalogQuoteV2(ctx context.Context, user, key string, input Cata
 			if !ok {
 				return nil, catalogError(503, "INVALID_CATALOG_PRICE", "商品价格需要管理员修正。")
 			}
+			if kind == "product" {
+				price, e = promotionPriceV209(content)
+				if e != nil {
+					return nil, e
+				}
+			}
 			subtotal := new(big.Int).Mul(price, big.NewInt(quantity))
 			total.Add(total, subtotal)
 			if len(catalogMoneyString(total)) > 20 {
@@ -943,15 +962,50 @@ func (s *Store) CatalogQuoteV2(ctx context.Context, user, key string, input Cata
 			}
 			lines = append(lines, map[string]any{"productId": d.ID, "title": content["title"], "unitPrice": catalogMoneyString(price), "quantity": quantity, "subtotal": catalogMoneyString(subtotal), "productVersion": version})
 		}
-		if e := commerceWithinExecutionLimitV2(catalogMoneyString(total)); e != nil {
-			return nil, e
-		}
+		var promotion CatalogObjectV2
 		if kind == "product" {
 			if _, e := commerceDeliveryContentsV2(ctx, tx, docs, quantities, nil); e != nil {
 				return nil, e
 			}
+			coupons, e := promotionCouponsTxV209(ctx, tx, owner, now)
+			if e != nil {
+				return nil, e
+			}
+			promotion, e = promotionTotalsV209(docs, quantities, coupons)
+			if e != nil {
+				return nil, e
+			}
+			total, e = commerceAmountV2(catalogString(promotion, "totalAmount"))
+			if e != nil {
+				return nil, e
+			}
+		}
+		if total.Sign() != 0 || kind != "product" {
+			if e := commerceWithinExecutionLimitV2(catalogMoneyString(total)); e != nil {
+				return nil, e
+			}
 		}
 		quote := CatalogObjectV2{"quoteId": ID("quote_"), "channel": channel, "items": lines, "totalAmount": catalogMoneyString(total), "currency": "CREDIT", "expiresAt": now.Add(5 * time.Minute), "delivery": delivery, "version": 1, "warnings": []string{"报价不预留库存，付款时将重新校验库存及交付条件。"}}
+		if kind == "product" {
+			for k, v := range promotion {
+				quote[k] = v
+			}
+			for _, p := range docs {
+				shop, e := catalogRecordTx(ctx, tx, p.StoreID, "store", false)
+				if e != nil {
+					return nil, e
+				}
+				quote["storeName"], quote["storeId"] = shop.Body["name"], shop.ID
+				break
+			}
+			if input["source"] != "DIRECT" {
+				cart, e := promotionCartSnapshotV209(ctx, tx, user, quantities)
+				if e != nil {
+					return nil, e
+				}
+				quote["cartItems"] = cart
+			}
+		}
 		if _, e := tx.ExecContext(ctx, "INSERT INTO catalog_quotes_v2 VALUES(?,?,?,?,?,?)", quote["quoteId"], user, channel, catalogJSON(quote), now, now.Add(5*time.Minute)); e != nil {
 			return nil, e
 		}

@@ -17,11 +17,15 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import java.util.UUID
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import org.json.JSONObject
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.*
 
 val ShopCatalog=mutableStateListOf<ShopProduct>()
@@ -44,7 +48,7 @@ fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String) {
             items(products.chunked(2)){row->Row(Modifier.padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){
                 row.forEach{product->Surface(onClick={onProduct(product.id)},modifier=Modifier.weight(1f),shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface){Column{
                     ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().height(170.dp),scale=ContentScale.Crop)
-                    Column(Modifier.padding(16.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium,minLines=2);Text("${credit(product.price)} 信用点",Modifier.padding(top=6.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                    Column(Modifier.padding(16.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium,minLines=2);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))}
                 }}}
                 if(row.size==1)Spacer(Modifier.weight(1f))
             }}
@@ -56,7 +60,7 @@ private fun ProductPoster(product:ShopProduct,modifier:Modifier,onClick:()->Unit
     val ink=if(product.darkArt)Color.White else Color(0xFF1D1D1F)
     Box(modifier.clip(RoundedCornerShape(28.dp)).background(if(product.darkArt)Color.Black else Color.White).clickable(onClick=onClick)){
         if(product.poster)ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxSize(),scale=ContentScale.Crop) else ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(220.dp),scale=ContentScale.Crop)
-        Column(Modifier.padding(25.dp)){Text(product.category.uppercase(),fontSize=11.sp,fontWeight=FontWeight.SemiBold,letterSpacing=1.sp,color=ink.copy(alpha=.65f));Text(product.name,Modifier.padding(top=9.dp),fontSize=25.sp,lineHeight=31.sp,fontWeight=FontWeight.Bold,color=ink);Text(product.subtitle,Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium,color=ink);Text("${credit(product.price)} 信用点",Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodySmall,color=ink.copy(alpha=.75f))}
+        Column(Modifier.padding(25.dp)){Text(product.category.uppercase(),fontSize=11.sp,fontWeight=FontWeight.SemiBold,letterSpacing=1.sp,color=ink.copy(alpha=.65f));Text(product.name,Modifier.padding(top=9.dp),fontSize=25.sp,lineHeight=31.sp,fontWeight=FontWeight.Bold,color=ink);Text(product.subtitle,Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium,color=ink);Text("${credit(product.price)} 信用点",Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodySmall,color=ink.copy(alpha=.75f));if(product.originalPrice>product.price)Text(credit(product.originalPrice),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=ink.copy(alpha=.5f))}
     }
 }
 @Composable
@@ -72,7 +76,8 @@ fun ProductPage(product:ShopProduct,state:LabState,topInset:Dp,onBag:()->Unit,on
             item{ProductGallery(product,Modifier.padding(horizontal=20.dp))}
             item{Column(Modifier.padding(horizontal=24.dp)){Text("商品详情",style=MaterialTheme.typography.headlineSmall);Text(product.description,Modifier.padding(top=13.dp),style=MaterialTheme.typography.bodyLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
             item{ServerAssetImage(product.photos.lastOrNull(),"${product.name} 细节",Modifier.padding(horizontal=20.dp).fillMaxWidth().height(260.dp).clip(RoundedCornerShape(24.dp)))}
-            item{Column(Modifier.padding(horizontal=20.dp)){LabCard{Text("包装内容",style=MaterialTheme.typography.titleLarge);product.contents.forEach{Text(it,Modifier.padding(top=12.dp),style=MaterialTheme.typography.bodyLarge)};DetailRow("单价","${credit(product.price)} 信用点");Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("数量",Modifier.weight(1f));QuantityControl(quantity,{quantity=it;added=false},max=minOf(product.stock,product.limit).coerceAtLeast(1))}}}}
+            item{Column(Modifier.padding(horizontal=20.dp)){LabCard{Text("包装内容",style=MaterialTheme.typography.titleLarge);product.contents.forEach{Text(it,Modifier.padding(top=12.dp),style=MaterialTheme.typography.bodyLarge)};if(product.deliveryCredits>0)Text("附带 ${product.deliveryCredits} 信用点",Modifier.padding(top=12.dp),style=MaterialTheme.typography.bodyLarge);ShopPriceLabel(product,modifier=Modifier.padding(vertical=14.dp));Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("数量",Modifier.weight(1f));QuantityControl(quantity,{quantity=it;added=false},max=minOf(product.stock,product.limit).coerceAtLeast(1))}}}}
+            if(product.purchaseLimits.isNotEmpty())item{Column(Modifier.padding(horizontal=20.dp)){LabCard{Text("购买说明",style=MaterialTheme.typography.titleLarge);product.purchaseLimits.forEach{Text(it,Modifier.padding(top=12.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)};Text("刷新时间为北京时间。",Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}}
             item{Column(Modifier.padding(horizontal=20.dp)){LabCard{Icon(Icons.Outlined.LocalShipping,null,tint=MaterialTheme.colorScheme.primary);Text(product.estimatedDelivery,Modifier.padding(top=12.dp),style=MaterialTheme.typography.titleLarge);Text(product.deliverySummary,Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant);DetailRow("领取账户",state.userName);DetailRow("退款规则","未领取可申请退款");DetailRow("交付方式","游戏内邮箱")}}}
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface.copy(alpha=.97f)) {
@@ -99,28 +104,55 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
     LaunchedEffect(state.cart.toMap()){quoteKey=UUID.randomUUID().toString()}
     var quoteText by rememberSaveable{mutableStateOf<String?>(null)};var quoting by remember{mutableStateOf(false)};var confirmQuote by rememberSaveable{mutableStateOf(false)}
     var pending by rememberSaveable{mutableStateOf(hashMapOf<String,Int>())};var orderId by rememberSaveable{mutableStateOf<String?>(null)};var paymentKey by rememberSaveable{mutableStateOf("")};var error by remember{mutableStateOf<String?>(null)}
+    val cartFingerprint=items.map{Triple(it.first.id,it.second,it.first.version)}
+    var quotedFingerprint by remember{mutableStateOf<List<Triple<String,Int,Long>>>(emptyList())}
+    LaunchedEffect(quoteKey,cartFingerprint){
+        if(pending.isNotEmpty()||confirmQuote)return@LaunchedEffect
+        quoteText=null;error=null
+        if(items.isEmpty())return@LaunchedEffect
+        quoting=true;delay(200)
+        val quote=state.commerce.network?.quoteStore(items,quoteKey)
+        if(!currentCoroutineContext().isActive)return@LaunchedEffect
+        quoteText=quote?.toString();quotedFingerprint=cartFingerprint;if(quote==null)error=state.commerce.network?.error;quoting=false
+    }
+    val summary=quoteText?.takeIf{quotedFingerprint==cartFingerprint}?.let{runCatching{checkoutSummary(JSONObject(it))}.getOrNull()}
     Box(Modifier.fillMaxSize()){
         LazyColumn(contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset,bottom=150.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){
             item{Text(if(items.isEmpty()&&unavailable.isEmpty())"购物袋还是空的" else "你的购物袋",style=MaterialTheme.typography.headlineLarge,modifier=Modifier.padding(vertical=8.dp))}
             if(items.isEmpty()&&unavailable.isEmpty())item{Text("添加喜欢的商品后，在这里完成付款。",color=MaterialTheme.colorScheme.onSurfaceVariant);PlainButton(onClose){Text("继续选购")}}
             items(unavailable,key={"unavailable-$it"}){id->LabCard{Text("该商品暂时无法购买",style=MaterialTheme.typography.titleMedium);Text("商品可能已下架或暂不可用。",Modifier.padding(top=8.dp),color=MaterialTheme.colorScheme.onSurfaceVariant);PlainButton({scope.launch{state.commerce.network?.setCart(id,0)}}){Text("移出购物袋")}}}
             items(items,key={it.first.id}){(product,count)->LabCard{
-                Row(verticalAlignment=Alignment.CenterVertically){ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(80.dp,100.dp).clip(RoundedCornerShape(15.dp)),scale=ContentScale.Crop);Column(Modifier.weight(1f).padding(start=14.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium);Text("${credit(product.price)} 信用点",Modifier.padding(top=6.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};IconButton({scope.launch{state.commerce.network?.setCart(product.id,0);error=state.commerce.network?.error}}){Icon(Icons.Outlined.Close,"移除${product.name}",Modifier.size(18.dp))}}
+                Row(verticalAlignment=Alignment.CenterVertically){ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(80.dp,100.dp).clip(RoundedCornerShape(15.dp)),scale=ContentScale.Crop);Column(Modifier.weight(1f).padding(start=14.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))};IconButton({scope.launch{state.commerce.network?.setCart(product.id,0);error=state.commerce.network?.error}}){Icon(Icons.Outlined.Close,"移除${product.name}",Modifier.size(18.dp))}}
                 Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){Text(credit(product.price*count),style=MaterialTheme.typography.titleMedium);QuantityControl(count,{number->scope.launch{state.commerce.network?.setCart(product.id,number);error=state.commerce.network?.error}},max=product.limit)}
             }}
-            if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("预计送达","以各商品交付说明为准");DetailRow("付款方式","钱包余额");DetailRow("可用余额",credit(state.balance));DetailRow("合计","${credit(items.sumOf{it.first.price*it.second})} 信用点");error?.let{Text(it,color=MaterialTheme.colorScheme.error)}}}
+            if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("付款方式","钱包余额");DetailRow("可用余额",if(state.balanceKnown)credit(state.balance) else "正在同步");
+                if(summary!=null){if(summary.originalTotal>summary.total)DetailRow("商品原价","${credit(summary.originalTotal)}");if(summary.productDiscount>0)DetailRow("商品优惠","−${credit(summary.productDiscount)}");if(summary.couponDiscount>0){DetailRow("优惠券","−${credit(summary.couponDiscount)}");Text("${summary.couponName ?: "已为你选择优惠"} · 已自动择优",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)};DetailRow("实付合计","${credit(summary.total)} 信用点")}
+                else Text(if(quoting)"正在计算优惠…" else "重新确认价格后即可结算",Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
+                error?.let{Text(it,Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{state.commerce.network?.refreshStore();quoteKey=UUID.randomUUID().toString()}}){Text("刷新商品与优惠")}}
+            }}
         }
-        if(items.isNotEmpty())Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){MotionButton({if(!state.balanceKnown)error="余额尚未同步，请先刷新钱包" else if(items.sumOf{it.first.price*it.second}>state.balance)error="余额不足，请调整商品数量" else if(!quoting)scope.launch{quoting=true;val quote=state.commerce.network?.quoteStore(items,quoteKey);if(quote!=null){quoteText=quote.toString();paymentKey=UUID.randomUUID().toString();confirmQuote=true}else error=state.commerce.network?.error;quoting=false}},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=!quoting){Text(if(quoting)"正在准备订单…" else "去结算 ${credit(items.sumOf{it.first.price*it.second})}")}}
+        if(items.isNotEmpty())Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){MotionButton({if(!quoting)scope.launch{
+            quoting=true
+            val fresh=state.commerce.network?.quoteStore(items,UUID.randomUUID().toString())
+            val current=ShopCatalog.mapNotNull{p->state.cart[p.id]?.takeIf{it>0}?.let{Triple(p.id,it,p.version)}}
+            if(current!=cartFingerprint){error="购物袋已变化，请重新确认"}
+            else if(fresh==null){error=state.commerce.network?.error}
+            else{val prices=checkoutSummary(fresh);quoteText=fresh.toString();quotedFingerprint=cartFingerprint
+                if(!state.balanceKnown&&prices.total!=0L)error="余额尚未同步，请先刷新钱包"
+                else if(prices.total>state.balance)error="余额不足，请调整商品数量"
+                else{error=null;paymentKey=UUID.randomUUID().toString();confirmQuote=true}}
+            quoting=false
+        }},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=!quoting&&summary!=null&&state.commerce.network?.cartBusy!=true){Text(if(quoting)"正在计算优惠…" else if(summary!=null)"去结算 ${credit(summary.total)}" else "等待确认价格")}}
     }
-    if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false}){confirmQuote=false;pending=HashMap(items.associate{it.first.id to it.second})}
+    if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false;quoteKey=UUID.randomUUID().toString()}){confirmQuote=false;val lines=JSONObject(quoteText!!).getJSONArray("items");pending=HashMap((0 until lines.length()).associate{val item=lines.getJSONObject(it);item.getString("productId") to item.getInt("quantity")})}
     if(pending.isNotEmpty()&&quoteText!=null) {
         val quote=JSONObject(quoteText!!)
-        PaymentExperience(apiCents(quote.getString("totalAmount")),"Deuterium 官方商城","支付成功",onCommit={orderId=state.commerce.network?.createOrder(quote,paymentKey);orderId!=null},autoCloseOnSuccess=true,errorMessage=state.storageMessage){pending=hashMapOf();quoteKey=UUID.randomUUID().toString();orderId?.let(onOrder)}
+        PaymentExperience(apiCents(quote.getString("totalAmount")),orderId?.let{state.commerce.order(it)?.seller} ?: quote.optString("storeName","官方商城"),"支付成功",onCommit={orderId=state.commerce.network?.createOrder(quote,paymentKey);orderId!=null},autoCloseOnSuccess=true,errorMessage=state.storageMessage){pending=hashMapOf();quoteKey=UUID.randomUUID().toString();orderId?.let(onOrder)}
     }
 }
 @Composable
 fun CheckoutQuoteConfirmation(quote:JSONObject,onClose:()->Unit,onConfirm:()->Unit) {
     val summary=remember(quote.toString()){checkoutSummary(quote)}
-    IosDialog(onClose,{Text("确认付款")},{Text("是否支付 ${credit(summary.total)} 信用点？")},
+    IosDialog(onClose,{Text("确认付款")},{Column{Text("是否支付 ${credit(summary.total)} 信用点？");if(summary.originalTotal>summary.total)Text("原价 ${credit(summary.originalTotal)}",Modifier.padding(top=8.dp),textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.5f),style=MaterialTheme.typography.bodySmall);summary.couponName?.let{Text("已使用：$it",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}},
         {PlainButton(onConfirm){Text("确认付款")}}, {PlainButton(onClose){Text("取消")}})
 }

@@ -67,5 +67,32 @@
       "inputSha256": "14fc3674b38153ec3db2c56fa8ee70a9662e854e7f8e5fdec9c962fb5dc059f4",
       "publishedSha256": "376411646a903bcdb53808b68d94673f9a7f5ea9e47fde4e15957395517a9151"
     }
-  ]
+  ],
+  "pendingRelease": {
+    "version": "2.0.9",
+    "androidVersionCode": 20901,
+    "status": "VERIFIED_NOT_DEPLOYED",
+    "branch": "xiwanzi/commerce-v209",
+    "coreVersion": "1.0.2",
+    "xconomyVersion": "2.26.3-deuterium.3",
+    "mail": {
+      "repository": "https://github.com/Deuterium-IX/Deuterium-Mail",
+      "commit": "67db93749bf97527ec3072214777c87e68e3132f",
+      "version": "0.6.2",
+      "apiVersion": 3,
+      "bridgeVersion": "0.6.1",
+      "uiVersion": "0.6.0",
+      "pullRequest": 2,
+      "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
+    },
+    "qa": "docs/qa/commerce-v209.md",
+    "releaseNotes": "docs/deployment/deuterium-2.0.9-candidate.md",
+    "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8",
+    "buildManifest": "docs/deployment/artifacts/v209/build-manifest.json",
+    "migrations": [
+      "023_commerce_promotions.sql",
+      "024_coupon_attention.sql",
+      "025_coupon_batches.sql"
+    ]
+  }
 }

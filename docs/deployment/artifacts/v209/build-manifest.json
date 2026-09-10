@@ -1,0 +1,77 @@
+{
+  "release": "2.0.9",
+  "status": "VERIFIED_NOT_DEPLOYED",
+  "builtAt": "2026-09-10T07:48:11.817450+00:00",
+  "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8",
+  "mailSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24",
+  "android": {
+    "packageName": "com.deuterium.app.uilab",
+    "versionCode": 20900,
+    "versionName": "2.0.9",
+    "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3"
+  },
+  "go": {
+    "os": "linux",
+    "architecture": "amd64",
+    "cgo": false,
+    "vcsModified": false
+  },
+  "versions": {
+    "web": "2.0.9",
+    "core": "1.0.2",
+    "mail": "0.6.2",
+    "mailApi": 3,
+    "mailBridge": "0.6.1",
+    "xconomy": "2.26.3-deuterium.3"
+  },
+  "files": [
+    {
+      "name": "Deuterium-2.0.9-20900-test.apk",
+      "sizeBytes": 25168577,
+      "sha256": "a5f197773999521343ec607fe39d3ccce8f86e639922155c849ecc8c45859103",
+      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 12996768,
+      "sha256": "9e98e943d79ee39b284e41829ff23235f35bdf8394b12ed0601e220874704c95",
+      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
+    },
+    {
+      "name": "Deuterium-Core-1.0.2.jar",
+      "sizeBytes": 15771870,
+      "sha256": "73f56b601f463f6ea32a7a635cf5c87be10662017fc3d6b8e1bc5935328811e6",
+      "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14"
+    },
+    {
+      "name": "XConomy-Bukkit-2.26.3-deuterium.3.jar",
+      "sizeBytes": 1383089,
+      "sha256": "1ef530a30e7522431bdc27dc8eaa5cecae4a9988f99e05ae336b45020afc23db",
+      "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14"
+    },
+    {
+      "name": "deuterium-mail-0.6.2.jar",
+      "sizeBytes": 1210587,
+      "sha256": "aa89ebf7275550c1f185b9b20c9f9d6fc127c345fc49d4aee30072903c17e222",
+      "sourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
+    },
+    {
+      "name": "deuterium-mail-bridge-0.6.1.jar",
+      "sizeBytes": 32540,
+      "sha256": "0fbf5f2de6fb529bb82bccc53dd02373eb641db8bbad5254841ee02a535f6c82",
+      "sourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
+    },
+    {
+      "name": "web-2.0.9.zip",
+      "sizeBytes": 33695546,
+      "sha256": "8815c9d7077e16d84b30cf54363b9c6f20480c53955f6dfe1505a5a58e7c07c6",
+      "sourceCommit": "80800bdab0d1ef01e1cdfcf56cbca9b9414cb2e8"
+    },
+    {
+      "name": "XConomy-2.26.3-deuterium.3-source.zip",
+      "sizeBytes": 349376,
+      "sha256": "7acff9e265404def923dc4807bc5f6f2b9fd24aaa454a957e9b118243e9b125c",
+      "sourceCommit": "3e09338eaa5fe19df64ef9e40cf7815337713a14"
+    }
+  ]
+}

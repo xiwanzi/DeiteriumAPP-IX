@@ -1,6 +1,8 @@
 # XConomy 持久化资金扩展
 
-当前目标：原版 XConomy-Bukkit 2.26.3 的指定输入，输出 `2.26.3-deuterium.2`。Java 21；适用于本项目 Youer 1.21.1 Bukkit 插件环境，不是代理端或 Sponge 构建。
+当前目标：原版 XConomy-Bukkit 2.26.3 的指定输入，输出 `2.26.3-deuterium.3`。Java 21；适用于本项目 Youer 1.21.1 Bukkit 插件环境，不是代理端或 Sponge 构建。
+
+2.0.9 候选新增可信插件 `rewardMail` 入口：固定 `mailcredit_<claim UUID>`，经既有原生变更事务提交并幂等重放，不加入网络执行白名单。配套 Core 1.0.2、Mail 0.6.2/API3；尚未表示生产部署。
 
 扩展保留 XConomy 自有数据库与经济账号，由插件内部 API 完成受控资金事务。Core 只调用 `ControlledEconomyAPI`，不读取 XConomy 凭据、不直接更新经济表。
 
@@ -33,7 +35,7 @@
 先把经核验的原 JAR 安装为 Maven provided 依赖 `me.yic:xconomy-bukkit-input:2.26.3`，执行 `mvn package`，然后运行：
 
 ```text
-python build_patch.py --input /path/XConomy-Bukkit-2.26.3.jar --output target/XConomy-Bukkit-2.26.3-deuterium.2.jar
+python build_patch.py --input /path/XConomy-Bukkit-2.26.3.jar --output target/XConomy-Bukkit-2.26.3-deuterium.3.jar
 ```
 
 脚本仅接受 SHA-256 `0e3695f75f9d8769bb365d6c60fe48d169baf162b0bed423b456acef0a53584f`，保留未修改内容并加入修改类清单；不覆盖输入。原源码来自 [XConomy](https://github.com/YiC200333/XConomy)，沿用 GPL-3.0-or-later；交付时一并提供本目录、LICENSE 和对应原版源码。

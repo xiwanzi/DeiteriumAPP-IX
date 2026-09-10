@@ -119,6 +119,21 @@ func (s *Store) PrepareCommerceSettlementV2(ctx context.Context, actor, id, kind
 		if !eligible {
 			return result, catalogError(409, "INVALID_STATE_TRANSITION", "尚未完成交付，不能确认结算。")
 		}
+		if d.Channel == "OFFICIAL_STORE" && d.Amount == "0.00" {
+			d.FundsState = "SETTLED"
+			d.Body["confirmedAt"] = now
+			commerceTouchV2(&d, now)
+			if e = commerceFinalizeStockV2(ctx, tx, d.ID); e != nil {
+				return result, e
+			}
+			if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
+				return result, e
+			}
+			if e = commerceEventV2(ctx, tx, d, actor, "settlement.completed", "优惠全额抵扣的订单已领取完成。", nil); e != nil {
+				return result, e
+			}
+			return CommerceMutationV2{ResourceID: d.ID, Kind: d.Kind}, nil
+		}
 		if d.PayeeUUID == "" {
 			return result, catalogError(409, "BENEFICIARY_UNCONFIRMED", "原受益人尚未确认。")
 		}

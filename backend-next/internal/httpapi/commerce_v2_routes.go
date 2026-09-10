@@ -89,7 +89,12 @@ func (s *Server) commerceCreateOrderV2(channel string) http.HandlerFunc {
 		}
 		nodes := map[string]store.CatalogNodePolicyV2{}
 		for _, n := range s.Config.Nodes {
-			nodes[n.ID] = store.CatalogNodePolicyV2{InventoryDomain: n.InventoryDomain, ClaimEnabled: n.ClaimEnabled}
+			policy := store.CatalogNodePolicyV2{InventoryDomain: n.InventoryDomain, ClaimEnabled: n.ClaimEnabled}
+			if adapter, ok := s.CommerceCore.(*commerceCoreAdapter); ok {
+				ready := adapter.creditDeliveryReady(n)
+				policy.CreditRewards = &ready
+			}
+			nodes[n.ID] = policy
 		}
 		available := s.commerceAvailableHTTPV2(CommerceReserveV2)
 		if channel == "OFFICIAL_STORE" {

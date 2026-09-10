@@ -117,9 +117,9 @@ export class DeuteriumClient {
   nodes() {
     return this.request("/api/v1/admin/core/nodes");
   }
-  items(cursor) {
+  items(cursor, query = "", inventoryDomain = "") {
     return this.request(
-      `/api/v1/admin/core/items${cursor ? `?afterItemRef=${encodeURIComponent(cursor.afterItemRef)}&afterRevision=${cursor.afterRevision}` : ""}`,
+      `/api/v1/admin/core/items?q=${encodeURIComponent(query)}&inventoryDomain=${encodeURIComponent(inventoryDomain)}${cursor ? `&afterItemRef=${encodeURIComponent(cursor.afterItemRef)}&afterRevision=${cursor.afterRevision}` : ""}`,
     );
   }
   balance(refresh = false) {

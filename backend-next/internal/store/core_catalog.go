@@ -62,6 +62,7 @@ func (s *Store) CoreItem(ctx context.Context, ref string, revision int64) (item 
 	err = s.DB.QueryRowContext(ctx, `SELECT v.metadata,COALESCE(h.archived,false) FROM item_versions v LEFT JOIN core_catalog_heads h ON h.item_ref=v.item_ref WHERE v.item_ref=? AND v.revision=?`, ref, revision).Scan(&metadata, &archived)
 	if err == nil {
 		err = json.Unmarshal(metadata, &item)
+		item.ItemRef, item.Revision = ref, revision
 	}
 	return
 }

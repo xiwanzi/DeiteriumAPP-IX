@@ -198,6 +198,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     val sensorManager=remember{context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager}
     val sensorAvailable=remember{listOf(Sensor.TYPE_GAME_ROTATION_VECTOR,Sensor.TYPE_ROTATION_VECTOR,Sensor.TYPE_ACCELEROMETER).any{sensorManager.getDefaultSensor(it)!=null}}
     val saved=rememberSaveableStateHolder();val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
+    val overlays=remember{IosOverlayRegistry()}
     val density=LocalDensity.current;val ime=WindowInsets.ime;val keyboard=ime.getBottom(density)>0
     val statusTop=WindowInsets.statusBars.asPaddingValues().calculateTopPadding();val compactTop=statusTop+48.dp
     val compactFadeBottom=compactTop+24.dp
@@ -220,14 +221,14 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     BackHandler(!keyboard&&(stack.isNotEmpty()||destination!=Destination.Shop)&&!transfer&&!people&&record==null&&!tuner&&!resetPassword){back()}
     LaunchedEffect(state.notice?.id){if(state.notice!=null){delay(4200);state.notice=null}}
     val title=when {
-        route=="storage"->"存储空间"
+        route=="storage"->"存储空间";route=="coupons"->"优惠券"
         route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->route.removePrefix("dm:")
         route=="announcement"->"官方公告";route=="event"->"委托大厅";route=="bag"->"购物袋";route=="orders"->"我的订单";route?.startsWith("order:")==true->"订单详情"
         route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"个人简介";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"
         route?.startsWith("market-product:")==true->"商品详情";else->destination.title
     }
-    CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop) {
+    CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalIosOverlayRegistry provides overlays) {
         Box(Modifier.fillMaxSize().then(if(route==null)Modifier.nestedScroll(connection) else Modifier)) {
             Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)) {
                 GlassAtmosphere(Modifier.recordGlassBackdrop(atmosphere))
@@ -258,6 +259,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                             current.startsWith("event:")->EventDetailPage(state,current.removePrefix("event:"),inset)
                             current.startsWith("product:")->ShopCatalog.find{it.id==current.removePrefix("product:")}?.let{ProductPage(it,state,inset,{open("bag")}){product,origin->flight=product to origin}}
                             current=="bag"->ShoppingBag(state,inset,{back()},::showOrder)
+                            current=="coupons"->StoreCouponsPage(state,inset)
                             current.startsWith("market-product:")->MarketProductPage(state.commerce,current.removePrefix("market-product:"),inset,{open("dm:$it")},::showOrder){open("edit-listing:$it")}
                             current=="publish"||current.startsWith("edit-listing:")->PublishListingPage(state.commerce,inset,{id->saved.removeState(current);val parent=stack.dropLast(1);val target="market-product:$id";stack=if(parent.lastOrNull()==target)parent else parent+target},if(current.startsWith("edit-listing:"))state.commerce.listings.find{it.id==current.removePrefix("edit-listing:")} else null)
                             current=="listings"->MarketPage(state.commerce,"",inset,{open("market-product:$it")},true){open("publish")}
@@ -284,6 +286,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                     when {
                         route in listOf("commissions","events","event","my-commissions")->Row{IconButton({open("my-commissions")}){Icon(Icons.Outlined.Assignment,"我的委托",tint=MaterialTheme.colorScheme.primary)};IconButton({open("publish-commission")}){Icon(Icons.Outlined.Add,"发布委托",tint=MaterialTheme.colorScheme.primary)}}
                         route=="public"->IconButton({people=true}){Icon(Icons.Outlined.PeopleOutline,"在线玩家",tint=MaterialTheme.colorScheme.primary)}
+                        route=="bag"->IconButton({open("coupons")}){Icon(Icons.Outlined.ConfirmationNumber,"优惠券",tint=MaterialTheme.colorScheme.primary)}
                         route.startsWith("product:")->Box(Modifier.onGloballyPositioned{bagCenter=it.positionInRoot()+Offset(it.size.width/2f,it.size.height/2f)}){ShoppingBagButton(state.cart.values.sum()){open("bag")}}
                         route=="listings"->IconButton({open("publish")}){Icon(Icons.Outlined.Add,"发布商品",tint=MaterialTheme.colorScheme.primary)}
                         route.startsWith("dm:")->IconButton({open("player:${route.removePrefix("dm:")}")}){Icon(Icons.Outlined.PersonOutline,"查看玩家资料",tint=MaterialTheme.colorScheme.primary)}
@@ -292,6 +295,9 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                 }
             }
             if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,buildSet{if(updates?.hasUpdates==true)add(Destination.Profile.ordinal);if(state.hasUnreadMessages)add(Destination.Info.ordinal)}){destination=Destination.entries[it]}}
+            state.commerce.network?.couponAttention?.let{attention->
+                CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize(),allowPopup=route==null)
+            }
             flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}
             AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {
                 state.notice?.let{notice->LiquidGlass(Modifier.fillMaxWidth(),backdrop=backdrop,onClick={goToNotice(notice.route)}){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.NotificationsNone,null,tint=MaterialTheme.colorScheme.primary);Column(Modifier.weight(1f).padding(horizontal=10.dp)){Text(notice.title,style=MaterialTheme.typography.titleMedium);Text(notice.body,style=MaterialTheme.typography.bodySmall,maxLines=2)};IconButton({state.notice=null},Modifier.size(36.dp)){Icon(Icons.Outlined.Close,"关闭提醒",Modifier.size(18.dp))}}}}

@@ -38,6 +38,13 @@ public final class EconomyAccess {
     }
     public JsonObject initializeSystemAccounts(){return call("initializeSystemAccounts",new Class<?>[]{});}
     public JsonObject queryOperation(String id){return call("queryOperation",new Class<?>[]{String.class},id);}
+    public boolean mailCreditsAvailable(){
+        try{api().getMethod("rewardMail",String.class,UUID.class,long.class);return true;}
+        catch(ReflectiveOperationException|CoreFailure unavailable){return false;}
+    }
+    public JsonObject rewardMail(String id,UUID player,long credits){
+        return call("rewardMail",new Class<?>[]{String.class,UUID.class,long.class},id,player,credits);
+    }
     public boolean isSystemIdentity(UUID id,String name){
         if(name.equalsIgnoreCase("DIMA")||name.equalsIgnoreCase("DaoYu"))return true;
         try{return Boolean.TRUE.equals(api().getMethod("isSystemIdentity",UUID.class,String.class).invoke(null,id,name));}

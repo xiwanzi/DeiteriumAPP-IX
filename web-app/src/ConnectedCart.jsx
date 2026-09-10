@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ShoppingBag, Trash2 } from "lucide-react";
+import { ShoppingBag, Trash2, Ticket } from "lucide-react";
 import { Button, Empty, Field, Modal, PageHead } from "./components.jsx";
 import { credit, id } from "./format.js";
 import PurchaseFlow from "./PurchaseFlow.jsx";
 import { resourceId } from "./business.js";
+import CouponWallet from "./CouponWallet.jsx";
 
 export default function ConnectedCart({ client, user, navigate }) {
   const [cart, setCart] = useState(null), [products, setProducts] = useState({}), [error, setError] = useState(""), [busy, setBusy] = useState(false), [checkout, setCheckout] = useState(false);
+  const [coupons, setCoupons] = useState(false);
   const requests = useRef({}), mounted = useRef(true);
   const load = async () => {
     setBusy(true); setError("");
@@ -23,16 +25,17 @@ export default function ConnectedCart({ client, user, navigate }) {
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
   const rows = cart?.items || [];
-  return <><PageHead eyebrow="SHOPPING BAG" title="购物袋" subtitle="商品价格和库存将在结算时再次确认。"><Button secondary onClick={load} disabled={busy}>刷新</Button></PageHead>
+  return <><PageHead eyebrow="SHOPPING BAG" title="购物袋" subtitle="商品价格和库存将在结算时再次确认。"><Button secondary className="coupon-bag-button" onClick={() => setCoupons(true)}><Ticket size={18} />优惠券</Button><Button secondary onClick={load} disabled={busy}>刷新</Button></PageHead>
     {error && <p className="auth-error" role="alert">{error}</p>}
     <div className="cart-product-list">{rows.map((item) => { const product = products[item.productId]; return <div className="cart-product-row" key={item.productId}>
       {product?.images?.[0]?.url && <img className="cart-product-image" src={product.images[0].url} alt="" />}<div className="cart-product-copy">
-      <h3>{product?.content?.title || "商品暂不可用"}</h3>{product && <p className="price">{credit(product.content.price)}<small>信用点 / 件</small></p>}
+      <h3>{product?.content?.title || "商品暂不可用"}</h3>{product && <p className="price">{credit(product.effectivePrice ?? product.content.price)}{product.content.discountRate < 10000 && <del className="sale-original">{credit(product.content.price)}</del>}<small>信用点 / 件</small></p>}
       </div><Field label="数量"><select value={item.quantity} disabled={busy || !product} onChange={(e) => update(item, Number(e.target.value))}>{Array.from({ length: Math.max(item.quantity, Math.min(999, product?.content?.limitPerOrder || 1, product?.availableStock ?? 999)) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></Field>
       <Button secondary disabled={busy} onClick={() => update(item, 0, true)}><Trash2 size={15} />移出购物袋</Button>
     </div>; })}</div>
     {!busy && !rows.length && <Empty title="购物袋还是空的" text="挑选喜欢的商品后，可以加入这里。"><Button onClick={() => navigate("/")}>前往商城</Button></Empty>}
     {rows.length > 0 && <div className="button-row"><Button disabled={busy || rows.some((item) => !products[item.productId])} onClick={() => setCheckout(true)}><ShoppingBag size={16} />去结算</Button></div>}
-    {checkout && <Modal title="商城结算" close={() => setCheckout(false)} className="checkout-modal"><PurchaseFlow client={client} user={user} channel="OFFICIAL_STORE" previewProducts={rows.map((item) => products[item.productId])} items={rows.map((item) => ({ productId: item.productId, quantity: item.quantity, expectedProductVersion: products[item.productId].version }))} onResource={(resource) => navigate(`/orders?order=${encodeURIComponent(resourceId(resource.value))}`)} /></Modal>}
+    {checkout && <Modal title="商城结算" close={() => { setCheckout(false); load(); }} className="checkout-modal"><PurchaseFlow client={client} user={user} channel="OFFICIAL_STORE" source="CART" previewProducts={rows.map((item) => products[item.productId])} items={rows.map((item) => ({ productId: item.productId, quantity: item.quantity, expectedProductVersion: products[item.productId].version }))} onResource={(resource) => navigate(`/orders?order=${encodeURIComponent(resourceId(resource.value))}`)} /></Modal>}
+    {coupons && <Modal title="优惠券" close={() => setCoupons(false)} wide><CouponWallet client={client} /></Modal>}
   </>;
 }

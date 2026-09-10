@@ -18,10 +18,10 @@ def main():
     with zipfile.ZipFile(a.input) as src:entries={n:src.read(n) for n in src.namelist() if not n.endswith('/') and not (n.startswith('META-INF/') and n.endswith(('.SF','.RSA','.DSA')))}
     plugin=entries['plugin.yml'].decode('utf-8')
     import re
-    plugin,count=re.subn(r'(?m)^version:.*$',"version: '2.26.3-deuterium.2'",plugin)
+    plugin,count=re.subn(r'(?m)^version:.*$',"version: '2.26.3-deuterium.3'",plugin)
     if count!=1:raise SystemExit('Unexpected plugin metadata')
     entries['plugin.yml']=plugin.encode();entries.update(modified)
-    entries['META-INF/deuterium-xconomy-patch.json']=json.dumps({'version':'2.26.3-deuterium.2','inputSha256':EXPECTED,'apiVersion':1,'ledgerApiVersion':1,'modifiedClasses':sorted(modified)},sort_keys=True,indent=2).encode()
+    entries['META-INF/deuterium-xconomy-patch.json']=json.dumps({'version':'2.26.3-deuterium.3','inputSha256':EXPECTED,'apiVersion':1,'ledgerApiVersion':1,'mailCreditApiVersion':1,'modifiedClasses':sorted(modified)},sort_keys=True,indent=2).encode()
     entries['META-INF/DEUTERIUM-LICENSE']= (base/'LICENSE').read_bytes()
     a.output.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(a.output,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as out:

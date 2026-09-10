@@ -15,7 +15,9 @@ func commerceRefundStepsV2(d CommerceRecordV2, amount string) ([]CommerceStepV2,
 		}
 		steps = append(steps, CommerceStepV2{Command: "mailbox.revoke", Payload: map[string]any{"source": "deuterium-commerce", "deliveryId": plan["deliveryId"], "orderId": d.ID, "expectedSnapshotSha256": plan["snapshotSha256"], "snapshotJson": plan["snapshotJson"], "reasonCode": "CUSTOMER_REFUND"}})
 	}
-	steps = append(steps, commerceMoneyStepV2(d, "wallet.escrow.refund", amount))
+	if amount != "0.00" || d.Channel != "OFFICIAL_STORE" {
+		steps = append(steps, commerceMoneyStepV2(d, "wallet.escrow.refund", amount))
+	}
 	return steps, nil
 }
 func (s *Store) PrepareCommerceRefundV2(ctx context.Context, actor, id, kind, key string, expected int64, input CatalogObjectV2, available bool) (CommerceMutationV2, error) {
@@ -48,7 +50,7 @@ func (s *Store) PrepareCommerceRefundV2(ctx context.Context, actor, id, kind, ke
 		if e != nil {
 			return result, e
 		}
-		if remaining.Sign() <= 0 {
+		if remaining.Sign() <= 0 && !(d.Channel == "OFFICIAL_STORE" && d.Amount == "0.00") {
 			return result, catalogError(409, "NO_HELD_FUNDS", "交易已经完成结算。")
 		}
 		now := time.Now().UTC().Truncate(time.Microsecond)

@@ -53,7 +53,15 @@ func commerceItemSnapshotV2(ctx context.Context, tx *sql.Tx, p CatalogRecordV2, 
 	if !ok {
 		return nil, catalogInvalid()
 	}
-	return CatalogObjectV2{"productId": p.ID, "productVersion": version, "title": content["title"], "subtitle": content["subtitle"], "description": content["description"], "unitPrice": catalogMoneyString(price), "quantity": quantity, "photoAssetIds": photos, "categoryName": category, "includedItems": included, "contentBlocks": blocks}, nil
+	originalPrice := catalogMoneyString(price)
+	if p.Kind == "product" {
+		var e error
+		price, e = promotionPriceV209(content)
+		if e != nil {
+			return nil, e
+		}
+	}
+	return CatalogObjectV2{"productId": p.ID, "productVersion": version, "title": content["title"], "subtitle": content["subtitle"], "description": content["description"], "unitPrice": catalogMoneyString(price), "originalUnitPrice": originalPrice, "quantity": quantity, "photoAssetIds": photos, "categoryName": category, "includedItems": included, "contentBlocks": blocks}, nil
 }
 
 // Quote and checkout use the same whole-order delivery limits. This reads the
@@ -63,6 +71,7 @@ func commerceDeliveryContentsV2(ctx context.Context, tx *sql.Tx, products map[st
 		return nil, e
 	}
 	attachments := map[string]CatalogObjectV2{}
+	credits := int64(0)
 	allowed := map[string]bool{}
 	domain := ""
 	shop := ""
@@ -90,6 +99,10 @@ func commerceDeliveryContentsV2(ctx context.Context, tx *sql.Tx, products map[st
 	first := true
 	for _, id := range commerceSortedKeysV2(quantities) {
 		product := products[id]
+		credits += catalogNumber(product.Published, "deliveryCredits") * quantities[id]
+		if credits > 1000000000000 {
+			return nil, catalogError(422, "DELIVERY_CREDITS_LIMIT", "单笔邮件信用点超出交付上限，请分开购买。")
+		}
 		template, e := catalogPublishedTemplateV2(ctx, tx, product, nodes)
 		if e != nil {
 			return nil, e
@@ -127,8 +140,20 @@ func commerceDeliveryContentsV2(ctx context.Context, tx *sql.Tx, products map[st
 			attachments[key] = CatalogObjectV2{"itemRef": a["itemRef"], "revision": a["revision"], "quantity": quantity, "payloadSha256": a["payloadSha256"]}
 		}
 	}
-	if len(allowed) == 0 || len(attachments) == 0 || len(attachments) > 32 {
+	if len(allowed) == 0 || (len(attachments) == 0 && credits == 0) || len(attachments) > 32 {
 		return nil, catalogError(422, "DELIVERY_SCOPE_CONFLICT", "商品没有共同的安全领取节点，或附件过多，请分开购买。")
+	}
+	if credits > 0 && nodes != nil {
+		known, supported := false, false
+		for id := range allowed {
+			if value := nodes[id].CreditRewards; value != nil {
+				known = true
+				supported = supported || *value
+			}
+		}
+		if known && !supported {
+			return nil, catalogError(503, "CREDIT_DELIVERY_UNAVAILABLE", "信用点邮件交付暂未就绪，请稍后再购买。")
+		}
 	}
 	keys := []string{}
 	for key := range attachments {
@@ -156,7 +181,11 @@ func commerceDeliveryContentsV2(ctx context.Context, tx *sql.Tx, products map[st
 		servers = append(servers, id)
 	}
 	sort.Strings(servers)
-	return CatalogObjectV2{"schemaVersion": 1, "inventoryDomain": domain, "allowedServerIds": servers, "attachments": items}, nil
+	snapshot := CatalogObjectV2{"schemaVersion": 1, "inventoryDomain": domain, "allowedServerIds": servers, "attachments": items}
+	if credits > 0 {
+		snapshot["creditAmount"] = credits
+	}
+	return snapshot, nil
 }
 func commerceMailPlanV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2, products map[string]CatalogRecordV2, quantities map[string]int64, nodes map[string]CatalogNodePolicyV2) (CatalogObjectV2, error) {
 	snapshot, e := commerceDeliveryContentsV2(ctx, tx, products, quantities, nodes)
@@ -172,7 +201,12 @@ func commerceMailPlanV2(ctx context.Context, tx *sql.Tx, d CommerceRecordV2, pro
 	if e != nil {
 		return nil, e
 	}
-	return CatalogObjectV2{"source": "deuterium-commerce", "deliveryId": ID("delivery_"), "orderId": d.ID, "recipientUuid": d.OwnerUUID, "title": title, "body": body, "sender": "Deuterium 官方商城", "snapshotJson": raw, "snapshotSha256": Digest([]byte(raw)), "allowedServerIds": snapshot["allowedServerIds"], "inventoryDomain": snapshot["inventoryDomain"]}, nil
+	seller, _ := catalogObject(d.Body["seller"])
+	sender := catalogString(seller, "displayName")
+	if sender == "" {
+		sender = "官方商城"
+	}
+	return CatalogObjectV2{"source": "deuterium-commerce", "deliveryId": ID("delivery_"), "orderId": d.ID, "recipientUuid": d.OwnerUUID, "title": title, "body": body, "sender": sender, "snapshotJson": raw, "snapshotSha256": Digest([]byte(raw)), "allowedServerIds": snapshot["allowedServerIds"], "inventoryDomain": snapshot["inventoryDomain"]}, nil
 }
 
 func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, expected int64, channel string, available bool, nodes map[string]CatalogNodePolicyV2) (CommerceMutationV2, error) {
@@ -221,8 +255,10 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 			return result, catalogVersion()
 		}
 		amount := catalogString(quote, "totalAmount")
-		if e = commerceWithinExecutionLimitV2(amount); e != nil {
-			return result, e
+		if amount != "0.00" || channel != "OFFICIAL_STORE" {
+			if e = commerceWithinExecutionLimitV2(amount); e != nil {
+				return result, e
+			}
 		}
 		lines, ok := quote["items"].([]any)
 		if !ok || len(lines) < 1 || len(lines) > 100 {
@@ -298,9 +334,20 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 			if kind == "product" && quantity > catalogNumber(content, "limitPerOrder") {
 				return result, catalogError(422, "PURCHASE_LIMIT", "数量超过单笔限购。")
 			}
+			if kind == "product" {
+				if e := promotionCheckLimitsV209(ctx, tx, owner.ServerUUID, p, quantity, now); e != nil {
+					return result, e
+				}
+			}
 			price, ok := catalogMoney(content["price"])
 			if !ok {
 				return result, catalogInvalid()
+			}
+			if kind == "product" {
+				price, e = promotionPriceV209(content)
+				if e != nil {
+					return result, e
+				}
 			}
 			if catalogMoneyString(price) != catalogString(line, "unitPrice") {
 				return result, catalogVersion()
@@ -311,6 +358,32 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 			}
 			total.Add(total, subtotal)
 			products[id] = p
+		}
+		if kind == "product" {
+			// Recompute exactly the quoted coupon, never silently substitute a new
+			// promotion after the buyer has confirmed the amount.
+			coupons := []CatalogRecordV2{}
+			if applied, ok := catalogObject(quote["coupon"]); ok {
+				coupon, e := catalogRecordTx(ctx, tx, catalogString(applied, "couponId"), "coupon", true)
+				if e != nil {
+					return result, e
+				}
+				if coupon.Version != catalogNumber(applied, "version") {
+					return result, catalogVersion()
+				}
+				coupons = append(coupons, coupon)
+			}
+			pricing, e := promotionTotalsV209(products, quantities, coupons)
+			if e != nil {
+				return result, e
+			}
+			total, e = commerceAmountV2(catalogString(pricing, "totalAmount"))
+			if e != nil {
+				return result, e
+			}
+			if quote["couponDiscount"] != nil && pricing["couponDiscount"] != quote["couponDiscount"] {
+				return result, catalogVersion()
+			}
 		}
 		if catalogMoneyString(total) != amount {
 			return result, catalogVersion()
@@ -366,6 +439,13 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 		}
 		d.Body = CatalogObjectV2{"orderNo": "D" + now.Format("20060102") + d.ID[len("order_"):], "construction": construction, "buyer": buyerParty, "seller": sellerParty, "items": snapshots, "delivery": delivery, "confirmationHours": confirmationHours, "shippedAt": nil, "workCompletedAt": nil, "confirmedAt": nil}
 		if channel == "OFFICIAL_STORE" {
+			for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon", "cartItems"} {
+				if v, ok := quote[k]; ok {
+					d.Body[k] = v
+				}
+			}
+		}
+		if channel == "OFFICIAL_STORE" {
 			plan, e := commerceMailPlanV2(ctx, tx, d, products, quantities, nodes)
 			if e != nil {
 				return result, e
@@ -374,6 +454,11 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 			d.Body["mailboxState"] = "NOT_CREATED"
 		}
 		snapshot := CatalogObjectV2{"snapshotId": d.SnapshotID, "orderId": d.ID, "buyer": buyerParty, "seller": sellerParty, "items": snapshots, "totalAmount": amount, "delivery": delivery, "confirmationHours": confirmationHours, "capturedAt": now}
+		for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon"} {
+			if v, ok := d.Body[k]; ok {
+				snapshot[k] = v
+			}
+		}
 		if len(catalogJSON(snapshot)) > 1<<20 {
 			return result, catalogError(422, "SNAPSHOT_SIZE_LIMIT", "订单详情过多，请分开购买。")
 		}
@@ -381,6 +466,11 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 		snapshot["sha256"] = d.SnapshotSHA256
 		if e = commerceSaveV2(ctx, tx, &d, true); e != nil {
 			return result, e
+		}
+		if channel == "OFFICIAL_STORE" {
+			if e = promotionReserveV209(ctx, tx, owner, d, quote, now); e != nil {
+				return result, e
+			}
 		}
 		if e = commerceInsertSnapshotV2(ctx, tx, d, snapshot, now); e != nil {
 			return result, e
@@ -415,6 +505,9 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 			}
 		}
 		steps := []CommerceStepV2{commerceReserveStepV2(d)}
+		if channel == "OFFICIAL_STORE" && amount == "0.00" {
+			steps = []CommerceStepV2{}
+		}
 		if channel == "OFFICIAL_STORE" {
 			plan, _ := catalogObject(d.Body["mailboxPlan"])
 			steps = append(steps, CommerceStepV2{Command: "mailbox.create", Payload: map[string]any(plan)})

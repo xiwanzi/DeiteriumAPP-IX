@@ -14,6 +14,16 @@ import (
 
 type commerceCoreAdapter struct{ server *Server }
 
+func (a *commerceCoreAdapter) creditDeliveryReady(node config.Node) bool {
+	var status struct {
+		Mailbox struct {
+			APIVersion    int  `json:"apiVersion"`
+			CreditRewards bool `json:"creditRewards"`
+		} `json:"mailbox"`
+	}
+	return a.nodeReady(node, "mailbox.create") && json.Unmarshal(a.server.Core.Status(node.ID), &status) == nil && status.Mailbox.APIVersion >= 3 && status.Mailbox.CreditRewards
+}
+
 func commerceCommandAllowed(command string) bool {
 	switch command {
 	case CommerceReserveV2, CommerceBindV2, CommerceSettleV2, CommerceRefundV2, "mailbox.create", "mailbox.revoke":
@@ -64,6 +74,17 @@ func (a *commerceCoreAdapter) Available(command string) bool {
 
 func (a *commerceCoreAdapter) selectNode(ctx context.Context, command string, payload map[string]any) (string, error) {
 	cluster, domain := "", ""
+	requiresCredits := false
+	if command == "mailbox.create" {
+		var snapshot struct {
+			CreditAmount int64 `json:"creditAmount"`
+		}
+		raw, _ := payload["snapshotJson"].(string)
+		if json.Unmarshal([]byte(raw), &snapshot) != nil {
+			return "", bridge.ErrProtocol
+		}
+		requiresCredits = snapshot.CreditAmount > 0
+	}
 	allowed := map[string]bool{}
 	if command == "mailbox.create" {
 		domain, _ = payload["inventoryDomain"].(string)
@@ -114,6 +135,9 @@ func (a *commerceCoreAdapter) selectNode(ctx context.Context, command string, pa
 			continue
 		}
 		if len(allowed) > 0 && !allowed[node.ID] {
+			continue
+		}
+		if requiresCredits && !a.creditDeliveryReady(node) {
 			continue
 		}
 		if a.nodeReady(node, command) {

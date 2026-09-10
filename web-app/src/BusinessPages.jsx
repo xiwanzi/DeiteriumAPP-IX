@@ -32,7 +32,8 @@ export function BusinessDetail({ client, user, type, reference, initial, onChang
   return <>
     <div className="button-row"><Badge tone={pending ? "neutral" : "blue"}>{label || value.status}</Badge><Badge tone="neutral">{fundsLabels[value.fundsStatus] || value.fundsStatus}</Badge><Button secondary disabled={busy} onClick={load}><RefreshCw size={15} />刷新</Button></div>
     <h2>{type === "COMMISSION" ? value.content?.title : value.items?.map((item) => item.title).join("、") || value.orderNo}</h2>
-    <p className="price">{credit(value.amount ?? value.content?.reward)}<small>信用点</small></p>
+    <p className="price">{credit(value.amount ?? value.content?.reward)}{Number(value.discountTotal) > 0 && <del className="sale-original">{credit(value.originalTotal)}</del>}<small>信用点</small></p>
+    {Number(value.productDiscount) > 0 && <p className="muted">商品优惠 −{credit(value.productDiscount)}</p>}{value.coupon && <p className="muted">{value.coupon.name} −{credit(value.couponDiscount)}</p>}
     {type === "ORDER" && <div className="settings-banner"><Avatar user={{name:value.seller?.displayName,avatar:value.orderType === "AI_SUBSCRIPTION" ? {url:media("xiaoxiang_avatar.png")} : value.seller?.avatar}} /><div><strong>{value.seller?.displayName}</strong><p>{value.orderType === "AI_SUBSCRIPTION" ? "套餐自动开通，无需领取，不支持退款。" : value.channel === "OFFICIAL_STORE" ? "官方商家" : "玩家卖家"}</p></div>{value.orderType === "AI_SUBSCRIPTION" && <a className="button secondary" href="/information?conversation=assistant">联系卖家</a>}</div>}
     {value.aiExpiresAt && <p>套餐有效期至 {new Date(value.aiExpiresAt).toLocaleString("zh-CN")}</p>}
     {pending && <p className="notice-box">交易仍在处理中，进度会自动更新。请稍后查看。</p>}

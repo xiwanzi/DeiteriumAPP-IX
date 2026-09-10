@@ -1,5 +1,5 @@
 name: DeuteriumCore
-version: '1.0.1'
+version: '1.0.2'
 main: cafe.deuterium.core.DeuteriumCorePlugin
 api-version: '1.21'
 authors: [Deuterium]

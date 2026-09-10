@@ -69,7 +69,7 @@ export default function RemoteCollection({ client, path, user, onNotificationTar
       return <button className="foundation-card" style={{ textAlign: "left", color: "inherit", cursor: "pointer" }} key={item[config.key]} onClick={() => select(item)}>
         {image?.url ? <img src={image.url} alt={image.altText || c.title} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /> : <Package size={24} />}
         {item.pinned && <Badge>置顶</Badge>}{path==="/market"&&mine&&<Badge tone={item.active?"sage":"neutral"}>{item.active?"在售":"已下架"}</Badge>}{path==="/notifications"&&!item.readAt&&<Badge>未读</Badge>}<h3 style={{ marginTop: 16 }}>{c.title}</h3><p>{c.subtitle || c.description || item.summary || item.body}</p>
-        {(c.price !== undefined || c.reward !== undefined) && <strong className="price">{credit(c.price ?? c.reward)}<small>信用点</small></strong>}
+        {(c.price !== undefined || c.reward !== undefined) && <strong className="price">{credit(item.effectivePrice ?? c.price ?? c.reward)}{c.discountRate < 10000 && <del className="sale-original">{credit(c.price)}</del>}<small>信用点</small></strong>}
       </button>;
     })}</div>
     {!busy && !error && !visible.length && <Empty title={query ? "没有匹配的结果" : config.empty} text={query ? "试试其他关键词。" : "新的内容发布后会出现在这里。"} />}

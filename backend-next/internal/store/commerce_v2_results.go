@@ -521,7 +521,7 @@ func (s *Store) commerceCompleteOperationV2(ctx context.Context, tx *sql.Tx, d *
 		}
 		return activateAIOrderV206(ctx, tx, d, now)
 	case "reserve", "bind", "deliver":
-		return nil
+		return promotionCompletePurchaseV209(ctx, tx, d, now)
 	case "settle":
 		d.FundsState = "SETTLED"
 		d.State = "CONFIRMED"
@@ -628,7 +628,11 @@ func (s *Store) commerceFailOperationV2(ctx context.Context, tx *sql.Tx, d *Comm
 		}
 		return nil
 	case "reserve":
-		if op.StepIndex == 0 {
+		// A free order's first step is delivery. Positive evidence that a mail
+		// exists must keep its stock/coupon reserved even if the adapter reports
+		// an inconsistent failure, until a real cancellation proof is obtained.
+		freeMailExists := d.Channel == "OFFICIAL_STORE" && d.Amount == "0.00" && catalogString(d.Body, "mailId") != "" && !catalogEnum(d.Body["mailboxState"], "REVOKED", "FAILED")
+		if op.StepIndex == 0 && !freeMailExists {
 			d.State = "CANCELLED"
 			d.FundsState = "UNPAID"
 			return commerceReleaseStockV2(ctx, tx, *d)

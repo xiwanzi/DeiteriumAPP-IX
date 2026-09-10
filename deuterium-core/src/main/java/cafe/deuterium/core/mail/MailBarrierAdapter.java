@@ -1,6 +1,7 @@
 package cafe.deuterium.core.mail;
 
 import cafe.deuterium.core.api.PlayerDataService;
+import cafe.deuterium.core.game.EconomyAccess;
 import cafe.deuterium.mail.api.MailPlayerDataBarrier;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -11,8 +12,20 @@ import java.util.function.Supplier;
 /** Delegates every guarantee to the real sync owner; no timer or success-by-default fallback. */
 public final class MailBarrierAdapter implements MailPlayerDataBarrier {
     private final Supplier<PlayerDataService> provider;
+    private final EconomyAccess economy = new EconomyAccess();
     public MailBarrierAdapter(Supplier<PlayerDataService> provider) { this.provider = provider; }
     @Override public boolean available() { PlayerDataService s = provider.get(); return s != null && s.available(); }
+    @Override public boolean creditRewardsAvailable() { return economy.mailCreditsAvailable(); }
+    @Override public void ensureCredits(UUID player, UUID operation, long credits) {
+        if (credits == 0) return;
+        if (credits < 0 || credits > 1000000000000L) throw new IllegalArgumentException("Invalid mail credits");
+        String id = "mailcredit_" + operation;
+        var proof = economy.rewardMail(id, player, credits);
+        if (!id.equals(proof.get("operationId").getAsString()) || !"COMPLETED".equals(proof.get("status").getAsString())
+                || !player.toString().equals(proof.get("playerUuid").getAsString()) || !"CREDIT".equals(proof.get("currency").getAsString())
+                || proof.get("amount").getAsBigDecimal().compareTo(java.math.BigDecimal.valueOf(credits)) != 0)
+            throw new IllegalStateException("Mail credit commit proof mismatch");
+    }
     @Override public SaveProof lookupSaveProof(UUID playerUuid, String domain, UUID operation, String epoch) throws Exception {
         PlayerDataService service = provider.get();
         if (service == null) throw new IllegalStateException("Player save proof provider unavailable");
