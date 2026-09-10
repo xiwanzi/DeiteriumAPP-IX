@@ -368,6 +368,9 @@ func (s *Store) CatalogEditV2(ctx context.Context, user, id, kind, key string, e
 		if d.Version != expected || d.Version >= 2147483647 {
 			return nil, catalogVersion()
 		}
+		if d.State == "DELETED" {
+			return nil, catalogNotFound()
+		}
 		if d.State == "ARCHIVED" {
 			return nil, catalogError(409, "INVALID_STATE_TRANSITION", "已归档商品不能编辑。")
 		}
@@ -447,6 +450,9 @@ func (s *Store) CatalogActionV2(ctx context.Context, user, id, kind, key string,
 		if d.Version >= 2147483647 {
 			return nil, catalogVersion()
 		}
+		if d.State == "DELETED" {
+			return nil, catalogNotFound()
+		}
 		now := time.Now().UTC()
 		switch action {
 		case "publish":
@@ -524,6 +530,9 @@ func (s *Store) CatalogGetRecordV2(ctx context.Context, user, id, kind string, m
 	if e != nil {
 		return d, e
 	}
+	if d.State == "DELETED" {
+		return d, catalogNotFound()
+	}
 	if management {
 		if kind == "listing" {
 			if d.OwnerID != user {
@@ -560,7 +569,7 @@ func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV
 			return nil, e
 		}
 	}
-	q := catalogSelect + " WHERE kind=?"
+	q := catalogSelect + " WHERE kind=? AND state<>'DELETED'"
 	args := []any{f.Kind}
 	if f.StoreID != "" {
 		q += " AND store_id=?"

@@ -11,7 +11,8 @@ export default function CouponManagement({ client }) {
   const [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [query, setQuery] = useState(""), [filter, setFilter] = useState("草稿"),
     [busy, setBusy] = useState(false), [error, setError] = useState(""), [editor, setEditor] = useState(null),
     [selected, setSelected] = useState(new Map()), [confirmation, setConfirmation] = useState(null), [publishing, setPublishing] = useState(false),
-    [publishError, setPublishError] = useState(""), [message, setMessage] = useState("");
+    [publishError, setPublishError] = useState(""), [message, setMessage] = useState(""),
+    [deletion, setDeletion] = useState(null), [deleting, setDeleting] = useState(false), [deleteError, setDeleteError] = useState("");
   const generation = useRef(0), publication = useRef(null);
   const load = async (more = false) => {
     const current = ++generation.current; setBusy(true); setError("");
@@ -45,6 +46,17 @@ export default function CouponManagement({ client }) {
       if (filter === "全部") await load(); else setFilter("全部");
     } catch (e) { setPublishError(e.message); } finally { setPublishing(false); }
   };
+  const remove = async () => {
+    if (!deletion || deleting) return;
+    setDeleting(true); setDeleteError("");
+    try {
+      const response = await client.request(`/api/v1/admin/coupons/${encodeURIComponent(deletion.coupon.couponId)}/delete`, { method: "POST", body: deletion.body });
+      if (!response.data?.deleted) throw new Error("删除结果尚未确认，请重试核对。");
+      setSelected((old) => { const next = new Map(old); next.delete(deletion.coupon.couponId); return next; });
+      setItems((old) => old.filter((coupon) => coupon.couponId !== deletion.coupon.couponId));
+      setDeletion(null); setMessage("优惠券已删除。"); await load();
+    } catch (e) { setDeleteError(e.message); } finally { setDeleting(false); }
+  };
   return <div className="coupons-workspace">
     <PageHead eyebrow="OFFERS" title="优惠券" subtitle="先保存草稿，再勾选要一起发放的优惠券。"><Button onClick={() => { setMessage(""); setEditor({}); }}><Plus size={17} />新建草稿</Button></PageHead>
     <div className="template-toolbar"><label className="picker-search"><Search size={18} /><input aria-label="搜索优惠券" placeholder="搜索优惠券名称" value={query} maxLength={100} onChange={(e) => setQuery(e.target.value)} /></label><Button secondary disabled={busy} onClick={() => load()}>刷新</Button></div>
@@ -61,10 +73,15 @@ export default function CouponManagement({ client }) {
       <div className="coupon-row-summary"><Badge tone={couponStatus(coupon) === "进行中" ? "sage" : "neutral"}>{couponStatus(coupon)}</Badge><h3>{coupon.name}</h3><p>{coupon.type === "ITEM" ? "单品折扣券" : "整单优惠券"} · {coupon.stackWithProductDiscount ? "可叠加商品折扣" : "与商品折扣择优"}</p></div>
       <div className="coupon-row-benefit"><div className="coupon-row-value">{couponBenefit(coupon)}</div><small>{couponConditions(coupon)}</small></div>
       <div className="coupon-row-audience"><p>{coupon.audience === "ALL" ? "全体玩家 · 含新注册玩家" : `${coupon.playerRefs.length} 位指定玩家`}</p><small>{couponDate(coupon.startsAt)} — {couponDate(coupon.endsAt)}</small></div>
-      <Button className="coupon-row-edit" secondary disabled={busy} onClick={() => setEditor(coupon)}>编辑</Button>
+      <div className="coupon-row-edit coupon-row-actions"><Button secondary disabled={busy} onClick={() => setEditor(coupon)}>编辑</Button>{!coupon.active && <button type="button" className="text-button danger-text" disabled={busy || deleting} onClick={() => { setDeleteError(""); setDeletion({ coupon, body: { clientRequestId: id(), expectedVersion: coupon.version } }); }}>删除</button>}</div>
     </article>)}</div>
     {!busy && !visible.length && <Empty title={filter === "草稿" ? "先准备好你的优惠" : "还没有匹配的优惠券"} text={filter === "草稿" ? "保存几张不同的优惠券草稿，再勾选它们，一次发放给玩家。" : "换个筛选条件，或新建一张优惠券草稿。"} />}
     {cursor && <div className="button-row"><Button secondary disabled={busy} onClick={() => load(true)}>加载更多优惠券</Button></div>}
+    {deletion && <Modal title="删除优惠券" dismissOnBackdrop={false} close={() => { if (!deleting) setDeletion(null); }}>
+      <p>确认删除“{deletion.coupon.name}”？删除后将从优惠券列表移除，无法再次启用。已有订单记录保留。</p>
+      {deleteError && <p className="auth-error" role="alert">{deleteError}</p>}
+      <div className="editor-actions"><Button secondary disabled={deleting} onClick={() => setDeletion(null)}>取消</Button><Button danger disabled={deleting} onClick={remove}>{deleting ? "正在删除…" : "确认删除"}</Button></div>
+    </Modal>}
     {editor && <Modal title={!editor.couponId ? "新建优惠券草稿" : editor.publicationState === "DRAFT" ? "编辑草稿" : "编辑优惠券"} wide guardClose dismissOnBackdrop={false} className="coupon-editor-modal" close={() => setEditor(null)}><CouponForm client={client} initial={editor} onSaved={async (saved) => {
       setEditor(null); setSelected((old) => { if (!old.has(saved.couponId)) return old; const next = new Map(old); next.set(saved.couponId, saved); return next; });
       setMessage(saved.publicationState === "DRAFT" ? "草稿已保存。勾选需要一起发放的草稿后，点击批量发放。" : "优惠券已保存。");

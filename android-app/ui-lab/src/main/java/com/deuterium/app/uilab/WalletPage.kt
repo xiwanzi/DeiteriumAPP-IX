@@ -66,9 +66,9 @@ private fun BalanceCard(state: LabState, onTransfer: () -> Unit) {
     val motion = LocalMotion.current
     val rotation = if (state.refreshing && motion) {
         val rotating = rememberInfiniteTransition(label = "refresh")
-        val angle by rotating.animateFloat(0f, 360f, infiniteRepeatable(tween(850, easing = LinearEasing)), label = "refresh-angle")
+        val angle = rotating.animateFloat(0f, 360f, infiniteRepeatable(tween(850, easing = LinearEasing)), label = "refresh-angle")
         angle
-    } else 0f
+    } else null
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(30.dp)).background(MaterialTheme.colorScheme.surface)) {
         Canvas(Modifier.matchParentSize()) {
             val center = Offset(size.width * .95f, size.height * .20f)
@@ -109,7 +109,7 @@ private fun BalanceCard(state: LabState, onTransfer: () -> Unit) {
                     modifier = Modifier.size(51.dp), shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                     Icon(Icons.Outlined.Refresh, "刷新余额", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(23.dp)
-                        .graphicsLayer { rotationZ = if(state.refreshing && motion) rotation else 0f })
+                        .graphicsLayer { rotationZ = rotation?.value ?: 0f })
                 }
             }
         }

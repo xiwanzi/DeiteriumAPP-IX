@@ -21,12 +21,12 @@ class CouponAttention(private val api:BackendApi) {
     private var serverClock=Instant.now()
     private var clockNanos=System.nanoTime()
     var now by mutableStateOf(serverClock);private set
-    val unread:List<StoreCoupon> get()=available.filter{it.visible(now)&&(receipts[it.id]?.level ?: 0)<2}
-    val arrivals:List<StoreCoupon> get() {
+    val unread:List<StoreCoupon> by derivedStateOf { available.filter{it.visible(now)&&(receipts[it.id]?.level ?: 0)<2} }
+    val arrivals:List<StoreCoupon> by derivedStateOf {
         val shownBatches=receipts.values.mapNotNull{it.releaseBatchId}.toSet()
-        return unread.filter{announced[it.id]!=true&&(receipts[it.id]?.level ?: 0)<1&&(it.releaseBatchId==null||it.releaseBatchId !in shownBatches)}
+        unread.filter{announced[it.id]!=true&&(receipts[it.id]?.level ?: 0)<1&&(it.releaseBatchId==null||it.releaseBatchId !in shownBatches)}
     }
-    val hasUnread:Boolean get()=unread.isNotEmpty()
+    val hasUnread:Boolean by derivedStateOf { unread.isNotEmpty() }
 
     init {
         val saved=api.couponReceipts(owner)
@@ -105,9 +105,4 @@ class CouponAttention(private val api:BackendApi) {
         receipts.forEach{(id,receipt)->value.put(id,JSONObject().put("level",receipt.level).put("endsAt",receipt.endsAt.toString()).put("pending",receipt.pending).put("releaseBatchId",receipt.releaseBatchId))}
         api.saveCouponReceipts(owner,value)
     }
-}
-
-fun couponArrivalNeedsDetails(coupons:List<StoreCoupon>):Boolean {
-    val coupon=coupons.singleOrNull() ?: return true
-    return coupon.type!="ORDER"||coupon.benefit!="FIXED"||coupon.restricted||coupon.name.length>24||coupon.scope.length>30
 }

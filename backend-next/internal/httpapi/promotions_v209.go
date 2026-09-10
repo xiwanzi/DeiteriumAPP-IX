@@ -32,6 +32,7 @@ func (s *Server) registerPromotionsV209(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/admin/coupons", s.saveCouponV209)
 	mux.HandleFunc("POST /api/v1/admin/coupons/publish", s.publishCouponDraftsV209)
 	mux.HandleFunc("PUT /api/v1/admin/coupons/{couponId}", s.saveCouponV209)
+	mux.HandleFunc("POST /api/v1/admin/coupons/{couponId}/delete", s.deleteCatalogEntry("coupon"))
 }
 
 func (s *Server) couponsV209(admin bool) http.HandlerFunc {

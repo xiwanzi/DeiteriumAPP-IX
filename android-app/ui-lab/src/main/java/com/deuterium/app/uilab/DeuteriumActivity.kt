@@ -114,7 +114,7 @@ class DeuteriumActivity : ComponentActivity() {
             var params by remember { mutableStateOf(materialStore.load()) }
             var paymentAssetsReady by remember { mutableStateOf(FacePayAssets.movie!=null) }
             LaunchedEffect(Unit) {
-                PaymentSound.prepare(this@DeuteriumActivity)
+                withContext(Dispatchers.IO){PaymentSound.prepare(this@DeuteriumActivity)}
                 runCatching { FacePayAssets.load(this@DeuteriumActivity) }
                 paymentAssetsReady=true
             }
@@ -296,11 +296,11 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
             }
             if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,buildSet{if(updates?.hasUpdates==true)add(Destination.Profile.ordinal);if(state.hasUnreadMessages)add(Destination.Info.ordinal)}){destination=Destination.entries[it]}}
             state.commerce.network?.couponAttention?.let{attention->
-                CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize(),allowPopup=route==null)
+                CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize())
             }
             flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}
             AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {
-                state.notice?.let{notice->LiquidGlass(Modifier.fillMaxWidth(),backdrop=backdrop,onClick={goToNotice(notice.route)}){Row(Modifier.padding(15.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.NotificationsNone,null,tint=MaterialTheme.colorScheme.primary);Column(Modifier.weight(1f).padding(horizontal=10.dp)){Text(notice.title,style=MaterialTheme.typography.titleMedium);Text(notice.body,style=MaterialTheme.typography.bodySmall,maxLines=2)};IconButton({state.notice=null},Modifier.size(36.dp)){Icon(Icons.Outlined.Close,"关闭提醒",Modifier.size(18.dp))}}}}
+                state.notice?.let{notice->InAppNoticeCard(notice.title,notice.body,{goToNotice(notice.route)},{state.notice=null},backdrop=backdrop)}
             }
         }
         if(transfer)TransferSheet(state,transferTo){transfer=false}

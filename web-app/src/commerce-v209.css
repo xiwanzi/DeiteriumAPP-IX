@@ -100,3 +100,8 @@
 @media (max-width: 900px) { .promotion-form-layout { grid-template-columns: minmax(0, 1fr); } .promotion-preview { position: static; max-width: 450px; width: 100%; margin: 0 auto; } .coupon-admin-row { grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; padding: 18px; } .coupon-row-summary { grid-column: 2; }.coupon-row-edit { grid-column: 3; grid-row: 1; }.coupon-row-benefit { grid-column: 2 / -1; }.coupon-row-audience { grid-column: 2 / -1; } }
 @media (max-width: 520px) { .coupon-selection-bar { top: 70px; gap: 12px; }.coupon-selection-bar > div { flex-basis: 100%; justify-content: flex-end; }.coupon-batch-review > div { align-items: flex-start; flex-wrap: wrap; }.coupon-batch-review b { font-size: 18px; } }
 @media (max-width: 520px) { .picker-footer { flex-wrap: wrap; } .picker-footer > span { flex-basis: 100%; } .limit-reset { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .template-toolbar { flex-wrap: wrap; } .template-attachment { gap: 10px; flex-wrap: wrap; } .template-attachment > div:first-child { flex-basis: calc(100% - 55px); } .template-attachment .field { width: calc(100% - 58px); } .promotion-editor-section { padding: 18px; } }
+
+.coupon-row-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.coupon-row-actions .text-button { min-height: 44px; min-width: 44px; }
+
+.catalog-row-actions .danger-text, .coupon-row-actions .danger-text { color: var(--red, #d74747); }

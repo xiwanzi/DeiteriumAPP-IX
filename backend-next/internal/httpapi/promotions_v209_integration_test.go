@@ -169,8 +169,8 @@ func TestPromotionCheckoutClearsPurchasedUnitsOnceAndFreezesCurrentShopV209(t *t
 	}
 	commerceRunTest(t, f, refund)
 	rows, _, _, _ = f.s.CouponsV209(ctx, f.buyer.ID, false, "", "", 30)
-	if len(rows) != 0 {
-		t.Fatal("refund duplicated coupon")
+	if len(rows) != 1 {
+		t.Fatal("full refund did not return coupon")
 	}
 }
 
@@ -283,6 +283,9 @@ func TestPromotionCreditDeliveryAndZeroPaymentRefundV209(t *testing.T) {
 	d = commerceRunTest(t, f, m)
 	if d.FundsState != "REFUNDED" || core.calls["wallet.escrow.refund"] != 0 {
 		t.Fatal(d, core.calls)
+	}
+	if rows, _, _, e := f.s.CouponsV209(ctx, f.buyer.ID, false, "", "", 100); e != nil || len(rows) != 1 {
+		t.Fatal("zero-payment refund did not restore coupon", rows, e)
 	}
 }
 

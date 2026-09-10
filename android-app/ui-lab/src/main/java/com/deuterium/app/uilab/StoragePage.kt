@@ -142,12 +142,12 @@ private fun StorageCaption(text:String){Text(text,Modifier.padding(start=16.dp),
 private fun StorageActivityIndicator(){
     val phase=if(LocalMotion.current){
         val transition=androidx.compose.animation.core.rememberInfiniteTransition(label="storage-progress")
-        val rotation by transition.animateFloat(0f,12f,androidx.compose.animation.core.infiniteRepeatable(tween(900,easing=androidx.compose.animation.core.LinearEasing)),label="storage-spokes")
-        rotation.toInt()
-    } else 0
+        val rotation = transition.animateFloat(0f,12f,androidx.compose.animation.core.infiniteRepeatable(tween(900,easing=androidx.compose.animation.core.LinearEasing)),label="storage-spokes")
+        rotation
+    } else null
     val color=MaterialTheme.colorScheme.onSurfaceVariant
     Canvas(Modifier.size(18.dp).semantics{contentDescription="正在处理"}){
-        repeat(12){index->rotate(index*30f){drawLine(color.copy(alpha=.2f+.8f*((index-phase+12)%12)/12f),Offset(center.x,size.height*.06f),Offset(center.x,size.height*.24f),strokeWidth=1.5.dp.toPx(),cap=StrokeCap.Round)}}
+        repeat(12){index->rotate(index*30f){drawLine(color.copy(alpha=.2f+.8f*((index-(phase?.value?.toInt() ?: 0)+12)%12)/12f),Offset(center.x,size.height*.06f),Offset(center.x,size.height*.24f),strokeWidth=1.5.dp.toPx(),cap=StrokeCap.Round)}}
     }
 }
 

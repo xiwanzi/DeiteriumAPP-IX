@@ -136,7 +136,29 @@ func promotionCompletePurchaseV209(ctx context.Context, tx *sql.Tx, d *CommerceR
 	return nil
 }
 
-func promotionReleaseUnusedV209(ctx context.Context, tx *sql.Tx, order string) error {
-	_, e := tx.ExecContext(ctx, "DELETE FROM promotion_redemptions_v209 WHERE resource_id=? AND redeemed_at IS NULL", order)
+func promotionReleaseV209(ctx context.Context, tx *sql.Tx, order CommerceRecordV2) error {
+	// This runs inside the order-completion transaction, after proof validation.
+	// Match the original order so later reuse survives a replay of this refund.
+	fullRefund := order.Channel == "OFFICIAL_STORE" && order.State == "REFUNDED" && order.FundsState == "REFUNDED" && order.PendingOperationID == ""
+	if fullRefund {
+		paid, e := commerceAmountV2(order.Amount)
+		if e != nil {
+			return e
+		}
+		refunded, e := commerceAmountV2(order.RefundedAmount)
+		if e != nil {
+			return e
+		}
+		settled, e := commerceAmountV2(order.SettledAmount)
+		if e != nil {
+			return e
+		}
+		fullRefund = paid.Cmp(refunded) == 0 && settled.Sign() == 0
+	}
+	query := "DELETE FROM promotion_redemptions_v209 WHERE resource_id=?"
+	if !fullRefund {
+		query += " AND redeemed_at IS NULL"
+	}
+	_, e := tx.ExecContext(ctx, query, order.ID)
 	return e
 }
