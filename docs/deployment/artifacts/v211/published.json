@@ -1,0 +1,28 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.11-21100-test",
+    "kind": "APK",
+    "versionName": "2.0.11",
+    "versionCode": 21100,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "大幅提升流畅度，提升系统稳定性。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.11-21100-test.apk",
+    "sizeBytes": 8875538,
+    "sha256": "4adec4a7e3e0e361c30fdcab93127a810d492262ed002f87c07ac0e545b7a40d",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21099,
+    "channel": "stable",
+    "publishedAt": "2026-09-11T02:40:27Z"
+  },
+  "health": {
+    "status": "ready"
+  },
+  "backupDirectory": "/var/backups/deuterium/app-2.0.11-20260911-21100",
+  "manifestSha256": "9799085d0275a5040df14088767f4eb61a1e62541c9e009ae00da4975b0a9e8a",
+  "previousReleaseEntriesPreserved": 11,
+  "activeFinancialOperationsBeforeRestart": 0,
+  "backendBinaryUnchanged": true,
+  "webDirectoryUnchanged": true,
+  "restartedService": "deuterium.service"
+}

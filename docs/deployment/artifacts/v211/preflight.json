@@ -1,0 +1,29 @@
+{
+  "serverTime": "2026-09-11T02:29:50Z",
+  "service": "active",
+  "health": {
+    "status": "ready"
+  },
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.10-65c08a290896",
+  "backendSha256": "1fa7b3dc691bc80cf7a579be832cec1465724225b8afbfb845b66b03d2666ee3",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.10-65c08a290896/dist",
+  "webVersion": "2.0.10",
+  "configHashes": {
+    "config.json": "aeb88e7905824aa60310d194d2010b11e1933dc568660f6185c8ec904004b413",
+    "backend.env": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+    "releases.json": "7151ae6287e1822c64f91f6afa9f94b8c06f591e1b8b037a9ff0221452371847"
+  },
+  "nginxSha256": "23e2051cb3edf7c759fa13716f5eec05b7c1a2424b0f8b63691189cbede878d9",
+  "releaseCount": 11,
+  "latestVersionCode": 21000,
+  "resourceReleaseCount": 0,
+  "activeFinancialOperations": 0,
+  "businessCounts": {
+    "COMMISSION": "4",
+    "ORDER": "27"
+  },
+  "accountCount": 70,
+  "recipientActiveCount": 1,
+  "downloadDirectory": "/var/www/deuterium/downloads",
+  "freeBytes": 23169314816
+}

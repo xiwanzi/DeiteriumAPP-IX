@@ -1,6 +1,6 @@
 # 部署与维护手册
 
-当前以 2026-09-10 的 [2.0.9 部署记录](deuterium-2.0.9-live.md) 为准：App 20901、Web/Go、Core 1.0.2、Mail 0.6.2/API3、Bridge 0.6.1、XConomy .3 已更新，Mail UI/Sync 保留实服文件；三常驻服运行、MEK 停止。SMTP 和经营参数以后台现有配置为准；下方流程用于后续有授权的部署。
+当前 App 为 [2.0.11（21100）](deuterium-2.0.11-live.md)，Web/Go 沿用 [2.0.10](deuterium-2.0.10-live.md)，游戏组件沿用 [2.0.9](deuterium-2.0.9-live.md) 配套（Core 1.0.2、Mail 0.6.2/API3、Bridge 0.6.1、XConomy .3；Mail UI/Sync 保留实服文件）。三常驻服运行、MEK 停止。SMTP 和经营参数以后台现有配置为准；下方流程用于后续有授权的部署。
 
 ## 拓扑和路径
 
@@ -8,11 +8,11 @@
 | --- | --- |
 | 公网入口 | `https://47.103.99.34`，443，同源 API；域名在当时仍等待备案 |
 | Go | systemd `deuterium.service`，`/opt/deuterium/current/deuterium`，监听 `127.0.0.1:8080` |
-| Go 发布目录 | `/opt/deuterium/releases/release-2.0.9-e4e4c4b7791c`；`current` 指向已验证版本 |
+| Go 发布目录 | `/opt/deuterium/releases/release-2.0.10-65c08a290896`；`current` 指向已验证版本 |
 | 配置 | `/etc/deuterium/config.json`、`backend.env`、`releases.json`；AI 配置与提示词由环境中的文件路径指定 |
 | 后端库 | MariaDB `deuterium_backend`，独立账号；禁止复用游戏经济数据库身份 |
 | Nginx | 现有宝塔路径 `/www/server/panel/vhost/nginx/deuterium-test.conf`；80 ACME webroot `/var/www/deuterium-acme` |
-| 网站 | 发布目录 `/var/www/deuterium/releases/web-2.0.9-e4e4c4b7791c/dist`；实际生效 root 从 Nginx 配置核对 |
+| 网站 | 发布目录 `/var/www/deuterium/releases/web-2.0.10-65c08a290896/dist`；实际生效 root 从 Nginx 配置核对 |
 | APK | Nginx `/downloads/` 公开渠道，发布时必须核对实际 alias/root，不上传私有目录 |
 | 云备份 | `/var/backups/deuterium/`，含数据库一致性备份、前版配置和更新清单，受限访问 |
 | 游戏备份 | 游戏主机 `E:/Deuterium_IX/deployment-backups/app-v209-20260910-20901`，不是云端公开目录 |

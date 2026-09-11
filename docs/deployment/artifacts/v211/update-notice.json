@@ -1,0 +1,10 @@
+{
+  "recipient": "xiwanzi",
+  "eventKey": "app.release:21100",
+  "count": 1,
+  "title": "2.0.11 更新已就绪",
+  "body": "大幅提升流畅度，提升系统稳定性。",
+  "publicChatBroadcast": false,
+  "visibleThroughAccountApi": true,
+  "createdAt": "2026-09-11T02:43:49.498749Z"
+}

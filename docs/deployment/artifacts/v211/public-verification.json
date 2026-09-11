@@ -1,0 +1,23 @@
+{
+  "checks": {
+    "20004": "21100 available",
+    "20101": "21100 available",
+    "20200": "21100 available",
+    "20300": "21100 available",
+    "20401": "21100 available",
+    "20500": "21100 available",
+    "20600": "21100 available",
+    "20700": "21100 available",
+    "20800": "21100 available",
+    "20901": "21100 available",
+    "21000": "21100 available",
+    "21099": "21100 available",
+    "21100": "no self/downgrade",
+    "21101": "no self/downgrade"
+  },
+  "releaseNotes": "大幅提升流畅度，提升系统稳定性。",
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.11-21100-test.apk",
+  "downloadSize": 8875538,
+  "downloadSha256": "4adec4a7e3e0e361c30fdcab93127a810d492262ed002f87c07ac0e545b7a40d",
+  "httpsVerified": true
+}
