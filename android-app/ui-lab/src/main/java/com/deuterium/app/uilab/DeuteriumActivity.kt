@@ -150,7 +150,7 @@ class DeuteriumActivity : ComponentActivity() {
                     WindowCompat.getInsetsController(window,window.decorView).apply { isAppearanceLightStatusBars = !dark; isAppearanceLightNavigationBars = !dark }
                 }
                 CompositionLocalProvider(LocalHeaderGlassParameters provides params.header,LocalAppUpdates provides updates,LocalContentColor provides MaterialTheme.colorScheme.onSurface, LocalOverlayGlassEnabled provides overlayGlass,LocalDeviceTilt provides rememberDeviceTilt(tilt && motion && (glass||overlayGlass))) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    Box(Modifier.fillMaxSize()) {
                     if(!signedIn) AuthPage { name ->
                         session.clearSession()
                     } else LabApp(
@@ -235,8 +235,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     }
     CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalIosOverlayRegistry provides overlays) {
         Box(Modifier.fillMaxSize().then(if(route==null)Modifier.nestedScroll(connection) else Modifier)) {
-            Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)) {
-                GlassAtmosphere(Modifier.recordGlassBackdrop(atmosphere))
+            GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()) {
                 AnimatedContent(page,modifier=Modifier.fillMaxSize(),transitionSpec={if(motion)(fadeIn(tween(180,25))+slideInHorizontally(tween(260,easing=FastOutSlowInEasing)){it/14}) togetherWith fadeOut(tween(130)) else EnterTransition.None togetherWith ExitTransition.None},label="pages"){current->
                     saved.SaveableStateProvider(current) {
                         val inset=if(current in Destination.entries.map{it.name})statusTop+184.dp-chromeFor(current).offset.dp else secondaryContentTop

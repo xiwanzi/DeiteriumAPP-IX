@@ -1,0 +1,4 @@
+Captured info
+Measured 1260 frames
+INSTRUMENTATION_RESULT: overdrawPageCapture=PASS
+INSTRUMENTATION_CODE: -1

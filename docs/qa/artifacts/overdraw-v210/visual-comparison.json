@@ -1,0 +1,279 @@
+{
+  "scenes": 68,
+  "differentScenes": 0,
+  "comparison": "full RGBA bytes",
+  "results": [
+    {
+      "scene": "bills-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "bills-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "bills-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "bills-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "commission-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "commission-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "commission-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "commission-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "controls-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "controls-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "controls-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "controls-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-0-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-0-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-0-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-0-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-100-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-100-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-100-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-100-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-25-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-25-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-25-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-25-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-50-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-50-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-50-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-50-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-75-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-75-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "flight-75-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "flight-75-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "glass-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "glass-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "glass-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "glass-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "info-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "info-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "info-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "info-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "market-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "market-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "market-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "market-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "orders-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "orders-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "orders-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "orders-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-0-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-0-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-0-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-0-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-128-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-128-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-128-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-128-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-34-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-34-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-34-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-34-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-98-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-98-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "shop-98-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "shop-98-t2-f14.png",
+      "same": true
+    },
+    {
+      "scene": "wallet-t1-f10.png",
+      "same": true
+    },
+    {
+      "scene": "wallet-t1-f14.png",
+      "same": true
+    },
+    {
+      "scene": "wallet-t2-f10.png",
+      "same": true
+    },
+    {
+      "scene": "wallet-t2-f14.png",
+      "same": true
+    }
+  ]
+}

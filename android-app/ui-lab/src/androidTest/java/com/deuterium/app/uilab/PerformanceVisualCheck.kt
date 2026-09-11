@@ -74,14 +74,13 @@ object PerformanceVisualCheck {
                 test.runOnMainSync { host!!.setContent {
                     key(scene,theme,font){LabTheme(theme,false){
                         val density=LocalDensity.current
-                        val backdrop=rememberGraphicsLayer()
+                        val backdrop=rememberGraphicsLayer();val atmosphere=rememberGraphicsLayer()
                         val chrome=remember{PageChromeState(scene.substringAfter("shop-","0").toFloatOrNull() ?: 0f)}
                         val tilt=remember{mutableStateOf(Offset(.23f,-.17f))}
                         CompositionLocalProvider(LocalDensity provides Density(density.density,font),LocalContentColor provides MaterialTheme.colorScheme.onSurface,
                             LocalOverlayBackdrop provides backdrop,LocalDeviceTilt provides tilt) {
                             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-                                Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)) {
-                                    GlassAtmosphere()
+                                GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()) {
                                     when {
                                         scene.startsWith("shop-")->ShopPage(state,{},208.dp-chrome.offset.dp,"")
                                         scene=="market"->MarketPage(state.commerce,"",64.dp,{})

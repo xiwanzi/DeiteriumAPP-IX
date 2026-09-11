@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
@@ -26,6 +27,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
 val LocalGlassBackdrop = staticCompositionLocalOf<GraphicsLayer?> { null }
@@ -121,12 +123,36 @@ fun GlassAtmosphere(modifier: Modifier = Modifier) {
     val base = MaterialTheme.colorScheme.background
     val accent = MaterialTheme.colorScheme.primary
     Spacer(modifier.fillMaxSize().drawWithCache {
-        val first=Brush.radialGradient(listOf(accent.copy(alpha = if(dark) .03f else .025f), Color.Transparent),
-            center = Offset(size.width * .95f, size.height * .15f), radius = size.width * .95f)
-        val second=Brush.radialGradient(listOf(Color(0xFFE2C599).copy(alpha = if(dark) .02f else .03f), Color.Transparent),
-            center = Offset(size.width * .04f, size.height * .63f), radius = size.width * .9f)
-        val third=Brush.radialGradient(listOf(Color(0xFF98A8DC).copy(alpha = if(dark) .025f else .025f), Color.Transparent),
-            center = Offset(size.width, size.height * .95f), radius = size.width * .9f)
-        onDrawBehind { drawRect(base);drawRect(first);drawRect(second);drawRect(third) }
+        val brushes=atmosphereBrushes(size,dark,accent)
+        onDrawBehind { drawRect(base);brushes.forEach{drawRect(it)} }
     })
+}
+
+private fun atmosphereBrushes(size:Size,dark:Boolean,accent:Color)=listOf(
+    Brush.radialGradient(listOf(accent.copy(alpha=if(dark).03f else .025f),Color.Transparent),
+        center=Offset(size.width*.95f,size.height*.15f),radius=size.width*.95f),
+    Brush.radialGradient(listOf(Color(0xFFE2C599).copy(alpha=if(dark).02f else .03f),Color.Transparent),
+        center=Offset(size.width*.04f,size.height*.63f),radius=size.width*.9f),
+    Brush.radialGradient(listOf(Color(0xFF98A8DC).copy(alpha=.025f),Color.Transparent),
+        center=Offset(size.width,size.height*.95f),radius=size.width*.9f)
+)
+
+/** Reuse the static screen background, while glass samples the original drawing commands.
+ * Sampling the cached texture instead introduces an extra filtering/rounding step in the glass. */
+@Composable
+internal fun GlassScene(atmosphere:GraphicsLayer,backdrop:GraphicsLayer,modifier:Modifier=Modifier,content:@Composable BoxScope.()->Unit) {
+    val base=MaterialTheme.colorScheme.background;val accent=MaterialTheme.colorScheme.primary
+    val cached=rememberGraphicsLayer();val foreground=rememberGraphicsLayer()
+    Box(modifier.drawWithCache {
+        val brushes=atmosphereBrushes(size,base.red<.5f,accent)
+        val dimensions=IntSize(size.width.toInt(),size.height.toInt())
+        atmosphere.record(this,layoutDirection,dimensions){drawRect(base);brushes.forEach{drawRect(it)}}
+        cached.compositingStrategy=androidx.compose.ui.graphics.layer.CompositingStrategy.Offscreen
+        cached.record(this,layoutDirection,dimensions){drawLayer(atmosphere)}
+        onDrawWithContent {
+            foreground.record{this@onDrawWithContent.drawContent()}
+            backdrop.record{drawLayer(atmosphere);drawLayer(foreground)}
+            drawLayer(cached);drawLayer(foreground)
+        }
+    },content=content)
 }

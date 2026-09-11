@@ -1,0 +1,4 @@
+Starting render fixture through launcher
+Render fixture activity created
+INSTRUMENTATION_RESULT: comparison=[{"theme":1,"scene":"background","mode":"production","differentPixels":0,"maxChannelDelta":0},{"theme":1,"scene":"glass","mode":"production","differentPixels":0,"maxChannelDelta":0},{"theme":2,"scene":"background","mode":"production","differentPixels":0,"maxChannelDelta":0},{"theme":2,"scene":"glass","mode":"production","differentPixels":0,"maxChannelDelta":0}]
+INSTRUMENTATION_CODE: -1

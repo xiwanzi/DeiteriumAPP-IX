@@ -1,0 +1,12 @@
+{
+  "diagnosticFilesVerifiedAndRemoved": 33,
+  "temporaryTestPackageRemoved": true,
+  "hwuiSettingsRestored": {
+    "debug.hwui.overdraw": "show",
+    "debug.hwui.renderer": "",
+    "debug.hwui.profile": "false",
+    "debug.hwui.show_layers_updates": "",
+    "debug.hwui.show_dirty_regions": ""
+  },
+  "candidateAppRetained": true
+}

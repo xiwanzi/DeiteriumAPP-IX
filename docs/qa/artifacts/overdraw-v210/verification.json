@@ -1,0 +1,97 @@
+{
+  "date": "2026-09-11",
+  "baseCommit": "0492730603a5cc998466d2433baffdd98e385977",
+  "branch": "xiwanzi/global-overdraw-v210",
+  "appVersion": "2.0.10",
+  "versionCode": 21000,
+  "package": "com.deuterium.app.uilab",
+  "debuggable": false,
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "baselineApkSha256": "78d5b52f3d821d516361fb4dce9f532c5bf8e5b083309c95bf91553d04dacdaf",
+  "candidateApk": {
+    "sizeBytes": 8875538,
+    "sha256": "58633bc1490ab1294d7c836b818d02198eae9d2f70125a8257e6aa0e75f928c6",
+    "dex": [
+      {
+        "name": "classes.dex",
+        "bytes": 12037532
+      },
+      {
+        "name": "classes2.dex",
+        "bytes": 4443976
+      }
+    ],
+    "profiles": [
+      {
+        "name": "assets/dexopt/baseline.prof",
+        "bytes": 11432
+      },
+      {
+        "name": "assets/dexopt/baseline.profm",
+        "bytes": 1306
+      }
+    ]
+  },
+  "installedCandidateSha256Verified": true,
+  "device": {
+    "manufacturer": "Xiaomi",
+    "model": "24129PN74C",
+    "api": 37,
+    "width": 1200,
+    "height": 2670,
+    "densityDpi": 520,
+    "pipeline": "Skia Vulkan"
+  },
+  "frames": {
+    "before": {
+      "frames": 1260,
+      "gpuSamples": 1260,
+      "gpuMedianMs": 5.66125,
+      "gpuP95Ms": 6.28125,
+      "totalMedianMs": 7.879057,
+      "totalP95Ms": 11.383999
+    },
+    "after": {
+      "frames": 1260,
+      "gpuSamples": 1260,
+      "gpuMedianMs": 4.17875,
+      "gpuP95Ms": 4.887344,
+      "totalMedianMs": 6.335934,
+      "totalP95Ms": 10.196365
+    }
+  },
+  "frameProtocol": "Information tab, one warm-up round trip then four measured round trips; same shell input script; overdraw tint disabled",
+  "screenshotProtocol": "PixelCopy of application window; original and optimized drawing on the same device; RGBA8888 comparison",
+  "pixelChecks": {
+    "emulatorScenes": 68,
+    "emulatorDifferentScenes": 0,
+    "phoneComparisons": 4,
+    "phoneDifferentPixels": 0
+  },
+  "backgroundRawTextureEstimateBytes": 12816000,
+  "source": [
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/DeuteriumActivity.kt",
+      "sha256LfNormalized": "354ab0f3c8915b6d70ca1a7128cfb4a71459bc7cde4bba90028fddcaebe71987"
+    },
+    {
+      "path": "android-app/ui-lab/src/main/java/com/deuterium/app/uilab/LiquidGlass.kt",
+      "sha256LfNormalized": "da132ce3e269782bbbc4ba915936f437a224a4d2b0b20032ed37e335ed90ac78"
+    }
+  ],
+  "jvmTests": 149,
+  "jvmFailures": 0,
+  "serverDeployment": false,
+  "originalOverdrawSetting": "show",
+  "restoredOverdrawSetting": "show",
+  "cleanup": {
+    "temporaryTestPackageRemoved": true,
+    "diagnosticFilesVerifiedAndRemoved": 33,
+    "dedicatedEmulatorStopped": true,
+    "candidateAppRetained": true
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 24
+  }
+}

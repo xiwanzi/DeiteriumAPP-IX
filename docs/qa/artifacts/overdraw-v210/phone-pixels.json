@@ -1,0 +1,30 @@
+[
+  {
+    "theme": 1,
+    "scene": "background",
+    "mode": "production",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 1,
+    "scene": "glass",
+    "mode": "production",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 2,
+    "scene": "background",
+    "mode": "production",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 2,
+    "scene": "glass",
+    "mode": "production",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  }
+]

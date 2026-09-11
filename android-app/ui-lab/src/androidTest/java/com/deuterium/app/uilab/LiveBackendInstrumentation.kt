@@ -16,6 +16,9 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        options.getString("overdrawPageCapture")?.let{OverdrawPageCapture.run(this,it);return}
+        options.getString("overdrawScrollBenchmark")?.let{OverdrawPageCapture.run(this,it,benchmark=true);return}
+        options.getString("overdrawDiagnostics")?.let{OverdrawDiagnostics.run(this,experiments=it=="experiments");return}
         options.getString("performanceVisual")?.let{PerformanceVisualCheck.run(this,it);return}
         if(options.getString("performanceIO")=="true"){PerformanceIoCheck.run(this);return}
         if(options.getString("couponArrivals")=="true"){CouponArrivalCheck.run(this);return}
