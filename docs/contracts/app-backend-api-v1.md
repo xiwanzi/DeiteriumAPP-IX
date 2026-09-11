@@ -470,8 +470,7 @@ AI 错误码：
 ```json
 {
   "gameId": "StarDust",
-  "qq": "24681012",
-  "password": "password-8-to-64"
+  "qq": "24681012"
 }
 ```
 
@@ -491,18 +490,17 @@ AI 错误码：
 规则：
 
 - 后端通过插件桥解析 `gameId` 并确认玩家在线。
-- 后端检查 QQ 唯一性和密码长度。
+- 后端检查游戏 ID、QQ 格式和绑定占用；获取验证码不需要密码。旧客户端附带的 `password` 字段被忽略，密码在创建账号时校验。
 - 后端生成 6 位数字验证码，通过服务器私聊发送。
 - 响应不得返回验证码明文。
 
 主要错误：
 
-- `PLAYER_NOT_ONLINE`
-- `PLAYER_NOT_FOUND`
-- `QQ_ALREADY_USED`
-- `UUID_ALREADY_REGISTERED`
-- `PASSWORD_INVALID`
-- `VERIFICATION_COOLDOWN`
+- `GAME_ID_INVALID`
+- `QQ_INVALID`
+- `ACCOUNT_ALREADY_EXISTS`
+- `PLAYER_OFFLINE`
+- `RATE_LIMITED`
 - `PLUGIN_BRIDGE_UNAVAILABLE`
 
 ### 4.2 提交注册

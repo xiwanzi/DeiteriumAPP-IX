@@ -33,7 +33,9 @@ fun AuthPage(onSignedIn:(String)->Unit) {
     var verificationToken by remember{mutableStateOf("")}
     val api=BackendApi.get(LocalContext.current)
     val scope=rememberCoroutineScope();val colors=MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().background(colors.background).statusBarsPadding().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal=26.dp)) {
+    val backdrop=rememberGraphicsLayer()
+    CompositionLocalProvider(LocalOverlayBackdrop provides backdrop) {
+    Column(Modifier.fillMaxSize().recordGlassBackdrop(backdrop).background(colors.background).statusBarsPadding().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal=26.dp)) {
         Spacer(Modifier.height(18.dp))
         LoginVersionBadge(Modifier.align(Alignment.CenterHorizontally).size(138.dp))
         Spacer(Modifier.height(18.dp))
@@ -45,14 +47,19 @@ fun AuthPage(onSignedIn:(String)->Unit) {
         Surface(shape=RoundedCornerShape(24.dp),color=colors.surface){Column {
             AuthInput(account,{account=it.take(32);codeSent=false;verificationToken=""},if(register)"游戏内 ID" else "玩家 ID 或 QQ",Icons.Outlined.PersonOutline)
             AuthLine()
-            if(register){AuthInput(qq,{qq=it.filter(Char::isDigit).take(12);codeSent=false;verificationToken=""},"QQ 号",Icons.Outlined.AlternateEmail,keyboard=KeyboardType.Number);AuthLine();AuthInput(code,{code=it.filter(Char::isDigit).take(6)},"游戏内验证码",Icons.Outlined.VerifiedUser,keyboard=KeyboardType.Number,trailing={PlainButton({if(!busy)scope.launch{busy=true;runCatching{api.request("POST","/account/registration-code",JSONObject().put("gameId",account.trim()).put("qq",qq).put("password",password),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");codeSent=true;error=null}.onFailure{error=it.message};busy=false}}){Text(if(codeSent)"重发" else "获取",style=MaterialTheme.typography.bodyMedium)}});AuthLine()}
+            if(register){AuthInput(qq,{qq=it.filter{char->char in '0'..'9'}.take(20);codeSent=false;verificationToken=""},"QQ 号",Icons.Outlined.AlternateEmail,keyboard=KeyboardType.Number);AuthLine();AuthInput(code,{code=it.filter(Char::isDigit).take(6)},"游戏内验证码",Icons.Outlined.VerifiedUser,keyboard=KeyboardType.Number,trailing={PlainButton({
+                if(!busy){
+                    error=when{!account.trim().matches(Regex("[A-Za-z0-9_]{1,32}"))->"请输入有效的游戏 ID（1–32 位字母、数字或下划线）";qq.length !in 5..20->"请输入有效的 QQ 号（5–20 位数字）";else->null}
+                    if(error==null)scope.launch{busy=true;runCatching{api.request("POST","/account/registration-code",JSONObject().put("gameId",account.trim()).put("qq",qq),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");codeSent=true;error=null}.onFailure{error=it.message};busy=false}
+                }
+            }){Text(if(codeSent)"重发" else "获取",style=MaterialTheme.typography.bodyMedium)}});AuthLine()}
             AuthInput(password,{password=it.take(72)},if(register)"设置密码（至少8位）" else "密码",Icons.Outlined.Lock,secret=true)
         }}
         if(codeSent&&register)Text("验证码已发送至游戏内，请在服务器中查看",Modifier.padding(start=5.dp,top=10.dp),style=MaterialTheme.typography.bodySmall,color=colors.onSurfaceVariant)
         error?.let{Text(it,Modifier.padding(top=12.dp,start=5.dp),style=MaterialTheme.typography.bodySmall,color=colors.error)}
         if(!register)PlainButton({reset=true},Modifier.align(Alignment.End).padding(top=4.dp)){Text("忘记密码？",style=MaterialTheme.typography.bodyMedium)} else Spacer(Modifier.height(18.dp))
         MotionButton({
-            error=when{account.isBlank()->"请输入玩家 ID 或 QQ";register&&qq.length<5->"请输入有效的 QQ 号";register&&(!codeSent||code.length!=6)->"请获取游戏内验证码";password.length<8->"密码至少需要 8 位";else->null}
+            error=when{account.isBlank()->"请输入玩家 ID 或 QQ";register&&qq.length !in 5..20->"请输入有效的 QQ 号";register&&(!codeSent||code.length!=6)->"请获取游戏内验证码";password.codePointCount(0,password.length) !in 8..64->"密码需要 8–64 位";else->null}
             if(error==null&&!busy)scope.launch{busy=true;runCatching{if(register)api.register(account.trim(),qq,password,verificationToken,code) else api.login(account.trim(),password)}.onSuccess{name->password="";onSignedIn(name)}.onFailure{error=it.message ?: "登录失败，请稍后重试"};busy=false}
         },Modifier.fillMaxWidth().height(54.dp),enabled=!busy){Text(if(busy)"正在进入…" else if(register)"创建账号并继续" else "登录")}
         Spacer(Modifier.height(22.dp))
@@ -61,6 +68,7 @@ fun AuthPage(onSignedIn:(String)->Unit) {
     }
     if(reset)ResetPasswordSheet(account){reset=false}
     if(privacy)IosDialog({privacy=false},{Text("账号与隐私")},{Text("账号通过服务器验证，密码仅用于本次身份校验，不会保存在设备中。登录凭据加密保存在本机；交易与消息由后端处理。注册和改密通过游戏内验证码确认身份。")},{PlainButton({privacy=false}){Text("知道了")}})
+    }
 }
 @Composable
 private fun AuthLine(){HorizontalDivider(Modifier.padding(start=55.dp),thickness=.5.dp,color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))}

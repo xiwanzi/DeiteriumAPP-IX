@@ -467,8 +467,7 @@ Android 实现依据：[安全共享文件](https://developer.android.com/traini
 ```json
 {
   "gameId": "example",
-  "qq": "example",
-  "password": "example-"
+  "qq": "12345"
 }
 ```
 
@@ -8956,8 +8955,8 @@ OPEN 阶段尚无接取者时只允许发布者及授权管理员；公开详情
 | 字段 | 类型 | 必填 | 约束 | 说明 |
 | --- | --- | --- | --- | --- |
 | `gameId` | string | 是 | 长度 1–32 |  |
-| `qq` | string | 是 | 长度 1–20 |  |
-| `password` | string | 是 | 长度 8–64；password |  |
+| `qq` | string | 是 | 5–20 位数字 |  |
+| `password` | string | 否 | 已废弃 | 兼容旧客户端，取码时忽略；密码在创建账号时校验 |
 
 ### `RegisterRequest`
 
