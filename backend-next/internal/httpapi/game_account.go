@@ -35,12 +35,21 @@ func (s *Server) registrationCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		GameID   string `json:"gameId"`
-		QQ       string `json:"qq"`
+		GameID string `json:"gameId"`
+		QQ     string `json:"qq"`
+		// Older clients send this field when requesting a code. Only registerGame validates it.
 		Password string `json:"password"`
 	}
-	if body(w, r, &in) != nil || !identity.ValidGameID(in.GameID) || identity.SystemGameID(in.GameID) || !identity.ValidQQ(in.QQ) || !validPassword(in.Password) {
+	if body(w, r, &in) != nil {
 		failError(w, r, bridge.ErrProtocol)
+		return
+	}
+	if !identity.ValidGameID(in.GameID) || identity.SystemGameID(in.GameID) {
+		failure(w, r, 400, "GAME_ID_INVALID", "请输入有效的游戏 ID（1–32 位字母、数字或下划线）。")
+		return
+	}
+	if !identity.ValidQQ(in.QQ) {
+		failure(w, r, 400, "QQ_INVALID", "请输入有效的 QQ 号（5–20 位数字）。")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -168,8 +177,12 @@ func (s *Server) registerGame(w http.ResponseWriter, r *http.Request, kind strin
 		Code              string `json:"code"`
 		Password          string `json:"password"`
 	}
-	if body(w, r, &in) != nil || !validCode(in.VerificationToken, in.Code) || !validPassword(in.Password) {
+	if body(w, r, &in) != nil || !validCode(in.VerificationToken, in.Code) {
 		failError(w, r, bridge.ErrProtocol)
+		return
+	}
+	if !validPassword(in.Password) {
+		failure(w, r, 400, "PASSWORD_INVALID", "密码需要 8–64 位。")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)

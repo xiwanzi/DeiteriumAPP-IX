@@ -152,11 +152,17 @@ func TestGameRegistrationHTTPUsesSessionUUIDAndCookieBoundary(t *testing.T) {
 	})
 	presence, _ := json.Marshal(map[string]any{"players": []any{map[string]string{"playerUuid": uuid, "gameId": "NewPlayer", "sessionEpoch": "d97161f9-2a7c-4abd-a8e7-6fd64a64c099"}}})
 	f.app.Core.SetPresence("amiya", presence)
-	resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": "NewPlayer", "qq": "10009", "password": password}, nil, nil)
+	resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": "NewPlayer", "qq": "10009"}, nil, nil)
 	if resp.StatusCode != 200 {
 		t.Fatal(resp.StatusCode, result)
 	}
 	token := result["data"].(map[string]any)["verificationToken"].(string)
+	for _, invalidPassword := range []string{"", "short", string(make([]byte, 65))} {
+		resp, result = f.request(t, "POST", "/api/v1/account/register", map[string]string{"verificationToken": token, "code": code, "password": invalidPassword}, nil, nil)
+		if resp.StatusCode != 400 || result["error"].(map[string]any)["code"] != "PASSWORD_INVALID" {
+			t.Fatal("registration accepted an invalid password", resp.StatusCode, result)
+		}
+	}
 	in := map[string]string{"verificationToken": token, "code": code, "password": password}
 	resp, _ = f.request(t, "POST", "/api/v1/account/register", in, http.Header{"Origin": []string{f.http.URL}}, nil)
 	if resp.StatusCode != 403 {
@@ -187,6 +193,44 @@ func TestGameRegistrationHTTPUsesSessionUUIDAndCookieBoundary(t *testing.T) {
 		}
 	}
 }
+
+func TestRegistrationCodeIgnoresLegacyPasswordAndKeepsValidationAndCooldown(t *testing.T) {
+	for _, legacyPassword := range []string{"", "short", password} {
+		t.Run(fmt.Sprintf("legacy-password-length-%d", len(legacyPassword)), func(t *testing.T) {
+			f := newFixture(t)
+			uuid := "d97161f9-2a7c-4abd-a8e7-6fd64a64c009"
+			var deliveries atomic.Int32
+			corePeer(f, func(command string, p map[string]any) (string, any) {
+				if command != "verification.deliver" || p["playerUuid"] != uuid || p["password"] != nil {
+					t.Error("unexpected verification payload", command)
+				}
+				deliveries.Add(1)
+				return "COMPLETED", map[string]bool{"delivered": true}
+			})
+			presence, _ := json.Marshal(map[string]any{"players": []any{map[string]string{"playerUuid": uuid, "gameId": "NewPlayer", "sessionEpoch": "d97161f9-2a7c-4abd-a8e7-6fd64a64c099"}}})
+			f.app.Core.SetPresence("amiya", presence)
+			for _, invalid := range []struct{ gameID, qq, code string }{{"", "10009", "GAME_ID_INVALID"}, {"NewPlayer", "123", "QQ_INVALID"}, {"NewPlayer", "１２３４５", "QQ_INVALID"}} {
+				resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": invalid.gameID, "qq": invalid.qq}, nil, nil)
+				if resp.StatusCode != 400 || result["error"].(map[string]any)["code"] != invalid.code {
+					t.Fatal("incorrect identity validation", resp.StatusCode, result)
+				}
+			}
+			request := map[string]string{"gameId": "NewPlayer", "qq": "10009", "password": legacyPassword}
+			resp, result := f.request(t, "POST", "/api/v1/account/registration-code", request, nil, nil)
+			if resp.StatusCode != 200 {
+				t.Fatal("legacy password prevented code delivery", resp.StatusCode, result)
+			}
+			if _, exposed := result["data"].(map[string]any)["code"]; exposed {
+				t.Fatal("verification code exposed in HTTP response")
+			}
+			resp, result = f.request(t, "POST", "/api/v1/account/registration-code", request, nil, nil)
+			if resp.StatusCode != 429 || deliveries.Load() != 1 {
+				t.Fatal("verification cooldown bypass", resp.StatusCode, result, deliveries.Load())
+			}
+		})
+	}
+}
+
 func TestWalletIdempotencyOfflineReplayRecipientIsolationAndUnknown(t *testing.T) {
 	f := newFixture(t)
 	for i := range f.app.Config.Nodes {

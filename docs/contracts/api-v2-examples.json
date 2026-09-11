@@ -208,8 +208,7 @@
       "operationId": "requestRegistrationCode",
       "request": {
         "gameId": "example",
-        "qq": "example",
-        "password": "example-"
+        "qq": "12345"
       },
       "requestSchema": {
         "$ref": "#/components/schemas/RegistrationCodeRequest"

@@ -756,7 +756,7 @@ components:
           minimum: 0
     RegistrationCodeRequest:
       type: object
-      required: [gameId, qq, password]
+      required: [gameId, qq]
       properties:
         gameId:
           type: string
@@ -764,13 +764,13 @@ components:
           maxLength: 32
         qq:
           type: string
-          minLength: 1
+          minLength: 5
           maxLength: 20
+          pattern: "^[0-9]{5,20}$"
         password:
           type: string
-          minLength: 8
-          maxLength: 64
-          format: password
+          deprecated: true
+          description: 仅兼容旧客户端附带字段，获取验证码时忽略；创建账号时才校验密码。
     RegisterRequest:
       type: object
       required: [verificationToken, code, password]
