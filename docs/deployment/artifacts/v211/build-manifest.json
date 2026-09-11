@@ -1,0 +1,34 @@
+{
+  "versionName": "2.0.11",
+  "versionCode": 21100,
+  "packageName": "com.deuterium.app.uilab",
+  "variant": "performance",
+  "debuggable": false,
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "sourceCommit": "6a0a68767cd4da0795a3bf11b88d810e7b4efdf0",
+  "androidTree": "1901a426b8c037f466050d185bd48aec15873247",
+  "releaseNotes": "大幅提升流畅度，提升系统稳定性。",
+  "fileName": "Deuterium-2.0.11-21100-test.apk",
+  "sizeBytes": 8875538,
+  "sha256": "4adec4a7e3e0e361c30fdcab93127a810d492262ed002f87c07ac0e545b7a40d",
+  "jvmTests": {
+    "tests": 149,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "profiles": [
+    {
+      "name": "assets/dexopt/baseline.prof",
+      "bytes": 11433
+    },
+    {
+      "name": "assets/dexopt/baseline.profm",
+      "bytes": 1306
+    }
+  ],
+  "lintSummary": "0 errors, 24 warnings",
+  "mergeCommit": "46d4c5e76eb57722a59bbe8a2e36c8633359d3ab",
+  "pullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/21",
+  "sourceTreeMatchesMergedCommit": true
+}

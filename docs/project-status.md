@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-09-11：**App 2.0.11（21100）已于 10:40 上线**，源码 `46d4c5e76eb5`（PR #21），xiwanzi 更新提醒已推送；说明为“大幅提升流畅度，提升系统稳定性。”Web/Go 沿用 2.0.10，27 笔订单、4 个委托及原配置保留；三常驻服在线、MEK 离线。维护工作区 `.worktrees/performance-audit-v210`，分支 `xiwanzi/release-v211-live`。见[发布与验证](deployment/deuterium-2.0.11-live.md)。
+
 2026-09-11：**全局过度绘制修正版已在真机覆盖验收**，分支 `xiwanzi/global-overdraw-v210`、工作区 `.worktrees/performance-audit-v210`。四页普通背景退出全屏红色覆盖；68 张固定画面和 4 组真机背景/玻璃对照零差异，同组滑动 GPU 中位数 5.66→4.18 ms。App 仍为 2.0.10（21000），未推送、合并或线上发布。见[验收记录](qa/app-global-overdraw-v210.md)。
 
 2026-09-11：**App 性能优化本机候选**位于 `.worktrees/performance-audit-v210`，分支 `xiwanzi/performance-equivalence-v210`。保持原素材、动画、玻璃和标题折叠，优化计算、持久化与读取，并准备同证书的非 debuggable APK；版本仍为 2.0.10（21000），未推送、合并或部署。见[验收记录](qa/app-performance-equivalence-v210.md)、[全范围审查](reviews/app-performance-full-v210-2026-09-11.md)。真机帧率与手感仍待验证；下方为线上状态。

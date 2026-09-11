@@ -1,0 +1,9 @@
+{
+  "backupDirectory": "/var/backups/deuterium/app-2.0.11-20260911-21100",
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.11-21100-test.apk",
+  "sizeBytes": 8875538,
+  "sha256": "4adec4a7e3e0e361c30fdcab93127a810d492262ed002f87c07ac0e545b7a40d",
+  "previousManifestSha256": "7151ae6287e1822c64f91f6afa9f94b8c06f591e1b8b037a9ff0221452371847",
+  "publicApkVerified": true,
+  "updateFeedChanged": false
+}
