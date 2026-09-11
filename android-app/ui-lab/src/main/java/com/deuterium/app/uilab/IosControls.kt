@@ -43,10 +43,14 @@ fun AssistChoice(onClick:()->Unit,label:@Composable ()->Unit,modifier:Modifier=M
 
 @Composable
 fun IosSwitch(checked:Boolean,onCheckedChange:(Boolean)->Unit,modifier:Modifier=Modifier,enabled:Boolean=true) {
-    val position by animateFloatAsState(if(checked)1f else 0f,if(LocalMotion.current)spring(.8f,600f) else snap(),label="toggle")
+    val position=animateFloatAsState(if(checked)1f else 0f,if(LocalMotion.current)spring(.8f,600f) else snap(),label="toggle")
+    val track=MaterialTheme.colorScheme.surfaceVariant
     Box(modifier.size(55.dp,44.dp).toggleable(checked,enabled=enabled,role=Role.Switch,onValueChange=onCheckedChange).alpha(if(enabled)1f else .35f),contentAlignment=Alignment.Center) {
-        Box(Modifier.size(51.dp,31.dp).background(lerp(MaterialTheme.colorScheme.surfaceVariant,Color(0xFF34C759),position),CircleShape))
-        Box(Modifier.align(Alignment.CenterStart).offset(x=(4+20*position).dp).size(27.dp).shadow(2.dp,CircleShape).background(Color.White,CircleShape))
+        Box(Modifier.size(51.dp,31.dp).drawWithCache {
+            val outline=CircleShape.createOutline(size,layoutDirection,this)
+            onDrawBehind { drawOutline(outline,lerp(track,Color(0xFF34C759),position.value)) }
+        })
+        Box(Modifier.align(Alignment.CenterStart).offset { IntOffset((4+20*position.value).dp.roundToPx(),0) }.size(27.dp).shadow(2.dp,CircleShape).background(Color.White,CircleShape))
     }
 }
 

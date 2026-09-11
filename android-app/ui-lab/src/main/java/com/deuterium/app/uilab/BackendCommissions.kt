@@ -6,9 +6,13 @@ import org.json.JSONObject
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+
 import java.util.UUID
 
+private val newestCommissionFirst=compareByDescending<Commission>{it.createdAt}.thenByDescending{it.id}
+
 class BackendCommissions(private val api:BackendApi,private val state:LabState) {
+    private val submission=kotlinx.coroutines.sync.Mutex()
     private var visibilityRevision=0L
     var error by mutableStateOf<String?>(null);private set
     private fun fail(value:Throwable){error=value.message ?: "委托服务暂不可用";state.storageMessage=error}
@@ -25,8 +29,8 @@ class BackendCommissions(private val api:BackendApi,private val state:LabState) 
         val entry=Commission(id,id,value.getJSONObject("owner").getString("displayName"),draft,date(value,"createdAt")!!,stage=stage,worker=value.optJSONObject("worker")?.getString("displayName"),acceptedAt=date(value,"acceptedAt"),completedAt=date(value,"completedAt"),confirmedAt=date(value,"confirmedAt"),deadlineMillis=if(stage==CommissionStage.Completed)epoch(value,"acceptanceDueAt") else epoch(value,"workDueAt"),completionNote=value.optString("completionDescription"),
             refund=when(refund?.optString("status")){"REQUESTED","PROCESSING"->RefundState.Requested;"REJECTED"->RefundState.Rejected;"APPROVED"->RefundState.Approved;else->RefundState.None},refundAttempts=value.optInt("refundAttemptsUsed"),refundReason=refund?.optString("reason").orEmpty(),rejectionReason=refund?.optString("rejectionReason").orEmpty(),pausedMillis=if(value.isNull("pausedRemainingSeconds"))null else value.optLong("pausedRemainingSeconds")*1000,automatic=value.optBoolean("automatic"),
             serverStatus=status,fundsStatus=value.getString("fundsStatus"),serverActions=set,version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"))
-        val index=state.commissions.entries.indexOfFirst{it.id==id};if(index>=0)state.commissions.entries[index]=entry else state.commissions.entries.add(0,entry)
-        state.commissions.entries.sortWith(compareByDescending<Commission>{it.createdAt}.thenByDescending{it.id})
+        val index=state.commissions.entries.indexOfFirst{it.id==id}
+        state.commissions.entries.replaceInOrder(index,entry,newestCommissionFirst)
         return id
     }
     suspend fun refresh(){val revision=visibilityRevision;runCatching{
@@ -42,6 +46,10 @@ class BackendCommissions(private val api:BackendApi,private val state:LabState) 
         }.getOrElse{fail(it);false}
     }
     suspend fun publish(key:String,draft:CommissionDraft):String?{
+        if(!submission.tryLock())return null
+        return try { publishLocked(key,draft) } finally { submission.unlock() }
+    }
+    private suspend fun publishLocked(key:String,draft:CommissionDraft):String?{
         val requestScope=api.financialScope()
         val kind="COMMISSION_PUBLISH"
         if(api.pendingOperation(kind)!=null){recover();fail(ApiFailure("RESULT_UNKNOWN","上一笔预付结果仍需核对，请先查看我的委托"));return null}

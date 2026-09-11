@@ -28,7 +28,12 @@ class NotificationPreferences(context:Context,userName:String) {
     var error by mutableStateOf<String?>(null);private set
     var busy by mutableStateOf(false);private set
     private var version=0L
-    private fun apply(value:JSONObject) { values.keys.toList().forEach{key->if(value.has(key))set(key,value.getBoolean(key))};version=value.getLong("version");error=null }
+    private fun apply(value:JSONObject) {
+        val edit=prefs.edit()
+        try { values.keys.toList().forEach{key->if(value.has(key)){val next=value.getBoolean(key);values[key]=next;edit.putBoolean(key,next)}} }
+        finally { edit.apply() }
+        version=value.getLong("version");error=null
+    }
     suspend fun sync(){runCatching{api.request("GET","/notifications/preferences")}.onSuccess(::apply).onFailure{error=it.message}}
     suspend fun update(key:String,value:Boolean){
         if(busy)return

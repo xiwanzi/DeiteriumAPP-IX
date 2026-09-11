@@ -22,7 +22,7 @@ internal suspend fun recoverPendingOperation(
     scope: FinancialScope,
     currentScope: () -> FinancialScope,
     request: suspend (String, String, JSONObject?) -> JSONObject,
-    persist: (JSONObject?) -> Unit
+    persist: suspend (JSONObject?) -> Unit
 ): JSONObject {
     scope.verify(pending)
     scope.verifyCurrent(currentScope())

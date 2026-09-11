@@ -94,6 +94,11 @@ class DeuteriumActivity : ComponentActivity() {
         val session = androidx.lifecycle.ViewModelProvider(this)[LabSession::class.java]
         val updates=androidx.lifecycle.ViewModelProvider(this)[AppUpdates::class.java]
         updates.initialize()
+        lifecycleScope.launch {
+            try { prewarmVersionBadge(this@DeuteriumActivity,updates.resourceDirectory) }
+            catch(cancelled:CancellationException){throw cancelled}
+            catch(_:Exception){ /* The visible image request retains its normal fallback. */ }
+        }
         setContent {
             var theme by rememberSaveable { mutableIntStateOf(prefs.getInt("theme", 1)) }
             var motion by rememberSaveable { mutableStateOf(prefs.getBoolean("motion", true)) }
@@ -145,7 +150,7 @@ class DeuteriumActivity : ComponentActivity() {
                     WindowCompat.getInsetsController(window,window.decorView).apply { isAppearanceLightStatusBars = !dark; isAppearanceLightNavigationBars = !dark }
                 }
                 CompositionLocalProvider(LocalHeaderGlassParameters provides params.header,LocalAppUpdates provides updates,LocalContentColor provides MaterialTheme.colorScheme.onSurface, LocalOverlayGlassEnabled provides overlayGlass,LocalDeviceTilt provides rememberDeviceTilt(tilt && motion && (glass||overlayGlass))) {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    Box(Modifier.fillMaxSize()) {
                     if(!signedIn) AuthPage { name ->
                         session.clearSession()
                     } else LabApp(
@@ -230,8 +235,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     }
     CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalIosOverlayRegistry provides overlays) {
         Box(Modifier.fillMaxSize().then(if(route==null)Modifier.nestedScroll(connection) else Modifier)) {
-            Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)) {
-                GlassAtmosphere(Modifier.recordGlassBackdrop(atmosphere))
+            GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()) {
                 AnimatedContent(page,modifier=Modifier.fillMaxSize(),transitionSpec={if(motion)(fadeIn(tween(180,25))+slideInHorizontally(tween(260,easing=FastOutSlowInEasing)){it/14}) togetherWith fadeOut(tween(130)) else EnterTransition.None togetherWith ExitTransition.None},label="pages"){current->
                     saved.SaveableStateProvider(current) {
                         val inset=if(current in Destination.entries.map{it.name})statusTop+184.dp-chromeFor(current).offset.dp else secondaryContentTop
@@ -298,7 +302,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
             state.commerce.network?.couponAttention?.let{attention->
                 CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize())
             }
-            flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter,flightProgress.value)}
+            flight?.let{(product,start)->ShoppingBagFlight(product,start,bagCenter){flightProgress.value}}
             AnimatedVisibility(state.notice!=null,modifier=Modifier.align(Alignment.TopCenter).padding(top=compactTop+8.dp,start=16.dp,end=16.dp),enter=fadeIn()+slideInVertically{-it/2},exit=fadeOut()+slideOutVertically{-it/2}) {
                 state.notice?.let{notice->InAppNoticeCard(notice.title,notice.body,{goToNotice(notice.route)},{state.notice=null},backdrop=backdrop)}
             }

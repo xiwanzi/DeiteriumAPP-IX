@@ -32,7 +32,7 @@ fun MarketPage(book:CommerceBook,query:String,topInset:Dp,onProduct:(String)->Un
     var deleting by remember{mutableStateOf<MarketListing?>(null)}
     var category by rememberSaveable{mutableStateOf("全部")}
     LaunchedEffect(Unit){book.network?.refreshMarket()}
-    val listings=book.listings.filter{(if(ownOnly)it.seller==book.userName else it.active&&it.stock>0)&&marketCategoryMatches(it.category,category)&&(query.isBlank()||it.title.contains(query,true)||it.category.contains(query,true)||it.seller.contains(query,true))}
+    val listings by remember(book,ownOnly,category,query){derivedStateOf{book.listings.filter{(if(ownOnly)it.seller==book.userName else it.active&&it.stock>0)&&marketCategoryMatches(it.category,category)&&(query.isBlank()||it.title.contains(query,true)||it.category.contains(query,true)||it.seller.contains(query,true))}}}
     LazyVerticalGrid(columns=GridCells.Fixed(2),contentPadding=PaddingValues(start=14.dp,end=14.dp,top=topInset,bottom=115.dp),horizontalArrangement=Arrangement.spacedBy(10.dp),verticalArrangement=Arrangement.spacedBy(13.dp)) {
         item(span={GridItemSpan(2)}){MarketCategoryBar(category,{category=it})}
         if(category.contains(" · "))item(span={GridItemSpan(2)}){Text(category,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}

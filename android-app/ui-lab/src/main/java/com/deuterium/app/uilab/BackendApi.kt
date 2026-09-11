@@ -27,6 +27,7 @@ class ApiFailure(val code: String, message: String, val status: Int = 0) : IOExc
 /** All asset and identity authority stays on the backend. No offline-success fallback. */
 class BackendApi internal constructor(context: Context, origin: String = BuildConfig.API_BASE_URL) {
     private val prefs = context.getSharedPreferences("backend-v2", Context.MODE_PRIVATE)
+    private val pendingWrites=PendingPreferences(prefs)
     val baseUrl: String = origin.trimEnd('/')
     val http = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS).callTimeout(25, TimeUnit.SECONDS)
@@ -85,6 +86,7 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
         val imageScope=financialScope()
         val requestToken=if(authenticated)token ?: throw ApiFailure("UNAUTHORIZED","请重新登录",401) else null
         return withContext(Dispatchers.IO) {
+        if(authenticated){pendingWrites.awaitCommitted();imageScope.verifyCurrent(financialScope())}
         val builder = Request.Builder().url("$baseUrl/api/v1$path").header("Accept", "application/json")
         if(authenticated) builder.header("Authorization", "Bearer $requestToken")
         idempotencyKey?.let{builder.header("Idempotency-Key",it)}
@@ -115,26 +117,29 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     internal fun financialScope()=FinancialScope(if(signedIn)playerRef else "",baseUrl)
     fun pendingTransfer(): JSONObject? = (prefs.getString("pendingTransfer:$baseUrl:$playerRef", null) ?: prefs.getString("pendingTransfer",null))?.let { runCatching { JSONObject(it) }.getOrNull() }
         ?.takeIf { it.optString("owner") == playerRef }
-    internal fun saveTransfer(value: JSONObject?,scope:FinancialScope=financialScope()) {
+    internal suspend fun saveTransfer(value: JSONObject?,scope:FinancialScope=financialScope()) {
         val key="pendingTransfer:${scope.origin}:${scope.owner}"
-        if(value == null) prefs.edit().remove(key).apply()
-        else prefs.edit().putString(key, JSONObject(value.toString()).put("owner",scope.owner).put("origin",scope.origin).toString()).commit()
+        pendingWrites.save(key,value?.let{JSONObject(it.toString()).put("owner",scope.owner).put("origin",scope.origin).toString()})
+        if(value!=null)scope.verifyCurrent(financialScope())
     }
     fun pendingChat(): JSONObject? = prefs.getString("pendingChat", null)?.let { runCatching { JSONObject(it) }.getOrNull() }
         ?.takeIf { it.optString("owner") == playerRef }
-    fun savePendingChat(value: JSONObject?) {
-        if(value == null) prefs.edit().remove("pendingChat").apply()
-        else prefs.edit().putString("pendingChat", value.put("owner", playerRef).toString()).commit()
+    suspend fun savePendingChat(value: JSONObject?) {
+        val scope=financialScope()
+        pendingWrites.save("pendingChat",value?.put("owner",scope.owner)?.toString())
+        if(value!=null)scope.verifyCurrent(financialScope())
     }
     fun pendingDirect(recipient:String):JSONObject? = prefs.getString("pending-direct:$playerRef:$recipient",null)?.let { runCatching { JSONObject(it) }.getOrNull() }
-    fun savePendingDirect(recipient:String,value:JSONObject?) {
-        val key="pending-direct:$playerRef:$recipient"
-        if(value==null)prefs.edit().remove(key).apply() else prefs.edit().putString(key,value.toString()).commit()
+    suspend fun savePendingDirect(recipient:String,value:JSONObject?) {
+        val scope=financialScope();val key="pending-direct:${scope.owner}:$recipient"
+        pendingWrites.save(key,value?.toString())
+        if(value!=null)scope.verifyCurrent(financialScope())
     }
     fun pendingForward(recipient:String):JSONObject? = prefs.getString("pending-forward:$playerRef:$recipient",null)?.let { runCatching { JSONObject(it) }.getOrNull() }
-    fun savePendingForward(recipient:String,value:JSONObject?) {
-        val key="pending-forward:$playerRef:$recipient"
-        if(value==null)prefs.edit().remove(key).apply() else prefs.edit().putString(key,value.toString()).commit()
+    suspend fun savePendingForward(recipient:String,value:JSONObject?) {
+        val scope=financialScope();val key="pending-forward:${scope.owner}:$recipient"
+        pendingWrites.save(key,value?.toString())
+        if(value!=null)scope.verifyCurrent(financialScope())
     }
     fun shownNotices():Set<String> = prefs.getStringSet("shown-notices:$playerRef",emptySet()).orEmpty().toSet()
     fun saveShownNotices(ids:Set<String>){prefs.edit().putStringSet("shown-notices:$playerRef",ids.toList().takeLast(200).toSet()).apply()}
@@ -144,15 +149,15 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
         prefs.edit().putString("coupon-receipts:${scope.origin}:${scope.owner}",value.toString()).apply()
     }
     fun uploadState(key:String):JSONObject? = prefs.getString("upload:$playerRef:$key",null)?.let{runCatching{JSONObject(it)}.getOrNull()}
-    fun saveUploadState(key:String,value:JSONObject){prefs.edit().putString("upload:$playerRef:$key",value.toString()).commit()}
-    fun clearUploadState(key:String){prefs.edit().remove("upload:$playerRef:$key").apply()}
+    suspend fun saveUploadState(key:String,value:JSONObject){val scope=financialScope();pendingWrites.save("upload:${scope.owner}:$key",value.toString());scope.verifyCurrent(financialScope())}
+    suspend fun clearUploadState(key:String){pendingWrites.save("upload:$playerRef:$key",null)}
     fun pendingAI(owner:String):JSONObject?=prefs.getString("ai-pending:$owner",null)?.let{runCatching{JSONObject(it)}.getOrNull()}
-    fun savePendingAI(owner:String,value:JSONObject?){val key="ai-pending:$owner";if(value==null)prefs.edit().remove(key).apply()else prefs.edit().putString(key,value.toString()).commit()}
+    suspend fun savePendingAI(owner:String,value:JSONObject?){val scope=financialScope();pendingWrites.save("ai-pending:$owner",value?.toString());if(value!=null)scope.verifyCurrent(financialScope())}
     fun pendingOperation(kind:String):JSONObject? = (prefs.getString("operation:$baseUrl:$playerRef:$kind",null) ?: prefs.getString("operation:$playerRef:$kind",null))?.let{runCatching{JSONObject(it)}.getOrNull()}
-    internal fun saveOperation(kind:String,value:JSONObject?,scope:FinancialScope=financialScope()) {
+    internal suspend fun saveOperation(kind:String,value:JSONObject?,scope:FinancialScope=financialScope()) {
         val key="operation:${scope.origin}:${scope.owner}:$kind"
-        if(value==null)prefs.edit().remove(key).apply()
-        else prefs.edit().putString(key,JSONObject(value.toString()).put("owner",scope.owner).put("origin",scope.origin).toString()).commit()
+        pendingWrites.save(key,value?.let{JSONObject(it.toString()).put("owner",scope.owner).put("origin",scope.origin).toString()})
+        if(value!=null)scope.verifyCurrent(financialScope())
     }
     suspend fun listAll(path:String,itemField:String="items"):List<JSONObject>{
         val result=mutableListOf<JSONObject>();var cursor:String?=null;val seen=mutableSetOf<String>()

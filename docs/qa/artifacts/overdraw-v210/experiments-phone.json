@@ -1,0 +1,86 @@
+[
+  {
+    "theme": 1,
+    "scene": "background",
+    "mode": "cached",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 1,
+    "scene": "background",
+    "mode": "shader",
+    "differentPixels": 1918575,
+    "maxChannelDelta": 3
+  },
+  {
+    "theme": 1,
+    "scene": "background",
+    "mode": "separate",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 1,
+    "scene": "glass",
+    "mode": "cached",
+    "differentPixels": 1037,
+    "maxChannelDelta": 1
+  },
+  {
+    "theme": 1,
+    "scene": "glass",
+    "mode": "shader",
+    "differentPixels": 1035978,
+    "maxChannelDelta": 3
+  },
+  {
+    "theme": 1,
+    "scene": "glass",
+    "mode": "separate",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 2,
+    "scene": "background",
+    "mode": "cached",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 2,
+    "scene": "background",
+    "mode": "shader",
+    "differentPixels": 924985,
+    "maxChannelDelta": 1
+  },
+  {
+    "theme": 2,
+    "scene": "background",
+    "mode": "separate",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  },
+  {
+    "theme": 2,
+    "scene": "glass",
+    "mode": "cached",
+    "differentPixels": 943,
+    "maxChannelDelta": 1
+  },
+  {
+    "theme": 2,
+    "scene": "glass",
+    "mode": "shader",
+    "differentPixels": 477793,
+    "maxChannelDelta": 1
+  },
+  {
+    "theme": 2,
+    "scene": "glass",
+    "mode": "separate",
+    "differentPixels": 0,
+    "maxChannelDelta": 0
+  }
+]

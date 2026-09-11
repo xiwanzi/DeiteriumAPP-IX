@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
@@ -26,6 +27,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
 val LocalGlassBackdrop = staticCompositionLocalOf<GraphicsLayer?> { null }
@@ -61,12 +63,6 @@ fun LiquidGlass(
         .then(if(onClick == null) Modifier else Modifier.clickable(onClick = onClick))
         .drawWithCache {
             val corner = radius.toPx()
-            val rim = Brush.linearGradient(listOf(
-                Color.White.copy(alpha = (if(dark) .65f else 1f) * parameters.highlight),
-                Color.White.copy(alpha = .16f * parameters.highlight),
-                Color(0xFFABD8C5).copy(alpha = .55f * parameters.highlight),
-                Color.White.copy(alpha = .78f * parameters.highlight)
-            ), start = Offset.Zero, end = Offset(size.width, size.height))
             val sheen = Brush.linearGradient(listOf(Color.White.copy(alpha = (if(dark) .16f else .46f) * parameters.highlight), Color.Transparent, Color.White.copy(alpha = .05f * parameters.highlight)))
             frost.renderEffect = if(enabled && Build.VERSION.SDK_INT >= 31) {
                 val blur = if(parameters.blur > .1f) RenderEffect.createBlurEffect(parameters.blur.dp.toPx(), parameters.blur.dp.toPx(), Shader.TileMode.CLAMP) else null
@@ -126,13 +122,37 @@ fun GlassAtmosphere(modifier: Modifier = Modifier) {
     val dark = MaterialTheme.colorScheme.background.red < .5f
     val base = MaterialTheme.colorScheme.background
     val accent = MaterialTheme.colorScheme.primary
-    Canvas(modifier.fillMaxSize()) {
-        drawRect(base)
-        drawRect(Brush.radialGradient(listOf(accent.copy(alpha = if(dark) .03f else .025f), Color.Transparent),
-            center = Offset(size.width * .95f, size.height * .15f), radius = size.width * .95f))
-        drawRect(Brush.radialGradient(listOf(Color(0xFFE2C599).copy(alpha = if(dark) .02f else .03f), Color.Transparent),
-            center = Offset(size.width * .04f, size.height * .63f), radius = size.width * .9f))
-        drawRect(Brush.radialGradient(listOf(Color(0xFF98A8DC).copy(alpha = if(dark) .025f else .025f), Color.Transparent),
-            center = Offset(size.width, size.height * .95f), radius = size.width * .9f))
-    }
+    Spacer(modifier.fillMaxSize().drawWithCache {
+        val brushes=atmosphereBrushes(size,dark,accent)
+        onDrawBehind { drawRect(base);brushes.forEach{drawRect(it)} }
+    })
+}
+
+private fun atmosphereBrushes(size:Size,dark:Boolean,accent:Color)=listOf(
+    Brush.radialGradient(listOf(accent.copy(alpha=if(dark).03f else .025f),Color.Transparent),
+        center=Offset(size.width*.95f,size.height*.15f),radius=size.width*.95f),
+    Brush.radialGradient(listOf(Color(0xFFE2C599).copy(alpha=if(dark).02f else .03f),Color.Transparent),
+        center=Offset(size.width*.04f,size.height*.63f),radius=size.width*.9f),
+    Brush.radialGradient(listOf(Color(0xFF98A8DC).copy(alpha=.025f),Color.Transparent),
+        center=Offset(size.width,size.height*.95f),radius=size.width*.9f)
+)
+
+/** Reuse the static screen background, while glass samples the original drawing commands.
+ * Sampling the cached texture instead introduces an extra filtering/rounding step in the glass. */
+@Composable
+internal fun GlassScene(atmosphere:GraphicsLayer,backdrop:GraphicsLayer,modifier:Modifier=Modifier,content:@Composable BoxScope.()->Unit) {
+    val base=MaterialTheme.colorScheme.background;val accent=MaterialTheme.colorScheme.primary
+    val cached=rememberGraphicsLayer();val foreground=rememberGraphicsLayer()
+    Box(modifier.drawWithCache {
+        val brushes=atmosphereBrushes(size,base.red<.5f,accent)
+        val dimensions=IntSize(size.width.toInt(),size.height.toInt())
+        atmosphere.record(this,layoutDirection,dimensions){drawRect(base);brushes.forEach{drawRect(it)}}
+        cached.compositingStrategy=androidx.compose.ui.graphics.layer.CompositingStrategy.Offscreen
+        cached.record(this,layoutDirection,dimensions){drawLayer(atmosphere)}
+        onDrawWithContent {
+            foreground.record{this@onDrawWithContent.drawContent()}
+            backdrop.record{drawLayer(atmosphere);drawLayer(foreground)}
+            drawLayer(cached);drawLayer(foreground)
+        }
+    },content=content)
 }

@@ -12,14 +12,33 @@ android {
         applicationId = "com.deuterium.app.uilab"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21000
-        versionName = "2.0.10"
-        testInstrumentationRunner = "com.deuterium.app.uilab.LiveBackendInstrumentation"
+        versionCode = 21100
+        versionName = "2.0.11"
+        testInstrumentationRunner = providers.gradleProperty("deuteriumTestRunner").orElse("com.deuterium.app.uilab.LiveBackendInstrumentation").get()
         val apiBase = providers.gradleProperty("deuteriumApiBase").orElse("https://47.103.99.34").get()
         require(apiBase.matches(Regex("https?://[A-Za-z0-9.:-]+"))) { "deuteriumApiBase must be an HTTP(S) origin" }
         buildConfigField("String", "API_BASE_URL", "\"$apiBase\"")
     }
     buildFeatures { compose = true; buildConfig = true }
+    buildTypes {
+        create("performance") {
+            initWith(getByName("release"))
+            // Keep the installed application's existing certificate for local comparisons.
+            signingConfig=signingConfigs.getByName("debug")
+            isDebuggable=false
+            isMinifyEnabled=true
+            isShrinkResources=true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),"proguard-rules.pro")
+            testProguardFiles+=file("proguard-test-rules.pro")
+            matchingFallbacks+=listOf("release")
+        }
+        create("profileCapture") {
+            initWith(getByName("performance"))
+            isMinifyEnabled=false
+            isShrinkResources=false
+        }
+    }
+    testBuildType=providers.gradleProperty("deuteriumTestBuildType").orElse("debug").get()
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -32,6 +51,7 @@ dependencies {
     testImplementation("org.json:json:20240303")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.noties.markwon:core:4.6.2")

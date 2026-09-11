@@ -1,0 +1,62 @@
+{
+  "observedAt": "2026-09-11T02:58:44.804210+08:00",
+  "releaseSource": "65c08a290896601c6254369792e4223216ebee8e",
+  "reviewHead": "ad8a8efd2a0b00375b159274aae8a52055a58b88",
+  "androidChangedSinceRelease": [],
+  "artifact": {
+    "file": "Deuterium-2.0.10-21000-test.apk",
+    "sizeBytes": 23557745,
+    "sha256": "22a99ec7a1fdcf0182f124c8d9ba70d1c4ccc3953340f4d1755a22fbe26c65d5",
+    "matchesReleaseManifest": true,
+    "badging": [
+      "package: name='com.deuterium.app.uilab' versionCode='21000' versionName='2.0.10' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'",
+      "sdkVersion:'26'",
+      "targetSdkVersion:'35'",
+      "application-debuggable"
+    ],
+    "packagedProfiles": [],
+    "dexFiles": [
+      {
+        "name": "classes.dex",
+        "bytes": 44284208
+      },
+      {
+        "name": "classes2.dex",
+        "bytes": 83428
+      },
+      {
+        "name": "classes3.dex",
+        "bytes": 3969084
+      },
+      {
+        "name": "classes4.dex",
+        "bytes": 13573264
+      },
+      {
+        "name": "classes5.dex",
+        "bytes": 3542560
+      }
+    ],
+    "dexTotalBytes": 65452544
+  },
+  "sourceImages": [
+    {
+      "resource": "deuterium_brand.png",
+      "bytes": 1819447,
+      "width": 1254,
+      "height": 1254,
+      "estimatedRgbaBytes": 6290064,
+      "note": "RGBA estimate from source dimensions, not measured heap use"
+    },
+    {
+      "resource": "face_pay_atlas.png",
+      "bytes": 610922,
+      "width": 1512,
+      "height": 1260,
+      "estimatedRgbaBytes": 7620480,
+      "note": "RGBA estimate from source dimensions, not measured heap use"
+    }
+  ],
+  "adbDevices": [],
+  "runtimeFrameMeasurementPerformed": false
+}

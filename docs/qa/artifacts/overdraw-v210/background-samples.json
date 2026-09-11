@@ -1,0 +1,134 @@
+[
+  {
+    "page": "shop",
+    "sampleBounds": [
+      8,
+      1000,
+      24,
+      2200
+    ],
+    "before": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 19200,
+      "dominantRGB": [
+        248,
+        121,
+        123
+      ],
+      "pngSha256": "4b1e519e40c197405bd4776784ad15c8433d1631887383e106078f2ac5142726"
+    },
+    "after": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 0,
+      "dominantRGB": [
+        197,
+        197,
+        247
+      ],
+      "pngSha256": "689738f96e7f1c60cf3b448781a443d9d16dbb5cca36e73f9083a004e8de46b7"
+    }
+  },
+  {
+    "page": "market",
+    "sampleBounds": [
+      8,
+      1000,
+      24,
+      2200
+    ],
+    "before": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 19200,
+      "dominantRGB": [
+        248,
+        121,
+        123
+      ],
+      "pngSha256": "ad55c9c83667c33c0d31289b1e7a51b1c8858b907080d4c653ade8832b8d4390"
+    },
+    "after": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 0,
+      "dominantRGB": [
+        197,
+        197,
+        247
+      ],
+      "pngSha256": "1b3a237c126e96a781a86303eacb76b7de539122bfaa6e6cdc23074e8e5c36ed"
+    }
+  },
+  {
+    "page": "info",
+    "sampleBounds": [
+      8,
+      1000,
+      24,
+      2200
+    ],
+    "before": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 19200,
+      "dominantRGB": [
+        248,
+        121,
+        123
+      ],
+      "pngSha256": "ec447514099685a5a97a864e0ae17f811b9ca15b81954f1b0d58fb7c044a279f"
+    },
+    "after": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 0,
+      "dominantRGB": [
+        197,
+        197,
+        247
+      ],
+      "pngSha256": "00796818e30a4da2cd22923c001195615025d3448d99007d8d44af033132a3e9"
+    }
+  },
+  {
+    "page": "profile",
+    "sampleBounds": [
+      8,
+      1000,
+      24,
+      2200
+    ],
+    "before": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 19200,
+      "dominantRGB": [
+        248,
+        121,
+        123
+      ],
+      "pngSha256": "7515cd95f57a0aa9405d6f7048e2c1ebd9b29fe2554142268b5c5365b2ef0892"
+    },
+    "after": {
+      "width": 1200,
+      "height": 2670,
+      "samplePixels": 19200,
+      "redTintPixels": 0,
+      "dominantRGB": [
+        197,
+        197,
+        247
+      ],
+      "pngSha256": "1f0f2922a23b284dbe33ad1a9332656942bb4c9e68369618c90b77e94eab0323"
+    }
+  }
+]

@@ -1,0 +1,6 @@
+Captured shop
+Captured market
+Captured profile
+Captured info
+INSTRUMENTATION_RESULT: overdrawPageCapture=PASS
+INSTRUMENTATION_CODE: -1

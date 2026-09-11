@@ -1,5 +1,9 @@
 # Deuterium IX 工程约定
 
+2026-09-11：**全局过度绘制修正版已完成真机覆盖验收**。维护工作区 `.worktrees/performance-audit-v210`，分支 `xiwanzi/global-overdraw-v210`，App 仍为 2.0.10（21000）。普通背景改为缓存复用，玻璃保留原采样源；四页背景退出全屏红色覆盖，68 张固定画面及 4 组真机对照零像素差异。见[验收记录](docs/qa/app-global-overdraw-v210.md)。尚未推送、合并或线上发布。
+
+2026-09-11：**本机 App 性能优化候选**维护于 `.worktrees/performance-audit-v210`，分支 `xiwanzi/performance-equivalence-v210`，版本仍为 2.0.10（21000）。保留原视觉/动画参数，完成列表计算、请求持久化、图片解析、绘制和非 debuggable 构建优化；实际验证和限制见[验收记录](docs/qa/app-performance-equivalence-v210.md)。尚未推送、合并或部署，线上状态仍以下方 02:38 发布记录为准。
+
 2026-09-11：**App 2.0.10（21000）、Web 2.0.10 与配套 Go 已于 02:38 上线**，源码 `65c08a290896`（PR #18、#19），已向 xiwanzi 推送更新提醒。优惠券统一应用内通知、停用券/商品可删除、全额退款返券及启动绘制优化已生效；迁移释放 1 条历史退款券占用，26 笔订单与 4 个委托保留。三常驻服在线，MEK 继续停止；游戏插件未更换。维护工作区 `.worktrees/commerce-refunds-performance`，分支 `xiwanzi/release-v210-live`。见[部署记录](docs/deployment/deuterium-2.0.10-live.md)。下方为较早记录。
 
 2026-09-11：优惠券生命周期、商品删除及启动绘制修正已通过 [PR #18](https://github.com/xiwanzi/DeiteriumAPP-IX/pull/18) 合入 main，源码 `303db4ee57f9`。App/Web 2.0.10（App 21000）准备测试交付；线上部署状态见[2.0.10 交付记录](docs/deployment/deuterium-2.0.10-handoff.md)。下方“尚未推送、合并”是开发阶段记录。

@@ -25,9 +25,9 @@ fun OrdersPage(book:CommerceBook,topInset:Dp,onOrder:(String)->Unit) {
     var deleting by remember{mutableStateOf<CommerceOrder?>(null)}
     LaunchedEffect(Unit){book.network?.refreshOrders()}
     var channel by rememberSaveable{mutableIntStateOf(0)};var selling by rememberSaveable{mutableIntStateOf(0)};var filter by rememberSaveable{mutableStateOf("全部")}
-    val orders=book.orders.filter{it.channel==(if(channel==0)OrderChannel.Official else OrderChannel.Market)&&(if(channel==1&&selling==1)it.seller==book.userName else it.buyer==book.userName)}.filter{
+    val orders by remember(book,channel,selling,filter){derivedStateOf{book.orders.filter{it.channel==(if(channel==0)OrderChannel.Official else OrderChannel.Market)&&(if(channel==1&&selling==1)it.seller==book.userName else it.buyer==book.userName)}.filter{
         when(filter){"进行中"->it.serverStatus !in setOf("CANCELLED","REFUNDED")&&it.stage !in listOf(OrderStage.Confirmed,OrderStage.Claimed)&&it.refund!=RefundState.Approved;"已完成"->it.stage in listOf(OrderStage.Confirmed,OrderStage.Claimed);"退款"->it.refund!=RefundState.None;else->true}
-    }.sortedWith(compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id})
+    }.sortedWith(compareByDescending<CommerceOrder>{it.createdAt}.thenByDescending{it.id})}}
     LazyColumn(contentPadding=PaddingValues(start=16.dp,end=16.dp,top=topInset,bottom=40.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
         item { SegmentedControl(listOf("商城订单","市场订单"),channel,{channel=it;filter="全部"}) }
         if(channel==1)item { SegmentedControl(listOf("我买到的","我卖出的"),selling,{selling=it},Modifier.fillMaxWidth(.64f)) }

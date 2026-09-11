@@ -33,14 +33,26 @@ fun LoginVersionBadge(modifier:Modifier=Modifier) {
     val images=remember(context){AppImages.get(context)}
     var failed by remember(directory){mutableStateOf(false)}
     val source by produceState<Any>(R.drawable.deuterium_brand,directory,failed) {
-        value=if(failed)R.drawable.deuterium_brand else withContext(Dispatchers.IO) {
-            directory?.let{File(it,"images/deuterium-brand.png")}?.takeIf{it.isFile} ?: R.drawable.deuterium_brand
-        }
+        value=if(failed)R.drawable.deuterium_brand else versionBadgeSource(directory)
     }
     val request=remember(context,source) {
-        coil3.request.ImageRequest.Builder(context).data(source).size(768,768).build()
+        versionBadgeRequest(context,source)
     }
     // The launch badge scales up to 192dp. Decode off the UI thread and share
     // the bounded result between launch and login through the existing loader.
     coil3.compose.AsyncImage(request,"Deuterium 版本标",imageLoader=images.loader,modifier=modifier,onError={if(source is File)failed=true})
+}
+
+private suspend fun versionBadgeSource(directory:String?):Any=withContext(Dispatchers.IO) {
+    directory?.let{File(it,"images/deuterium-brand.png")}?.takeIf{it.isFile} ?: R.drawable.deuterium_brand
+}
+
+private fun versionBadgeRequest(context:android.content.Context,source:Any)=
+    coil3.request.ImageRequest.Builder(context).data(source).size(768,768).build()
+
+/** Optional prefetch uses the identical request; it never changes the launch clock or ready state. */
+internal suspend fun prewarmVersionBadge(context:android.content.Context,directory:String?) {
+    val source=versionBadgeSource(directory);val loader=AppImages.get(context).loader
+    val result=loader.execute(versionBadgeRequest(context,source))
+    if(result is coil3.request.ErrorResult&&source is File)loader.execute(versionBadgeRequest(context,R.drawable.deuterium_brand))
 }
