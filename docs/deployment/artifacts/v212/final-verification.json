@@ -1,0 +1,22 @@
+{
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "updateNoticeVisible": true,
+  "configHashes": {
+    "config.json": "40518477bc8feb8389858e21d9cc163ada5239bc7e7855bc8a3bcd1ded0c830f",
+    "backend.env": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+    "releases.json": "4cdfe6b4ce55ff96944732d8908b36dc7a630118f2342d9e3060c0e71d8380af"
+  },
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "accountCount": 71,
+  "temporarySessionCreatedForReadOnlyVerification": true,
+  "temporarySessionRevoked": true,
+  "revokedSessionStatus": 401
+}

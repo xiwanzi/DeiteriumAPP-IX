@@ -1,0 +1,24 @@
+{
+  "checks": {
+    "20004": "21200 available",
+    "20101": "21200 available",
+    "20200": "21200 available",
+    "20300": "21200 available",
+    "20401": "21200 available",
+    "20500": "21200 available",
+    "20600": "21200 available",
+    "20700": "21200 available",
+    "20800": "21200 available",
+    "20901": "21200 available",
+    "21000": "21200 available",
+    "21100": "21200 available",
+    "21199": "21200 available",
+    "21200": "no self/downgrade",
+    "21201": "no self/downgrade"
+  },
+  "releaseNotes": "注册验证码无需先填写密码；修复忘记密码页面玻璃背景过于透明的问题，统一浮层显示效果。",
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.12-21200-test.apk",
+  "downloadSize": 8875538,
+  "downloadSha256": "7e8bf5ff4a9bc313cb70430545e832294443be5136565a8b79742ba6d03129a1",
+  "httpsVerified": true
+}
