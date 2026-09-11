@@ -1,0 +1,21 @@
+{
+  "verifiedAt": "2026-09-11T14:19:20Z",
+  "service": "active",
+  "health": {
+    "status": "ready"
+  },
+  "runningBackendPath": "/opt/deuterium/releases/release-2.0.12-a0ed4446d074/deuterium",
+  "backendSha256": "2078dcaf614e7b9a049915dd6af724544c45ff17d08d363abbd656c0f2aeef51",
+  "webDirectoryUnchanged": true,
+  "configurationUnchanged": true,
+  "migrationsUnchanged": true,
+  "allPreexistingAccountsPreserved": true,
+  "allPreexistingCommerceResourcesPreserved": true,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "accountCount": 71,
+  "oldAccountActiveCount": 1,
+  "activeFinancialOperations": 0
+}

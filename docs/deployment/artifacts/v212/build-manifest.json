@@ -1,0 +1,39 @@
+{
+  "versionName": "2.0.12",
+  "versionCode": 21200,
+  "packageName": "com.deuterium.app.uilab",
+  "variant": "performance",
+  "debuggable": false,
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "sourceCommit": "b804685109e52484074197ddcc0cfde8bc919171",
+  "androidTree": "01b3391ee3305fcf61bb93a41e619cb90d98f840",
+  "backendTree": "97309d5134a038b1cf6fce3f9739a8ce167d3e6c",
+  "releaseNotes": "注册验证码无需先填写密码；修复忘记密码页面玻璃背景过于透明的问题，统一浮层显示效果。",
+  "fileName": "Deuterium-2.0.12-21200-test.apk",
+  "sizeBytes": 8875538,
+  "sha256": "7e8bf5ff4a9bc313cb70430545e832294443be5136565a8b79742ba6d03129a1",
+  "jvmTests": {
+    "tests": 149,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "profiles": [
+    {
+      "name": "assets/dexopt/baseline.prof",
+      "bytes": 11480
+    },
+    {
+      "name": "assets/dexopt/baseline.profm",
+      "bytes": 1310
+    }
+  ],
+  "lintSummary": "0 errors, 24 warnings",
+  "backendFileName": "deuterium-linux-amd64",
+  "backendSizeBytes": 13009056,
+  "backendSha256": "2078dcaf614e7b9a049915dd6af724544c45ff17d08d363abbd656c0f2aeef51",
+  "backendValidation": "registration/verification integration tests with race detector passed; Go unit tests and vet passed in implementation validation",
+  "mergeCommit": "a0ed4446d074294062b9f7b1a6482a36b1880859",
+  "pullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/23",
+  "sourceTreeMatchesMergedCommit": true
+}

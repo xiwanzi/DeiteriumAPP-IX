@@ -1,0 +1,10 @@
+{
+  "recipient": "xiwanzi",
+  "eventKey": "app.release:21200",
+  "count": 1,
+  "title": "2.0.12 更新已就绪",
+  "body": "注册验证码无需先填写密码；修复忘记密码页面玻璃背景过于透明的问题，统一浮层显示效果。",
+  "publicChatBroadcast": false,
+  "visibleThroughAccountApi": true,
+  "createdAt": "2026-09-11T14:18:32.719882Z"
+}

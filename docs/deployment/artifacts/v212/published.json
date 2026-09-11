@@ -1,0 +1,25 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.12-21200-test",
+    "kind": "APK",
+    "versionName": "2.0.12",
+    "versionCode": 21200,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "注册验证码无需先填写密码；修复忘记密码页面玻璃背景过于透明的问题，统一浮层显示效果。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.12-21200-test.apk",
+    "sizeBytes": 8875538,
+    "sha256": "7e8bf5ff4a9bc313cb70430545e832294443be5136565a8b79742ba6d03129a1",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21199,
+    "channel": "stable",
+    "publishedAt": "2026-09-11T14:18:29Z"
+  },
+  "manifestSha256": "4cdfe6b4ce55ff96944732d8908b36dc7a630118f2342d9e3060c0e71d8380af",
+  "previousReleaseEntriesPreserved": 12,
+  "health": {
+    "status": "ready"
+  },
+  "backupDirectory": "/var/backups/deuterium/release-2.0.12-20260911-a0ed4446d074",
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.12-a0ed4446d074"
+}
