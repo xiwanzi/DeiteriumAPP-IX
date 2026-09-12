@@ -1,0 +1,68 @@
+/* Community branding and player-facing admission flow. */
+.submission-trap{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(100%);pointer-events:none}
+.submission-error:not(:empty){margin:0 0 15px}
+button:disabled{cursor:wait;opacity:.65}
+#submission-result{padding:8px 0 12px;outline:none}
+#submission-result h3{font-size:26px;line-height:1.45;margin:10px 0 15px}
+.result-status{font-size:13px;line-height:1.8;color:#606857}
+.receipt-details{border-block:1px solid #c3c8bb;padding:8px 0;margin:19px 0}
+.receipt-details>div{grid-template-columns:70px 1fr;font-size:11px;padding-top:9px;padding-bottom:4px}
+.receipt-details dd{overflow-wrap:anywhere}
+.receipt-label{display:block;font-size:13px;margin:15px 0 8px}
+#receipt-token,#query-token{font:11px/1.8 Consolas,monospace;padding:10px;width:100%;background:#e1e4d9;border:1px solid #b6bda5;border-radius:0;color:#303829}
+.receipt-actions{display:flex;gap:10px;margin-top:16px}.receipt-actions button{font-size:12px;padding:11px;min-height:43px;flex:1}
+.result-reason{font-size:13px;line-height:1.8;padding:13px;border-left:3px solid #aaa342;background:#e8e8d9;white-space:pre-wrap;overflow-wrap:anywhere}
+.new-application{display:block;margin:22px auto 0;padding:6px 0;border:0;background:none;text-decoration:underline;font-size:11px;color:#737b65;text-underline-offset:3px}
+#query-form .primary{margin-top:16px}
+.world{background-image:url('assets/dsa-launch-minecraft-v5.png');background-position:49% center}
+.world-grade{background:linear-gradient(180deg,#070b100a 0%,transparent 43%,#0b111729 63%,#0b1018d1 100%)}
+.world-dots{opacity:.2}
+.version-emblem{display:block;object-fit:contain;border:0;border-radius:0}
+.brand{padding:18px 7px 0}
+.brand .version-emblem{width:62px;height:62px;margin:auto}
+.brand .brand-en{display:block;font-size:6px;letter-spacing:.2px;margin-top:8px}
+.project-name .version-emblem{width:45px;height:45px}
+.project-name{gap:12px}
+.project-name small{letter-spacing:2px}
+.footer-left .version-emblem{width:36px;height:36px}
+.group-link{text-decoration:none;display:flex;align-items:center;gap:9px;min-height:40px;background:#1c232bbf;color:white;border:1px solid #fff5;padding:10px 14px;font-size:12px;white-space:nowrap}
+.group-link b{font-size:18px;margin-left:12px;font-weight:400}
+.group-link:hover{background:#2c353c;color:var(--yellow)}
+.world-reticle{left:66%;top:26%;opacity:.6}
+.recruitment{padding-top:300px}
+.terminal-body{padding-top:24px}
+.intro{font-size:13px;margin:12px 0 23px}
+.field{margin-bottom:23px}
+.membership-note{border:1px solid #bec0b0;border-left:3px solid #9b9f32;background:#e9ebdca8;align-items:flex-start;padding:11px;margin-bottom:17px}
+.membership-note .notice-icon{margin-top:3px}
+.membership-note strong{font-weight:600;color:#41463b}
+.membership-note p{font-size:12px;line-height:1.8;color:#565d4f}
+.membership-note>div{flex:1;min-width:0}
+.inline-group-link{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;padding-top:7px;border-top:1px solid #bfc3aa;text-decoration:none;font-size:11px;color:#454d17}
+.inline-group-link>span{font:11px var(--mono)}
+.inline-group-link:hover{color:#111;border-color:#737b42}
+.covenant-agreement{display:flex;align-items:flex-start;gap:8px;margin:17px 0 22px;font-size:12px;line-height:1.8;position:relative}
+.covenant-agreement input{width:17px;height:17px;margin:3px 0 0;accent-color:#737a00;flex-shrink:0;cursor:pointer}
+.covenant-agreement label{cursor:pointer}
+.text-link{border:0;background:none;padding:0;color:#535900;line-height:inherit;font-size:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.text-link:hover{color:#222700}
+.covenant-error:not(:empty){margin:-12px 0 18px}
+.review-reminder{font-size:12px;line-height:1.8;color:#676c5f;border-left:2px solid #a2a73f;padding-left:10px;margin:17px 0}
+.consent{margin:15px 0 23px}
+.footer{background:#0a1118b3}
+.footer-links{display:flex;gap:20px;align-items:center}
+.footer-links button{border:0;background:none;color:#afb7bb;font-size:10px;padding:10px 0}
+.footer-links button:hover{color:var(--yellow)}
+.footer-signoff{font-size:11px;letter-spacing:2px;color:#c1c8c9}
+.covenant-intro{margin-bottom:20px!important}
+.covenant-list{list-style:none;margin:0;padding:0!important;counter-reset:covenant}
+.covenant-list li{counter-increment:covenant;position:relative;padding:0 0 17px 30px;margin:0}
+.covenant-list li:before{content:counter(covenant,decimal-leading-zero);font:11px var(--mono);position:absolute;left:0;top:4px;color:#70773a}
+.covenant-list strong{display:block;color:#333c2a;font-size:14px}
+.covenant-list p{font-size:13px!important;line-height:1.8!important;margin:3px 0 0}
+.dialog-group-link{margin-top:18px!important;display:block;padding:13px;border:1px solid #c0c4a8;color:#3d4621!important;text-align:center}
+.channel-notice{padding:12px;border-left:3px solid #959e37;background:#e6e9dc;color:#505943!important}
+@media(min-width:1600px){.brand .version-emblem{width:69px;height:69px}.terminal-body{padding-top:28px}.field{margin-bottom:26px}}
+@media(max-width:1100px){.brand .version-emblem{width:52px;height:52px}.brand .brand-en{font-size:5px}.project-name .version-emblem{width:39px;height:39px}.membership-note p{font-size:11px}.footer-links{gap:16px}.footer-signoff{display:none}.topline-code{display:none}}
+@media(max-width:850px){.brand .version-emblem{width:46px;height:46px}.project-name .version-emblem{width:33px;height:33px}.group-link{font-size:10px;padding:9px;min-height:36px}.group-link b{font-size:15px;margin-left:1px}.recruitment{padding-top:140px}.world{background-size:auto 720px;background-position:42% 0;background-color:#10171e}.world-grade{background:linear-gradient(180deg,transparent 0,transparent 30%,#10171e8a 46%,#10171e 67%)}.world-reticle{left:auto;right:20%;top:82px}.membership-note p{font-size:12px}.footer-links{gap:12px}.footer-links button{font-size:9px}.footer-left .version-emblem{width:31px;height:31px}.footer-left small{font-size:8px}.intro{font-size:13px}.footer{background:#0d141b}}
+@media(max-width:480px){.brand{padding:14px 3px 0}.brand .version-emblem{width:39px;height:39px}.brand .brand-en{font-size:4px;letter-spacing:0}.sidebar nav{margin-top:29px}.project-name .version-emblem{width:29px;height:29px}.project-name{gap:7px}.project-name small{font-size:7px;letter-spacing:.3px}.project-name>span{font-size:10px}.topline-group{font-size:9px;padding:7px;gap:5px;min-height:33px}.topline-group .status-square{display:none}.topline-group b{font-size:13px}.recruitment{padding-top:159px}.world-subtitle{font-size:13px;letter-spacing:.2px}.intro{font-size:11px}.world{background-size:auto 640px;background-position:41% 0}.world-grade{background:linear-gradient(180deg,transparent 0,transparent 24%,#10171eaa 39%,#10171e 57%)}.world-reticle{right:19%;top:80px}.membership-note{padding:10px;gap:8px;margin-bottom:17px}.membership-note p{font-size:10px}.inline-group-link{font-size:10px;gap:6px}.inline-group-link>span{font-size:10px}.covenant-agreement{font-size:11px;gap:7px;margin-bottom:21px}.covenant-agreement input{width:16px;height:16px;margin-top:2px}.review-reminder{font-size:11px}.footer{gap:11px;padding-block:19px}.footer-links{padding-left:0;gap:16px;flex-wrap:wrap}.footer-links button{font-size:9px;padding:0}.footer-left .version-emblem{width:31px;height:31px}.footer-left small{font-size:8px}.footer-left>span{font-size:10px}.field{margin-bottom:22px}.dialog-body{padding:24px}.dialog-body h2{font-size:25px}}

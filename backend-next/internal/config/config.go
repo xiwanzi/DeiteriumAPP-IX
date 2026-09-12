@@ -31,12 +31,14 @@ type Node struct {
 }
 
 type Config struct {
-	SMTPKey           []byte   `json:"-"`
-	Listen            string   `json:"listen"`
-	PublicOrigin      string   `json:"publicOrigin"`
-	Development       bool     `json:"development"`
-	TrustedProxyCIDRs []string `json:"trustedProxyCidrs"`
-	Nodes             []Node   `json:"nodes"`
+	AdmissionPublicOrigin       string   `json:"admissionPublicOrigin,omitempty"`
+	AdmissionGatewayTokenSHA256 string   `json:"admissionGatewayTokenSha256,omitempty"`
+	SMTPKey                     []byte   `json:"-"`
+	Listen                      string   `json:"listen"`
+	PublicOrigin                string   `json:"publicOrigin"`
+	Development                 bool     `json:"development"`
+	TrustedProxyCIDRs           []string `json:"trustedProxyCidrs"`
+	Nodes                       []Node   `json:"nodes"`
 }
 
 func Load(path string) (Config, error) {
@@ -65,6 +67,23 @@ func Load(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
+	if c.AdmissionPublicOrigin != "" {
+		origin, err := url.Parse(c.AdmissionPublicOrigin)
+		if err != nil || origin.Host == "" || origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" || (origin.Scheme != "https" && !(c.Development && origin.Scheme == "http" && loopback(origin.Hostname()))) {
+			return errors.New("admissionPublicOrigin must be an exact HTTPS origin")
+		}
+	}
+	if c.AdmissionGatewayTokenSHA256 != "" {
+		hash, err := hex.DecodeString(c.AdmissionGatewayTokenSHA256)
+		if err != nil || len(hash) != 32 || c.AdmissionGatewayTokenSHA256 != strings.ToLower(c.AdmissionGatewayTokenSHA256) {
+			return errors.New("invalid admission gateway credential hash")
+		}
+		for _, n := range c.Nodes {
+			if n.TokenSHA256 == c.AdmissionGatewayTokenSHA256 {
+				return errors.New("admission gateway requires a separate credential")
+			}
+		}
+	}
 	u, err := url.Parse(c.PublicOrigin)
 	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Opaque != "" {
 		return errors.New("publicOrigin must be an exact origin without path")

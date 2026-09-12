@@ -23,16 +23,17 @@ import (
 var ErrForbidden = errors.New("forbidden")
 
 type Server struct {
-	Store        *store.Store
-	Config       config.Config
-	Identity     *identity.Service
-	Hub          *bridge.Hub
-	Core         *bridge.Runtime
-	CommerceCore CommerceExecutorV2
-	ctx          context.Context
-	cancel       context.CancelFunc
-	requests     chan struct{}
-	desktop      *desktopRuntime
+	AdmissionResolver func(context.Context, string) (store.AdmissionProfile, error)
+	Store             *store.Store
+	Config            config.Config
+	Identity          *identity.Service
+	Hub               *bridge.Hub
+	Core              *bridge.Runtime
+	CommerceCore      CommerceExecutorV2
+	ctx               context.Context
+	cancel            context.CancelFunc
+	requests          chan struct{}
+	desktop           *desktopRuntime
 }
 
 func New(s *store.Store, c config.Config) *Server {
@@ -66,6 +67,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAdminCommerceV204(mux)
 	s.registerLauncherIcons(mux)
 	s.registerDesktopLauncher(mux)
+	s.registerAdmission(mux)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
