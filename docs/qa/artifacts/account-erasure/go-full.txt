@@ -1,0 +1,11 @@
+?   	github.com/xiwanzi/DeuteriumAPP/backend-next/cmd/deuterium	[no test files]
+?   	github.com/xiwanzi/DeuteriumAPP/backend-next/cmd/deuterium-identity	[no test files]
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/integration	119.266s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/bridge	1.124s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/config	1.113s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/httpapi	350.701s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity	1.773s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify	1.198s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/objectstorage	1.235s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store	1.214s
+?   	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/testdb	[no test files]
