@@ -1,0 +1,74 @@
+{
+  "buildSourceCommit": "c6dd50e975807b5737a94db9270beed5715c20b6",
+  "sourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
+  "sha256": "ade795578175f5f271b7efe8b4c29b7598cdb43950579cf6a78c655858d8bff3",
+  "size": 13267104,
+  "newPath": "/opt/deuterium/releases/smtp-fix-c6dd50e97580",
+  "backup": "/var/backups/deuterium/smtp-fix-c6dd50e97580",
+  "publishedAt": "2026-09-12T16:36:06.027738+00:00",
+  "previousBackend": "/opt/deuterium/releases/admission-ip-fb12a4d2ece7",
+  "databaseBackupSha256": "c6dc5f06df43c9535f3e8eb562fc926bb0f285e735f8e6b07e3696740ed9e69d",
+  "ready": true,
+  "accountsPreserved": true,
+  "resourcesPreserved": true,
+  "whitelistPreserved": true,
+  "smtpSettingsPreserved": true,
+  "launcherPreserved": true,
+  "appFeedPreserved": true,
+  "web": "/var/www/deuterium/releases/web-2.0.17-0778123edd89/dist",
+  "admission": "/var/www/deuterium-admission/releases/admission-1.0.0-990a3c9eac3d/site",
+  "emailSettingsVersion": 8,
+  "diagnostic": {
+    "queue": {
+      "mailSent": false,
+      "queueCompatibilityPassed": true
+    },
+    "authentication": {
+      "authenticated": true,
+      "host": "smtp.qq.com",
+      "mailSent": false,
+      "port": 465,
+      "security": "TLS",
+      "settingsVersion": 8,
+      "smtpErrorCode": 0
+    },
+    "isolatedSchemaRemoved": true
+  },
+  "delivery": {
+    "events": [
+      {
+        "id": "smtp_test_c1113196fb76437083655f77ab7ae798",
+        "status": "SENT",
+        "attempts": 1,
+        "lastError": "",
+        "createdAt": "2026-09-12 16:26:39.297644",
+        "sentAt": "2026-09-12 16:36:11.886215",
+        "nextAttemptAt": "2026-09-12 16:26:39.297644"
+      },
+      {
+        "id": "smtp_test_a644fbc370ec7e7fa50a78c67f300501",
+        "status": "SENT",
+        "attempts": 1,
+        "lastError": "",
+        "createdAt": "2026-09-12 16:24:01.970538",
+        "sentAt": "2026-09-12 16:36:11.001856",
+        "nextAttemptAt": "2026-09-12 16:24:01.970538"
+      }
+    ],
+    "statusCounts": {
+      "SENT": "2"
+    },
+    "gateway": {
+      "online": true,
+      "onlinePlayers": 0,
+      "version": "1.0.0"
+    },
+    "whitelistCounts": {
+      "REVOKED": "70"
+    },
+    "backend": "/opt/deuterium/releases/smtp-fix-c6dd50e97580"
+  },
+  "raceIntegrationTestsPassed": 3,
+  "notifyTestsPassed": true,
+  "vetPassed": true
+}
