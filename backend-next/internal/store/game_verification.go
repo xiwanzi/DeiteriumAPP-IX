@@ -20,7 +20,7 @@ type GameVerification struct {
 }
 
 func (s *Store) NewGameVerification(ctx context.Context, v GameVerification) error {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (s *Store) CheckGameVerification(ctx context.Context, token, code, purpose 
 	return
 }
 func (s *Store) RegisterGameUser(ctx context.Context, v GameVerification, passwordHash string) (u User, err error) {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
 		return
 	}
@@ -102,7 +102,8 @@ func (s *Store) RegisterGameUser(ctx context.Context, v GameVerification, passwo
 	if err = consumeVerification(ctx, tx, v); err != nil {
 		return
 	}
-	u = User{ID: ID("user_"), PlayerRef: "player_" + Digest([]byte("deuterium-player:" + v.PlayerUUID))[:40], ServerUUID: v.PlayerUUID, GameID: v.GameID, QQ: v.QQ, PasswordHash: passwordHash, Status: "active", IdentityStatus: "bound"}
+	u = User{ID: ID("user_"), ServerUUID: v.PlayerUUID, GameID: v.GameID, QQ: v.QQ, PasswordHash: passwordHash, Status: "active", IdentityStatus: "bound"}
+	u.PlayerRef = "player_" + Digest([]byte("deuterium-player:" + v.PlayerUUID + ":" + u.ID))[:40]
 	_, err = tx.ExecContext(ctx, `INSERT INTO identities (id,player_ref,server_uuid,game_id,qq,password_hash,status,created_at,updated_at,legacy_fingerprint) VALUES (?,?,?,?,?,?,'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),'native')`, u.ID, u.PlayerRef, u.ServerUUID, u.GameID, u.QQ, u.PasswordHash)
 	if duplicate(err) {
 		return u, ErrConflict
@@ -129,6 +130,9 @@ func (s *Store) RegisterGameUser(ctx context.Context, v GameVerification, passwo
 	if _, err = tx.ExecContext(ctx, "UPDATE game_verifications SET user_id=? WHERE verification_id=?", u.ID, v.ID); err != nil {
 		return
 	}
+	if _, err = tx.ExecContext(ctx, "UPDATE core_player_directory SET player_ref=? WHERE player_uuid=?", u.PlayerRef, u.ServerUUID); err != nil {
+		return
+	}
 	err = tx.Commit()
 	return
 }
@@ -146,7 +150,7 @@ func consumeVerification(ctx context.Context, tx *sql.Tx, v GameVerification) er
 	return err
 }
 func (s *Store) ResetGamePassword(ctx context.Context, v GameVerification, passwordHash string) error {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, v.UserID)
 	if err != nil {
 		return err
 	}

@@ -267,7 +267,7 @@ func (s *Store) RunAssetLifecycleV2(ctx context.Context, objects AssetObjectStor
 }
 
 func (s *Store) advanceAssetLifecycleV2(ctx context.Context, objects AssetObjectStorageV2, prefix, id string) (string, error) {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
 		return "", err
 	}
@@ -418,8 +418,11 @@ func (s *Store) RestoreAssetLifecycleV2(ctx context.Context, objects AssetObject
 		return ErrAssetBusy
 	}
 	defer s.assetLifecycle.Unlock()
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, actor)
 	if err != nil {
+		if errors.Is(err, ErrUnauthorized) {
+			return ErrAssetForbidden
+		}
 		return err
 	}
 	defer tx.Rollback()

@@ -65,6 +65,15 @@ func (s *Store) CommerceCaseViewV2(ctx context.Context, viewer, caseID string, a
 	if err != nil {
 		return nil, err
 	}
+	if err = redactDeletedPartiesTx(ctx, tx, c.Body); err != nil {
+		return nil, err
+	}
+	if err = redactDeletedPartiesTx(ctx, tx, c.Snapshot); err != nil {
+		return nil, err
+	}
+	if err = redactDeletedPartiesTx(ctx, tx, c.EvidenceEntries); err != nil {
+		return nil, err
+	}
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}

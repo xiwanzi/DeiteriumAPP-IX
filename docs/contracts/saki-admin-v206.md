@@ -1,5 +1,7 @@
 # Saki、账号与头像增量接口
 
+2026-09-12 增量候选：账号管理新增[管理员密码确认的永久注销](account-permanent-deletion.md)。已注销账号从本页账号列表排除，不能通过解封恢复；原有授权/封禁接口保持原格式。尚未部署。
+
 2026-09-09，本机候选；与 [App OpenAPI](openapi-app-v2.yaml) 配合使用。所有路径前缀 `/api/v1`，沿用 App Bearer / Web Cookie、Origin 与 CSRF 校验。
 
 | 接口 | 权限与内容 |

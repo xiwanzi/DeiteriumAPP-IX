@@ -96,7 +96,7 @@ func (s *Store) CreateWalletTransfer(ctx context.Context, u User, client, node s
 	raw, _ := json.Marshal(map[string]any{"fromUuid": u.ServerUUID, "toUuid": p.UUID, "amount": amount})
 	fingerprintRaw, _ := json.Marshal(map[string]any{"recipient": p.PlayerRef, "amount": amount, "note": note})
 	fingerprint := Digest(fingerprintRaw)
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, u.ID)
 	if err != nil {
 		return
 	}
@@ -115,6 +115,13 @@ func (s *Store) CreateWalletTransfer(ctx context.Context, u User, client, node s
 	if err != nil {
 		return
 	}
+	var validRecipient bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM identities WHERE player_ref=? AND server_uuid=? AND status='active') OR (EXISTS(SELECT 1 FROM core_player_directory WHERE player_ref=? AND player_uuid=?) AND NOT EXISTS(SELECT 1 FROM account_deletions WHERE original_uuid=?))`, p.PlayerRef, p.UUID, p.PlayerRef, p.UUID, p.UUID).Scan(&validRecipient); err != nil {
+		return
+	}
+	if !validRecipient {
+		return "", false, ErrSocialNotFound
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO core_operations VALUES (?,?,?,?,?,?,?,'QUEUED',NULL,DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 60 SECOND),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))`, opID, u.ID, "wallet:"+Digest([]byte(client)), node, "wallet.transfer", Digest(append([]byte(node+":wallet.transfer:"), raw...)), raw)
 	if err != nil {
 		return
@@ -122,6 +129,48 @@ func (s *Store) CreateWalletTransfer(ctx context.Context, u User, client, node s
 	err = tx.Commit()
 	return
 }
+func (s *Store) ExistingWalletTransfer(ctx context.Context, actor, client, recipient, amount string, note *string) (string, error) {
+	var id, fingerprint string
+	err := s.DB.QueryRowContext(ctx, "SELECT transfer_id,fingerprint FROM wallet_transfers_next WHERE actor_id=? AND client_request_id=?", actor, client).Scan(&id, &fingerprint)
+	if err != nil {
+		return "", err
+	}
+	raw, _ := json.Marshal(map[string]any{"recipient": recipient, "amount": amount, "note": note})
+	if fingerprint != Digest(raw) {
+		return "", ErrConflict
+	}
+	return id, nil
+}
+
+func (s *Store) historicalWalletRecipient(ctx context.Context, ref, uuid string, at time.Time) (Recipient, error) {
+	if deletedRef, deleted, err := s.DeletedWalletParty(ctx, uuid, at); err != nil {
+		return Recipient{}, err
+	} else if deleted {
+		return Recipient{PlayerRef: deletedRef, GameID: DeletedAccountName, Source: "game_id"}, nil
+	}
+	p, err := s.WalletRecipient(ctx, ref)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return p, err
+	}
+	// A game-only recipient may since have registered with a fresh App reference.
+	var qq string
+	err = s.DB.QueryRowContext(ctx, "SELECT player_ref,game_id,qq FROM identities WHERE server_uuid=? AND status<>'deleted'", uuid).Scan(&p.PlayerRef, &p.GameID, &qq)
+	if err == nil {
+		p.Registered = true
+		p.QQ = &qq
+		p.Source = "game_id"
+		return p, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return p, err
+	}
+	err = s.DB.QueryRowContext(ctx, "SELECT player_ref,game_id FROM core_player_directory WHERE player_uuid=?", uuid).Scan(&p.PlayerRef, &p.GameID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Recipient{PlayerRef: ref, GameID: "未知玩家", Source: "game_id"}, nil
+	}
+	return p, err
+}
+
 func (s *Store) WalletTransfer(ctx context.Context, id string) (t WalletTransfer, err error) {
 	var ref, state string
 	var result sql.NullString
@@ -129,7 +178,7 @@ func (s *Store) WalletTransfer(ctx context.Context, id string) (t WalletTransfer
 	if err != nil {
 		return
 	}
-	t.Recipient, err = s.WalletRecipient(ctx, ref)
+	t.Recipient, err = s.historicalWalletRecipient(ctx, ref, t.ToUUID, t.CreatedAt)
 	t.Currency = "CREDIT"
 	t.Status = "processing"
 	switch state {

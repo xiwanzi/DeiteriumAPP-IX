@@ -26,6 +26,7 @@ class ApiFailure(val code: String, message: String, val status: Int = 0) : IOExc
 
 /** All asset and identity authority stays on the backend. No offline-success fallback. */
 class BackendApi internal constructor(context: Context, origin: String = BuildConfig.API_BASE_URL) {
+    private val appContext=context.applicationContext
     private val prefs = context.getSharedPreferences("backend-v2", Context.MODE_PRIVATE)
     private val pendingWrites=PendingPreferences(prefs)
     val baseUrl: String = origin.trimEnd('/')
@@ -106,6 +107,7 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
                     ?: throw ApiFailure("INVALID_RESPONSE", "服务器响应格式不正确")
                 root?.optJSONObject("page")?.let{result.put("_page",it)}
                 root?.optString("serverTime")?.takeIf{it.isNotBlank()}?.let{result.put("_serverTime",it)}
+                redactErasedAccounts(result,erasedPlayerRefs())
                 if(!authenticated||token==requestToken)RemoteImageUrls.remember(result,imageScope,refreshPath=path.takeIf{method=="GET"})
                 result
             }
@@ -115,6 +117,18 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     }
 
     internal fun financialScope()=FinancialScope(if(signedIn)playerRef else "",baseUrl)
+    internal fun erasedPlayerRefs():Set<String> = prefs.getStringSet("erased-player-refs:$baseUrl",emptySet()).orEmpty().toSet()
+    internal fun accountDeletionCursor():Long=prefs.getLong("account-deletion-cursor:$baseUrl",0)
+    internal fun rememberAccountDeletions(refs:Set<String>,cursor:Long){
+        val all=erasedPlayerRefs()+refs
+        val edit=prefs.edit().putStringSet("erased-player-refs:$baseUrl",all).putLong("account-deletion-cursor:$baseUrl",cursor)
+        prefs.all.keys.filter{key->(key.startsWith("pending-direct:")||key.startsWith("pending-forward:"))&&refs.any{key.endsWith(":$it")}}.forEach(edit::remove)
+        edit.apply()
+    }
+    internal suspend fun clearErasedPresentation(sources:Set<String>,names:Set<String>){
+        AppImages.get(appContext).evictSources(sources)
+        LabNotifications(appContext).clearAccounts(names)
+    }
     fun pendingTransfer(): JSONObject? = (prefs.getString("pendingTransfer:$baseUrl:$playerRef", null) ?: prefs.getString("pendingTransfer",null))?.let { runCatching { JSONObject(it) }.getOrNull() }
         ?.takeIf { it.optString("owner") == playerRef }
     internal suspend fun saveTransfer(value: JSONObject?,scope:FinancialScope=financialScope()) {
@@ -131,14 +145,18 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     }
     fun pendingDirect(recipient:String):JSONObject? = prefs.getString("pending-direct:$playerRef:$recipient",null)?.let { runCatching { JSONObject(it) }.getOrNull() }
     suspend fun savePendingDirect(recipient:String,value:JSONObject?) {
+        if(value!=null&&recipient in erasedPlayerRefs())throw ApiFailure("ACCOUNT_DELETED","该账号已注销")
         val scope=financialScope();val key="pending-direct:${scope.owner}:$recipient"
         pendingWrites.save(key,value?.toString())
+        if(value!=null&&recipient in erasedPlayerRefs()){pendingWrites.save(key,null);throw ApiFailure("ACCOUNT_DELETED","该账号已注销")}
         if(value!=null)scope.verifyCurrent(financialScope())
     }
     fun pendingForward(recipient:String):JSONObject? = prefs.getString("pending-forward:$playerRef:$recipient",null)?.let { runCatching { JSONObject(it) }.getOrNull() }
     suspend fun savePendingForward(recipient:String,value:JSONObject?) {
+        if(value!=null&&recipient in erasedPlayerRefs())throw ApiFailure("ACCOUNT_DELETED","该账号已注销")
         val scope=financialScope();val key="pending-forward:${scope.owner}:$recipient"
         pendingWrites.save(key,value?.toString())
+        if(value!=null&&recipient in erasedPlayerRefs()){pendingWrites.save(key,null);throw ApiFailure("ACCOUNT_DELETED","该账号已注销")}
         if(value!=null)scope.verifyCurrent(financialScope())
     }
     fun shownNotices():Set<String> = prefs.getStringSet("shown-notices:$playerRef",emptySet()).orEmpty().toSet()

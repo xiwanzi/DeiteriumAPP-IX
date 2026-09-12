@@ -36,7 +36,7 @@ func scanAssetV2(row assetScannerV2) (u AssetUploadV2, err error) {
 }
 
 func (s *Store) CreateAssetUploadV2(ctx context.Context, u AssetUploadV2) (AssetUploadV2, error) {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, u.UserID)
 	if err != nil {
 		return u, err
 	}
@@ -147,7 +147,7 @@ func (s *Store) AssetV2(ctx context.Context, viewerID, assetID string) (map[stri
 }
 
 func (s *Store) RemoveAssetV2(ctx context.Context, userID, assetID string) error {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, userID)
 	if err != nil {
 		return err
 	}

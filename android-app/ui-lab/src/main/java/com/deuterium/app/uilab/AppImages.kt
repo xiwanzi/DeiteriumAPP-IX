@@ -121,6 +121,11 @@ class AppImages private constructor(private val context:Context) {
     }
 
     private fun invalidate(){store.invalidateRequests();loader.memoryCache?.clear();epoch=store.generation.get()}
+    internal suspend fun evictSources(sources:Set<String>){
+        val scope=BackendApi.get(context).financialScope()
+        invalidate();RemoteImageUrls.clear()
+        withContext(Dispatchers.IO){sources.forEach{store.disk.remove(ImageCacheStore.key(scope,it))}}
+    }
     suspend fun clear(){
         invalidate()
         store.clear()

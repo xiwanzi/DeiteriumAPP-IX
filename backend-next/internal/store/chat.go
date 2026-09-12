@@ -61,7 +61,7 @@ func ID(prefix string) string {
 
 func (s *Store) CoreEvent(ctx context.Context, node, eventID, eventType string, payload []byte, chat *CoreChat, item *ItemVersion) (sequence int64, replayed bool, err error) {
 	fingerprint := Digest(append([]byte(eventType+":"), payload...))
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
 		return
 	}
@@ -83,6 +83,13 @@ func (s *Store) CoreEvent(ctx context.Context, node, eventID, eventType string, 
 		return
 	}
 	if chat != nil {
+		deleted, e := deletedUUIDTx(ctx, tx, chat.PlayerUUID)
+		if e != nil {
+			return sequence, false, e
+		}
+		if deleted {
+			return sequence, false, tx.Commit()
+		}
 		ref := "player_" + Digest([]byte("deuterium-player:" + chat.PlayerUUID))[:40]
 		registered := false
 		var userRef string
@@ -118,7 +125,7 @@ func (s *Store) CoreEvent(ctx context.Context, node, eventID, eventType string, 
 func (s *Store) PublishAppChat(ctx context.Context, u User, clientID, content string, nodes []string) (messageID string, replayed bool, err error) {
 	fingerprint := Digest([]byte(content))
 	source := "app:" + u.ID
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, u.ID)
 	if err != nil {
 		return
 	}
@@ -274,7 +281,7 @@ func (s *Store) ExistingAppChat(ctx context.Context, userID, clientID, content s
 }
 
 func (s *Store) ReserveChat(ctx context.Context, userID string) error {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, userID)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,7 @@
 # 接口文档阅读入口
 
+**2026-09-12 / 永久注销候选：** 管理工作台使用当前管理员密码确认注销，App/Web 同步清理旧账号引用，见[注销契约](account-permanent-deletion.md)与[OpenAPI](openapi-account-deletion.yaml)。尚未部署。
+
 **2026-09-10 / 2.0.8 候选：** 新增内置桌面图标选择、管理端发布与实时补同步，见 [图标切换契约](launcher-icons-v208.md) 和 [OpenAPI](openapi-launcher-icons-v208.yaml)。已完成本机实现与隔离验证，是否上线以部署记录为准。
 
 **2026-09-09 / 2.0.3：** 新增账号级记录隐藏，公共聊天 HTTP 发送已实现，详情见 [2.0.3 接入说明](app-v203.md)。OpenAPI 同步显示字段和真实回执；下方原始操作数是历史快照。

@@ -1,4 +1,5 @@
 import { readAiEvents } from "./ai-stream.js";
+import { redactErasedAccounts } from "./account-erasure.js";
 export class ApiError extends Error {
   constructor(message, code = "REQUEST_FAILED", status = 0, retryAfter = 0) {
     super(message);
@@ -10,6 +11,25 @@ export class ApiError extends Error {
 }
 export class DeuteriumClient {
   #csrf = "";
+  erasedPlayerRefs = new Set();
+  deletionCursor = 0;
+  deletionListeners = new Set();
+  deletionSync = null;
+  onAccountDeletions(listener) { this.deletionListeners.add(listener); return () => this.deletionListeners.delete(listener); }
+  async syncAccountDeletions() {
+    if (this.deletionSync) return this.deletionSync;
+    this.deletionSync = (async () => {
+      let more;
+      do {
+        const r = await this.request(`/api/v1/account/deletions?after=${this.deletionCursor}`);
+        const refs = r.data.items.map((item) => item.playerRef);
+        refs.forEach((ref) => this.erasedPlayerRefs.add(ref));
+        this.deletionCursor = r.data.cursor; more = r.data.hasMore;
+        if (refs.length) this.deletionListeners.forEach((listener) => listener(new Set(refs)));
+      } while (more);
+    })();
+    try { await this.deletionSync; } finally { this.deletionSync = null; }
+  }
   constructor({
     fetchImpl = globalThis.fetch.bind(globalThis),
     onUnauthorized = () => {},
@@ -80,7 +100,7 @@ export class DeuteriumClient {
         ),
       );
     }
-    return value;
+    return redactErasedAccounts(value, this.erasedPlayerRefs);
   }
   async login(account, password) {
     const r = await this.request("/api/v1/web/session", {
@@ -202,8 +222,8 @@ export function normalizeMessage(message, currentUser) {
     status:
       message.sender?.playerRef === currentUser.playerRef ? "sent" : undefined,
     clientMessageId: message.clientMessageId,
-    reply: message.reply ? { id: message.reply.messageId, text: message.reply.content, senderName: message.reply.sender?.gameId, availability: message.reply.availability } : null,
-    forwarded: message.forwarded ? { id: message.forwarded.messageId, text: message.forwarded.content, senderName: message.forwarded.sender?.gameId, availability: message.forwarded.availability } : null,
+    reply: message.reply ? { id: message.reply.messageId, text: message.reply.content, sender: message.reply.sender?.playerRef, senderName: message.reply.sender?.gameId, availability: message.reply.availability } : null,
+    forwarded: message.forwarded ? { id: message.forwarded.messageId, text: message.forwarded.content, sender: message.forwarded.sender?.playerRef, senderName: message.forwarded.sender?.gameId, availability: message.forwarded.availability } : null,
   };
 }
 export function mergeMessages(old, incoming) {

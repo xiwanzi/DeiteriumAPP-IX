@@ -43,7 +43,7 @@ export default function ConnectedProfile({ client, user, onLogout, navigate, onP
 
 export function PlayerProfile({ client, user, playerRef, onMessage }) {
   const [profile, setProfile] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  useEffect(() => { let active = true; client.profile(playerRef).then((r) => { if (active) setProfile(r.data); }).catch((e) => { if (active) setError(e.message); }); return () => { active = false; }; }, [playerRef]);
+  useEffect(() => { let active = true; setProfile(null); client.profile(playerRef).then((r) => { if (active && !client.erasedPlayerRefs.has(playerRef)) setProfile(r.data); }).catch((e) => { if (active) setError(e.message); }); const unsubscribe = client.onAccountDeletions((refs) => { if (refs.has(playerRef)) { setProfile(null); setError("该账号已注销"); } }); return () => { active = false; unsubscribe(); }; }, [client, playerRef]);
   const follow = async () => { setBusy(true); setError(""); try { const r = profile.followed ? await client.request(`/api/v1/chat/follows/${encodeURIComponent(playerRef)}`, { method: "DELETE" }) : await client.request("/api/v1/chat/follows", { method: "POST", body: { playerRef } }); setProfile({ ...profile, followed: r.data.followed }); } catch (e) { setError(e.message); } finally { setBusy(false); } };
   if (!profile) return <Empty title={error ? "暂时无法读取资料" : "正在读取资料"} text={error || "请稍候…"} />;
   return <><div className="player-detail"><Avatar user={profile} size="large" /><h2>{profile.gameId}</h2><Badge tone="neutral">{profile.online ? "游戏在线" : profile.lastSeenAt ? `上次在线 ${new Date(profile.lastSeenAt).toLocaleString("zh-CN")}` : "玩家"}</Badge></div>

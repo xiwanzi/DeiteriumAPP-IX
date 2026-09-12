@@ -135,9 +135,21 @@ type CorePlayerIdentity struct {
 }
 
 func (s *Store) RememberCorePlayer(ctx context.Context, p CorePlayerIdentity) (string, error) {
+	tx, err := s.beginAccountTx(ctx, "")
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	deleted, err := deletedUUIDTx(ctx, tx, p.PlayerUUID)
+	if err != nil {
+		return "", err
+	}
+	if deleted {
+		return "", ErrSocialNotFound
+	}
 	ref := "player_" + Digest([]byte("deuterium-player:" + p.PlayerUUID))[:40]
 	var registered string
-	err := s.DB.QueryRowContext(ctx, "SELECT player_ref FROM identities WHERE server_uuid=?", p.PlayerUUID).Scan(&registered)
+	err = tx.QueryRowContext(ctx, "SELECT player_ref FROM identities WHERE server_uuid=? AND status<>'deleted'", p.PlayerUUID).Scan(&registered)
 	if err == nil {
 		ref = registered
 	} else if !errors.Is(err, sql.ErrNoRows) {
@@ -150,11 +162,14 @@ func (s *Store) RememberCorePlayer(ctx context.Context, p CorePlayerIdentity) (s
 	if p.Online {
 		lastSeen = time.Now().UTC()
 	}
-	_, err = s.DB.ExecContext(ctx, `INSERT INTO core_player_directory VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE game_id=VALUES(game_id),node_id=VALUES(node_id),last_seen=CASE WHEN VALUES(last_seen) IS NULL THEN last_seen WHEN last_seen IS NULL THEN VALUES(last_seen) ELSE GREATEST(last_seen,VALUES(last_seen)) END`, ref, p.PlayerUUID, p.GameID, p.ServerID, lastSeen)
+	_, err = tx.ExecContext(ctx, `INSERT INTO core_player_directory VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE player_ref=VALUES(player_ref),game_id=VALUES(game_id),node_id=VALUES(node_id),last_seen=CASE WHEN VALUES(last_seen) IS NULL THEN last_seen WHEN last_seen IS NULL THEN VALUES(last_seen) ELSE GREATEST(last_seen,VALUES(last_seen)) END`, ref, p.PlayerUUID, p.GameID, p.ServerID, lastSeen)
+	if err == nil {
+		err = tx.Commit()
+	}
 	return ref, err
 }
 func (s *Store) CoreRecipient(ctx context.Context, ref string) (uuid string, err error) {
-	err = s.DB.QueryRowContext(ctx, "SELECT server_uuid FROM identities WHERE player_ref=?", ref).Scan(&uuid)
+	err = s.DB.QueryRowContext(ctx, "SELECT server_uuid FROM identities WHERE player_ref=? AND status='active'", ref).Scan(&uuid)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = s.DB.QueryRowContext(ctx, "SELECT player_uuid FROM core_player_directory WHERE player_ref=?", ref).Scan(&uuid)
 	}

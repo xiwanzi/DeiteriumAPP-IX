@@ -59,6 +59,13 @@ export default function ConnectedApp() {
       },
     });
   const client = clientRef.current;
+  useEffect(() => {
+    if (!session?.user.userId) return;
+    const sync = () => { if (!document.hidden) client.syncAccountDeletions().catch(() => {}); };
+    sync(); const timer = setInterval(sync, 4000);
+    const unsubscribe = client.onAccountDeletions((refs) => setModal((old) => old?.type === "player" && refs.has(old.player.id) ? null : old));
+    return () => { clearInterval(timer); unsubscribe(); };
+  }, [client, session?.user.userId]);
   const [ownProfile, setOwnProfile] = useState(null);
   useEffect(() => {
     let active = true;

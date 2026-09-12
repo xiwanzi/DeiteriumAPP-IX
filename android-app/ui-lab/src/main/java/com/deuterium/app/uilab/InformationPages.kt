@@ -84,6 +84,10 @@ private fun HubRow(title:String,subtitle:String,icon:ImageVector,color:Color,asi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},onProfile:(String)->Unit) {
+    if(state.isUnavailableAccount(name)){
+        Box(Modifier.fillMaxSize().padding(top=topInset),contentAlignment=Alignment.Center){Text("该账号已注销",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        return
+    }
     val messages=remember(name){state.conversation(name)}
     var draft by rememberSaveable(name,stateSaver=TextFieldValue.Saver){mutableStateOf(TextFieldValue(state.pendingDirectDraft(name)))}
     val list=rememberLazyListState()
@@ -97,6 +101,10 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
     val motion=LocalMotion.current
     fun send(){val text=draft.text;if(text.isNotBlank())scope.launch{if(state.sendDirect(name,text,replying)&&draft.text==text){draft=TextFieldValue("");replyId=null}}}
     LaunchedEffect(name){while(true){state.refreshDirect(name);delay(4000)}}
+    if(name!="AI 助手"&&Players.none{it.name==name}){
+        Box(Modifier.fillMaxSize().padding(top=topInset),contentAlignment=Alignment.Center){Text("会话不可用",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        return
+    }
     LaunchedEffect(state.ai?.recoveredDraft){if(name=="AI 助手"&&draft.text.isBlank()&&!state.ai?.recoveredDraft.isNullOrBlank())draft=TextFieldValue(state.ai!!.recoveredDraft)}
     LaunchedEffect(messages.lastOrNull()?.id){if(list.firstVisibleItemIndex<2||messages.lastOrNull()?.mine==true){if(motion)list.animateScrollToItem(0) else list.scrollToItem(0)}}
     LaunchedEffect(list.firstVisibleItemIndex,messages.size){if(messages.size>=90&&list.firstVisibleItemIndex>=messages.size-12)state.loadOlderDirect(name)}

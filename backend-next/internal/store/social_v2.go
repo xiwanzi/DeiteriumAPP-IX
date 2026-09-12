@@ -171,7 +171,7 @@ func (s *Store) socialMutate(ctx context.Context, user, action, key string, inpu
 		return nil, err
 	}
 	fingerprint := Digest(encoded)
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (s *Store) PublicProfileV2(ctx context.Context, viewerID, playerRef string)
 	err := s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(p.bio,''),p.avatar_json,COALESCE(p.version,1),EXISTS(SELECT 1 FROM social_follows_v2 f WHERE f.follower_id=? AND f.followed_id=i.id)
  FROM identities i LEFT JOIN social_profiles_v2 p ON p.user_id=i.id
  JOIN identities viewer ON viewer.id=? AND viewer.status='active'
-	 WHERE i.player_ref=?`, viewerID, viewerID, playerRef).Scan(&ownerID, &p.PlayerRef, &p.GameID, &p.QQ, &p.Bio, &avatar, &p.Version, &p.Followed)
+	 WHERE i.player_ref=? AND i.status<>'deleted'`, viewerID, viewerID, playerRef).Scan(&ownerID, &p.PlayerRef, &p.GameID, &p.QQ, &p.Bio, &avatar, &p.Version, &p.Followed)
 	if err != nil {
 		return p, socialMissing(err)
 	}
@@ -368,10 +368,25 @@ func (s *Store) FollowV2(ctx context.Context, u User, ref string, follow bool) (
 	if ref == u.PlayerRef {
 		return p, ErrSocialInvalid
 	}
+	tx, err := s.beginAccountTx(ctx, u.ID)
+	if err != nil {
+		return p, err
+	}
+	defer tx.Rollback()
+	var target int
+	if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE player_ref=? AND status='active'", ref).Scan(&target); err != nil {
+		return p, err
+	}
+	if target != 1 {
+		return p, ErrSocialNotFound
+	}
 	if follow {
-		_, err = s.DB.ExecContext(ctx, `INSERT IGNORE INTO social_follows_v2(follower_id,followed_id,created_at) SELECT ?,id,UTC_TIMESTAMP(6) FROM identities WHERE player_ref=? AND status='active'`, u.ID, ref)
+		_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_follows_v2(follower_id,followed_id,created_at) SELECT ?,id,UTC_TIMESTAMP(6) FROM identities WHERE player_ref=? AND status='active'`, u.ID, ref)
 	} else {
-		_, err = s.DB.ExecContext(ctx, `DELETE f FROM social_follows_v2 f JOIN identities i ON i.id=f.followed_id WHERE f.follower_id=? AND i.player_ref=?`, u.ID, ref)
+		_, err = tx.ExecContext(ctx, `DELETE f FROM social_follows_v2 f JOIN identities i ON i.id=f.followed_id WHERE f.follower_id=? AND i.player_ref=?`, u.ID, ref)
+	}
+	if err == nil {
+		err = tx.Commit()
 	}
 	p.Followed = follow
 	return p, err
@@ -569,7 +584,7 @@ func AddNotificationWithPushV206(ctx context.Context, tx *sql.Tx, userID, eventK
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_notifications_v2(notification_id,user_id,event_key,topic,title,body,target_json,system_push,created_at) VALUES(?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`, ID("not_"), userID, eventKey, topic, title, body, encoded, push)
+	_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_notifications_v2(notification_id,user_id,event_key,topic,title,body,target_json,system_push,created_at) SELECT ?,id,?,?,?,?,?,?,UTC_TIMESTAMP(6) FROM identities WHERE id=? AND status='active'`, ID("not_"), eventKey, topic, title, body, encoded, push, userID)
 	return err
 }
 func (s *Store) SendDirectV2(ctx context.Context, u User, conversation string, input SocialSendRequest, forward *SocialForwardRequest) (json.RawMessage, error) {
@@ -1149,7 +1164,7 @@ var socialMentionV2 = regexp.MustCompile(`@([A-Za-z0-9_]{1,32})\b`)
 // Call after the existing public-chat transaction commits, with its immutable
 // source/client key. This preserves the current Core/WS delivery protocol.
 func (s *Store) PublicSocialNotificationsV2(ctx context.Context, sourceID, clientMessageID string) error {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
 		return err
 	}

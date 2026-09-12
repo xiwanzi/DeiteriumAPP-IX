@@ -46,7 +46,7 @@ func (s *Store) AdminAccountsV206(ctx context.Context, search, status string, of
 		return nil, 0, ErrSocialInvalid
 	}
 	search = "%" + strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(search), "!", "!!"), "%", "!%"), "_", "!_") + "%"
-	where := ` WHERE (?='' OR i.status=?) AND (i.game_id LIKE ? ESCAPE '!' OR i.qq LIKE ? ESCAPE '!' OR i.player_ref LIKE ? ESCAPE '!')`
+	where := ` WHERE i.status<>'deleted' AND (?='' OR i.status=?) AND (i.game_id LIKE ? ESCAPE '!' OR i.qq LIKE ? ESCAPE '!' OR i.player_ref LIKE ? ESCAPE '!')`
 	args := []any{status, status, search, search, search}
 	var total int
 	if err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities i"+where, args...).Scan(&total); err != nil {
@@ -96,6 +96,9 @@ func (s *Store) ChangeAdminAccountV206(ctx context.Context, actor, target string
 		}
 		if version != input.ExpectedVersion {
 			return nil, ErrSocialVersion
+		}
+		if status == "deleted" {
+			return nil, catalogError(409, "ACCOUNT_DELETED", "该账号已永久注销，无法恢复。")
 		}
 		if input.Action == "ban" || input.Action == "revoke-admin" {
 			var remaining int

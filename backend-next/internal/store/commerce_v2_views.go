@@ -248,6 +248,9 @@ func (s *Store) commerceViewV204(ctx context.Context, viewer, id string, public,
 		return nil, e
 	}
 	out := commerceBaseViewV2(d, viewer, refund, active, time.Now().UTC())
+	if e = redactDeletedPartiesTx(ctx, tx, out); e != nil {
+		return nil, e
+	}
 	hidden, e := hiddenRecordV203(ctx, tx, viewer, d.Kind, d.ID)
 	if e != nil {
 		return nil, e
@@ -360,6 +363,9 @@ func (s *Store) CommerceSnapshotV2(ctx context.Context, viewer, id string, publi
 	}
 	var out CatalogObjectV2
 	e = json.Unmarshal([]byte(raw), &out)
+	if e == nil {
+		e = redactDeletedPartiesTx(ctx, tx, out)
+	}
 	return out, e
 }
 func (s *Store) CommerceRefundViewV2(ctx context.Context, viewer, resource, id string) (map[string]any, error) {
