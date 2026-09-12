@@ -1,0 +1,14 @@
+{
+  "fallbackServers": [
+    "amiya",
+    "login"
+  ],
+  "gatewaySha256": "EC51139DCCE4A98670B726F93ECFB1DBB15676592EC7F8CBF28095477137F293",
+  "rememberedPlayers": 3,
+  "newPid": 23496,
+  "otherPluginCount": 6,
+  "backup": "E:/Deuterium_IX/deployment-backups/admission-gateway-20260912-retry1",
+  "defaultServer": "amiya",
+  "oldPid": 23040,
+  "installed": true
+}

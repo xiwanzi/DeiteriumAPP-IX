@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-09-12T15:03:52Z",
+  "backendPath": "/opt/deuterium/releases/admission-ip-fb12a4d2ece7/deuterium",
+  "backendSha256": "68f24e0d5185188789e6a4aeaefa9005782942291c53c99a3e7a0c809ea64f80",
+  "webVersion": "2.0.16",
+  "admissionPath": "/var/www/deuterium-admission/releases/admission-1.0.0-990a3c9eac3d/site",
+  "applicationURL": "https://47.103.99.34/admission/",
+  "allPreexistingAccountIDsPreserved": true,
+  "allPreexistingResourceIDsPreserved": true,
+  "allImportedUUIDsRetained": true,
+  "previousMigrationsUnchanged": true,
+  "appFeedUnchanged": true,
+  "accountRecords": 71,
+  "deletedAccountRecords": 1,
+  "resourceCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "whitelistCounts": {
+    "ACTIVE": "70"
+  },
+  "applicationCount": 0,
+  "pendingKickCommands": 0,
+  "launcherVersions": [
+    "6",
+    "6"
+  ]
+}

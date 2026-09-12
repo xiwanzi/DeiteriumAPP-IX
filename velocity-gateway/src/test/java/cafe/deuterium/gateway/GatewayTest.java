@@ -103,6 +103,33 @@ class GatewayTest {
         }
     }
 
+    @Test void revokedOnlinePlayerIsDisconnectedAndAcknowledged() throws Exception {
+        try(Fixture f=fixture()) {
+            Player p=f.player();when(f.proxy.getPlayer(PLAYER)).thenReturn(Optional.of(p));
+            when(f.client.check(PLAYER)).thenReturn(CompletableFuture.completedFuture(new GatewayClient.Access(false,"REVOKED",2,"")));
+            kick(f.plugin,new GatewayClient.Kick("kick_"+"a".repeat(32),PLAYER,2,"权限已撤销"));
+            verify(p).disconnect(any(Component.class));assertEquals("DISCONNECTED",ack(f.plugin,"kick_"+"a".repeat(32)));
+        }
+    }
+    @Test void regrantedPlayerIsNotDisconnectedByStaleCommand() throws Exception {
+        try(Fixture f=fixture()) {
+            Player p=f.player();when(f.proxy.getPlayer(PLAYER)).thenReturn(Optional.of(p));
+            when(f.client.check(PLAYER)).thenReturn(CompletableFuture.completedFuture(new GatewayClient.Access(true,"ACTIVE",3,"")));
+            kick(f.plugin,new GatewayClient.Kick("kick_"+"b".repeat(32),PLAYER,2,"旧指令"));
+            verify(p,never()).disconnect(any(Component.class));assertEquals("CANCELLED",ack(f.plugin,"kick_"+"b".repeat(32)));
+        }
+    }
+    @Test void unknownPermissionDuringKickKeepsCommandPending() throws Exception {
+        try(Fixture f=fixture()) {
+            Player p=f.player();when(f.proxy.getPlayer(PLAYER)).thenReturn(Optional.of(p));
+            when(f.client.check(PLAYER)).thenReturn(CompletableFuture.failedFuture(new java.io.IOException("offline")));
+            kick(f.plugin,new GatewayClient.Kick("kick_"+"c".repeat(32),PLAYER,2,"待核对"));
+            verify(p,never()).disconnect(any(Component.class));assertNull(ack(f.plugin,"kick_"+"c".repeat(32)));
+        }
+    }
+    private static void kick(DeuteriumGateway plugin,GatewayClient.Kick command)throws Exception{var m=DeuteriumGateway.class.getDeclaredMethod("executeKick",GatewayClient.Kick.class);m.setAccessible(true);m.invoke(plugin,command);}
+    @SuppressWarnings("unchecked") private static String ack(DeuteriumGateway plugin,String id)throws Exception{var f=DeuteriumGateway.class.getDeclaredField("acknowledgements");f.setAccessible(true);var a=((java.util.Map<String,GatewayClient.Ack>)f.get(plugin)).get(id);return a==null?null:a.status();}
+
     private Fixture fixture() throws Exception {return new Fixture();}
     private final class Fixture implements AutoCloseable {
         final ProxyServer proxy=mock(ProxyServer.class);final GatewayClient client=mock(GatewayClient.class);
