@@ -12,7 +12,7 @@
 {
   "apiBaseUrl": "https://47.103.99.34",
   "apiToken": "填写单独生成的网关凭据",
-  "applicationUrl": "https://47.103.99.34:9443",
+  "applicationUrl": "https://47.103.99.34/admission/",
   "defaultServer": "amiya",
   "fallbackServers": ["amiya", "login"],
   "requestTimeoutSeconds": 5

@@ -1,6 +1,6 @@
 # 通行申请与代理准入接口
 
-2026-09-12。申请站独立部署；当前目标 `https://47.103.99.34:9443`，管理端继续使用现有网站。所有业务响应沿用 `{requestId,data,serverTime}`，错误沿用 `{error:{code,message}}`。
+2026-09-12。申请站独立部署。非标准 HTTPS 端口公网受阻，暂由 `https://47.103.99.34/admission/` 提供独立站点目录的入口，之后迁往独立域名。管理端继续使用现有网站。所有业务响应沿用 `{requestId,data,serverTime}`，错误沿用 `{error:{code,message}}`。
 
 ## 公开申请
 
@@ -53,4 +53,4 @@ POST `/bridge/v1/admission/poll`，请求 `{instanceId,pluginVersion,onlinePlaye
 
 `029_admission.sql` 只新增申请、资格、事件、断开指令、心跳和锁表。`deuterium import-whitelist --file ...` 默认为预览；加 `--apply` 才导入，已有条目一律保留，不能通过重跑迁移重新启用已移除玩家。旧 App 账号的注册/注销与游戏通行权限独立管理。
 
-网站换独立域名时，更新 Nginx 的站点/证书、Go 的 `admissionPublicOrigin`、代理的 `applicationUrl` 并验证来源校验。申请站和现有网站继续各自使用自己的站点根目录。
+`admissionPublicOrigin` 是浏览器来源，`admissionApplicationUrl` 可指定同一来源下的申请站路径，未配置时回退到来源根地址。网站换独立域名时，更新 Nginx 的站点/证书、Go 的这两个字段、代理的 `applicationUrl` 并验证来源校验。申请站和现有网站继续各自使用自己的站点根目录。

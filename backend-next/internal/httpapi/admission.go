@@ -121,7 +121,7 @@ func (s *Server) registerAdmission(mux *http.ServeMux) {
 			failure(w, r, 503, "ADMISSION_CLOSED", "申请通道尚未开放。")
 			return
 		}
-		v2Success(w, r, map[string]any{"covenantVersion": store.AdmissionCovenantVersion, "groupNumber": "490579956", "groupURL": "https://qm.qq.com/q/HROB9FDSYE", "defaultServer": "amiya", "publicOrigin": s.Config.AdmissionPublicOrigin})
+		v2Success(w, r, map[string]any{"covenantVersion": store.AdmissionCovenantVersion, "groupNumber": "490579956", "groupURL": "https://qm.qq.com/q/HROB9FDSYE", "defaultServer": "amiya", "publicOrigin": s.Config.AdmissionPublicOrigin, "applicationURL": s.Config.AdmissionURL()})
 	})
 	mux.HandleFunc("POST /api/v1/admission/applications", func(w http.ResponseWriter, r *http.Request) {
 		if !s.publicAdmissionOrigin(r) {
@@ -216,7 +216,7 @@ func (s *Server) registerAdmission(mux *http.ServeMux) {
 			admissionFailure(w, r, err)
 			return
 		}
-		result["applicationURL"] = s.Config.AdmissionPublicOrigin
+		result["applicationURL"] = s.Config.AdmissionURL()
 		v2Success(w, r, result)
 	})
 	mux.HandleFunc("GET /api/v1/admin/whitelist/applications", func(w http.ResponseWriter, r *http.Request) {
