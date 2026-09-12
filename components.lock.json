@@ -16,19 +16,19 @@
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.17",
-      "sourceCommit": "906bbae5b5c21c153b0b4c78ee0dd77cb5521521",
-      "publishedSourceCommit": "906bbae5b5c21c153b0b4c78ee0dd77cb5521521",
-      "publishedArchiveSha256": "8959c048550a2e75f23b67408b0e4044011f90bd627ff39287baa2191e4ae558",
-      "buildSourceCommit": "0778123edd89228ff0231f2e194e733d85ce5d21"
+      "version": "2.0.18",
+      "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+      "publishedSourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+      "publishedArchiveSha256": "a29c4dc85f5d2c8f7f5f7897490c1a0608049936e175e1e99c3281cf66babbd2",
+      "buildSourceCommit": "dc53db8d4374d28105f18504573291662dc44d85"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
-      "publishedSourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
-      "publishedSha256": "ade795578175f5f271b7efe8b4c29b7598cdb43950579cf6a78c655858d8bff3",
-      "buildSourceCommit": "c6dd50e975807b5737a94db9270beed5715c20b6"
+      "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+      "publishedSourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+      "publishedSha256": "fc85f44d9332854d5ef4ee3709086e344bb6bb825d4e14523ddaf51fa27338b1",
+      "buildSourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0"
     },
     {
       "name": "core",
@@ -86,10 +86,10 @@
     {
       "name": "admission-web",
       "path": "admission-web",
-      "version": "1.0.0",
-      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
-      "buildSourceCommit": "990a3c9eac3d1901428b2ce71cf43119a2e43ec6",
-      "publishedArchiveSha256": "35bd030038fb1df55a56c654a78b01ec20cc0c0a8c52b27329571ee16bcc259a",
+      "version": "1.0.1",
+      "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+      "buildSourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+      "publishedArchiveSha256": "592996324ae4b043d0e80a518b2897d4e86d743d977902ec18fa8813330638ff",
       "url": "https://47.103.99.34/admission/"
     }
   ],
@@ -97,7 +97,7 @@
     "version": "2.0.13",
     "androidVersionCode": 21300,
     "status": "PUBLISHED",
-    "branch": "xiwanzi/smtp-live-record",
+    "branch": "xiwanzi/admission-mail-live-record",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
@@ -110,18 +110,18 @@
       "pullRequest": 2,
       "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
-    "qa": "docs/qa/smtp-queue-compatibility.md",
-    "releaseNotes": "docs/deployment/smtp-queue-fix-live.md",
-    "sourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
-    "buildManifest": "docs/deployment/artifacts/smtp-queue-fix/verification.json",
+    "qa": "docs/plans/admission-review-email.md",
+    "releaseNotes": "docs/deployment/admission-review-email-live.md",
+    "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+    "buildManifest": "docs/deployment/artifacts/admission-review-email/verification.json",
     "migrations": [
-      "029_admission.sql"
+      "030_admission_review_email.sql"
     ],
     "publishedAt": "2026-09-12T14:49:14Z",
-    "webVersion": "2.0.17",
+    "webVersion": "2.0.18",
     "gatewayVersion": "1.0.0",
     "admissionURL": "https://47.103.99.34/admission/",
-    "webPublishedAt": "2026-09-12T16:10:49.509528+00:00",
-    "backendPublishedAt": "2026-09-12T16:36:06.027738+00:00"
+    "webPublishedAt": "2026-09-12T18:03:15.064594+00:00",
+    "backendPublishedAt": "2026-09-12T18:03:15.064594+00:00"
   }
 }
