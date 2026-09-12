@@ -26,10 +26,10 @@ func desktopDocument(t *testing.T) store.DesktopLauncherDocument {
 	artifact := map[string]any{"url": "https://launcher.example/artifact", "size": 100, "sha256": strings.Repeat("a", 64)}
 	bootstrap, _ := json.Marshal(map[string]any{"minecraftVersion": "1.21.1", "loaderVersion": "21.1.248", "instanceVersion": "1.21.1-NeoForge_21.1.248", "baselineVersion": "baseline", "mcpatchUrl": "https://launcher.example/updates/", "java": artifact, "installer": artifact})
 	entries := []any{}
-	for _, key := range []string{"arknights", "endfield", "popucom"} {
+	for _, key := range []string{"arknights", "deuterium_ix", "popucom"} {
 		entries = append(entries, map[string]any{"key": key, "name": key, "icon": "hypergryph/icon.png", "background": "hypergryph/bg.png", "gallery": "hypergryph/gallery.webp", "cover": "hypergryph/cover.webp", "accent": "#fdfc00", "hover": "#ffff00", "pressed": "#dddd00", "tabs": []string{"公告"}, "sidebars": []any{}, "banners": []any{}, "news": []any{map[string]any{"title": "完整公告保存验证", "tab": "公告", "date": "09/12", "body": strings.Repeat("正文", 3000), "images": []any{}}}})
 	}
-	content, _ := json.Marshal(map[string]any{"entries": entries})
+	content, _ := json.Marshal(map[string]any{"schemaVersion": 2, "entries": entries})
 	return store.DesktopLauncherDocument{Bootstrap: bootstrap, Content: content}
 }
 
@@ -72,7 +72,7 @@ func TestDesktopLauncherPermissionsDraftPublishAndReplay(t *testing.T) {
 	f.request(t, "Alice", "PUT", endpoint, input, 200)
 	f.request(t, "Alice", "PUT", endpoint, input, 200)
 	f.request(t, "", "GET", "/api/v1/launcher/content", nil, 200)
-	f.request(t, "", "GET", "/api/v1/launcher/bootstrap", nil, 200)
+	f.request(t, "", "GET", "/api/v1/launcher/bootstrap", nil, 404)
 	input["clientRequestId"] = "stale"
 	f.request(t, "Alice", "PUT", endpoint, input, 409)
 	var count int
