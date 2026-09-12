@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -29,7 +30,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: deuterium serve|migrate|export-legacy|import-legacy|grant-permission|core-key")
+		return errors.New("usage: deuterium serve|migrate|export-legacy|import-legacy|import-whitelist|grant-permission|core-key")
 	}
 	if args[0] == "core-key" {
 		secret := identity.Secret()
@@ -48,7 +49,7 @@ func run(args []string) error {
 		return errors.New("unexpected arguments")
 	}
 	switch args[0] {
-	case "serve", "migrate", "export-legacy", "import-legacy", "grant-permission", "asset-gc-preview":
+	case "serve", "migrate", "export-legacy", "import-legacy", "import-whitelist", "grant-permission", "asset-gc-preview":
 	default:
 		return errors.New("unknown command")
 	}
@@ -69,6 +70,30 @@ func run(args []string) error {
 	}
 	defer db.DB.Close()
 	switch args[0] {
+	case "import-whitelist":
+		if *input == "" {
+			return errors.New("--file is required")
+		}
+		file, err := os.Open(*input)
+		if err != nil {
+			return errors.New("cannot read whitelist import")
+		}
+		defer file.Close()
+		decoder := json.NewDecoder(io.LimitReader(file, 16*1024*1024))
+		decoder.DisallowUnknownFields()
+		var players []store.AdmissionImportPlayer
+		if decoder.Decode(&players) != nil {
+			return errors.New("invalid whitelist import")
+		}
+		var extra any
+		if decoder.Decode(&extra) != io.EOF {
+			return errors.New("trailing whitelist import data")
+		}
+		result, err := db.ImportAdmission(ctx, players, *apply)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(os.Stdout).Encode(result)
 	case "asset-gc-preview":
 		assets, err := db.PreviewAssetLifecycleV2(ctx, 1000)
 		if err != nil {
