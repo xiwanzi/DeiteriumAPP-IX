@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
@@ -26,6 +27,11 @@ type EmailEventV204 struct {
 	LastError     string     `json:"lastError"`
 	CreatedAt     time.Time  `json:"createdAt"`
 	SentAt        *time.Time `json:"sentAt"`
+	ApplicationID *string    `json:"applicationId,omitempty"`
+	Recipient     string     `json:"recipient,omitempty"`
+	Payload       string     `json:"-"`
+	Kind          string     `json:"kind"`
+	GameID        string     `json:"gameId,omitempty"`
 }
 
 func (s *Store) EmailSettingsV204(ctx context.Context) (EmailSettingsV204, error) {
@@ -56,6 +62,9 @@ func (s *Store) SaveEmailSettingsV204(ctx context.Context, actor, key string, ex
 		Settings notify.Settings
 		Password *string
 	}{expected, settings, password}, func(tx *sql.Tx) (any, error) {
+		if err := requirePlatformAdminTxV206(ctx, tx, actor); err != nil {
+			return nil, err
+		}
 		if _, err := tx.ExecContext(ctx, `INSERT IGNORE INTO admin_email_settings_v204 VALUES(1,'{}','',0,UTC_TIMESTAMP(6))`); err != nil {
 			return nil, err
 		}
@@ -98,33 +107,57 @@ func enqueueCaseEmailV204(ctx context.Context, tx *sql.Tx, id string) error {
 }
 func (s *Store) EnqueueTestEmailV204(ctx context.Context, actor, key string) (json.RawMessage, error) {
 	return s.socialMutate(ctx, actor, "email.test", key, key, func(tx *sql.Tx) (any, error) {
+		if err := requirePlatformAdminTxV206(ctx, tx, actor); err != nil {
+			return nil, err
+		}
 		var version int64
-		if err := tx.QueryRowContext(ctx, `SELECT version FROM admin_email_settings_v204 WHERE id=1 FOR UPDATE`).Scan(&version); err != nil {
+		var settingsJSON string
+		if err := tx.QueryRowContext(ctx, `SELECT version,settings_json FROM admin_email_settings_v204 WHERE id=1 FOR UPDATE`).Scan(&version, &settingsJSON); err != nil {
+			return nil, err
+		}
+		var settings notify.Settings
+		if err := json.Unmarshal([]byte(settingsJSON), &settings); err != nil {
 			return nil, err
 		}
 		// A test message is explicit and rate limited; it never contains case evidence.
 		var count int
-		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_email_outbox_v204 WHERE case_id IS NULL AND created_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 MINUTE)`).Scan(&count); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_email_outbox_v204 WHERE case_id IS NULL AND application_id IS NULL AND case_state='TEST' AND created_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 MINUTE)`).Scan(&count); err != nil {
 			return nil, err
 		}
 		if count > 0 {
 			return nil, ErrRateLimited
 		}
 		id := ID("smtp_test_")
-		_, err := tx.ExecContext(ctx, `INSERT INTO admin_email_outbox_v204(event_id,case_version,case_state,next_attempt_at,created_at) VALUES(?,0,'TEST',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))`, id)
+		_, err := tx.ExecContext(ctx, `INSERT INTO admin_email_outbox_v204(event_id,recipient,case_version,case_state,next_attempt_at,created_at) VALUES(?,?,0,'TEST',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))`, id, strings.Join(settings.Recipients, ", "))
 		return map[string]any{"eventId": id, "status": "PENDING"}, err
 	})
 }
 
-const emailEventSelectV204 = `SELECT event_id,case_id,case_version,case_state,status,attempts,next_attempt_at,last_error,created_at,sent_at FROM admin_email_outbox_v204`
+const emailEventSelectV204 = `SELECT event_id,case_id,case_version,case_state,status,attempts,next_attempt_at,last_error,created_at,sent_at,application_id,recipient,COALESCE(payload_json,'') FROM admin_email_outbox_v204`
 
 func scanEmailEventV204(row catalogScanner) (e EmailEventV204, err error) {
-	err = row.Scan(&e.EventID, &e.CaseID, &e.CaseVersion, &e.CaseState, &e.Status, &e.Attempts, &e.NextAttemptAt, &e.LastError, &e.CreatedAt, &e.SentAt)
+	err = row.Scan(&e.EventID, &e.CaseID, &e.CaseVersion, &e.CaseState, &e.Status, &e.Attempts, &e.NextAttemptAt, &e.LastError, &e.CreatedAt, &e.SentAt, &e.ApplicationID, &e.Recipient, &e.Payload)
+	e.Kind = "TEST"
+	if e.CaseID != nil {
+		e.Kind = "INTERVENTION"
+	}
+	if e.ApplicationID != nil {
+		e.Kind = "ADMISSION_" + e.CaseState
+	}
+	if e.CaseState == "TEST_APPROVED" || e.CaseState == "TEST_REJECTED" {
+		e.Kind = e.CaseState
+	}
+	if e.Payload != "" {
+		var p AdmissionEmailPayload
+		if json.Unmarshal([]byte(e.Payload), &p) == nil {
+			e.GameID = p.GameID
+		}
+	}
 	return
 }
 func (s *Store) EmailStatusV204(ctx context.Context) (map[string]any, error) {
 	var pending, failed int
-	err := s.DB.QueryRowContext(ctx, `SELECT COALESCE(SUM(status<>'SENT'),0),COALESCE(SUM(status='RETRY'),0) FROM admin_email_outbox_v204`).Scan(&pending, &failed)
+	err := s.DB.QueryRowContext(ctx, `SELECT COALESCE(SUM(status IN ('PENDING','SENDING','RETRY')),0),COALESCE(SUM(status='RETRY'),0) FROM admin_email_outbox_v204`).Scan(&pending, &failed)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +183,7 @@ func (s *Store) ClaimEmailV204(ctx context.Context) (EmailEventV204, error) {
 	}
 	defer tx.Rollback()
 	// The runtime has one email worker; ordinary row locking also supports MariaDB 10.5.
-	event, err := scanEmailEventV204(tx.QueryRowContext(ctx, emailEventSelectV204+` WHERE (status IN ('PENDING','RETRY') AND next_attempt_at<=UTC_TIMESTAMP(6)) OR (status='SENDING' AND lease_until<UTC_TIMESTAMP(6)) ORDER BY created_at,event_id LIMIT 1 FOR UPDATE`))
+	event, err := scanEmailEventV204(tx.QueryRowContext(ctx, emailEventSelectV204+` WHERE ((status IN ('PENDING','RETRY') AND next_attempt_at<=UTC_TIMESTAMP(6)) OR (status='SENDING' AND lease_until<UTC_TIMESTAMP(6))) AND (application_id IS NULL OR EXISTS (SELECT 1 FROM admin_email_settings_v204 WHERE id=1 AND JSON_UNQUOTE(JSON_EXTRACT(settings_json,'$.admissionReviewEnabled'))='true')) ORDER BY created_at,event_id LIMIT 1 FOR UPDATE`))
 	if err != nil {
 		return event, err
 	}

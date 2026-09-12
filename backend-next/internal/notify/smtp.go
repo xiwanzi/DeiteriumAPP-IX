@@ -9,8 +9,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
-	"fmt"
-	"mime"
 	"net"
 	"net/mail"
 	"net/smtp"
@@ -21,15 +19,16 @@ import (
 )
 
 type Settings struct {
-	Enabled            bool     `json:"enabled"`
-	Host               string   `json:"host"`
-	Port               int      `json:"port"`
-	Security           string   `json:"security"`
-	Username           string   `json:"username"`
-	From               string   `json:"from"`
-	Recipients         []string `json:"recipients"`
-	Version            int64    `json:"version"`
-	PasswordConfigured bool     `json:"passwordConfigured"`
+	Enabled                bool     `json:"enabled"`
+	Host                   string   `json:"host"`
+	Port                   int      `json:"port"`
+	Security               string   `json:"security"`
+	Username               string   `json:"username"`
+	From                   string   `json:"from"`
+	Recipients             []string `json:"recipients"`
+	Version                int64    `json:"version"`
+	PasswordConfigured     bool     `json:"passwordConfigured"`
+	AdmissionReviewEnabled bool     `json:"admissionReviewEnabled"`
 }
 
 func (s Settings) Validate() error {
@@ -122,7 +121,17 @@ func Send(ctx context.Context, s Settings, password, messageID, subject, body st
 	return sendWithRoots(ctx, s, password, messageID, subject, body, nil)
 }
 func sendWithRoots(ctx context.Context, s Settings, password, messageID, subject, body string, roots *x509.CertPool) error {
+	return sendMessageWithRoots(ctx, s, password, messageID, Message{Subject: subject, Text: body}, roots)
+}
+func SendMessage(ctx context.Context, s Settings, password, messageID string, message Message) error {
+	return sendMessageWithRoots(ctx, s, password, messageID, message, nil)
+}
+func sendMessageWithRoots(ctx context.Context, s Settings, password, messageID string, message Message, roots *x509.CertPool) error {
 	if err := s.Validate(); err != nil {
+		return err
+	}
+	encoded, err := composeMessage(s, messageID, message)
+	if err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
@@ -174,14 +183,7 @@ func sendWithRoots(ctx context.Context, s Settings, password, messageID, subject
 	if err != nil {
 		return errors.New("SMTP 暂时无法接收邮件。")
 	}
-	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\nMessage-ID: <%s@deuterium-notifications>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n", s.From, strings.Join(s.Recipients, ", "), mime.BEncoding.Encode("UTF-8", subject), time.Now().UTC().Format(time.RFC1123Z), messageID)
-	encoded := base64.StdEncoding.EncodeToString([]byte(body))
-	for len(encoded) > 76 {
-		message += encoded[:76] + "\r\n"
-		encoded = encoded[76:]
-	}
-	message += encoded + "\r\n"
-	if _, err = writer.Write([]byte(message)); err != nil {
+	if _, err = writer.Write(encoded); err != nil {
 		return errors.New("SMTP 发送中断，稍后使用同一邮件编号重试。")
 	}
 	if err = writer.Close(); err != nil {

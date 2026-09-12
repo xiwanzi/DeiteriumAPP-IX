@@ -342,7 +342,11 @@ func (s *Store) ReviewAdmission(ctx context.Context, actor, application string, 
 		if err := admissionEvent(ctx, tx, actor, p.UUID, strings.ToLower(in.Decision), application, in.Reason); err != nil {
 			return nil, err
 		}
-		return map[string]any{"applicationId": application, "status": state, "version": version + 1, "entryVersion": entryVersion}, nil
+		emailStatus, err := enqueueAdmissionEmail(ctx, tx, application, qq, AdmissionEmailPayload{UUID: p.UUID, GameID: p.Name, Decision: state, Reason: strings.TrimSpace(in.Reason), ReviewVersion: version + 1, EntryVersion: entryVersion})
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"applicationId": application, "status": state, "version": version + 1, "entryVersion": entryVersion, "emailStatus": emailStatus}, nil
 	})
 }
 

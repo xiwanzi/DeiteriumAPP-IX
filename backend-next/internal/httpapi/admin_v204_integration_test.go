@@ -323,7 +323,7 @@ func TestAdminSMTPEncryptionVersionReplayAndDurableRetryV204(t *testing.T) {
 	f.request(t, "Alice", "POST", path+"/test", test, 200)
 	f.request(t, "Alice", "POST", path+"/test", test, 200)
 	sends := 0
-	sender := func(_ context.Context, s notify.Settings, password, id, subject, body string) error {
+	sender := func(_ context.Context, s notify.Settings, password, id string, message notify.Message) error {
 		sends++
 		if password != "private-smtp-test-password" || len(s.Recipients) != 1 {
 			t.Fatal("wrong delivery settings")

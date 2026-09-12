@@ -10,10 +10,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity"
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
@@ -24,7 +26,10 @@ func TestAdmissionBrowserFixture(t *testing.T) {
 		t.Skip("interactive fixture not requested")
 	}
 	f := admissionFixture(t)
+	f.app.Close() // Browser delivery uses an explicit local capture, never external SMTP.
 	f.http.Close()
+	var delivered []map[string]any
+	var deliveryMu sync.Mutex
 	web, _ := filepath.Abs("../../../web-app/dist")
 	portal, _ := filepath.Abs("../../../admission-web")
 	adminToken, csrf := identity.Secret(), identity.Secret()
@@ -36,6 +41,19 @@ func TestAdmissionBrowserFixture(t *testing.T) {
 	admission := http.StripPrefix("/admission/", http.FileServer(http.Dir(portal)))
 	f.http = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
+		case r.URL.Path == "/fixture-mail-deliver" && r.Method == "POST":
+			deliveryMu.Lock()
+			defer deliveryMu.Unlock()
+			for n := 0; n < 10; n++ {
+				err := f.app.processEmailV204(context.Background(), func(_ context.Context, settings notify.Settings, _, id string, message notify.Message) error {
+					delivered = append(delivered, map[string]any{"recipients": settings.Recipients, "messageId": id, "subject": message.Subject, "html": message.HTML, "text": message.Text})
+					return nil
+				})
+				if err != nil {
+					break
+				}
+			}
+			json.NewEncoder(w).Encode(delivered)
 		case r.URL.Path == "/fixture-login":
 			f.app.setCookie(w, adminToken, time.Now().Add(30*time.Minute))
 			http.Redirect(w, r, "/admin?section=whitelist", http.StatusSeeOther)

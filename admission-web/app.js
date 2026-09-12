@@ -31,7 +31,7 @@ function showStep(value, focus = true) {
   phase.replaceChildren(document.createTextNode(`0${step + 1}`), Object.assign(document.createElement('small'), {textContent:'/03'}));
   document.querySelector('#form-title').textContent = ['建立身份档案', '选择开拓方向', '核对申请信息'][step];
   document.querySelector('.form-header .eyebrow').textContent = ['IDENTITY REGISTRATION', 'EXPLORATION PREFERENCE', 'PERSONNEL CONFIRMATION'][step];
-  intro.textContent = ['填写游戏 ID 和 QQ 号码，申请加入服务器。', '你平时喜欢怎么玩？可以多选，也可以跳过。', '请核对信息。审核结果将通过 QQ 与你联系。'][step];
+  intro.textContent = ['填写游戏 ID 和 QQ 号码，申请加入服务器。', '你平时喜欢怎么玩？可以多选，也可以跳过。', '请核对信息。审核结果将发送至你填写的 QQ 邮箱。'][step];
   document.querySelector('#previous').hidden = step === 0;
   document.querySelector('#next-label').textContent = step === 2 ? '提交申请' : step === 1 ? '核对信息' : '下一步';
   document.querySelector('#next-en').textContent = step === 2 ? 'SUBMIT' : 'CONTINUE';
@@ -86,10 +86,10 @@ for (const input of [id, qq]) input.addEventListener('input', () => {
 });
 const dialog = document.querySelector('#info-dialog');
 const content = {
-  guide: {title:'申请前，先看这里', html:'<ul><li>使用你本人持有的 Minecraft Java 版正版账号，填写当前玩家名，不要填写邮箱或 UUID。</li><li><strong>先加入服务器 QQ 群（490579956）。填写的 QQ 号码不在群内，将无法通过审核。</strong></li><li>阅读并同意《文明游戏公约》，确认愿意遵守服务器规则。</li><li>保持 QQ 可联系，审核期间请留意管理组的消息。</li></ul><p>申请通过后才能进入服务器。入群或提交申请都不代表已经获得通行许可。</p><a class="dialog-group-link" href="https://qm.qq.com/q/HROB9FDSYE" target="_blank" rel="noopener noreferrer">加入 Deuterium · 柚 QQ 群 ↗</a>'},
+  guide: {title:'申请前，先看这里', html:'<ul><li>使用你本人持有的 Minecraft Java 版正版账号，填写当前玩家名，不要填写邮箱或 UUID。</li><li><strong>先加入服务器 QQ 群（490579956）。填写的 QQ 号码不在群内，将无法通过审核。</strong></li><li>阅读并同意《文明游戏公约》，确认愿意遵守服务器规则。</li><li>请确认该 QQ 邮箱可以收信，审核结果将发送至“QQ号码@qq.com”。</li></ul><p>申请通过后才能进入服务器。入群或提交申请都不代表已经获得通行许可。</p><a class="dialog-group-link" href="https://qm.qq.com/q/HROB9FDSYE" target="_blank" rel="noopener noreferrer">加入 Deuterium · 柚 QQ 群 ↗</a>'},
   about: {title:'欢迎来到 Deuterium IX', html:'<p>这里是一个 Minecraft 玩家社区。</p><p>你可以盖房子、做自动化、探索新的地方，也可以和朋友一起慢慢建设。无论熟悉模组，还是刚开始接触，都欢迎你来认识我们。</p><p>先加入 QQ 群，看看群公告里的玩法介绍，再申请你的通行许可。遇到问题可以在群内询问管理组。</p>'},
   covenant: {title:'文明游戏公约', html:'<p class="covenant-intro">一起玩得长久，比一时的输赢更重要。加入 Deuterium IX，请和我们一起遵守：</p><ol class="covenant-list"><li><strong>友善交流，尊重彼此</strong><p>不辱骂、骚扰或歧视他人，不公开他人的个人信息。遇到分歧先沟通，不把争执带成围攻。</p></li><li><strong>珍惜他人的建设成果</strong><p>未经允许，不拆改他人建筑、不拿取他人物资。使用他人的设施或进入私人区域前，先征得同意。</p></li><li><strong>公平游玩，不作弊</strong><p>不使用作弊工具，不利用漏洞刷取物资或破坏服务器。发现问题请向管理组反馈。</p></li><li><strong>照顾共同的游戏环境</strong><p>不刷屏、不发送骚扰广告，不恶意制造卡顿或占用服务器资源。建设大型装置时，遵守所在子服的性能规则。</p></li><li><strong>遵守规则，有事沟通</strong><p>阅读群公告和各子服的玩法规则。发生纠纷时保留记录，联系管理组处理，不自行报复或破坏。</p></li></ol><p>各子服的具体玩法与限制，请以群公告为准。</p>'},
-  privacy: {title:'资料使用说明', html:'<p>游戏 ID 用于核对账号和设置通行权限；QQ 号码用于核对群成员身份、联系审核事项与通知结果。这些资料不用于公开展示。</p><p>点击“提交申请”后，资料将发送给服务器管理组。请只填写本人信息，不要在补充记录中提供密码、验证码或其他敏感资料。</p><p>查询凭证仅保存在你当前的浏览器中；尚未确认结果的提交内容会暂存在当前标签页，便于重试。申请和处理记录由管理组保存，用于审核与处理争议。需要更正资料或了解审核情况，请在服务器 QQ 群内联系管理组。</p>'},
+  privacy: {title:'资料使用说明', html:'<p>游戏 ID 用于核对账号和设置通行权限；QQ 号码用于核对群成员身份、联系审核事项，并将审核结果发送至对应的“QQ号码@qq.com”邮箱。这些资料不用于公开展示。</p><p>点击“提交申请”后，资料将发送给服务器管理组。请只填写本人信息，不要在补充记录中提供密码、验证码或其他敏感资料。</p><p>查询凭证仅保存在你当前的浏览器中；尚未确认结果的提交内容会暂存在当前标签页，便于重试。申请和处理记录由管理组保存，用于审核与处理争议。需要更正资料或了解审核情况，请在服务器 QQ 群内联系管理组。</p>'},
   source: {title:'影像鸣谢', html:'<p>背景：DSA 火箭发射。</p><p>采用方块风格的夜间发射场景，由 Deuterium IX 提供。</p>'},
 };
 function openDialog(key) {
@@ -160,11 +160,11 @@ async function submitApplication() {
 }
 function statusCopy(result) {
   if (result.accessAllowed) return ['通行许可已通过', '你可以使用此正版账号进入服务器了。'];
-  if (result.status === 'PENDING') return ['申请已提交，等待审核', '请保持 QQ 可联系，并留在服务器群内。你也可以随时查询最新结果。'];
+  if (result.status === 'PENDING') return ['申请已提交，等待审核', '审核结果将发送至你的 QQ 邮箱。请留在服务器群内，也可以随时查询最新结果。'];
   if (result.status === 'REJECTED') return ['申请未通过', '请查看审核原因。有疑问可以在服务器 QQ 群内联系管理组。'];
   if (result.accessStatus === 'REVOKED') return ['通行权限已移除', '如需了解原因，请在服务器 QQ 群内联系管理组。'];
   if (result.status === 'APPROVED') return ['申请已通过', '当前尚无有效通行权限，请联系管理组核实。'];
-  return ['申请已提交，等待审核', '请保持 QQ 可联系，并留在服务器群内。你也可以随时查询最新结果。'];
+  return ['申请已提交，等待审核', '审核结果将发送至你的 QQ 邮箱。请留在服务器群内，也可以随时查询最新结果。'];
 }
 function showReceipt(result, token) {
   currentReceipt = token; storage.write(RECEIPT_KEY, token);
