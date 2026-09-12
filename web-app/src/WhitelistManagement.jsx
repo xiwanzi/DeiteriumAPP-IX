@@ -11,24 +11,27 @@ const when = (value) => value ? new Date(value).toLocaleString("zh-CN", { hour12
 
 export default function WhitelistManagement({ client }) {
   const [view, setView] = useState("申请记录"), [filter, setFilter] = useState("PENDING"), [query, setQuery] = useState(""), [search, setSearch] = useState(""), [offset, setOffset] = useState(0);
-  const [data, setData] = useState(null), [summary, setSummary] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [feedback, setFeedback] = useState("");
+  const [result, setResult] = useState(null), [summary, setSummary] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [feedback, setFeedback] = useState("");
   const [editor, setEditor] = useState(null), [history, setHistory] = useState(null), [historyBusy, setHistoryBusy] = useState(false);
   const generation = useRef(0), historyGeneration = useRef(0);
   const applications = view === "申请记录";
+  const listPath = `/api/v1/admin/whitelist/${applications ? "applications" : "entries"}?${new URLSearchParams({ q: search, status: filter, offset, limit: 30 })}`;
+  // A view change renders before effect cleanup, so only display the matching response.
+  const data = result?.path === listPath ? result.data : null;
   const load = async (quiet = false) => {
     const current = ++generation.current;
     if (!quiet) setBusy(true);
     setError("");
     try {
       const [list, overview] = await Promise.all([
-        client.request(`/api/v1/admin/whitelist/${applications ? "applications" : "entries"}?${new URLSearchParams({ q: search, status: filter, offset, limit: 30 })}`),
+        client.request(listPath),
         client.request("/api/v1/admin/whitelist/summary"),
       ]);
-      if (current === generation.current) { setData(list.data); setSummary(overview.data); }
+      if (current === generation.current) { setResult({ path: listPath, data: list.data }); setSummary(overview.data); }
     } catch (e) { if (current === generation.current) setError(e.message); }
     finally { if (current === generation.current) setBusy(false); }
   };
-  useEffect(() => { setData(null); load(); const timer = setInterval(() => load(true), 15000); return () => { generation.current++; clearInterval(timer); }; }, [client, view, filter, search, offset]);
+  useEffect(() => { load(); const timer = setInterval(() => load(true), 15000); return () => { generation.current++; clearInterval(timer); }; }, [client, listPath]);
   useEffect(() => () => { historyGeneration.current++; }, []);
   const changeView = (next) => { setView(next); setFilter(next === "申请记录" ? "PENDING" : "ACTIVE"); setOffset(0); };
   const saved = async (message) => { setEditor(null); setFeedback(message); await load(); };
