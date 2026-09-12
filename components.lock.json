@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-12",
+  "baselineDate": "2026-09-13",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
@@ -16,11 +16,11 @@
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.16",
-      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
-      "publishedSourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
-      "publishedArchiveSha256": "68f3f21c51f2e24fa11458a94eb3ec57f1a819d1b0830660938f9cceab5af285",
-      "buildSourceCommit": "990a3c9eac3d1901428b2ce71cf43119a2e43ec6"
+      "version": "2.0.17",
+      "sourceCommit": "906bbae5b5c21c153b0b4c78ee0dd77cb5521521",
+      "publishedSourceCommit": "906bbae5b5c21c153b0b4c78ee0dd77cb5521521",
+      "publishedArchiveSha256": "8959c048550a2e75f23b67408b0e4044011f90bd627ff39287baa2191e4ae558",
+      "buildSourceCommit": "0778123edd89228ff0231f2e194e733d85ce5d21"
     },
     {
       "name": "go-backend",
@@ -97,7 +97,7 @@
     "version": "2.0.13",
     "androidVersionCode": 21300,
     "status": "PUBLISHED",
-    "branch": "xiwanzi/admission-live-record",
+    "branch": "xiwanzi/web217-live-record",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
@@ -110,16 +110,17 @@
       "pullRequest": 2,
       "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
-    "qa": "docs/qa/admission-v1.md",
-    "releaseNotes": "docs/deployment/admission-v1-live.md",
+    "qa": "docs/qa/whitelist-tab-crash.md",
+    "releaseNotes": "docs/deployment/web-2.0.17-live.md",
     "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
     "buildManifest": "docs/deployment/artifacts/admission-v1/manifest.json",
     "migrations": [
       "029_admission.sql"
     ],
     "publishedAt": "2026-09-12T14:49:14Z",
-    "webVersion": "2.0.16",
+    "webVersion": "2.0.17",
     "gatewayVersion": "1.0.0",
-    "admissionURL": "https://47.103.99.34/admission/"
+    "admissionURL": "https://47.103.99.34/admission/",
+    "webPublishedAt": "2026-09-12T16:10:49.509528+00:00"
   }
 }

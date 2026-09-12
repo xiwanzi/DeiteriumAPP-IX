@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-13：**Web 2.0.17 已于 00:10 上线**，修复白名单列表切回申请记录导致全屏白屏。按用户最新要求，00:14 已撤销全部 70 个现有白名单资格，当时有效资格为 0；账号及历史保留，在线连接未主动断开。以后须重新申请审批，禁止自动恢复旧导入资格。App、Go、Gateway 沿用原版。见[部署与重置记录](docs/deployment/web-2.0.17-live.md)。下方为较早记录。
+
 2026-09-12：**通行申请站、Web 2.0.16、配套 Go 与 Velocity Gateway 1.0.0 已上线**。申请入口 `https://47.103.99.34/admission/`，管理入口 `/admin?section=whitelist`；默认进 Amiya，重连优先上次子服。70 个有效旧账号保留通行资格。App 保持 2.0.13，本轮仅独立网页。维护工作区 `C:/DeiteriumAPP-IX/.worktrees/admission-velocity`，先读[部署记录](docs/deployment/admission-v1-live.md)。下方为较早记录。
 
 2026-09-12：**App 2.0.13（21300）、Web 2.0.15 与配套 Go 已于 19:15 上线**，源码 `15690c138288`（PR #26），xiwanzi 更新提醒已推送。工作台支持当前管理员密码确认的永久注销，App/Web 同步清理关联展示，历史交易匿名保留；已部署启动器 0.5 源码一并合入，内容版本 5 和配置未改。71 个账号、27 笔订单、5 个委托保留，四节点在线；本轮未注销真实账号。维护工作区 `.worktrees/account-erasure`，分支 `xiwanzi/release-v213-live`。见[部署记录](docs/deployment/deuterium-2.0.13-live.md)。下方为较早记录。
