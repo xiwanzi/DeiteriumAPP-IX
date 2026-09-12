@@ -39,8 +39,10 @@ func TestSMTPTLSAndSTARTTLSSendUTF8AndAcceptCommittedDataBeforeQuit(t *testing.T
 	}
 	roots := x509.NewCertPool()
 	roots.AddCert(cert)
-	for _, security := range []string{"TLS", "STARTTLS"} {
+	for _, security := range []string{"TLS", "STARTTLS", "TLS-HTML", "STARTTLS-HTML"} {
 		t.Run(security, func(t *testing.T) {
+			html := strings.HasSuffix(security, "-HTML")
+			security := strings.TrimSuffix(security, "-HTML")
 			listener, err := net.Listen("tcp", "127.0.0.1:0")
 			if err != nil {
 				t.Fatal(err)
@@ -112,13 +114,22 @@ func TestSMTPTLSAndSTARTTLSSendUTF8AndAcceptCommittedDataBeforeQuit(t *testing.T
 			s.Host = "127.0.0.1"
 			s.Port = listener.Addr().(*net.TCPAddr).Port
 			s.Security = security
-			if err := sendWithRoots(context.Background(), s, "test-password", "same-message", "平台介入更新", "案件状态已更新", roots); err != nil {
-				t.Fatal(err)
+			var sendErr error
+			if html {
+				sendErr = sendMessageWithRoots(context.Background(), s, "test-password", "same-message", Message{Subject: "平台介入更新", Text: "案件状态已更新", HTML: `<p>审核结果</p><img src="cid:badge">`, Images: []InlineImage{{CID: "badge", Filename: "badge.png", ContentType: "image/png", Data: []byte{1, 2, 3}}}}, roots)
+			} else {
+				sendErr = sendWithRoots(context.Background(), s, "test-password", "same-message", "平台介入更新", "案件状态已更新", roots)
+			}
+			if sendErr != nil {
+				t.Fatal(sendErr)
 			}
 			select {
 			case message := <-received:
 				if !strings.Contains(message, "Message-ID: <same-message@deuterium-notifications>") || !strings.Contains(message, base64.StdEncoding.EncodeToString([]byte("案件状态已更新"))) {
 					t.Fatal("MIME message missing expected content")
+				}
+				if html && (!strings.Contains(message, "multipart/related") || !strings.Contains(strings.ToLower(message), "content-id: <badge>")) {
+					t.Fatal("SMTP lost HTML or inline image")
 				}
 			case err := <-failures:
 				t.Fatal(err)
