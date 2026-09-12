@@ -1,0 +1,85 @@
+{
+  "release": {
+    "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
+    "backend": "/opt/deuterium/releases/admission-email-57878e526653",
+    "web": "/var/www/deuterium/releases/web-2.0.18-57878e526653",
+    "admission": "/var/www/deuterium-admission/releases/admission-1.0.1-57878e526653",
+    "backup": "/var/backups/deuterium/admission-email-57878e526653",
+    "webVersion": "2.0.18",
+    "admissionVersion": "1.0.1",
+    "files": [
+      {
+        "name": "deuterium",
+        "size": 21651616,
+        "sha256": "fc85f44d9332854d5ef4ee3709086e344bb6bb825d4e14523ddaf51fa27338b1"
+      },
+      {
+        "name": "web-2.0.18.zip",
+        "size": 33709220,
+        "sha256": "a29c4dc85f5d2c8f7f5f7897490c1a0608049936e175e1e99c3281cf66babbd2"
+      },
+      {
+        "name": "admission-1.0.1.zip",
+        "size": 4559669,
+        "sha256": "592996324ae4b043d0e80a518b2897d4e86d743d977902ec18fa8813330638ff"
+      }
+    ],
+    "publishedAt": "2026-09-12T18:03:15.064594+00:00",
+    "previous": {
+      "backend": "/opt/deuterium/releases/smtp-fix-c6dd50e97580",
+      "web": "/var/www/deuterium/releases/web-2.0.17-0778123edd89/dist",
+      "admission": "/var/www/deuterium-admission/releases/admission-1.0.0-990a3c9eac3d/site"
+    },
+    "databaseBackupSha256": "dcde7cfe859ff8bc9a342fba880f7019a98015f6fd9e4128212f6d58c0572c44",
+    "recordsPreserved": true,
+    "whitelistPreserved": true,
+    "smtpPreserved": true,
+    "launcherPreserved": true,
+    "appFeedPreserved": true,
+    "ready": true,
+    "reviewEmailEnabled": false
+  },
+  "activation": {
+    "enabledAt": "2026-09-12T18:04:59.023712+00:00",
+    "admissionReviewEnabled": true,
+    "smtpSettingsVersion": 9,
+    "smtpCipherPreserved": true,
+    "whitelistPreserved": true,
+    "templatePreviews": {
+      "APPROVED": "admission-20260913-v1",
+      "REJECTED": "admission-20260913-v1"
+    },
+    "testDelivery": [
+      {
+        "eventId": "smtp_test_975906132663e6a4fcbfc1a4082f9e79",
+        "kind": "TEST_REJECTED",
+        "status": "SENT",
+        "attempts": 1,
+        "sentAt": "2026-09-12T18:04:58.699277Z",
+        "recipientMatchesApprovedTestMailbox": true
+      },
+      {
+        "eventId": "smtp_test_decb9ac457df3fef7f94bfd8b7cfa7a0",
+        "kind": "TEST_APPROVED",
+        "status": "SENT",
+        "attempts": 1,
+        "sentAt": "2026-09-12T18:04:56.010042Z",
+        "recipientMatchesApprovedTestMailbox": true
+      }
+    ],
+    "temporarySessionRemoved": true
+  },
+  "final": {
+    "runningBinaryVerified": true,
+    "whitelistCounts": {
+      "REVOKED": "70"
+    },
+    "accountCount": 71,
+    "resourceCounts": {
+      "COMMISSION": "5",
+      "ORDER": "27"
+    },
+    "gatewayOnline": true,
+    "publicHTMLMatchesBuild": true
+  }
+}
