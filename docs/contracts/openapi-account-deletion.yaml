@@ -1,5 +1,5 @@
 openapi: 3.0.3
-info: {title: Deuterium permanent account deletion, version: candidate-2026-09-12}
+info: {title: Deuterium permanent account deletion, version: 2.0.13}
 servers: [{url: /api/v1}]
 paths:
   /admin/accounts/{userId}/delete:

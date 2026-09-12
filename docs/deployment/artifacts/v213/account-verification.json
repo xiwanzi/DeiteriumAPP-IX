@@ -1,0 +1,17 @@
+{
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "previouslyOnlineNodesReconnected": true,
+  "accountManagementAvailable": true,
+  "passwordConfirmationEnforced": true,
+  "negativeProbeUsedSelfTargetAndEmptyPassword": true,
+  "deletionSyncAvailable": true,
+  "launcherPublishedVersion": 5,
+  "noticeVisible": true,
+  "temporarySessionRevoked": true,
+  "revokedSessionStatus": 401
+}

@@ -1,5 +1,7 @@
 # 接口文档阅读入口
 
+2026-09-12：永久注销功能已随 App 2.0.13 / Web 2.0.15 上线，见[部署记录](../deployment/deuterium-2.0.13-live.md)。下方候选说明保留为历史。
+
 **2026-09-12 / 永久注销候选：** 管理工作台使用当前管理员密码确认注销，App/Web 同步清理旧账号引用，见[注销契约](account-permanent-deletion.md)与[OpenAPI](openapi-account-deletion.yaml)。尚未部署。
 
 **2026-09-10 / 2.0.8 候选：** 新增内置桌面图标选择、管理端发布与实时补同步，见 [图标切换契约](launcher-icons-v208.md) 和 [OpenAPI](openapi-launcher-icons-v208.yaml)。已完成本机实现与隔离验证，是否上线以部署记录为准。

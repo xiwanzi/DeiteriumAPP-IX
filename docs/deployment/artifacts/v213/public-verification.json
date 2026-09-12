@@ -1,0 +1,28 @@
+{
+  "checks": {
+    "20004": "21300 available",
+    "20101": "21300 available",
+    "20200": "21300 available",
+    "20300": "21300 available",
+    "20401": "21300 available",
+    "20500": "21300 available",
+    "20600": "21300 available",
+    "20700": "21300 available",
+    "20800": "21300 available",
+    "20901": "21300 available",
+    "21000": "21300 available",
+    "21100": "21300 available",
+    "21200": "21300 available",
+    "21299": "21300 available",
+    "21300": "no self/downgrade",
+    "21301": "no self/downgrade"
+  },
+  "apkSha256": "2d063c93d865c374be426e9aa263658869c96a6aeb8f4c4de029f990f5fd398b",
+  "apkSize": 8875538,
+  "httpsVerified": true,
+  "webVersion": "2.0.15",
+  "accountDeleteControlInPublishedBundle": true,
+  "bundledLauncherControlPreserved": true,
+  "oldBootstrapStatus": 404,
+  "launcherContentAvailable": true
+}

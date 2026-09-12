@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-09-12T11:18:10Z",
+  "service": "active",
+  "health": {
+    "status": "ready"
+  },
+  "runningBackendPath": "/opt/deuterium/releases/release-2.0.13-15690c138288/deuterium",
+  "backendSha256": "3ffce2b5552de15005064310b5318bccf9812e56db413b928c64effd6558ebcf",
+  "webVersion": "2.0.15",
+  "configurationAndRuntimeFilesUnchanged": true,
+  "previousMigrationChecksumsUnchanged": true,
+  "appliedMigration": [
+    "028_account_deletion.sql"
+  ],
+  "launcherDraftAndPublicationUnchanged": true,
+  "launcherPublishedVersion": "5",
+  "allPreexistingAccountsPreserved": true,
+  "allPreexistingCommerceResourcesPreserved": true,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "accountCount": 71,
+  "deletionCount": 0,
+  "oldAccountActiveCount": 1,
+  "activeFinancialOperations": 0,
+  "activeLauncherSyncs": 0
+}

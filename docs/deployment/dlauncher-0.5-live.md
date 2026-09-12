@@ -1,5 +1,7 @@
 # DLauncher 0.5.0 / Web 2.0.14
 
+2026-09-12 后续维护：本记录的 App Web/Go 源码 `b5b06c8` 已随 [PR #26](https://github.com/xiwanzi/DeiteriumAPP-IX/pull/26) 合入 main，配合[账号注销发布](deuterium-2.0.13-live.md)上线至 Web 2.0.15。启动器内容版本 5、配置和索引保留，Windows 启动器未重新发布。下方“尚未合并”是本轮首次交付时的状态。
+
 2026-09-12，桌面启动器改为整包发布后仅通过 McPatch 更新。用户本轮要求只修改启动器与打包脚本，不生成完整游戏包。
 
 ## 实现

@@ -1,0 +1,54 @@
+{
+  "versionName": "2.0.13",
+  "versionCode": 21300,
+  "webVersion": "2.0.15",
+  "packageName": "com.deuterium.app.uilab",
+  "variant": "performance",
+  "debuggable": false,
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "sourceCommit": "6231ac2c833656ec259747dbeaa1c484a4a2904a",
+  "sourceTrees": {
+    "android-app": "4fbc9624866b84d89bcce9d7bfd5be2e46d455fc",
+    "backend-next": "750ff7d8f9cf316147626dedf5560515c26e5885",
+    "web-app": "9a922f663cfb2ea3f7617328b1204ae76f9a4353"
+  },
+  "releaseNotes": "新增管理员密码确认的永久注销功能，同步清理旧账号的联系人、主页和商品，历史交易匿名保留。",
+  "files": [
+    {
+      "name": "Deuterium-2.0.13-21300-test.apk",
+      "sizeBytes": 8875538,
+      "sha256": "2d063c93d865c374be426e9aa263658869c96a6aeb8f4c4de029f990f5fd398b"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 13156512,
+      "sha256": "3ffce2b5552de15005064310b5318bccf9812e56db413b928c64effd6558ebcf"
+    },
+    {
+      "name": "web-2.0.15.zip",
+      "sizeBytes": 33703632,
+      "sha256": "c1b370b4db8d4f62cd8e8ad7ade87d19211cf4e938850119464b573efb3964ca"
+    }
+  ],
+  "androidTests": {
+    "tests": 152,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 24
+  },
+  "profiles": {
+    "assets/dexopt/baseline.prof": 9905,
+    "assets/dexopt/baseline.profm": 1318
+  },
+  "migrations": {
+    "028_account_deletion.sql": "5b68531560814e7365b96cac09d7a0b06a121ee1497f3a4c497054f4a2b858b0"
+  },
+  "preservedLauncherCommit": "b5b06c80d62cef65efbc219edf296d5c1827a648",
+  "mergeCommit": "15690c138288746188ea242379695be1f3e6622a",
+  "pullRequest": "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/26",
+  "sourceTreesMatchMerge": true
+}

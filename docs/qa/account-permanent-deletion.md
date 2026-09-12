@@ -1,5 +1,7 @@
 # 永久注销账号验收
 
+2026-09-12 19:15：本功能已随 App 2.0.13（21300）、Web 2.0.15 和配套 Go 上线，见[部署记录](../deployment/deuterium-2.0.13-live.md)。下方保留最初本机候选验收阶段。
+
 2026-09-12。实现提交 `038718b068fb8a6a4074a60d4bd0cdb3fbd567c0`，分支 `xiwanzi/account-erasure`，工作区 `.worktrees/account-erasure`。基于 App 2.0.12 / Web 2.0.10 配套源码。
 
 **本地候选，尚未推送、合并或部署；没有注销真实账号，`luoyinwuchen` 未在本轮被操作。** App 版本仍是 2.0.12（21200），本机 Debug APK 仅用于验证，不是新的线上发布。
