@@ -6,7 +6,7 @@ import java.util.List;
 final class GatewayConfig {
     String apiBaseUrl = "https://47.103.99.34";
     String apiToken = "";
-    String applicationUrl = "https://47.103.99.34:9443";
+    String applicationUrl = "https://47.103.99.34/admission/";
     String defaultServer = "amiya";
     List<String> fallbackServers = List.of("amiya", "login");
     int requestTimeoutSeconds = 5;

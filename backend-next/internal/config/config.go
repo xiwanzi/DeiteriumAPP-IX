@@ -31,6 +31,7 @@ type Node struct {
 }
 
 type Config struct {
+	AdmissionApplicationURL     string   `json:"admissionApplicationUrl,omitempty"`
 	AdmissionPublicOrigin       string   `json:"admissionPublicOrigin,omitempty"`
 	AdmissionGatewayTokenSHA256 string   `json:"admissionGatewayTokenSha256,omitempty"`
 	SMTPKey                     []byte   `json:"-"`
@@ -67,6 +68,12 @@ func Load(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
+	if c.AdmissionApplicationURL != "" {
+		u, err := url.Parse(c.AdmissionApplicationURL)
+		if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Scheme+"://"+u.Host != c.AdmissionPublicOrigin {
+			return errors.New("admissionApplicationUrl must belong to admissionPublicOrigin")
+		}
+	}
 	if c.AdmissionPublicOrigin != "" {
 		origin, err := url.Parse(c.AdmissionPublicOrigin)
 		if err != nil || origin.Host == "" || origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" || (origin.Scheme != "https" && !(c.Development && origin.Scheme == "http" && loopback(origin.Hostname()))) {
@@ -143,6 +150,13 @@ func (c Config) Validate() error {
 		return errors.New("only one Core economy authority is allowed")
 	}
 	return nil
+}
+
+func (c Config) AdmissionURL() string {
+	if c.AdmissionApplicationURL != "" {
+		return c.AdmissionApplicationURL
+	}
+	return c.AdmissionPublicOrigin
 }
 
 func loopback(host string) bool { ip := net.ParseIP(host); return ip != nil && ip.IsLoopback() }

@@ -51,6 +51,7 @@ func TestAdmissionBrowserFixture(t *testing.T) {
 	}))
 	f.app.Config.PublicOrigin = f.http.URL
 	f.app.Config.AdmissionPublicOrigin = f.http.URL
+	f.app.Config.AdmissionApplicationURL = f.http.URL + "/admission/"
 	data, _ := json.Marshal(map[string]any{"url": f.http.URL, "adminURL": f.http.URL + "/fixture-login", "applicationURL": f.http.URL + "/admission/"})
 	if err := os.WriteFile(file, data, 0600); err != nil {
 		t.Fatal(err)
