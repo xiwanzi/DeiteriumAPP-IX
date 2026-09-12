@@ -32,6 +32,7 @@ type Server struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 	requests     chan struct{}
+	desktop      *desktopRuntime
 }
 
 func New(s *store.Store, c config.Config) *Server {
@@ -44,6 +45,7 @@ func New(s *store.Store, c config.Config) *Server {
 	}
 	go server.coreWorker(nodes)
 	go server.emailWorkerV204()
+	server.initDesktopLauncher()
 	return server
 }
 func (s *Server) Close() { s.cancel(); s.Hub.Wake() }
@@ -63,6 +65,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAdminAccountsV206(mux)
 	s.registerAdminCommerceV204(mux)
 	s.registerLauncherIcons(mux)
+	s.registerDesktopLauncher(mux)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
