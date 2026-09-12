@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-13：**SMTP 队列修复已于 00:36 上线**，解决 MariaDB 10.5 不支持 `SKIP LOCKED` 导致测试邮件始终待发送的问题。两封已排队测试邮件已被 QQ SMTP 接收，配置/授权码保留。Web 仍为 2.0.17，App 2.0.13，70 条已撤销白名单资格未恢复；审批通过邮件尚待正文确定。见[上线记录](docs/deployment/smtp-queue-fix-live.md)。下方为较早记录。
+
 2026-09-13：**Web 2.0.17 已于 00:10 上线**，修复白名单列表切回申请记录导致全屏白屏。按用户最新要求，00:14 已撤销全部 70 个现有白名单资格，当时有效资格为 0；账号及历史保留，在线连接未主动断开。以后须重新申请审批，禁止自动恢复旧导入资格。App、Go、Gateway 沿用原版。见[部署与重置记录](docs/deployment/web-2.0.17-live.md)。下方为较早记录。
 
 2026-09-12：**通行申请站、Web 2.0.16、配套 Go 与 Velocity Gateway 1.0.0 已上线**。申请入口 `https://47.103.99.34/admission/`，管理入口 `/admin?section=whitelist`；默认进 Amiya，重连优先上次子服。70 个有效旧账号保留通行资格。App 保持 2.0.13，本轮仅独立网页。维护工作区 `C:/DeiteriumAPP-IX/.worktrees/admission-velocity`，先读[部署记录](docs/deployment/admission-v1-live.md)。下方为较早记录。

@@ -25,10 +25,10 @@
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
-      "publishedSourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
-      "publishedSha256": "68f24e0d5185188789e6a4aeaefa9005782942291c53c99a3e7a0c809ea64f80",
-      "buildSourceCommit": "fb12a4d2ece73107a0d69029c86e83a1c82c7cb4"
+      "sourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
+      "publishedSourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
+      "publishedSha256": "ade795578175f5f271b7efe8b4c29b7598cdb43950579cf6a78c655858d8bff3",
+      "buildSourceCommit": "c6dd50e975807b5737a94db9270beed5715c20b6"
     },
     {
       "name": "core",
@@ -97,7 +97,7 @@
     "version": "2.0.13",
     "androidVersionCode": 21300,
     "status": "PUBLISHED",
-    "branch": "xiwanzi/web217-live-record",
+    "branch": "xiwanzi/smtp-live-record",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
@@ -110,10 +110,10 @@
       "pullRequest": 2,
       "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
-    "qa": "docs/qa/whitelist-tab-crash.md",
-    "releaseNotes": "docs/deployment/web-2.0.17-live.md",
-    "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
-    "buildManifest": "docs/deployment/artifacts/admission-v1/manifest.json",
+    "qa": "docs/qa/smtp-queue-compatibility.md",
+    "releaseNotes": "docs/deployment/smtp-queue-fix-live.md",
+    "sourceCommit": "8cf9149f0ccf2f17fa28231ab639f09a5176772c",
+    "buildManifest": "docs/deployment/artifacts/smtp-queue-fix/verification.json",
     "migrations": [
       "029_admission.sql"
     ],
@@ -121,6 +121,7 @@
     "webVersion": "2.0.17",
     "gatewayVersion": "1.0.0",
     "admissionURL": "https://47.103.99.34/admission/",
-    "webPublishedAt": "2026-09-12T16:10:49.509528+00:00"
+    "webPublishedAt": "2026-09-12T16:10:49.509528+00:00",
+    "backendPublishedAt": "2026-09-12T16:36:06.027738+00:00"
   }
 }
