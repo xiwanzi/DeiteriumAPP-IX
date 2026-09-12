@@ -34,7 +34,7 @@ func (s *Store) UserByAlias(ctx context.Context, alias string) (u User, err erro
 }
 
 func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf string, expiry time.Time, newPasswordHash string) error {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, user.ID)
 	if err != nil {
 		return err
 	}

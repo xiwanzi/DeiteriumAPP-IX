@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { redactErasedAccounts } from "./account-erasure.js";
 import { Plus, RefreshCw } from "lucide-react";
 import { Badge, Button, Empty, Field, Modal, PageHead, Tabs, Avatar, media } from "./components.jsx";
 import { MediaPicker } from "./MediaPicker.jsx";
@@ -26,6 +27,7 @@ export function BusinessDetail({ client, user, type, reference, initial, onChang
     } catch (e) { if (alive.current) setError(e.message); } finally { loading.current = false; }
   };
   useEffect(() => { alive.current = true; load(); const timer = setInterval(() => { if (!document.hidden && current.current && fundsPending(current.current)) load(); }, 5000); return () => { alive.current = false; clearInterval(timer); }; }, [reference]);
+  useEffect(() => client.onAccountDeletions(() => setValue((old) => redactErasedAccounts(old, client.erasedPlayerRefs))), [client]);
   if (!value) return <Empty title={error ? "暂时无法读取详情" : "正在读取详情"} text={error || "请稍候…"}><Button secondary onClick={load}>重新读取</Button></Empty>;
   const pending = fundsPending(value), label = type === "COMMISSION" ? value.status === "ACTIVE" && pending ? "正在确认接取" : commissionStatus[value.status] : value.construction && value.status === "SHIPPED" ? "施工中" : orderStatus[value.status];
   const updated = async (data) => { const resource = businessResource(data); if (resource) setValue(resource.value); setAction(null); await load(); await onChanged?.(); };
@@ -136,6 +138,7 @@ export default function BusinessPages({ client, user, type = "ORDER", merchantSt
     } catch (e) { if (current === generation.current) setError(e.message); } finally { if (current === generation.current) setBusy(false); }
   };
   useEffect(() => { setItems([]); load(); return () => { generation.current++; }; }, [scope, type, merchantStoreId]);
+  useEffect(() => client.onAccountDeletions(() => setItems((old) => redactErasedAccounts(old, client.erasedPlayerRefs))), [client]);
   useEffect(() => { const reference = new URLSearchParams(location.search).get(isCommission ? "commission" : "order"); if (reference) setSelected({ reference }); }, [type]);
   const onResource = (resource) => { setCreating(false); setPending(null); setSelected({ reference: resourceId(resource.value), value: resource.value }); load(); };
   const saved = Object.values(savedBusiness(user.userId)).filter((entry) => isCommission ? entry.kind === "COMMISSION_PUBLISH" : ["STORE_PURCHASE", "MARKET_PURCHASE"].includes(entry.kind));

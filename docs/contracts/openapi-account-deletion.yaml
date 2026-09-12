@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info: {title: Deuterium permanent account deletion, version: candidate-2026-09-12}
+servers: [{url: /api/v1}]
+paths:
+  /admin/accounts/{userId}/delete:
+    post:
+      operationId: permanentlyDeleteAccount
+      summary: 平台管理员输入自己的当前密码后永久注销目标账号
+      security: [{WebSession: [], CsrfToken: []}, {AppBearer: []}]
+      parameters:
+        - {in: path, name: userId, required: true, schema: {type: string, minLength: 1, maxLength: 128}}
+        - {in: header, name: Origin, description: 网页会话必须同源, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId, expectedVersion, password]
+              properties:
+                clientRequestId: {type: string, minLength: 1, maxLength: 128}
+                expectedVersion: {type: integer, format: int64, minimum: 1}
+                password: {type: string, format: password, writeOnly: true, minLength: 8, maxLength: 64}
+      responses:
+        '200':
+          description: 注销成功或成功请求的同键重试
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [userId, deleted, version]
+                    properties:
+                      userId: {type: string}
+                      deleted: {type: boolean, enum: [true]}
+                      version: {type: integer, format: int64}
+        '400': {description: 当前管理员密码或请求格式错误}
+        '401': {description: 当前会话无效}
+        '403': {description: 非平台管理员或 Origin/CSRF 拒绝}
+        '404': {description: 目标账号不存在}
+        '409': {description: 版本/幂等冲突、凭证变化、本人/最后管理员保护、未完成交易、商店归属或已注销终态}
+        '429': {description: 密码确认限次}
+        '503': {description: 服务忙或事务暂不可用，保留原请求键重试}
+  /account/deletions:
+    get:
+      operationId: listAccountDeletions
+      summary: 读取不含旧个人资料的注销引用增量
+      security: [{WebSession: []}, {AppBearer: []}]
+      parameters:
+        - {in: query, name: after, schema: {type: integer, format: int64, minimum: 0, default: 0}}
+      responses:
+        '200':
+          description: 最多 100 项，按 sequence 升序
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [items, cursor, hasMore]
+                    properties:
+                      items:
+                        type: array
+                        maxItems: 100
+                        items:
+                          type: object
+                          additionalProperties: false
+                          required: [sequence, playerRef]
+                          properties:
+                            sequence: {type: integer, format: int64, minimum: 1}
+                            playerRef: {type: string}
+                      cursor: {type: integer, format: int64, minimum: 0}
+                      hasMore: {type: boolean}
+        '400': {description: 游标格式不正确}
+        '401': {description: 当前会话无效}
+components:
+  securitySchemes:
+    WebSession: {type: apiKey, in: cookie, name: __Host-deuterium_session}
+    CsrfToken: {type: apiKey, in: header, name: X-CSRF-Token}
+    AppBearer: {type: http, scheme: bearer}

@@ -58,7 +58,7 @@ func (s *Store) PublishAppChatV2(ctx context.Context, u User, clientID, content,
 	if err != nil {
 		return "", false, err
 	}
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, u.ID)
 	if err != nil {
 		return "", false, err
 	}

@@ -203,7 +203,7 @@ func aiQuotaLockedV2(ctx context.Context, tx *sql.Tx, user string, policy AIPoli
 }
 func (s *Store) AIStateV2(ctx context.Context, user string, policy AIPolicyV2, now time.Time) (AIStateV2, error) {
 	var state AIStateV2
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, user)
 	if err != nil {
 		return state, err
 	}
@@ -263,7 +263,7 @@ func (s *Store) AIExchangeV2(ctx context.Context, user, id string) (AIExchangeV2
 }
 func (s *Store) BeginAIV2(ctx context.Context, user, key, content, model string, policy AIPolicyV2, now time.Time, lifetime time.Duration) (AIExchangeV2, bool, error) {
 	var e AIExchangeV2
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, user)
 	if err != nil {
 		return e, false, err
 	}
@@ -324,7 +324,7 @@ func (s *Store) CheckpointAIV2(ctx context.Context, e AIExchangeV2) error {
 	if err != nil {
 		return err
 	}
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, e.UserID)
 	if err != nil {
 		return err
 	}
@@ -353,7 +353,7 @@ func (s *Store) FinishAIV2(ctx context.Context, e AIExchangeV2, status, code, re
 	if status != "completed" && status != "failed" && status != "unknown" && status != "incomplete" {
 		return errors.New("invalid ai terminal state")
 	}
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, e.UserID)
 	if err != nil {
 		return err
 	}
@@ -486,7 +486,7 @@ func (s *Store) AIContextV2(ctx context.Context, e AIExchangeV2, limit int) ([]A
 }
 func (s *Store) ResetAIV2(ctx context.Context, user string, now time.Time) (AIConversationV2, error) {
 	var next AIConversationV2
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, user)
 	if err != nil {
 		return next, err
 	}

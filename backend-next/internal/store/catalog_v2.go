@@ -142,7 +142,7 @@ func (s *Store) catalogMutation(ctx context.Context, user, key, scope string, in
 	if !CatalogReferenceV2(key) {
 		return nil, catalogInvalid()
 	}
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.beginAccountTx(ctx, user)
 	if err != nil {
 		return nil, err
 	}

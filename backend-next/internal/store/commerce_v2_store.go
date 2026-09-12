@@ -33,7 +33,7 @@ func (s *Store) commerceMutateAttemptV2(ctx context.Context, actor, key, scope s
 	if !CatalogReferenceV2(key) {
 		return result, catalogInvalid()
 	}
-	tx, e := s.DB.BeginTx(ctx, nil)
+	tx, e := s.beginAccountTx(ctx, actor)
 	if e != nil {
 		return result, e
 	}

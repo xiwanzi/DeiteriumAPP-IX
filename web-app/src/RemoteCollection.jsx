@@ -50,6 +50,12 @@ export default function RemoteCollection({ client, path, user, onNotificationTar
     finally { if (current === generation.current) setBusy(false); }
   };
   useEffect(() => { setItems([]); setQuery(""); setSelected(null); load(); return () => { generation.current++; }; }, [path, mine]);
+  useEffect(() => client.onAccountDeletions((refs) => {
+    setItems((old) => old.filter((item) => !refs.has(item.seller?.playerRef)));
+    setSelected((old) => refs.has(old?.seller?.playerRef) ? null : old);
+    setPurchase((old) => refs.has(old?.item?.seller?.playerRef) ? null : old);
+    load();
+  }), [client, path, mine]);
   const markNotification = async (item) => {
     if (item.readAt) return; const scope = `notification:${item.notificationId}`; actionKeys.current[scope] ||= id();
     try { const r = await client.request("/api/v1/notifications/read", {method:"POST",body:{clientRequestId:actionKeys.current[scope],notificationIds:[item.notificationId]}}); if (typeof r.data.readCount !== "number") throw new Error("通知状态尚未确认。"); const changed={...item,readAt:r.serverTime || new Date().toISOString()};setItems((old)=>old.map((x)=>x.notificationId===item.notificationId?changed:x));setSelected(changed); }

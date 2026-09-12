@@ -16,6 +16,16 @@ class LabNotifications(private val context: Context) {
         manager.createNotificationChannel(NotificationChannel("wallet","钱包通知",NotificationManager.IMPORTANCE_HIGH).apply { description="转账到账提醒" })
     }
     fun allowed():Boolean = (Build.VERSION.SDK_INT<33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) && NotificationManagerCompat.from(context).areNotificationsEnabled()
+    internal fun clearAccounts(names:Set<String>){
+        if(names.isEmpty())return
+        val patterns=names.map{Regex("(?<![A-Za-z0-9_])${Regex.escape(it)}(?![A-Za-z0-9_])",RegexOption.IGNORE_CASE)}
+        val manager=context.getSystemService(NotificationManager::class.java)
+        manager.activeNotifications.forEach{entry->
+            val extras=entry.notification.extras
+            val text=listOf(android.app.Notification.EXTRA_TITLE,android.app.Notification.EXTRA_TEXT,android.app.Notification.EXTRA_BIG_TEXT).joinToString(" "){extras.getCharSequence(it)?.toString().orEmpty()}
+            if(patterns.any{it.containsMatchIn(text)})manager.cancel(entry.tag,entry.id)
+        }
+    }
     fun post(event:DemoNotice) {
         if(!allowed())return
         val userName=BackendApi.get(context).userName

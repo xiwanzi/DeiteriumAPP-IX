@@ -19,9 +19,17 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PlayerProfilePage(name:String,state:LabState,avatar:String?,topInset:Dp,onMessage:()->Unit,onTransfer:()->Unit) {
+    if(state.isUnavailableAccount(name)){
+        Box(Modifier.fillMaxSize().padding(top=topInset),contentAlignment=Alignment.Center){Text("该账号已注销",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        return
+    }
     LaunchedEffect(name){state.loadProfile(name)}
     val own=name==state.userName
     val player=Players.find{it.name==name}
+    if(!own&&player==null&&name!="AI 助手"){
+        Box(Modifier.fillMaxSize().padding(top=topInset),contentAlignment=Alignment.Center){Text("用户资料不可用",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        return
+    }
     val qq=if(own)state.api?.user?.optString("qq")?.takeIf{it.isNotBlank()} ?: "尚未公开" else player?.qq?.takeIf{it.isNotBlank()} ?: "尚未公开"
     val bio=if(own)state.profileBio.ifBlank{"还没有填写个人简介"} else player?.bio ?: "Deuterium 服务与帮助"
     val clipboard=LocalClipboardManager.current

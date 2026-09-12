@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>账号注销 · 本机验收</title></head>
+<body><div id="root"></div><script type="module">
+import React from "react";
+import { createRoot } from "react-dom/client";
+import AccountManagement from "/src/AccountManagement.jsx";
+import "/src/styles.css";
+import "/src/desktop-admin.css";
+const user={userId:"qa-admin",gameId:"AdminFixture",playerRef:"qa-admin-ref"};
+const account=(userId,gameId,admin=false)=>({userId,gameId,playerRef:userId+"-ref",qq:"10001",status:"active",admin,version:1,createdAt:"2026-09-12T00:00:00Z"});
+const initial=()=>[account(user.userId,user.gameId,true),account("qa-target","EraseFixture"),account("qa-keep","KeepFixture")];
+const qa=window.erasureQA={rows:initial(),requests:[],completed:new Map(),mode:"normal",mutations:0};
+const client={async request(path,options={}){
+  if(!options.method)return {data:{items:qa.rows,total:qa.rows.length}};
+  qa.requests.push({path,requestId:options.body.clientRequestId,passwordPresent:!!options.body.password});
+  if(!path.endsWith("/delete"))throw new Error("此测试仅验证永久注销。");
+  if(options.body.password!=="qa-admin-password")throw new Error("当前登录的管理员密码不正确。");
+  if(qa.completed.has(options.body.clientRequestId))return qa.completed.get(options.body.clientRequestId);
+  if(qa.mode==="blocked")throw new Error("该账号有未完成的订单或委托，请处理完毕后再注销。");
+  if(qa.mode==="delay")await new Promise((resolve)=>{qa.release=resolve;});
+  qa.rows=qa.rows.filter((row)=>row.userId!=="qa-target");qa.mutations++;
+  const result={data:{userId:"qa-target",deleted:true,version:2}};qa.completed.set(options.body.clientRequestId,result);
+  if(qa.mode==="unknown")throw new Error("连接中断，请重新输入管理员密码重试并确认原操作结果。");
+  return result;
+}};
+createRoot(document.getElementById("root")).render(React.createElement("main",{style:{maxWidth:1200,margin:"32px auto",padding:"0 24px"}},React.createElement(AccountManagement,{client,user})));
+</script></body></html>

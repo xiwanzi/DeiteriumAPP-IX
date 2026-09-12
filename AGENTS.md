@@ -1,5 +1,9 @@
 # Deuterium IX 工程约定
 
+2026-09-12：**管理员永久注销账号候选已完成本机实现与验收，尚未推送/部署**。源码 `038718b068fb`，工作区 `.worktrees/account-erasure`、分支 `xiwanzi/account-erasure`。工作台校验当前管理员密码，后端清理账号与展示数据，App/Web 同步清理缓存，历史交易匿名保留。没有操作真实旧号；线上仍为 2.0.12。见[验收记录](docs/qa/account-permanent-deletion.md)。
+
+2026-09-12：**DLauncher 0.5.0 / Web 2.0.14 配套 Go 已上线**，切换为整包发布后仅 McPatch 更新，删除首次安装接口和配置；Deuterium IX 使用 D9 徽章及 DSA 素材，其他入口隐藏。本轮从 origin/main 4a9c249 继续，保留并上线同步超时终态修复。维护 `.worktrees/dlauncher-bundled` / `feat/dlauncher-bundled`；用户要求本轮不生成完整游戏包。见[部署记录](docs/deployment/dlauncher-0.5-live.md)。
+
 2026-09-12 维护收口：启动器管理按本轮授权通过 PR 归入 main，后续 Web/Go 迭代从最新 origin/main 开分支；`.worktrees/dlauncher-admin` 保留为部署追溯入口。首次上线源码为 `fdf788c`。本轮 review 修正同步超时后无法保存终态的问题，未重跑测试、未重新部署；该修正需随下一次获授权的 Go 发布上线。下方“代码仅本地提交”为首次部署时的历史状态。
 
 2026-09-12：**Web 2.0.13 与启动器配套 Go 已上线**，管理导航新增“启动器”，连接同机 McPatch 原生 Web 与 OSS 同步，初始基线已发布。Android 沿用 2.0.12；71 个账号、27 笔订单、5 个委托保留，游戏服务未重启。本轮维护 `.worktrees/dlauncher-admin` / `feat/dlauncher-admin`，代码仅本地提交。见[部署与验证](docs/deployment/dlauncher-0.4-live.md)。下方为较早记录。

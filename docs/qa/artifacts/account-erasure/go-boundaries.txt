@@ -1,0 +1,2 @@
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/integration	8.179s
+ok  	github.com/xiwanzi/DeuteriumAPP/backend-next/internal/httpapi	43.367s

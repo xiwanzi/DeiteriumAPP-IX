@@ -201,10 +201,18 @@ func (s *Server) ledgerRecordV204(ctx context.Context, row ledgerRowV204, admin 
 	note, ref := title, row.BusinessRef
 	var other any
 	if row.OtherUUID != nil {
-		var playerRef, gameID string
-		err := s.Store.DB.QueryRowContext(ctx, `SELECT player_ref,game_id FROM identities WHERE server_uuid=? UNION SELECT player_ref,game_id FROM core_player_directory WHERE player_uuid=? LIMIT 1`, *row.OtherUUID, *row.OtherUUID).Scan(&playerRef, &gameID)
-		if err == nil {
-			other = map[string]any{"playerRef": playerRef, "gameId": gameID}
+		deletedRef, deleted, err := s.Store.DeletedWalletParty(ctx, *row.OtherUUID, row.OccurredAt)
+		if err != nil {
+			return nil, err
+		}
+		if deleted {
+			other = map[string]any{"playerRef": deletedRef, "gameId": store.DeletedAccountName, "deleted": true}
+		} else {
+			var playerRef, gameID string
+			err := s.Store.DB.QueryRowContext(ctx, `SELECT player_ref,game_id FROM identities WHERE server_uuid=? UNION SELECT player_ref,game_id FROM core_player_directory WHERE player_uuid=? LIMIT 1`, *row.OtherUUID, *row.OtherUUID).Scan(&playerRef, &gameID)
+			if err == nil {
+				other = map[string]any{"playerRef": playerRef, "gameId": gameID}
+			}
 		}
 	}
 	if row.Source == "APP" && kind == "TRANSFER" {
@@ -221,6 +229,11 @@ func (s *Server) ledgerRecordV204(ctx context.Context, row ledgerRowV204, admin 
 	value := map[string]any{"recordId": "econ_" + row.Sequence, "direction": row.Direction, "amount": row.Amount, "currency": "CREDIT", "status": "success", "title": title, "note": note, "occurredAt": row.OccurredAt, "businessType": kind, "businessRef": ref, "source": row.Source, "otherPlayer": other, "beforeBalance": row.BeforeBalance, "afterBalance": row.AfterBalance}
 	if admin {
 		value["player"] = map[string]any{"uuid": row.PlayerUUID, "gameId": row.GameID}
+		if ref, deleted, err := s.Store.DeletedWalletParty(ctx, row.PlayerUUID, row.OccurredAt); err != nil {
+			return nil, err
+		} else if deleted {
+			value["player"] = map[string]any{"uuid": row.PlayerUUID, "playerRef": ref, "gameId": store.DeletedAccountName, "deleted": true}
+		}
 		value["operationId"] = row.OperationID
 		value["ledgerType"] = row.BusinessType
 	}
@@ -253,7 +266,7 @@ func (s *Server) walletLedgerHTTPV204(w http.ResponseWriter, r *http.Request, ad
 		return
 	}
 	if admin && f.PlayerRef != "" {
-		e := s.Store.DB.QueryRowContext(r.Context(), `SELECT server_uuid FROM identities WHERE player_ref=? UNION SELECT player_uuid FROM core_player_directory WHERE player_ref=? LIMIT 1`, f.PlayerRef, f.PlayerRef).Scan(&uuid)
+		e := s.Store.DB.QueryRowContext(r.Context(), `SELECT COALESCE((SELECT original_uuid FROM account_deletions d WHERE d.user_id=i.id),i.server_uuid) FROM identities i WHERE i.player_ref=? UNION SELECT player_uuid FROM core_player_directory WHERE player_ref=? LIMIT 1`, f.PlayerRef, f.PlayerRef).Scan(&uuid)
 		if e != nil {
 			failError(w, r, e)
 			return

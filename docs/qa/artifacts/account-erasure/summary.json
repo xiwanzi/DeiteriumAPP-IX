@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-12",
+  "baseCommit": "dc0d70fe6726ad24b38f6d694a825cce5c9b80db",
+  "branch": "xiwanzi/account-erasure",
+  "android": {
+    "variant": "debug",
+    "versionName": "2.0.12",
+    "versionCode": 21200,
+    "packageName": "com.deuterium.app.uilab",
+    "sizeBytes": 25195429,
+    "sha256": "2ed525cb044642e9592086c678fd7830ce0db22f05fedffcba59e2bc54dba909",
+    "jvm": {
+      "tests": 152,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint": {
+      "errors": 0,
+      "warnings": 24
+    },
+    "instrumentation": [
+      "contact_follow_listing_message_and_pending_cleanup",
+      "delayed_profile_cannot_revive_and_markers_persist",
+      "open_profile_and_conversation_unavailable"
+    ]
+  },
+  "web": {
+    "tests": 68,
+    "failures": 0,
+    "build": "PASS",
+    "browser": [
+      "password-required",
+      "incorrect-password-cleared",
+      "unknown-response-same-key",
+      "single-deletion",
+      "other-accounts-preserved",
+      "mobile-dark",
+      "pending-dismissal-blocked"
+    ]
+  },
+  "backend": {
+    "fullRaceIntegration": "PASS before final transfer/audit refinements",
+    "finalTransferDeletionAuditRace": "PASS",
+    "vet": "PASS"
+  },
+  "productionChanged": false,
+  "realAccountsDeleted": false,
+  "implementationCommit": "038718b068fb8a6a4074a60d4bd0cdb3fbd567c0"
+}

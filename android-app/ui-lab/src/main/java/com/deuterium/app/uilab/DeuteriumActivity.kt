@@ -219,6 +219,11 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     LaunchedEffect(flight){if(flight!=null){flightProgress.snapTo(0f);if(motion)flightProgress.animateTo(1f,tween(650,easing=FastOutSlowInEasing))else flightProgress.snapTo(1f);flight=null}}
     fun open(name:String){keyboardController?.hide();if(stack.lastOrNull()!=name)stack=stack+name}
     fun back(){keyboardController?.hide();if(stack.isNotEmpty())stack=stack.dropLast(1)else destination=Destination.Shop}
+    LaunchedEffect(state.accountErasureRevision){
+        val name=route?.takeIf{it.startsWith("player:")||it.startsWith("dm:")}?.substringAfter(':')
+        if(name!=null&&state.isUnavailableAccount(name))back()
+        if(transferTo?.let(state::isUnavailableAccount)==true){transfer=false;transferTo=null}
+    }
     fun openTransfer(name:String?=null){transferTo=name;transfer=true}
     fun showOrder(id:String){stack=stack.filterNot{it=="bag"||it.startsWith("order:")||it.startsWith("refund:")}+"order:$id"}
     fun goToNotice(target:String){destination=if(target=="wallet")Destination.Profile else Destination.Info;stack=listOf(target);state.notice=null}
@@ -227,7 +232,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     LaunchedEffect(state.notice?.id){if(state.notice!=null){delay(4200);state.notice=null}}
     val title=when {
         route=="storage"->"存储空间";route=="coupons"->"优惠券"
-        route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->route.removePrefix("dm:")
+        route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->route.removePrefix("dm:").let{if(it=="AI 助手"||Players.any{p->p.name==it})it else "私聊"}
         route=="announcement"->"官方公告";route=="event"->"委托大厅";route=="bag"->"购物袋";route=="orders"->"我的订单";route?.startsWith("order:")==true->"订单详情"
         route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"个人简介";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/bridge"
@@ -155,20 +156,27 @@ func (s *Server) walletTransferCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
 	defer cancel()
-	p, err := s.Store.WalletRecipient(ctx, in.RecipientPlayerRef)
-	if err != nil || p.UUID == session.User.ServerUUID || identity.SystemGameID(p.GameID) {
-		failure(w, r, 400, "RECIPIENT_INVALID", "收款人无效或不能向该账号转账。")
+	id, existingErr := s.Store.ExistingWalletTransfer(ctx, session.User.ID, in.ClientRequestID, in.RecipientPlayerRef, amount, in.Note)
+	if existingErr != nil && !errors.Is(existingErr, sql.ErrNoRows) {
+		failError(w, r, existingErr)
 		return
 	}
-	node, err := s.economyNode()
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	id, _, err := s.Store.CreateWalletTransfer(ctx, session.User, in.ClientRequestID, node, p, amount, in.Note)
-	if err != nil {
-		failError(w, r, err)
-		return
+	if errors.Is(existingErr, sql.ErrNoRows) {
+		p, err := s.Store.WalletRecipient(ctx, in.RecipientPlayerRef)
+		if err != nil || p.UUID == session.User.ServerUUID || identity.SystemGameID(p.GameID) {
+			failure(w, r, 400, "RECIPIENT_INVALID", "收款人无效或不能向该账号转账。")
+			return
+		}
+		node, err := s.economyNode()
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+		id, _, err = s.Store.CreateWalletTransfer(ctx, session.User, in.ClientRequestID, node, p, amount, in.Note)
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
 	}
 	t, err := s.Store.WalletTransfer(ctx, id)
 	if err != nil {

@@ -72,6 +72,11 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     val hasUnreadMessages: Boolean get() = conversationUnread.values.any{it>0}
     private val conversationIds=mutableMapOf<String,String>()
     private val contactRefreshLock=kotlinx.coroutines.sync.Mutex()
+    private val erasedRefs=mutableStateListOf<String>().apply{addAll(api?.erasedPlayerRefs().orEmpty())}
+    private val unavailableAccounts=mutableStateListOf<String>()
+    var accountErasureRevision by mutableLongStateOf(0);private set
+    fun isErasedPlayer(ref:String)=ref.isNotBlank()&&(ref in erasedRefs||ref in api?.erasedPlayerRefs().orEmpty())
+    fun isUnavailableAccount(name:String)=name in unavailableAccounts||name==ErasedAccountName
     var contactsKnown by mutableStateOf(api==null);private set
     var contactsRefreshing by mutableStateOf(false);private set
     var contactsError by mutableStateOf<String?>(null);private set
@@ -155,6 +160,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         val target=if(thread==null)chat else conversation(thread)
         val id = value.optString("messageId"); if(id.isBlank() || target.any { it.remoteId == id }) return
         val sender = value.optJSONObject("sender") ?: return
+        if(isErasedPlayer(sender.optString("playerRef")))return
+        redactErasedAccounts(value,erasedRefs.toSet())
         val name = sender.optString("gameId"); val mine = sender.optString("playerRef") == api?.playerRef
         if(name.isNotBlank() && name != userName && Players.none { it.name == name }) Players.add(PlayerProfile(name, online = sender.optBoolean("online"), playerRef = sender.optString("playerRef")))
         val sentAt=runCatching{Instant.parse(value.optString("sentAt"))}.getOrDefault(Instant.now())
@@ -220,7 +227,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     suspend fun searchRecipients(query: String): List<PlayerProfile> {
         val service = api ?: throw ApiFailure("UNAVAILABLE", "账号服务暂不可用")
         val values = service.request("GET", "/wallet/recipients/search?query=${URLEncoder.encode(query.trim(), "UTF-8")}&type=auto").optJSONArray("candidates")?.objects().orEmpty()
-        return values.map { value -> PlayerProfile(value.getString("gameId"), value.optString("qq", ""), value.optString("bio", ""), value.optBoolean("online"), value.optString("lastSeen", "暂无记录"), value.getString("playerRef"),Players.find{it.playerRef==value.getString("playerRef")}?.avatar) }.filter { it.name != userName }.also { results ->
+        return values.filterNot{isErasedPlayer(it.optString("playerRef"))}.map { value -> PlayerProfile(value.getString("gameId"), value.optString("qq", ""), value.optString("bio", ""), value.optBoolean("online"), value.optString("lastSeen", "暂无记录"), value.getString("playerRef"),Players.find{it.playerRef==value.getString("playerRef")}?.avatar) }.filter { it.name != userName }.also { results ->
             results.forEach { player -> Players.removeAll { it.name == player.name }; Players.add(player) }
         }
     }
@@ -334,13 +341,15 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     fun conversation(name: String): SnapshotStateList<ChatLine> = directChats.getOrPut(name) { mutableStateListOf() }
     fun pendingDirectDraft(name:String):String = if(name=="AI 助手")ai?.recoveredDraft.orEmpty() else Players.find{it.name==name}?.let { api?.pendingDirect(it.playerRef)?.optString("content") }.orEmpty()
     private fun rememberPlayer(value:JSONObject) {
+        if(value.optBoolean("deleted")||isErasedPlayer(value.optString("playerRef")))return
         val name=value.optString("gameId");if(name.isBlank()||name==userName)return
+        unavailableAccounts.remove(name)
         val player=PlayerProfile(name,value.optString("qq").takeUnless{it=="null"}.orEmpty(),value.optString("bio"),value.optBoolean("online",value.optBoolean("serverOnline")),value.optString("lastSeenAt").takeUnless{it.isBlank()||it=="null"} ?: "暂无记录",value.optString("playerRef"),if(value.has("avatar"))value.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"} else Players.find{it.name==name}?.avatar)
         Players.removeAll{it.name==name};Players.add(player)
     }
     private suspend fun loadDirectory() {
         runCatching { api!!.request("GET","/chat/player-directory").optJSONArray("players")?.objects().orEmpty() }.onSuccess { values->values.forEach(::rememberPlayer) }
-        runCatching { api!!.request("GET","/chat/follows").optJSONArray("players")?.objects().orEmpty() }.onSuccess { values->followed.clear();values.forEach{rememberPlayer(it);followed.add(it.getString("gameId"))};saveFollowed(followed.toSet()) }
+        runCatching { api!!.request("GET","/chat/follows").optJSONArray("players")?.objects().orEmpty() }.onSuccess { values->followed.clear();values.filterNot{isErasedPlayer(it.optString("playerRef"))}.forEach{rememberPlayer(it);followed.add(it.getString("gameId"))};saveFollowed(followed.toSet()) }
     }
     suspend fun loadProfile(name:String) {
         val ref=if(name==userName)api?.playerRef else Players.find{it.name==name}?.playerRef
@@ -355,15 +364,54 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             if(closed)return
             contactsRefreshing=true
             val account=service.financialScope()
+            syncAccountDeletions()
+            val knownBefore=conversationIds.toMap()
             val values=service.listAll("/chat/conversations")
             account.verifyCurrent(service.financialScope())
-            values.forEach{value->val other=value.getJSONObject("otherPlayer");rememberPlayer(other);val name=other.getString("gameId");conversationIds[name]=value.getString("conversationId");value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)};conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[conversationIds[name]])0 else value.optInt("unreadCount").coerceAtLeast(0)}
+            val currentIds=values.map{it.getString("conversationId")}.toSet()
+            knownBefore.filter{(name,id)->id !in currentIds&&conversationIds[name]==id}.keys.forEach(::forgetConversation)
+            values.forEach{value->val other=value.getJSONObject("otherPlayer");if(isErasedPlayer(other.optString("playerRef")))return@forEach;rememberPlayer(other);val name=other.getString("gameId");val id=value.getString("conversationId");if(conversationIds[name]?.let{it!=id}==true)forgetConversation(name);conversationIds[name]=id;value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)};conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[conversationIds[name]])0 else value.optInt("unreadCount").coerceAtLeast(0)}
             contactsKnown=true;contactsError=null
         }catch(cancelled:kotlinx.coroutines.CancellationException){throw cancelled}
         catch(error:Exception){contactsError=error.message ?: "联系人暂时无法同步"}
         finally{contactsRefreshing=false;contactRefreshLock.unlock()}
     }
     suspend fun refreshContacts()=loadConversations()
+    private fun forgetConversation(name:String){
+        conversationIds.remove(name)?.let{readCursors.remove(it)};directChats.remove(name);conversationUnread.remove(name);directErrors.remove(name);directHistoryCursors.remove(name);directHistoryLoading.remove(name);directPending.remove(name)
+    }
+    private suspend fun syncAccountDeletions(){
+        val service=api ?: return
+        val scope=service.financialScope()
+        do {
+            val result=try{service.request("GET","/account/deletions?after=${service.accountDeletionCursor()}")}catch(e:ApiFailure){if(e.status==404)return;throw e}
+            scope.verifyCurrent(service.financialScope())
+            val refs=result.getJSONArray("items").objects().map{it.getString("playerRef")}.toSet()
+            service.rememberAccountDeletions(refs,result.getLong("cursor"))
+            if(refs.isNotEmpty()){applyAccountDeletions(refs);loadDirectory()}
+        }while(result.optBoolean("hasMore"))
+    }
+    internal suspend fun applyAccountDeletions(refs:Set<String>){
+        val people=Players.filter{it.playerRef in refs}
+        val names=people.map{it.name}.toSet()
+        val images=people.mapNotNull{it.avatar}.toSet()+commerce.listings.filter{it.sellerRef in refs}.flatMap{it.photos}
+        erasedRefs.addAll(refs.filter{it !in erasedRefs});unavailableAccounts.addAll(names.filter{it !in unavailableAccounts})
+        names.forEach(::forgetConversation);followed.removeAll(names);saveFollowed(followed.toSet());recentTransfers.removeAll(names)
+        Players.removeAll{it.playerRef in refs};commerce.listings.removeAll{it.sellerRef in refs}
+        fun clean(line:ChatLine):ChatLine {
+            val reply=line.reply?.let{if(it.name in names)it.copy(name=ErasedAccountName,text="原消息不可见")else it}
+            val forwarded=line.forwarded?.let{if(it.name in names)it.copy(name=ErasedAccountName,text="原消息不可见")else it}
+            return line.copy(reply=reply,forwarded=forwarded,text=if(line.forwarded?.name in names)"原消息不可见" else line.text)
+        }
+        chat.removeAll{it.name in names};chat.indices.forEach{chat[it]=clean(chat[it])}
+        directChats.values.forEach{messages->messages.indices.forEach{messages[it]=clean(messages[it])}}
+        if(chatReplyTo?.name in names)chatReplyTo=null
+        commerce.orders.indices.forEach{i->val order=commerce.orders[i];commerce.orders[i]=order.copy(buyer=if(order.buyer in names)ErasedAccountName else order.buyer,seller=if(order.seller in names)ErasedAccountName else order.seller,sellerQQ=if(order.seller in names)"" else order.sellerQQ,sellerAvatarUri=if(order.seller in names)null else order.sellerAvatarUri)}
+        commissions.entries.indices.forEach{i->val entry=commissions.entries[i];commissions.entries[i]=entry.copy(owner=if(entry.owner in names)ErasedAccountName else entry.owner,worker=if(entry.worker in names)ErasedAccountName else entry.worker)}
+        ledger.indices.forEach{i->if(ledger[i].name in names)ledger[i]=ledger[i].copy(name=ErasedAccountName)}
+        notice=null;commerce.notices.clear();accountErasureRevision++
+        api?.clearErasedPresentation(images,names)
+    }
     suspend fun searchDirectory(query:String):List<PlayerProfile>{
         if(closed)return emptyList()
         val service=api ?: return searchPlayers(query)

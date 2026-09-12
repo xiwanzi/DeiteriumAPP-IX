@@ -23,19 +23,39 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
     [modal, setModal] = useState(null), [drafts, setDrafts] = useState({}), [readPositions, setReadPositions] = useState({});
   const transport = useRef(null), alive = useRef(true), messagesRef = useRef(messages), cursorsRef = useRef(cursors),
     selectedRef = useRef(activeConversation), loading = useRef(new Set()), readRef = useRef({});
+  const conversationsRef = useRef(conversations), erasedChannels = useRef(new Set()); conversationsRef.current = conversations;
   messagesRef.current = messages; cursorsRef.current = cursors; selectedRef.current = activeConversation;
   const ai = useAiConversation({ client, user, active: activeConversation === "assistant" });
   const savePending = () => sessionStorage.setItem(pendingKey(user), JSON.stringify(pending.current));
+  const forgetChannels = (channels) => {
+    if (!channels.length) return;
+    channels.forEach((channel) => erasedChannels.current.add(channel));
+    setConversations((old) => old.filter((item) => !erasedChannels.current.has(item.conversationId)));
+    setMessages((old) => old.filter((message) => !erasedChannels.current.has(message.channel)));
+    setDrafts((old) => Object.fromEntries(Object.entries(old).filter(([key]) => !erasedChannels.current.has(key.slice(user.playerRef.length + 1)))));
+    Object.entries(pending.current).forEach(([key, entry]) => { if (erasedChannels.current.has(entry.channel)) delete pending.current[key]; }); savePending();
+    if (erasedChannels.current.has(selectedRef.current)) setActiveConversation("public");
+  };
+  const cleanMessage = (message) => {
+    const quote = (value) => value && client.erasedPlayerRefs.has(value.sender) ? { ...value, text: "", senderName: "已注销用户", availability: "UNAVAILABLE" } : value;
+    return { ...message, reply: quote(message.reply), forwarded: quote(message.forwarded), text: client.erasedPlayerRefs.has(message.forwarded?.sender) ? "原消息不可见" : message.text };
+  };
   const integrate = (incoming) => {
+    incoming = incoming.filter((message) => !client.erasedPlayerRefs.has(message.sender) && !erasedChannels.current.has(message.channel)).map(cleanMessage);
     for (const message of incoming) if (message.mine && message.clientMessageId && pending.current[message.clientMessageId]) { delete pending.current[message.clientMessageId]; savePending(); }
     setMessages((old) => mergeMessages(old, incoming));
   };
   const loadConversations = async () => {
     if (loading.current.has("conversations")) return;
     loading.current.add("conversations");
+    const knownBefore = new Set([...conversationsRef.current.map((item) => item.conversationId), ...messagesRef.current.map((message) => message.channel), ...Object.values(pending.current).map((entry) => entry.channel)]);
     try {
       const r = await client.conversations();
-      if (alive.current && Array.isArray(r.data)) setConversations(r.data);
+      if (alive.current && Array.isArray(r.data)) {
+        const current = r.data.filter((item) => !client.erasedPlayerRefs.has(item.otherPlayer.playerRef));
+        if (r.page?.hasMore === false) { const ids = new Set(current.map((item) => item.conversationId)); forgetChannels([...knownBefore].filter((id) => id && id !== "public" && id !== "assistant" && !ids.has(id))); }
+        setConversations(current);
+      }
     } catch (e) { if (alive.current) setError(e.message); }
     finally { loading.current.delete("conversations"); }
   };
@@ -53,6 +73,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
       if (channel !== "public" && selectedRef.current === channel) setDirectConnection("connected");
       setError("");
     } catch (e) {
+      if (alive.current && e.status === 404 && channel !== "public" && channel !== "assistant") { forgetChannels([channel]); return; }
       if (alive.current) { setError(e.message); if (channel !== "public" && selectedRef.current === channel) setDirectConnection("disconnected"); }
     } finally { loading.current.delete(channel); if (alive.current && more) setLoadingEarlier(false); }
   };
@@ -65,6 +86,10 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
   useEffect(() => {
     if (activeConversation !== "public" && activeConversation !== "assistant") { setDirectConnection("connecting"); loadMessages(activeConversation); }
   }, [activeConversation]);
+  useEffect(() => client.onAccountDeletions((refs) => {
+    forgetChannels(conversationsRef.current.filter((item) => refs.has(item.otherPlayer.playerRef)).map((item) => item.conversationId));
+    setMessages((old) => old.filter((message) => !refs.has(message.sender) && !erasedChannels.current.has(message.channel)).map(cleanMessage));
+  }), [client, user.userId]);
   useEffect(() => { if (requestedConversation) { setActiveConversation(requestedConversation); loadConversations(); } }, [requestedConversation]);
   const submitEntry = async (entry) => {
     const clientMessageId = entry.clientMessageId, pendingId = `pending:${clientMessageId}`;
@@ -80,7 +105,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
         if (!r.data?.messageId) throw new Error("消息结果尚未确认，请使用原消息重试。");
         authoritative = normalizeMessage(r.data, user);
       }
-      if (alive.current) { delete pending.current[clientMessageId]; savePending(); setMessages((old) => mergeMessages(old.filter((m) => m.id !== pendingId), [authoritative])); loadConversations(); }
+      if (alive.current) { delete pending.current[clientMessageId]; savePending(); setMessages((old) => mergeMessages(old.filter((m) => m.id !== pendingId), erasedChannels.current.has(authoritative.channel) ? [] : [cleanMessage(authoritative)])); loadConversations(); }
       return true;
     } catch (e) {
       if (alive.current) setMessages((old) => old.map((message) => message.id === pendingId ? { ...message, status: e.status >= 400 && e.status < 500 ? "failed" : "unknown", error: e.message } : message));
