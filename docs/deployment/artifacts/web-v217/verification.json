@@ -1,0 +1,35 @@
+{
+  "webVersion": "2.0.17",
+  "sourceCommit": "906bbae5b5c21c153b0b4c78ee0dd77cb5521521",
+  "buildSourceCommit": "0778123edd89228ff0231f2e194e733d85ce5d21",
+  "publishedAt": "2026-09-12T16:10:49.509528+00:00",
+  "archiveSha256": "8959c048550a2e75f23b67408b0e4044011f90bd627ff39287baa2191e4ae558",
+  "archiveSize": 33707785,
+  "publicAssetHashesMatched": true,
+  "productionBundleRoundTrips": 10,
+  "componentRoundTrips": 30,
+  "browserUncaughtErrors": 0,
+  "nodeTestsPassed": 68,
+  "backendRestarted": false,
+  "whitelistReset": {
+    "batch": "whitelist-reset-20260912T161358Z",
+    "completedAt": "2026-09-12T16:14:02.807945+00:00",
+    "revokedCount": 70,
+    "activeRemaining": 0,
+    "totalRevoked": 70,
+    "kickOnline": false,
+    "backupSha256": "820febfb81be4a6800961f7f38c9df866c10cb452ed0e072e0d7d638ed5fe41e",
+    "existingAccountsPreserved": true,
+    "existingResourcesPreserved": true,
+    "applicationHistoryPreserved": true,
+    "entryHistoryPreserved": true,
+    "pendingApplications": 0,
+    "pendingKicksAfter": 0,
+    "temporarySessionRevoked": true,
+    "gatewayVerification": {
+      "verifiedDenied": 70,
+      "allRevoked": true,
+      "endpoint": "/bridge/v1/admission/check"
+    }
+  }
+}
