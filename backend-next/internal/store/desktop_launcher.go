@@ -82,24 +82,9 @@ func ValidateDesktopPublication(v DesktopLauncherDocument) error {
 	if err := ValidateDesktopDocument(v); err != nil {
 		return err
 	}
-	var artifacts struct {
-		Java struct {
-			URL    string `json:"url"`
-			Size   int64  `json:"size"`
-			SHA256 string `json:"sha256"`
-		} `json:"java"`
-		Installer struct {
-			URL    string `json:"url"`
-			Size   int64  `json:"size"`
-			SHA256 string `json:"sha256"`
-		} `json:"installer"`
-	}
-	digest := regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
-	if json.Unmarshal(v.Bootstrap, &artifacts) != nil || !DesktopPublicURL(artifacts.Java.URL) || !DesktopPublicURL(artifacts.Installer.URL) || artifacts.Java.Size < 1 || artifacts.Installer.Size < 1 || !digest.MatchString(artifacts.Java.SHA256) || !digest.MatchString(artifacts.Installer.SHA256) {
-		return ErrSocialInvalid
-	}
 	var content struct {
-		Entries []struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Entries       []struct {
 			Key        string            `json:"key"`
 			Icon       string            `json:"icon"`
 			Background string            `json:"background"`
@@ -125,15 +110,15 @@ func ValidateDesktopPublication(v DesktopLauncherDocument) error {
 			} `json:"news"`
 		} `json:"entries"`
 	}
-	if json.Unmarshal(v.Content, &content) != nil || len(content.Entries) != 3 {
+	if json.Unmarshal(v.Content, &content) != nil || content.SchemaVersion != 2 || len(content.Entries) != 3 {
 		return ErrSocialInvalid
 	}
 	asset := func(path string) bool {
-		return DesktopPublicURL(path) || (strings.HasPrefix(path, "hypergryph/") && !strings.Contains(path, "..") && !strings.ContainsAny(path, "\\:\r\n"))
+		return DesktopPublicURL(path) || ((strings.HasPrefix(path, "hypergryph/") || strings.HasPrefix(path, "branding/")) && !strings.Contains(path, "..") && !strings.ContainsAny(path, "\\:\r\n"))
 	}
 	color := regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 	for i, entry := range content.Entries {
-		if entry.Key != []string{"arknights", "endfield", "popucom"}[i] || len(entry.Tabs) < 1 || len(entry.Tabs) > 5 || entry.Sidebars == nil || len(entry.Sidebars) > 16 || len(entry.Banners) > 8 || len(entry.News) > 60 {
+		if entry.Key != []string{"arknights", "deuterium_ix", "popucom"}[i] || len(entry.Tabs) < 1 || len(entry.Tabs) > 5 || entry.Sidebars == nil || len(entry.Sidebars) > 16 || len(entry.Banners) > 8 || len(entry.News) > 60 {
 			return ErrSocialInvalid
 		}
 		for _, value := range []string{entry.Icon, entry.Background, entry.Gallery, entry.Cover} {

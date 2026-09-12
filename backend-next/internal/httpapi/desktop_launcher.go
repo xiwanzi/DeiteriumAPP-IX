@@ -253,7 +253,6 @@ func (d *desktopRuntime) verifySynced(ctx context.Context, expected []byte) erro
 }
 
 func (s *Server) registerDesktopLauncher(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v1/launcher/bootstrap", s.publicDesktopBootstrap)
 	mux.HandleFunc("GET /api/v1/launcher/content", s.publicDesktopContent)
 	mux.HandleFunc("GET /api/v1/launcher/updates/index.json", s.publicDesktopIndex)
 	mux.HandleFunc("GET /api/v1/launcher/updates/{file}", s.publicDesktopPackage)
@@ -265,19 +264,6 @@ func (s *Server) registerDesktopLauncher(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/admin/desktop-launcher/media/complete", s.completeDesktopMedia)
 }
 
-func (s *Server) publicDesktopBootstrap(w http.ResponseWriter, r *http.Request) {
-	v, err := s.Store.DesktopLauncher(r.Context())
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	index, err := s.Store.DesktopPublishedIndex(r.Context())
-	if err != nil || v.Published == nil || len(index) < 3 {
-		failure(w, r, 503, "LAUNCHER_NOT_PUBLISHED", "客户端安装资源尚未发布。")
-		return
-	}
-	v2Success(w, r, v.Published.Bootstrap)
-}
 func (s *Server) publicDesktopContent(w http.ResponseWriter, r *http.Request) {
 	v, err := s.Store.DesktopLauncher(r.Context())
 	if err != nil {
@@ -376,13 +362,24 @@ func (s *Server) saveDesktopLauncher(w http.ResponseWriter, r *http.Request) {
 		socialFailureV2(w, r, err)
 		return
 	}
+	var release map[string]json.RawMessage
+	if json.Unmarshal(input.Document.Bootstrap, &release) != nil {
+		failure(w, r, 400, "RELEASE_INVALID", "整包版本配置无效。")
+		return
+	}
+	for key := range release {
+		if key != "minecraftVersion" && key != "loaderVersion" && key != "instanceVersion" && key != "baselineVersion" && key != "mcpatchUrl" {
+			delete(release, key)
+		}
+	}
+	input.Document.Bootstrap, _ = json.Marshal(release)
 	if input.Publish {
 		var recipe struct {
 			Baseline string `json:"baselineVersion"`
 			URL      string `json:"mcpatchUrl"`
 		}
 		if json.Unmarshal(input.Document.Bootstrap, &recipe) != nil {
-			failure(w, r, 400, "BASELINE_INVALID", "安装基线配置无效。")
+			failure(w, r, 400, "BASELINE_INVALID", "整包版本配置无效。")
 			return
 		}
 		index, indexErr := s.Store.DesktopPublishedIndex(r.Context())
@@ -394,7 +391,7 @@ func (s *Server) saveDesktopLauncher(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if indexErr != nil || parseErr != nil || !found {
-			failure(w, r, 409, "BASELINE_NOT_SYNCED", "请先将选定基线同步到 OSS，再发布启动器配置。")
+			failure(w, r, 409, "BASELINE_NOT_SYNCED", "请先同步对应的 McPatch 版本，再发布整包版本配置。")
 			return
 		}
 	}
