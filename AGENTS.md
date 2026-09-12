@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-12：**Web 2.0.13 与启动器配套 Go 已上线**，管理导航新增“启动器”，连接同机 McPatch 原生 Web 与 OSS 同步，初始基线已发布。Android 沿用 2.0.12；71 个账号、27 笔订单、5 个委托保留，游戏服务未重启。本轮维护 `.worktrees/dlauncher-admin` / `feat/dlauncher-admin`，代码仅本地提交。见[部署与验证](docs/deployment/dlauncher-0.4-live.md)。下方为较早记录。
+
 2026-09-11：**App 2.0.12（21200）与配套 Go 已于 22:18 上线**，源码 `a0ed4446d074`（PR #23），xiwanzi 更新提醒已推送。注册验证码不再依赖密码，忘记密码浮层接入统一背景模糊；Web 沿用 2.0.10，游戏插件未更换。71 个账号、27 笔订单和 5 个委托全部保留，四个游戏节点当前在线，旧号未注销。维护工作区 `.worktrees/auth-registration-glass`，分支 `xiwanzi/release-v212-live`。见[部署记录](docs/deployment/deuterium-2.0.12-live.md)。下方为较早记录。
 
 2026-09-11：**App 2.0.11（21100）已于 10:40 发布**，源码 `46d4c5e76eb5`（PR #21），xiwanzi 唯一更新提醒已推送。更新说明：“大幅提升流畅度，提升系统稳定性。”采用同签名非 debuggable 性能包；Web/Go 沿用 2.0.10，游戏插件未更换，27 笔订单和 4 个委托保留。维护工作区 `.worktrees/performance-audit-v210`，分支 `xiwanzi/release-v211-live`。见[部署记录](docs/deployment/deuterium-2.0.11-live.md)。下方“未发布”为此前候选阶段记录。
