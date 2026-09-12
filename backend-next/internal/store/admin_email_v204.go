@@ -149,7 +149,8 @@ func (s *Store) ClaimEmailV204(ctx context.Context) (EmailEventV204, error) {
 		return EmailEventV204{}, err
 	}
 	defer tx.Rollback()
-	event, err := scanEmailEventV204(tx.QueryRowContext(ctx, emailEventSelectV204+` WHERE (status IN ('PENDING','RETRY') AND next_attempt_at<=UTC_TIMESTAMP(6)) OR (status='SENDING' AND lease_until<UTC_TIMESTAMP(6)) ORDER BY created_at,event_id LIMIT 1 FOR UPDATE SKIP LOCKED`))
+	// The runtime has one email worker; ordinary row locking also supports MariaDB 10.5.
+	event, err := scanEmailEventV204(tx.QueryRowContext(ctx, emailEventSelectV204+` WHERE (status IN ('PENDING','RETRY') AND next_attempt_at<=UTC_TIMESTAMP(6)) OR (status='SENDING' AND lease_until<UTC_TIMESTAMP(6)) ORDER BY created_at,event_id LIMIT 1 FOR UPDATE`))
 	if err != nil {
 		return event, err
 	}

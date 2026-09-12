@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -118,6 +119,9 @@ func (s *Server) emailWorkerV204() {
 		case <-ticker.C:
 			for n := 0; n < 5; n++ {
 				if err := s.processEmailV204(s.ctx, notify.Send); err != nil {
+					if !errors.Is(err, sql.ErrNoRows) && !errors.Is(err, context.Canceled) {
+						slog.Warn("email delivery worker deferred", "error", err)
+					}
 					break
 				}
 			}
