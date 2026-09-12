@@ -1,0 +1,46 @@
+{
+  "sourceCommit": "fb12a4d2ece73107a0d69029c86e83a1c82c7cb4",
+  "webVersion": "2.0.16",
+  "gatewayVersion": "1.0.0",
+  "applicationURL": "https://47.103.99.34/admission/",
+  "defaultServer": "amiya",
+  "files": [
+    {
+      "name": "deuterium-linux-amd64",
+      "size": 13267104,
+      "sha256": "68f24e0d5185188789e6a4aeaefa9005782942291c53c99a3e7a0c809ea64f80"
+    },
+    {
+      "name": "web-2.0.16.zip",
+      "size": 33707744,
+      "sha256": "68f3f21c51f2e24fa11458a94eb3ec57f1a819d1b0830660938f9cceab5af285"
+    },
+    {
+      "name": "admission-web-1.0.0.zip",
+      "size": 4559635,
+      "sha256": "35bd030038fb1df55a56c654a78b01ec20cc0c0a8c52b27329571ee16bcc259a"
+    },
+    {
+      "name": "Deuterium-Gateway-1.0.0.jar",
+      "size": 26469,
+      "sha256": "ec51139dcce4a98670b726f93ecfb1dbb15676592ec7f8cbf28095477137f293"
+    }
+  ],
+  "trees": {
+    "backend-next": "09ea08be280149f6a0fe7a08bd43cc9ec625565f",
+    "web-app": "4be3d0f54944de4a817f3eb9a78f899974466c6c",
+    "admission-web": "faa7ea032aa3d5d700e75d51d9a3bc34ea360236",
+    "velocity-gateway": "42f88c9040af8205196518afa34bdc7be503adf9"
+  },
+  "migration": {
+    "name": "029_admission.sql",
+    "sha256": "4b4ca11d29d24ef9049197bb5fe126f2e0d5c7e4f7c030610ffa222f9b6d70c3"
+  },
+  "mergeCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+  "initialSourceCommit": "990a3c9eac3d1901428b2ce71cf43119a2e43ec6",
+  "backendPath": "/opt/deuterium/releases/admission-ip-fb12a4d2ece7",
+  "pullRequests": [
+    "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/28",
+    "https://github.com/xiwanzi/DeiteriumAPP-IX/pull/29"
+  ]
+}

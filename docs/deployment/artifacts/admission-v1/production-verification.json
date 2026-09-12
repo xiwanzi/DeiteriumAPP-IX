@@ -1,0 +1,27 @@
+{
+  "gateway": {
+    "instanceId": "53df7fc6-8dec-4088-a544-29700a5088be",
+    "lastSeen": "2026-09-12T14:54:16.490344Z",
+    "online": true,
+    "onlinePlayers": 1,
+    "version": "1.0.0"
+  },
+  "legacyPermits": 70,
+  "unknownDenied": true,
+  "approvalApplied": true,
+  "revocationApplied": true,
+  "actualProxyKickReceipt": "NOT_ONLINE",
+  "applicationHistoryPreserved": true,
+  "coreNodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "manualControlsVisible": true,
+  "syntheticRecordsRemoved": true,
+  "temporarySessionRevoked": true,
+  "publicSite": "https://47.103.99.34/admission/",
+  "webVersion": "2.0.16",
+  "httpsVerified": true
+}

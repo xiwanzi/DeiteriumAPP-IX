@@ -1,34 +1,34 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-11",
+  "baselineDate": "2026-09-12",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.10",
-      "versionCode": 21000,
-      "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
-      "publishedSha256": "22a99ec7a1fdcf0182f124c8d9ba70d1c4ccc3953340f4d1755a22fbe26c65d5",
-      "buildSourceCommit": "555bf1614fadc8108176f400c62ed8ec0e6514f4",
-      "publishedSourceCommit": "65c08a290896601c6254369792e4223216ebee8e"
+      "version": "2.0.13",
+      "versionCode": 21300,
+      "sourceCommit": "15690c138288746188ea242379695be1f3e6622a",
+      "publishedSha256": "2d063c93d865c374be426e9aa263658869c96a6aeb8f4c4de029f990f5fd398b",
+      "buildSourceCommit": "6231ac2c833656ec259747dbeaa1c484a4a2904a",
+      "publishedSourceCommit": "15690c138288746188ea242379695be1f3e6622a"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.10",
-      "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
-      "publishedSourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
-      "publishedArchiveSha256": "f4113bbc987c6bac1b270719a114ecae24d552c38cd4161c7f75958aa7ae6db1",
-      "buildSourceCommit": "555bf1614fadc8108176f400c62ed8ec0e6514f4"
+      "version": "2.0.16",
+      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+      "publishedSourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+      "publishedArchiveSha256": "68f3f21c51f2e24fa11458a94eb3ec57f1a819d1b0830660938f9cceab5af285",
+      "buildSourceCommit": "990a3c9eac3d1901428b2ce71cf43119a2e43ec6"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
-      "publishedSourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
-      "publishedSha256": "1fa7b3dc691bc80cf7a579be832cec1465724225b8afbfb845b66b03d2666ee3",
-      "buildSourceCommit": "65c08a290896601c6254369792e4223216ebee8e"
+      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+      "publishedSourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+      "publishedSha256": "68f24e0d5185188789e6a4aeaefa9005782942291c53c99a3e7a0c809ea64f80",
+      "buildSourceCommit": "fb12a4d2ece73107a0d69029c86e83a1c82c7cb4"
     },
     {
       "name": "core",
@@ -72,13 +72,32 @@
       "version": "0.7-deuterium.3",
       "inputSha256": "14fc3674b38153ec3db2c56fa8ee70a9662e854e7f8e5fdec9c962fb5dc059f4",
       "publishedSha256": "376411646a903bcdb53808b68d94673f9a7f5ea9e47fde4e15957395517a9151"
+    },
+    {
+      "name": "velocity-gateway",
+      "path": "velocity-gateway",
+      "version": "1.0.0",
+      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+      "buildSourceCommit": "fb12a4d2ece73107a0d69029c86e83a1c82c7cb4",
+      "publishedSha256": "ec51139dcce4a98670b726f93ecfb1dbb15676592ec7f8cbf28095477137f293",
+      "velocityRuntime": "4.1.1",
+      "defaultServer": "amiya"
+    },
+    {
+      "name": "admission-web",
+      "path": "admission-web",
+      "version": "1.0.0",
+      "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+      "buildSourceCommit": "990a3c9eac3d1901428b2ce71cf43119a2e43ec6",
+      "publishedArchiveSha256": "35bd030038fb1df55a56c654a78b01ec20cc0c0a8c52b27329571ee16bcc259a",
+      "url": "https://47.103.99.34/admission/"
     }
   ],
   "currentRelease": {
-    "version": "2.0.10",
-    "androidVersionCode": 21000,
+    "version": "2.0.13",
+    "androidVersionCode": 21300,
     "status": "PUBLISHED",
-    "branch": "xiwanzi/release-v210-live",
+    "branch": "xiwanzi/admission-live-record",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
@@ -91,13 +110,16 @@
       "pullRequest": 2,
       "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
-    "qa": "docs/qa/commerce-refunds-performance.md",
-    "releaseNotes": "docs/deployment/deuterium-2.0.10-live.md",
-    "sourceCommit": "65c08a290896601c6254369792e4223216ebee8e",
-    "buildManifest": "docs/deployment/artifacts/v210/build-manifest.json",
+    "qa": "docs/qa/admission-v1.md",
+    "releaseNotes": "docs/deployment/admission-v1-live.md",
+    "sourceCommit": "df9b7dedb0bbca12e1168be6f918c0bca326f322",
+    "buildManifest": "docs/deployment/artifacts/admission-v1/manifest.json",
     "migrations": [
-      "026_refunded_coupon_release.sql"
+      "029_admission.sql"
     ],
-    "publishedAt": "2026-09-10T18:38:40Z"
+    "publishedAt": "2026-09-12T14:49:14Z",
+    "webVersion": "2.0.16",
+    "gatewayVersion": "1.0.0",
+    "admissionURL": "https://47.103.99.34/admission/"
   }
 }
