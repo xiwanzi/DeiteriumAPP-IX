@@ -1,0 +1,10 @@
+{
+  "recipient": "xiwanzi",
+  "eventKey": "app.release:21300",
+  "count": 1,
+  "title": "2.0.13 更新已就绪",
+  "body": "新增管理员密码确认的永久注销功能，同步清理旧账号的联系人、主页和商品，历史交易匿名保留。",
+  "createdAt": "2026-09-12T11:16:02.827087Z",
+  "visibleThroughAccountApi": true,
+  "publicChatBroadcast": false
+}

@@ -1,0 +1,16 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.13-15690c138288",
+  "backendSha256": "3ffce2b5552de15005064310b5318bccf9812e56db413b928c64effd6558ebcf",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.15-15690c138288/dist",
+  "webVersion": "2.0.15",
+  "health": {
+    "status": "ready"
+  },
+  "appliedMigrations": {
+    "028_account_deletion.sql": "5b68531560814e7365b96cac09d7a0b06a121ee1497f3a4c497054f4a2b858b0"
+  },
+  "launcherSettingsUnchanged": true,
+  "deletionCount": 0,
+  "appFeedVersionCode": 21200,
+  "activatedAt": "2026-09-12T11:15:57Z"
+}

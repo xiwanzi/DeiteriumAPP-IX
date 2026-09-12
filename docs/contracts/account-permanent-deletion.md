@@ -1,6 +1,6 @@
 # 管理员永久注销与客户端清理
 
-2026-09-12。本地实现，尚未部署。补充[账号管理](saki-admin-v206.md)；[OpenAPI](openapi-account-deletion.yaml)。
+2026-09-12。已随 App 2.0.13 / Web 2.0.15 / 配套 Go 上线。补充[账号管理](saki-admin-v206.md)；[OpenAPI](openapi-account-deletion.yaml)；[部署记录](../deployment/deuterium-2.0.13-live.md)。
 
 ## 永久注销
 

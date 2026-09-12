@@ -1,0 +1,24 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.13-21300-test",
+    "kind": "APK",
+    "versionName": "2.0.13",
+    "versionCode": 21300,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "新增管理员密码确认的永久注销功能，同步清理旧账号的联系人、主页和商品，历史交易匿名保留。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.13-21300-test.apk",
+    "sizeBytes": 8875538,
+    "sha256": "2d063c93d865c374be426e9aa263658869c96a6aeb8f4c4de029f990f5fd398b",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21299,
+    "channel": "stable",
+    "publishedAt": "2026-09-12T11:15:58Z"
+  },
+  "manifestSha256": "725d226faf0b67d38ab97d35cc066a7f2c05c6580ed8afef30e1ea7b4f0904c3",
+  "previousReleaseEntriesPreserved": 13,
+  "health": {
+    "status": "ready"
+  },
+  "backupDirectory": "/var/backups/deuterium/release-2.0.13-20260912-15690c138288"
+}
