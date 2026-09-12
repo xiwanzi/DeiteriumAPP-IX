@@ -77,10 +77,13 @@ func (s *Server) initDesktopLauncher() {
 		if err == nil {
 			err = d.verifySynced(ctx, expected)
 		}
+		// Persist the outcome even when the verification deadline has expired.
+		finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(s.ctx), 10*time.Second)
+		defer finishCancel()
 		if err == nil {
-			_ = s.Store.FinishDesktopSync(ctx, v.ID, "SUCCEEDED", "已核对 OSS，同步内容完整。", expected)
+			_ = s.Store.FinishDesktopSync(finishCtx, v.ID, "SUCCEEDED", "已核对 OSS，同步内容完整。", expected)
 		} else {
-			_ = s.Store.FinishDesktopSync(ctx, v.ID, "FAILED", "上次同步等待中断。请在 McPatch 任务结束后重新同步，已上传文件会复用。", nil)
+			_ = s.Store.FinishDesktopSync(finishCtx, v.ID, "FAILED", "上次同步等待中断。请在 McPatch 任务结束后重新同步，已上传文件会复用。", nil)
 		}
 	}()
 }
@@ -460,11 +463,14 @@ func (s *Server) runDesktopSync(id string) {
 	if err == nil {
 		err = s.desktop.verifySynced(ctx, expected)
 	}
+	// A timed-out upload must still leave RUNNING so administrators can retry.
+	finishCtx, finishCancel := context.WithTimeout(context.WithoutCancel(s.ctx), 10*time.Second)
+	defer finishCancel()
 	if err != nil {
-		_ = s.Store.FinishDesktopSync(ctx, id, "FAILED", s.desktop.redact(err.Error()), nil)
+		_ = s.Store.FinishDesktopSync(finishCtx, id, "FAILED", s.desktop.redact(err.Error()), nil)
 		return
 	}
-	_ = s.Store.FinishDesktopSync(ctx, id, "SUCCEEDED", "最新更新已同步到 OSS，索引与文件完整性检查通过。", expected)
+	_ = s.Store.FinishDesktopSync(finishCtx, id, "SUCCEEDED", "最新更新已同步到 OSS，索引与文件完整性检查通过。", expected)
 }
 
 func (s *Server) accessDesktopLauncher(w http.ResponseWriter, r *http.Request) {
