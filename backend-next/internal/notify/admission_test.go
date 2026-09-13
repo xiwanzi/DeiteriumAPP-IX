@@ -52,6 +52,12 @@ func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(raw) > 100*1024 || len(m.Images[0].Data) > 40*1024 {
+		t.Fatal("email emblem or message is oversized")
+	}
+	if !strings.Contains(m.HTML, "color-scheme:only light") || !strings.Contains(m.HTML, "-webkit-text-fill-color:") || !strings.Contains(m.HTML, "background-image:linear-gradient(") {
+		t.Fatal("approved color protection missing")
+	}
 	email, err := mail.ReadMessage(bytes.NewReader(raw))
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +88,7 @@ func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
 		}
 	}
 	img, err := reader.NextPart()
-	if err != nil || img.Header.Get("Content-ID") != "<deuterium-ix-emblem>" {
+	if err != nil || img.Header.Get("Content-ID") != "<deuterium-ix-emblem-small-v1>" {
 		t.Fatal("CID image missing")
 	}
 	data, err := io.ReadAll(base64.NewDecoder(base64.StdEncoding, img))
