@@ -1,0 +1,49 @@
+{
+  "release": {
+    "buildSourceCommit": "f87d15598a88b685d89d7be85e9f0f23c1364d3f",
+    "sourceCommit": "a79eb664d28d49d8a7762518fcb32dec2357bafe",
+    "sha256": "47e9c79dc4e9fa7b6c7605ed53f4d1eb4a1a4a67e99f543524a7a6077d67b23c",
+    "size": 19873952,
+    "newPath": "/opt/deuterium/releases/mail-appearance-f87d15598a88",
+    "backup": "/var/backups/deuterium/mail-appearance-f87d15598a88",
+    "publishedAt": "2026-09-13T02:47:28.614964+00:00",
+    "previousBackend": "/opt/deuterium/releases/admission-email-57878e526653",
+    "databaseBackupSha256": "fe438812444eff720416df3c4a2e1366fc5301a8e5390984c9e28819d56742a6",
+    "ready": true,
+    "accountsPreserved": true,
+    "resourcesPreserved": true,
+    "whitelistPreserved": true,
+    "smtpSettingsPreserved": true,
+    "launcherPreserved": true,
+    "appFeedPreserved": true,
+    "web": "/var/www/deuterium/releases/web-2.0.18-57878e526653/dist",
+    "admission": "/var/www/deuterium-admission/releases/admission-1.0.1-57878e526653/site",
+    "emailSettingsVersion": 9
+  },
+  "verification": {
+    "templates": {
+      "APPROVED": {
+        "colorProtectionPresent": true,
+        "emblemBytes": 32512,
+        "dimensions": [
+          132,
+          132
+        ]
+      },
+      "REJECTED": {
+        "colorProtectionPresent": true,
+        "emblemBytes": 32512,
+        "dimensions": [
+          132,
+          132
+        ]
+      }
+    },
+    "runningBinaryVerified": true,
+    "reviewEmailsEnabled": true,
+    "smtpSettingsVersion": 9,
+    "noAdditionalTestEmailSent": true,
+    "gatewayOnline": true,
+    "temporarySessionRemoved": true
+  }
+}
