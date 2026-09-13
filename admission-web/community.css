@@ -66,3 +66,74 @@ button:disabled{cursor:wait;opacity:.65}
 @media(max-width:1100px){.brand .version-emblem{width:52px;height:52px}.brand .brand-en{font-size:5px}.project-name .version-emblem{width:39px;height:39px}.membership-note p{font-size:11px}.footer-links{gap:16px}.footer-signoff{display:none}.topline-code{display:none}}
 @media(max-width:850px){.brand .version-emblem{width:46px;height:46px}.project-name .version-emblem{width:33px;height:33px}.group-link{font-size:10px;padding:9px;min-height:36px}.group-link b{font-size:15px;margin-left:1px}.recruitment{padding-top:140px}.world{background-size:auto 720px;background-position:42% 0;background-color:#10171e}.world-grade{background:linear-gradient(180deg,transparent 0,transparent 30%,#10171e8a 46%,#10171e 67%)}.world-reticle{left:auto;right:20%;top:82px}.membership-note p{font-size:12px}.footer-links{gap:12px}.footer-links button{font-size:9px}.footer-left .version-emblem{width:31px;height:31px}.footer-left small{font-size:8px}.intro{font-size:13px}.footer{background:#0d141b}}
 @media(max-width:480px){.brand{padding:14px 3px 0}.brand .version-emblem{width:39px;height:39px}.brand .brand-en{font-size:4px;letter-spacing:0}.sidebar nav{margin-top:29px}.project-name .version-emblem{width:29px;height:29px}.project-name{gap:7px}.project-name small{font-size:7px;letter-spacing:.3px}.project-name>span{font-size:10px}.topline-group{font-size:9px;padding:7px;gap:5px;min-height:33px}.topline-group .status-square{display:none}.topline-group b{font-size:13px}.recruitment{padding-top:159px}.world-subtitle{font-size:13px;letter-spacing:.2px}.intro{font-size:11px}.world{background-size:auto 640px;background-position:41% 0}.world-grade{background:linear-gradient(180deg,transparent 0,transparent 24%,#10171eaa 39%,#10171e 57%)}.world-reticle{right:19%;top:80px}.membership-note{padding:10px;gap:8px;margin-bottom:17px}.membership-note p{font-size:10px}.inline-group-link{font-size:10px;gap:6px}.inline-group-link>span{font-size:10px}.covenant-agreement{font-size:11px;gap:7px;margin-bottom:21px}.covenant-agreement input{width:16px;height:16px;margin-top:2px}.review-reminder{font-size:11px}.footer{gap:11px;padding-block:19px}.footer-links{padding-left:0;gap:16px;flex-wrap:wrap}.footer-links button{font-size:9px;padding:0}.footer-left .version-emblem{width:31px;height:31px}.footer-left small{font-size:8px}.footer-left>span{font-size:10px}.field{margin-bottom:22px}.dialog-body{padding:24px}.dialog-body h2{font-size:25px}}
+
+/* Keep the original action yellow; reduce competing decorative accents. */
+.recruiting-status b {
+  background: rgba(30, 35, 38, .74);
+  color: #f0f2ef;
+  box-shadow: inset 0 0 0 1px rgba(237, 242, 237, .22);
+}
+.small-arrows { color: #ccd1ce; opacity: .65; }
+.recruitment h1 { box-shadow: 8px 8px 0 rgba(17, 23, 27, .38); }
+.region-tag .tag-square, .topline-group .status-square { background: #c9d0ca; }
+.world-reticle span { background: #c5cec5; opacity: .65; }
+.terminal::before { width: 24px; height: 2px; top: -7px; }
+.terminal::after { display: none; }
+.terminal-top i { background: #bec5c0; }
+.steps li.active::after { display: none; }
+.steps li.active span { color: var(--yellow); }
+.steps li.done { background: #e4e6e4; }
+.membership-note {
+  background: #e5e7e4;
+  border-color: #c0c5c0;
+  border-left-color: #939d93;
+}
+.membership-note p { color: #59615b; }
+.membership-note strong { color: #38433b; }
+.inline-group-link { color: #49574c; border-color: #c0c7c1; }
+.text-link { color: #4a5750; }
+.primary { background: var(--yellow); }
+
+/* Dialog actions stay quiet against the dimmed page. */
+#info-dialog .dialog-bar {
+  position: relative;
+  border-top: 1px solid #818a83;
+}
+#info-dialog .dialog-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 28px;
+  height: 2px;
+  background: var(--yellow);
+}
+#info-dialog .primary {
+  background: #292e2c;
+  color: #f1f3ef;
+  box-shadow: inset 3px 0 0 var(--yellow);
+}
+#info-dialog .primary > span:nth-child(2) { color: #b7c0b9; }
+#info-dialog .primary::before, #info-dialog .primary::after { display: none; }
+#info-dialog .primary:hover { background: #363e38; }
+#info-dialog .primary:active { background: #202722; }
+#info-dialog .dialog-ok {
+  margin-top: 12px;
+  min-height: 46px;
+  background: transparent;
+  color: #465249;
+  border: 1px solid #adb7ae;
+  box-shadow: none;
+}
+#info-dialog .dialog-ok > span:nth-child(2) { color: #78857b; }
+#info-dialog .dialog-ok svg { color: #66766b; }
+#info-dialog .dialog-ok:hover { background: #e0e5df; }
+#info-dialog .dialog-ok:active { background: #d3dcd3; }
+#info-dialog #query-token {
+  background: #e3e7e2;
+  border-color: #acb7ad;
+  color: #303c33;
+}
+@media (max-width:480px) {
+  .recruitment h1 { box-shadow: 5px 5px 0 rgba(17, 23, 27, .38); }
+}
