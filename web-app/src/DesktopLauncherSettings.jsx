@@ -4,6 +4,7 @@ import { Button, Field, Modal, PageHead, Tabs } from "./components.jsx";
 import { id } from "./format.js";
 import { useUnsavedChanges } from "./unsaved-changes.js";
 import "./desktop-launcher.css";
+import LauncherApplicationRelease from "./LauncherApplicationRelease.jsx";
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const formatDate = (value) => value ? new Date(value).toLocaleString("zh-CN") : "尚未发布";
@@ -104,9 +105,11 @@ export default function DesktopLauncherSettings({ client }) {
   }
   const sync = data?.sync, syncing = sync?.state === "RUNNING", versions = data?.mcpatch?.versions || [];
   return <section className="desktop-launcher-admin">
-    <PageHead eyebrow="DESKTOP LAUNCHER" title="启动器" subtitle="管理整包版本、后续更新和启动器内容。"><Button secondary disabled={busy} onClick={() => load(true)}><RefreshCw size={16} />刷新状态</Button></PageHead>
+    <PageHead eyebrow="DESKTOP LAUNCHER" title="启动器" subtitle="管理程序版本、游戏资源和启动器内容。"><Button secondary disabled={busy} onClick={() => load(true)}><RefreshCw size={16} />刷新状态</Button></PageHead>
     {error && <div className="dl-message is-error" role="alert">{error}</div>}
     {message && <div className="dl-message is-success" role="status"><CheckCircle2 size={18} />{message}</div>}
+    <div className="dl-editor-heading"><Tabs values={["内容与素材", "整包发布", "启动器版本"]} value={tab} onChange={(value) => { if (!busy) setTab(value); }} /></div>
+    {tab === "启动器版本" ? <LauncherApplicationRelease client={client} onBusyChange={setBusy} /> : <>
     <div className="dl-publish-card panel">
       <div><span className="dl-eyebrow">客户端资源</span><h2>McPatch 与 OSS</h2><p>在 McPatch 上传文件、打包版本，完成后在这里同步给玩家。</p><div className="dl-version-pair"><span>最新打包<strong>{versions.at(-1)?.label || "尚未打包"}</strong></span><span>最近同步<strong>{sync ? formatDate(sync.updatedAt) : "尚未同步"}</strong></span></div></div>
       <div className="dl-publish-actions"><a className="dl-external" href={data?.mcpatch?.url || "/mcpatch/"} target="_blank" rel="noreferrer">打开 McPatch 管理页<ArrowUpRight size={17} /></a><Button secondary disabled={!data?.mcpatch?.connected} onClick={loginInformation}>管理页登录信息</Button><Button disabled={syncing || !data?.mcpatch?.connected} onClick={synchronize}>{syncing ? <><LoaderCircle className="dl-spin" size={17} />正在同步到 OSS…</> : <><RefreshCw size={17} />同步到 OSS</>}</Button></div>
@@ -114,7 +117,7 @@ export default function DesktopLauncherSettings({ client }) {
       {data?.mcpatch?.error && <p className="auth-error">{data.mcpatch.error}</p>}
     </div>
     {!draft?.content?.entries ? <p className="dl-loading">{data ? "整包版本尚未配置。" : "正在读取启动器配置…"}</p> : <>
-      <div className="dl-editor-heading"><Tabs values={["内容与素材", "整包发布"]} value={tab} onChange={setTab} /><span>已发布版本 {data.settings.publishedVersion || "—"}</span></div>
+      <div className="dl-editor-heading"><span>已发布内容版本 {data.settings.publishedVersion || "—"}</span></div>
       <fieldset disabled={busy} className="dl-editor-fieldset">
         {tab === "内容与素材" ? <>
           <div className="dl-entry-switch">{draft.content.entries.map((value, index) => value.visible!==false && <button type="button" key={value.key} className={index === entryIndex ? "is-selected" : ""} onClick={() => setEntryIndex(index)}><img src={previewURL(value.icon)} alt="" /><span>{value.name}</span></button>)}</div>
@@ -131,6 +134,7 @@ export default function DesktopLauncherSettings({ client }) {
       </fieldset>
       {upload && <div className="dl-upload-progress" role="status"><span>{upload.name} · {upload.value === 100 ? "正在校验" : `${upload.value}%`}</span><progress value={upload.value} max={100} /></div>}
       <div className="dl-save-bar"><span>上次发布：{formatDate(data.settings.publishedAt)}</span><div><Button secondary disabled={busy} onClick={() => save(false)}><Save size={16} />保存草稿</Button><Button disabled={busy} onClick={() => save(true)}>{busy ? "正在处理…" : "发布内容"}</Button></div></div>
+    </>}
     </>}
     {access && <Modal title="McPatch 管理页登录" close={() => setAccess(null)}><p>此账号用于上传客户端文件与打包更新。</p><Field label="用户名" value={access.username} readOnly /><Field label="密码" type="password" value={access.password} readOnly /><div className="button-row"><Button secondary onClick={async () => { try { await navigator.clipboard.writeText(access.password); setMessage("McPatch 管理密码已复制。"); } catch { setError("复制失败，请从密码框选择复制。"); } }}><Copy size={15} />复制密码</Button><a className="dl-external" href={access.url} target="_blank" rel="noreferrer">打开管理页<ArrowUpRight size={16} /></a></div></Modal>}
   </section>;

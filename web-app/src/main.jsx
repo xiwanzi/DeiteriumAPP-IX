@@ -6,6 +6,11 @@ import './v2.css';
 import './admin-v204.css';
 import './desktop-admin.css';
 import './commerce-v209.css';
+import './launcher-embed.css';
+
+if (new URLSearchParams(location.search).get('launcher') === '1' || /\bDLauncher\//.test(navigator.userAgent)) {
+  document.documentElement.dataset.launcher = 'true';
+}
 
 // Older preview URLs now follow the same authenticated service path.
 if (location.pathname === '/preview' || location.pathname.startsWith('/preview/')) {
