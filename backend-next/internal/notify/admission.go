@@ -56,7 +56,7 @@ func RenderAdmission(in AdmissionMail) (Message, error) {
 	if err != nil {
 		return Message{}, err
 	}
-	m.Images = []InlineImage{{CID: "deuterium-ix-emblem", Filename: "deuterium-ix-emblem.png", ContentType: "image/png", Data: badge}}
+	m.Images = []InlineImage{{CID: "deuterium-ix-emblem-small-v1", Filename: "deuterium-ix-emblem-mail-132.png", ContentType: "image/png", Data: badge}}
 	return m, nil
 }
 
