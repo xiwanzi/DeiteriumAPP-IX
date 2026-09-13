@@ -1,0 +1,68 @@
+/* The existing player app inside the desktop launcher's content pane. */
+:root[data-launcher="true"][data-theme="dark"] {
+  --bg: #18171a;
+  --surface: #222126;
+  --sidebar: #1c1b1f;
+  --text: #f2f0ed;
+  --muted: #a29fa8;
+  --border: #ffffff15;
+  --blue: #eeed53;
+  --blue-soft: #fdfc0014;
+  --hover: #302f34;
+  --glass: #222126ed;
+  --radius: 16px;
+}
+:root[data-launcher="true"] { scrollbar-width: thin; }
+[data-launcher="true"] .auth-header { display: none; }
+[data-launcher="true"] .auth-layout {
+  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1.05fr) minmax(350px, 1fr);
+  padding: 24px;
+  gap: 24px;
+}
+[data-launcher="true"] .auth-story { min-height: 540px; border-radius: 16px; }
+[data-launcher="true"] .auth-story-copy { bottom: 94px; }
+[data-launcher="true"] .auth-story-copy h2 { font-size: clamp(32px, 3.6vw, 48px); }
+[data-launcher="true"] .auth-form-section { padding: 58px 24px 32px; }
+[data-launcher="true"] .auth-emblem { width: 40px; height: 40px; margin-bottom: 18px; }
+[data-launcher="true"] .auth-emblem img { border-radius:9px; object-fit:contain; }
+[data-launcher="true"] .auth-intro { margin-bottom: 22px; }
+[data-launcher="true"] .auth-form-wrap > h1 { font-size: 30px; }
+[data-launcher="true"] .auth-trust { margin-top: 18px; }
+[data-launcher="true"] .auth-form-footer { bottom: 0; }
+[data-launcher="true"][data-theme="dark"] .auth-submit,
+[data-launcher="true"][data-theme="dark"] .button:not(.secondary):not(.danger) {
+  background: #fdfc00;
+  color: #18171a;
+  border-color: #fdfc00;
+  box-shadow: none;
+}
+[data-launcher="true"] .button { border-radius: 10px; }
+[data-launcher="true"] .topbar { height: 72px; padding: 0 190px 0 24px; }
+[data-launcher="true"] .main-content { padding: 24px; }
+[data-launcher="true"] .chat-layout { height: calc(100dvh - 58px); }
+@media (min-width: 701px) {
+  [data-launcher="true"] .sidebar { width: 72px; padding: 18px 8px 12px; align-items: center; }
+  [data-launcher="true"] .main-shell { margin-left: 72px; }
+  [data-launcher="true"] .sidebar .brand,
+  [data-launcher="true"] .sidebar-caption,
+  [data-launcher="true"] .sidebar nav a > span,
+  [data-launcher="true"] .sidebar-bottom .world-card,
+  [data-launcher="true"] .admin-nav > span,
+  [data-launcher="true"] .admin-nav > svg:last-child,
+  [data-launcher="true"] .sidebar-about > span,
+  [data-launcher="true"] .sidebar-profile > span:not(.avatar),
+  [data-launcher="true"] .sidebar-profile > svg { display: none; }
+  [data-launcher="true"] .sidebar nav { margin-top: 0; gap: 8px; width: 100%; }
+  [data-launcher="true"] .sidebar nav a { height: 46px; min-height: 46px; justify-content: center; padding: 0; border-radius: 10px; }
+  [data-launcher="true"] .sidebar nav a.active:before { display: none; }
+  [data-launcher="true"] .sidebar-bottom { width: 100%; padding-top: 12px; }
+  [data-launcher="true"] .admin-nav,
+  [data-launcher="true"] .sidebar-about,
+  [data-launcher="true"] .sidebar-profile { justify-content: center; padding: 12px 0; }
+}
+@media (max-width: 700px) {
+  [data-launcher="true"] .auth-layout { display: block; padding: 20px; }
+  [data-launcher="true"] .auth-story { display: none; }
+  [data-launcher="true"] .auth-form-section { min-height: calc(100dvh - 40px); }
+}

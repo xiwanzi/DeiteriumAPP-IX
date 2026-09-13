@@ -253,6 +253,7 @@ func (d *desktopRuntime) verifySynced(ctx context.Context, expected []byte) erro
 }
 
 func (s *Server) registerDesktopLauncher(mux *http.ServeMux) {
+	s.registerDesktopApplication(mux)
 	mux.HandleFunc("GET /api/v1/launcher/content", s.publicDesktopContent)
 	mux.HandleFunc("GET /api/v1/launcher/updates/index.json", s.publicDesktopIndex)
 	mux.HandleFunc("GET /api/v1/launcher/updates/{file}", s.publicDesktopPackage)
