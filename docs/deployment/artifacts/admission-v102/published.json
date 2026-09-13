@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "3541a73604f92a6c16226d2b332427c668176966",
+  "version": "1.0.2",
+  "cssSha256": "2c89d2c3d9b55274752577b6c5b7f34ae8bea2889ba3531ef4d91d60efd8fa2e",
+  "baseCanonicalSha256": "080e7aa597d8570733064dcb74d82df617c4e69634bd9b9f7f01bd7ba61878e0",
+  "release": "/var/www/deuterium-admission/releases/admission-1.0.2-3541a73604f9",
+  "backup": "/var/backups/deuterium/admission-accent-3541a73604f9",
+  "publishedAt": "2026-09-13T12:48:51.870884+00:00",
+  "previousRelease": "/var/www/deuterium-admission/releases/admission-1.0.1-57878e526653/site",
+  "current": "/var/www/deuterium-admission/releases/admission-1.0.2-3541a73604f9/site",
+  "onlyCommunityCSSChanged": true,
+  "serviceRestartRequired": false,
+  "cacheControl": "no-cache",
+  "archiveSha256": "f6928816f94b916d00eeb6d792f3034257f9d4f21d478ff600a5b53a89bb7d3c",
+  "archiveSize": 4560370,
+  "browserVerification": {
+    "primary": "rgb(244, 255, 0)",
+    "dialogQuery": "rgb(41, 46, 44)",
+    "dialogReturn": "transparent",
+    "returnActionWorks": true,
+    "noApplicationSubmitted": true
+  }
+}

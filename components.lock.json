@@ -86,10 +86,10 @@
     {
       "name": "admission-web",
       "path": "admission-web",
-      "version": "1.0.1",
-      "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
-      "buildSourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
-      "publishedArchiveSha256": "592996324ae4b043d0e80a518b2897d4e86d743d977902ec18fa8813330638ff",
+      "version": "1.0.2",
+      "sourceCommit": "3541a73604f92a6c16226d2b332427c668176966",
+      "buildSourceCommit": "3541a73604f92a6c16226d2b332427c668176966",
+      "publishedArchiveSha256": "f6928816f94b916d00eeb6d792f3034257f9d4f21d478ff600a5b53a89bb7d3c",
       "url": "https://47.103.99.34/admission/"
     }
   ],
@@ -122,6 +122,9 @@
     "gatewayVersion": "1.0.0",
     "admissionURL": "https://47.103.99.34/admission/",
     "webPublishedAt": "2026-09-12T18:03:15.064594+00:00",
-    "backendPublishedAt": "2026-09-13T02:47:28.614964+00:00"
+    "backendPublishedAt": "2026-09-13T02:47:28.614964+00:00",
+    "admissionVersion": "1.0.2",
+    "admissionPublishedAt": "2026-09-13T12:48:51.870884+00:00",
+    "admissionReleaseNotes": "docs/deployment/admission-1.0.2-live.md"
   }
 }
