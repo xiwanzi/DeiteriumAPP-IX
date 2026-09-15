@@ -1,0 +1,64 @@
+{
+  "published": {
+    "startedAt": "2026-09-15T12:47:44.494349+00:00",
+    "publishedAt": "2026-09-15T12:47:45.804692+00:00",
+    "backend": "/opt/deuterium/releases/backend-concurrency-a824088cb518",
+    "sourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
+    "sha256": "ce12c2fb4bcc944d8abeae379ab9a888358eb64d427f3bf289fdffba7d2395e3",
+    "pid": "1864614",
+    "health": {
+      "status": "ready"
+    },
+    "business": {
+      "identities": {
+        "count": 71,
+        "idsSha256": "bbe4823fac948072146341ca6c54fe1793f430fe1181ddec5dfff6a03e2ca7f2"
+      },
+      "commerce_resources_v2": {
+        "count": 32,
+        "idsSha256": "b11899b20338d4d50cdd6b7f7ea96044b1347d9d1c2a5ec9da016332ef5eb853"
+      },
+      "resources": "COMMISSION\t5\nORDER\t27",
+      "migrationsSha256": "5b645d74107e670e0ef03c6c83b2e0c62b3d74a8515837a44bf0bea7e64cdfff"
+    },
+    "configsUnchanged": true,
+    "schemaUnchanged": true,
+    "webUnchanged": true,
+    "backup": "/var/backups/deuterium/backend-concurrency-a824088cb518"
+  },
+  "verification": {
+    "time": "2026-09-15T12:47:54.393840+00:00",
+    "health": {
+      "status": "ready"
+    },
+    "runningSha256": "ce12c2fb4bcc944d8abeae379ab9a888358eb64d427f3bf289fdffba7d2395e3",
+    "capacityAnonymousStatus": 401,
+    "pending": {
+      "commerce": 0,
+      "ai": 0
+    },
+    "service": "NRestarts=0\nMemoryCurrent=10002432\nActiveState=active\nSubState=running",
+    "business": {
+      "identities": {
+        "count": 71,
+        "idsSha256": "bbe4823fac948072146341ca6c54fe1793f430fe1181ddec5dfff6a03e2ca7f2"
+      },
+      "commerce_resources_v2": {
+        "count": 32,
+        "idsSha256": "b11899b20338d4d50cdd6b7f7ea96044b1347d9d1c2a5ec9da016332ef5eb853"
+      },
+      "resources": "COMMISSION\t5\nORDER\t27",
+      "migrationsSha256": "5b645d74107e670e0ef03c6c83b2e0c62b3d74a8515837a44bf0bea7e64cdfff"
+    }
+  },
+  "capacityAccess": {
+    "time": "2026-09-15T12:48:43.736997+00:00",
+    "status": 401,
+    "note": "Saved session unavailable; no session was created or refreshed."
+  },
+  "publicWebVersion": "2.0.19",
+  "publicAdmissionStatus": 200,
+  "testsRun": false,
+  "loadTestsRun": false,
+  "databaseMigrationRun": false
+}

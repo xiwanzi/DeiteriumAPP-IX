@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-13",
+  "baselineDate": "2026-09-15",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
@@ -25,10 +25,11 @@
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "a79eb664d28d49d8a7762518fcb32dec2357bafe",
-      "publishedSourceCommit": "a79eb664d28d49d8a7762518fcb32dec2357bafe",
-      "publishedSha256": "47e9c79dc4e9fa7b6c7605ed53f4d1eb4a1a4a67e99f543524a7a6077d67b23c",
-      "buildSourceCommit": "f87d15598a88b685d89d7be85e9f0f23c1364d3f"
+      "sourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
+      "publishedSourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
+      "publishedSha256": "ce12c2fb4bcc944d8abeae379ab9a888358eb64d427f3bf289fdffba7d2395e3",
+      "buildSourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
+      "releaseNotes": "docs/deployment/backend-concurrency-live.md"
     },
     {
       "name": "core",
@@ -122,9 +123,10 @@
     "gatewayVersion": "1.0.0",
     "admissionURL": "https://47.103.99.34/admission/",
     "webPublishedAt": "2026-09-12T18:03:15.064594+00:00",
-    "backendPublishedAt": "2026-09-13T02:47:28.614964+00:00",
+    "backendPublishedAt": "2026-09-15T12:47:45.804692+00:00",
     "admissionVersion": "1.0.2",
     "admissionPublishedAt": "2026-09-13T12:48:51.870884+00:00",
-    "admissionReleaseNotes": "docs/deployment/admission-1.0.2-live.md"
+    "admissionReleaseNotes": "docs/deployment/admission-1.0.2-live.md",
+    "backendReleaseNotes": "docs/deployment/backend-concurrency-live.md"
   }
 }

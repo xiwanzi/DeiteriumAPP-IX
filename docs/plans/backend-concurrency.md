@@ -2,7 +2,7 @@
 
 日期：2026-09-15。基线：`origin/main b9cc09a`。工作区：`backend-concurrency`，分支 `xiwanzi/backend-concurrency`。
 
-状态：本机实现，编译通过；按用户要求未运行测试或压测，尚未推送、合并、部署。
+状态：已通过 PR #43 推送合并，并于 2026-09-15 20:47:45 上线；按用户要求未运行测试或压测。见[上线记录](../deployment/backend-concurrency-live.md)。下文“本次检查”为实现阶段范围，部署状态以上线记录为准。
 
 ## 已确认范围
 

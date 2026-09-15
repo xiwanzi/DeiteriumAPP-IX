@@ -1,8 +1,8 @@
-> 当前发布：Go `812f1d1a5056`，已随 2.0.4 部署统一经济账本查询、SMTP 持久队列及管理员业务审计。见[2.0.4 部署记录](../docs/deployment/deuterium-2.0.4-live.md)；下方保留开发来源与历史验收。
+> 当前发布：Go `a824088cb518`，2026-09-15 并发优化已上线。见[上线记录](../docs/deployment/backend-concurrency-live.md)；下方保留开发来源与历史验收。
 
 # Deuterium 后端与 Core 集成
 
-并发隔离候选（2026-09-15）：HTTP、玩家 WebSocket、AI SSE、Core 和准入请求分别限额，合并公共消息读取，并为密码校验和 AI 提供有限等待。保持客户端协议；仅本机编译，未测试或部署。配置、容量接口和限制见[并发优化说明](../docs/plans/backend-concurrency.md)。
+并发隔离发布（2026-09-15）：HTTP、玩家 WebSocket、AI SSE、Core 和准入请求分别限额，合并公共消息读取，并为密码校验和 AI 提供有限等待。保持客户端协议；已编译并部署，按用户要求未运行测试或压测。配置、容量接口和限制见[并发优化说明](../docs/plans/backend-concurrency.md)。
 
 本分支提供 Go 后端、统一身份、Core RPC、钱包及插件侧持久化能力，源码在 `backend-next` 与 [deuterium-core](../deuterium-core/README.md)。App/网页继续沿用 `/api/v1`。**邮箱保持独立插件，Core 只通过公开 API 对接。** Foundation 0.1 是早期验收快照，不再代表当前实现范围。
 
