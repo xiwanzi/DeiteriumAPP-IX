@@ -2,6 +2,8 @@
 
 # Deuterium 后端与 Core 集成
 
+并发隔离候选（2026-09-15）：HTTP、玩家 WebSocket、AI SSE、Core 和准入请求分别限额，合并公共消息读取，并为密码校验和 AI 提供有限等待。保持客户端协议；仅本机编译，未测试或部署。配置、容量接口和限制见[并发优化说明](../docs/plans/backend-concurrency.md)。
+
 本分支提供 Go 后端、统一身份、Core RPC、钱包及插件侧持久化能力，源码在 `backend-next` 与 [deuterium-core](../deuterium-core/README.md)。App/网页继续沿用 `/api/v1`。**邮箱保持独立插件，Core 只通过公开 API 对接。** Foundation 0.1 是早期验收快照，不再代表当前实现范围。
 
 完整商城/市场/委托与 App/Web/AI 等全栈合并、Linux 运行及生产游戏服操作由 [部署任务](codex://threads/01a07e94-3ac4-7ab2-9d25-2a8698f58cf1) 的 `test-release-v2` 工作线统筹，不能把本分支独立增量与该集成分支混为一份构建。

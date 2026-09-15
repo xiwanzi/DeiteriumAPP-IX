@@ -32,13 +32,15 @@ type Server struct {
 	CommerceCore      CommerceExecutorV2
 	ctx               context.Context
 	cancel            context.CancelFunc
-	requests          chan struct{}
+	capacity          *requestCapacity
+	chatReads         sharedChatReads
+	ai                *aiGatewayV2
 	desktop           *desktopRuntime
 }
 
 func New(s *store.Store, c config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
-	server := &Server{Store: s, Config: c, Identity: identity.New(s), Hub: bridge.NewHub(), Core: bridge.NewRuntime(), ctx: ctx, cancel: cancel, requests: make(chan struct{}, 256)}
+	server := &Server{Store: s, Config: c, Identity: identity.New(s), Hub: bridge.NewHub(), Core: bridge.NewRuntime(), ctx: ctx, cancel: cancel, capacity: newRequestCapacity(c.Concurrency)}
 	server.CommerceCore = &commerceCoreAdapter{server: server}
 	nodes := make([]string, 0, len(c.Nodes))
 	for _, node := range c.Nodes {
@@ -68,6 +70,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerLauncherIcons(mux)
 	s.registerDesktopLauncher(mux)
 	s.registerAdmission(mux)
+	mux.HandleFunc("GET /api/v1/admin/runtime/capacity", s.runtimeCapacity)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -97,19 +100,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		failure(w, r, 404, "NOT_FOUND", "接口不存在或尚未实现。")
 	})
+	limited := s.capacity.wrap(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(context.WithValue(r.Context(), requestIDKey{}, store.ID("req_")))
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		select {
-		case s.requests <- struct{}{}:
-			defer func() { <-s.requests }()
-		default:
-			failure(w, r, 503, "SERVER_BUSY", "请求过多，请稍后重试。")
-			return
-		}
-		mux.ServeHTTP(w, r)
+		limited.ServeHTTP(w, r)
 	})
 }
 

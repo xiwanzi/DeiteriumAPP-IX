@@ -22,6 +22,7 @@ type aiGatewayV2 struct {
 	configError error
 	client      *http.Client
 	active      *atomic.Int32
+	queue       *aiQueue
 }
 
 func (s *Server) registerAIV2(mux *http.ServeMux) {
@@ -32,7 +33,8 @@ func (s *Server) registerAIConfigV2(mux *http.ServeMux, c aiConfigV2, configErro
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ResponseHeaderTimeout = 45 * time.Second
 	transport.MaxIdleConnsPerHost = max(1, int(c.MaxConcurrent))
-	g := &aiGatewayV2{server: s, config: c, configError: configError, client: &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, active: &atomic.Int32{}}
+	g := &aiGatewayV2{server: s, config: c, configError: configError, client: &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, active: &atomic.Int32{}, queue: &aiQueue{waiting: make(chan struct{}, 16)}}
+	s.ai = g
 	mux.HandleFunc("GET /api/v1/ai/me", g.configuredV206((*aiGatewayV2).me))
 	mux.HandleFunc("GET /api/v1/ai/plans", g.configuredV206((*aiGatewayV2).plans))
 	mux.HandleFunc("GET /api/v1/ai/messages", g.configuredV206((*aiGatewayV2).messages))
@@ -154,7 +156,11 @@ func (g *aiGatewayV2) reset(w http.ResponseWriter, r *http.Request) {
 }
 func (g *aiGatewayV2) run(e store.AIExchangeV2) {
 	defer g.active.Add(-1)
-	ctx, cancel := context.WithTimeout(g.server.ctx, time.Duration(g.config.TimeoutSeconds)*time.Second)
+	deadline := time.Now().Add(time.Duration(g.config.TimeoutSeconds) * time.Second)
+	if e.DeadlineAt.Before(deadline) {
+		deadline = e.DeadlineAt
+	}
+	ctx, cancel := context.WithDeadline(g.server.ctx, deadline)
 	defer cancel()
 	history, err := g.server.Store.AIContextV2(ctx, e, int(g.config.MaxContext))
 	result := aiProviderResultV2{Status: "failed", Code: "AI_PROVIDER_UNAVAILABLE"}
@@ -243,14 +249,7 @@ func (g *aiGatewayV2) stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if created {
-		if g.active.Add(1) <= int32(g.config.MaxConcurrent) {
-			go g.run(e)
-		} else {
-			g.active.Add(-1)
-			ctx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-			_ = g.server.Store.FinishAIV2(ctx, e, "failed", "AI_SERVER_BUSY", "", 0, 0)
-			stop()
-		}
+		g.schedule(e, u.TokenHash)
 	}
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
 	w.Header().Set("X-Accel-Buffering", "no")
