@@ -17,12 +17,10 @@ func (s *Service) HashPassword(ctx context.Context, password string) (string, er
 	if utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 64 || len(password) > 256 {
 		return "", store.ErrUnauthorized
 	}
-	select {
-	case s.slots <- struct{}{}:
-		defer func() { <-s.slots }()
-	default:
-		return "", ErrBusy
+	if err := s.acquirePasswordSlot(ctx); err != nil {
+		return "", err
 	}
+	defer func() { <-s.slots }()
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
@@ -32,6 +30,7 @@ func (s *Service) HashPassword(ctx context.Context, password string) (string, er
 type Service struct {
 	Store     *store.Store
 	slots     chan struct{}
+	waiting   chan struct{}
 	dummyHash string
 }
 
@@ -39,7 +38,7 @@ func New(s *store.Store) *Service {
 	// Public synthetic hash, never an account credential. Unknown accounts still
 	// execute the same bounded KDF, without allocating 64 MiB just to start up.
 	const dummy = "$argon2id$v=19$m=65536,t=3,p=2$2vFuEp4//iUeRq5II53mPw$qX0Vqkwxq2VJxZUjXYGv5D7meMQzHQ4V1cGb/RIMjBg"
-	return &Service{Store: s, slots: make(chan struct{}, 2), dummyHash: dummy}
+	return &Service{Store: s, slots: make(chan struct{}, 2), waiting: make(chan struct{}, 32), dummyHash: dummy}
 }
 
 func (s *Service) Login(ctx context.Context, account, password, ip, kind string) (token string, session store.Session, err error) {
@@ -50,12 +49,10 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if (!gamePattern.MatchString(account) && !qqPattern.MatchString(account)) || utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 64 || len(password) > 256 || (kind != "app" && kind != "web") {
 		return "", session, store.ErrUnauthorized
 	}
-	select {
-	case s.slots <- struct{}{}:
-		defer func() { <-s.slots }()
-	default:
-		return "", session, ErrBusy
+	if err = s.acquirePasswordSlot(ctx); err != nil {
+		return "", session, err
 	}
+	defer func() { <-s.slots }()
 	accountKey := store.Digest([]byte("account:" + account))
 	ipKey := store.Digest([]byte("ip:" + ip))
 	if err = s.Store.ReserveLogin(ctx, accountKey, ipKey); err != nil {

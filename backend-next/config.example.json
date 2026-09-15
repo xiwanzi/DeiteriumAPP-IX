@@ -3,5 +3,11 @@
   "publicOrigin": "https://community.example.invalid",
   "development": false,
   "trustedProxyCidrs": ["127.0.0.1/32"],
+  "concurrency": {
+    "httpRequests": 256,
+    "realtimeConnections": 1024,
+    "aiStreams": 64,
+    "controlRequests": 64
+  },
   "nodes": []
 }

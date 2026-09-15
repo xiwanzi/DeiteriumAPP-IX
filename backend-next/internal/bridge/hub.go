@@ -8,6 +8,7 @@ type Hub struct {
 	mu        sync.Mutex
 	listeners map[chan struct{}]struct{}
 	nodes     map[string]bool
+	revision  uint64
 }
 
 func NewHub() *Hub { return &Hub{listeners: map[chan struct{}]struct{}{}, nodes: map[string]bool{}} }
@@ -21,6 +22,7 @@ func (h *Hub) Subscribe() (chan struct{}, func()) {
 func (h *Hub) Wake() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	h.revision++
 	for c := range h.listeners {
 		select {
 		case c <- struct{}{}:
@@ -28,6 +30,7 @@ func (h *Hub) Wake() {
 		}
 	}
 }
+func (h *Hub) Revision() uint64 { h.mu.Lock(); defer h.mu.Unlock(); return h.revision }
 func (h *Hub) JoinNode(id string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()

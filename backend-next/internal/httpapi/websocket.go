@@ -282,7 +282,7 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 				iconVersion = icon.Version
 			}
 		}
-		messages, err := s.Store.Messages(ctx, cursor, true, 50)
+		messages, err := s.publicChatAfter(ctx, cursor)
 		if err != nil {
 			return
 		}

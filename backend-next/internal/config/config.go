@@ -31,15 +31,16 @@ type Node struct {
 }
 
 type Config struct {
-	AdmissionApplicationURL     string   `json:"admissionApplicationUrl,omitempty"`
-	AdmissionPublicOrigin       string   `json:"admissionPublicOrigin,omitempty"`
-	AdmissionGatewayTokenSHA256 string   `json:"admissionGatewayTokenSha256,omitempty"`
-	SMTPKey                     []byte   `json:"-"`
-	Listen                      string   `json:"listen"`
-	PublicOrigin                string   `json:"publicOrigin"`
-	Development                 bool     `json:"development"`
-	TrustedProxyCIDRs           []string `json:"trustedProxyCidrs"`
-	Nodes                       []Node   `json:"nodes"`
+	Concurrency                 Concurrency `json:"concurrency,omitempty"`
+	AdmissionApplicationURL     string      `json:"admissionApplicationUrl,omitempty"`
+	AdmissionPublicOrigin       string      `json:"admissionPublicOrigin,omitempty"`
+	AdmissionGatewayTokenSHA256 string      `json:"admissionGatewayTokenSha256,omitempty"`
+	SMTPKey                     []byte      `json:"-"`
+	Listen                      string      `json:"listen"`
+	PublicOrigin                string      `json:"publicOrigin"`
+	Development                 bool        `json:"development"`
+	TrustedProxyCIDRs           []string    `json:"trustedProxyCidrs"`
+	Nodes                       []Node      `json:"nodes"`
 }
 
 func Load(path string) (Config, error) {
@@ -68,6 +69,9 @@ func Load(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
+	if err := c.Concurrency.Validate(); err != nil {
+		return err
+	}
 	if c.AdmissionApplicationURL != "" {
 		u, err := url.Parse(c.AdmissionApplicationURL)
 		if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Scheme+"://"+u.Host != c.AdmissionPublicOrigin {
