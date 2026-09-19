@@ -182,7 +182,9 @@ func (s *Server) setCookie(w http.ResponseWriter, token string, expires time.Tim
 	http.SetCookie(w, &http.Cookie{Name: s.cookieName(), Value: token, Path: "/", Secure: !s.Config.Development, HttpOnly: true, SameSite: http.SameSiteLaxMode, Expires: expires, MaxAge: maxAge})
 }
 
-func (s *Server) origin(r *http.Request) bool { return r.Header.Get("Origin") == s.Config.PublicOrigin }
+func (s *Server) origin(r *http.Request) bool {
+	return s.Config.AllowsPublicOrigin(r.Header.Get("Origin"))
+}
 func (s *Server) remoteIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {

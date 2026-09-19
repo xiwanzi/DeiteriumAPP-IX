@@ -1,6 +1,7 @@
 {
   "listen": "127.0.0.1:8080",
   "publicOrigin": "https://community.example.invalid",
+  "additionalPublicOrigins": [],
   "development": false,
   "trustedProxyCidrs": ["127.0.0.1/32"],
   "concurrency": {
