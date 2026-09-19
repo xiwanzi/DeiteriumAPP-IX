@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-09-19：**App 宣传页 https://app.deuteriumix.com 已于 21:36 上线**。沿用第七版设计，删除未接正式服务等旧说明；下载和网页入口均为“敬请期待”，本域名不提供 APK。独立静态站与 HTTPS 自动续期验证通过，见[上线记录](deployment/app-landing-live.md)。
+
 2026-09-19：**玩家社区域名 https://chat.deuteriumix.com 已于 21:12 上线**。独立 HTTPS 证书和自动续期验证通过，Go 精确兼容新旧来源，App 2.0.13 / Web 2.0.19 保持；旧 IP 接口和启动器入口保留。源码 `a1064819ac0a`，维护 `.worktrees/chat-domain`，见[上线记录](deployment/chat-domain-live.md)。下方为较早记录。
 
 2026-09-15：**Go 并发优化已于 20:47:45 上线**（PR #43，源码 `a824088cb518`）。请求分组限额、公共聊天读取合并、AI/密码短时等待与管理员容量接口已部署。App 2.0.13、Web 2.0.19、启动器 0.6.1、申请站 1.0.2 保持；配置、71 条账号记录、27 笔订单和 5 个委托保留。按用户要求未运行测试或压测。维护工作区 `C:/DeiteriumAPP-IX/.worktrees/backend-concurrency`，见[上线记录](deployment/backend-concurrency-live.md)。下方为较早记录。

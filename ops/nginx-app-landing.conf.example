@@ -1,0 +1,26 @@
+server {
+    listen 80;
+    server_name app.deuteriumix.com;
+    root /var/www/deuterium-acme;
+    location ^~ /.well-known/acme-challenge/ { try_files $uri =404; }
+    location / { return 301 https://app.deuteriumix.com$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name app.deuteriumix.com;
+    ssl_certificate /etc/letsencrypt/live/deuterium-app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/deuterium-app/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    root /var/www/deuterium-app/current;
+    index index.html;
+    autoindex off;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    location ^~ /downloads/ { return 404; }
+    location ~* \.apk$ { return 404; }
+    location ~ /\. { deny all; }
+    location ~* \.(png|svg|mp4|wav)$ { try_files $uri =404; expires 1d; }
+    location / { try_files $uri $uri/ =404; expires -1; }
+    access_log /www/wwwlogs/deuterium-app.access.log;
+    error_log /www/wwwlogs/deuterium-app.error.log;
+}

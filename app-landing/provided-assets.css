@@ -1,0 +1,30 @@
+/* The phone case is part of each user-provided PNG. Never add a second case. */
+.device.provided-phone,.show-phone.provided-phone,.panel-phone.provided-phone,.profile-screen-frame.provided-phone{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible;filter:drop-shadow(0 20px 26px #14253433)}
+.provided-phone::after{display:none}
+.provided-phone .device-screen{border:0;border-radius:0;box-shadow:none;background:transparent;overflow:visible}
+.provided-phone>img,.provided-phone .device-screen>img{border-radius:0;background:transparent;width:100%;height:auto}
+.device.provided-phone{padding:0}
+.direct-panel .panel-phone.provided-phone{overflow:hidden;border-radius:0;height:270px;filter:drop-shadow(0 14px 20px #14253422)}
+.direct-panel .panel-phone.provided-phone>img{height:100%;width:100%;object-fit:cover;object-position:bottom}
+.wallet-stage{height:655px}
+.wallet-object.wallet-user-phone{position:absolute;top:34px;right:115px;left:auto;width:276px;filter:drop-shadow(0 20px 32px #06162980)}
+.wallet-user-phone>img{height:auto;width:100%;border:0;border-radius:0}
+.event-photo-card{position:absolute;right:92px;top:186px;width:365px;height:330px;border:9px solid #fff8f1;border-bottom-width:54px;border-radius:11px;background:#fff8f1;box-shadow:0 20px 40px #49273940;margin:0}
+.event-photo-card>img{height:100%;width:100%;object-fit:cover;object-position:50% 50%;border-radius:3px}
+.event-photo-card figcaption{position:absolute;left:0;right:0;bottom:-39px;font-size:12px;color:#927d7a;text-align:center;line-height:1.7}
+.media-dialog>img{border-radius:0}
+.payment-dialog{width:min(590px,calc(100vw - 26px));padding:29px 28px 22px;background:#f5f7f6;max-height:96dvh}
+.payment-dialog .section-kicker{font-size:10px;margin:5px 0 12px}
+.payment-dialog h2{font-size:25px;line-height:1.4;letter-spacing:-.8px;margin:0 28px 20px}
+#payment-video{display:block;width:auto;height:min(66dvh,690px);max-width:100%;margin:0 auto;border-radius:17px;background:#e9edf4;aspect-ratio:1080/2340;object-fit:contain}
+.payment-playback-actions{display:flex;justify-content:center;gap:10px;margin-top:17px}
+.payment-playback-actions>button{font-size:11px;background:#e2e9e1;color:#547053;border-radius:24px;padding:11px 15px;min-height:39px}
+.payment-playback-actions>button:hover{background:#d5e1d2}.payment-playback-actions>button:disabled{opacity:.65;cursor:default}
+#payment-video-note{font-size:10px;line-height:1.8;color:#778570;margin:15px 12px 0}
+@media(max-width:1150px){.wallet-object.wallet-user-phone{right:82px;width:270px;top:41px}.event-photo-card{right:57px;width:322px;height:305px;top:196px}.event-photo-card figcaption{font-size:11px}}
+@media(max-width:900px) and (min-width:761px){.wallet-stage{height:579px}.wallet-object.wallet-user-phone{right:47px;width:230px;top:38px}.event-photo-card{right:34px;width:273px;height:277px;top:222px}.event-photo-card figcaption{font-size:10px}}
+@media(max-width:760px){
+ .wallet-stage{height:965px}.wallet-object.wallet-user-phone{top:410px;left:calc(50% - 122px);right:auto;width:244px}
+ .event-photo-card{top:399px;left:calc(50% - 137px);right:auto;width:274px;height:270px;border-width:7px;border-bottom-width:47px}.event-photo-card figcaption{bottom:-34px;font-size:10px}
+ .payment-dialog{padding:27px 18px 19px}.payment-dialog h2{font-size:22px;margin-inline:17px;margin-bottom:16px}#payment-video{height:63dvh;border-radius:13px}.payment-playback-actions{gap:8px;margin-top:14px}.payment-playback-actions>button{font-size:10px;padding:10px 12px}#payment-video-note{font-size:9px;margin-inline:0;margin-top:12px}
+}

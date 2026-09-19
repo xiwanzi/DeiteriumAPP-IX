@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#233d39">
+  <meta name="description" content="Deuterium，把你的服务器生活带在身边。探索商城与玩家市场，连接朋友，发现社区里的新鲜事。">
+  <title>Deuterium — 你的世界，随时相连。</title>
+  <link rel="icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="styles-v2.css">
+  <link rel="stylesheet" href="editorial.css">
+  <link rel="stylesheet" href="rich.css">
+  <link rel="stylesheet" href="provided-assets.css">
+  <link rel="stylesheet" href="refinement.css">
+  <script src="app.js" defer></script>
+  <script src="rich.js" defer></script>
+</head>
+<body>
+  <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8Zm3 0V6a4 4 0 0 1 8 0v2"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 4H3v14h5l4 4v-4h9V4Z"/><path d="M7 9h10M7 13h6"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+    <symbol id="i-shop" viewBox="0 0 24 24"><path d="M3 10 5 3h14l2 7M4 10v11h16V10M9 21v-7h6v7M3 10c0 4 4 4 4 0 0 4 5 4 5 0 0 4 5 4 5 0 0 4 4 4 4 0"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2Z"/></symbol>
+  </defs></svg>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="主导航">
+      <a class="brand" href="#top" aria-label="Deuterium 首页"><img src="assets/app-icon.svg" width="31" height="31" alt=""><span>Deuterium</span></a>
+      <div class="nav-links"><a href="#experience">概览</a><a href="#market">商城与市场</a><a href="#connection">消息</a><a href="#wallet">钱包</a></div>
+      <div class="nav-actions"><button class="nav-web" data-coming="玩家网页版">网页版 <svg><use href="#i-arrow"/></svg></button><button class="button button-small" data-coming="Android App">下载 App</button></div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <img class="hero-scene" src="assets/street-daylight.png" alt="" aria-hidden="true" fetchpriority="high">
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-main section-shell">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot"></span>你的玩家生活，随身同行。</p>
+          <h1 id="hero-title">喜欢的世界，<br>一直在身边。</h1>
+          <p class="hero-description">好物、朋友，还有新鲜事。<br>一个 App，连接你在 Deuterium 的日常。</p>
+          <div class="hero-actions">
+            <button class="button button-primary" data-coming="Android App"><svg><use href="#i-download"/></svg>下载 App</button>
+            <div class="web-split">
+              <button class="web-main" data-coming="玩家网页版">进入网页版<svg><use href="#i-arrow"/></svg></button>
+              <button class="web-toggle" id="web-toggle" aria-label="展开网页版入口" aria-expanded="false" aria-controls="web-options"><svg><use href="#i-chevron"/></svg></button>
+              <div class="web-options" id="web-options" hidden>
+                <button data-coming="玩家网页版"><svg><use href="#i-globe"/></svg><span>玩家网页版<small>随时访问你的社区</small></span><em>敬请期待</em></button>
+                <button data-coming="商家工作台"><svg><use href="#i-shop"/></svg><span>商家工作台<small>打理店铺与订单</small></span><em>敬请期待</em></button>
+              </div>
+            </div>
+          </div>
+          <p class="availability">App 下载与网页版<span>·</span>敬请期待</p>
+        </div>
+        <figure class="device-stage" aria-label="Deuterium App 实际界面预览">
+          <div class="device device-center provided-phone"><div class="device-screen"><img id="hero-screen" src="assets/provided-store.png" alt="商城首页 · 用户提供带壳截图" width="1291" height="2751"></div></div>
+          <div class="app-switcher" aria-label="切换用户提供的 App 界面">
+            <button data-screen="store" aria-label="商城" aria-pressed="true"><svg><use href="#i-bag"/></svg><span>商城</span></button>
+            <button data-screen="chat" aria-label="聊天" aria-pressed="false"><svg><use href="#i-chat"/></svg><span>聊天</span></button>
+            <button data-screen="wallet" aria-label="钱包" aria-pressed="false"><svg><use href="#i-arrow"/></svg><span>钱包</span></button>
+            <button data-screen="player" aria-label="资料" aria-pressed="false"><svg><use href="#i-user"/></svg><span>资料</span></button>
+          </div>
+          <figcaption class="screen-caption" id="screen-caption" aria-live="polite">商城好物，清楚呈现。</figcaption>
+        </figure>
+      </div>
+      <div class="hero-footnote section-shell"><span>属于玩家的，另一个日常。</span><a href="#experience" class="scroll-cue">向下探索 <span>↓</span></a></div>
+    </section>
+
+
+    <section class="manifesto section-shell" id="experience" aria-label="Deuterium 产品理念">
+      <p class="section-kicker reveal">连接，发生在每一个日常。</p>
+      <h2 class="manifesto-line reveal"><em>喜欢的好物，</em>遇见懂它的人。</h2>
+      <h2 class="manifesto-line reveal"><em>熟悉的朋友，</em>不用等到上线再见。</h2>
+      <h2 class="manifesto-line reveal"><em>属于你的世界，</em>随时都能回到身边。</h2>
+    </section>
+
+    <section class="rich-section section-shell" id="market" aria-labelledby="market-title">
+      <div class="rich-heading reveal"><p class="section-kicker">商城与玩家市场</p><h2 id="market-title">总有好东西，<br>值得慢慢发现。</h2><p>精选商品、玩家收藏，还有关于下一座小屋的新灵感。<br>从逛一逛开始，把喜欢带回自己的世界。</p></div>
+      <div class="cinema-panel grain reveal">
+        <img class="cinema-backdrop" src="assets/flower-shop.png" alt="玩家走进街角花店" loading="lazy" width="2560" height="1494">
+        <div class="cinema-scrim"></div>
+        <div class="cinema-copy"><span class="white-tag">每一份热爱，都有去处。</span><h3>你的下一份心动，<br>就在这里。</h3><p>建材、装备、补给与建筑服务。<br>好东西，也可以来自身边的玩家。</p><button class="round-link" data-media="assets/provided-commission.png" data-media-title="玩家委托 · 用户提供截图">看看委托详情 <span>↗</span></button></div>
+        <div class="show-phone cinema-phone provided-phone" data-depth style="--rest-angle:4deg"><img src="assets/provided-commission.png" alt="玩家委托详情 · 用户提供带壳截图" loading="lazy" width="1291" height="2751"></div>
+      </div>
+      <div class="trio-grid">
+        <article class="mini-panel category-panel reveal"><div class="panel-top"><span>探索玩家市场</span><h3>按分类，<span class="category-title-tail">找到你要的物品。</span></h3></div><div class="category-demo"><div class="category-chips" aria-label="Minecraft 物品分类"><button data-category="all" aria-pressed="true">全部</button><button data-category="build" aria-pressed="false">建材</button><button data-category="gear" aria-pressed="false">装备</button><button data-category="supplies" aria-pressed="false">补给</button></div><div class="demo-products" data-visible-count="6"><div class="demo-product mc-product" data-product-category="build"><div class="mc-icon-holder"><img src="assets/minecraft/cherry_sapling.png" alt="Minecraft 原版樱花树苗图标" width="16" height="16" loading="lazy"></div><strong>樱花树苗</strong><small>建材</small></div><div class="demo-product mc-product" data-product-category="build"><div class="mc-icon-holder"><img src="assets/minecraft/brick.png" alt="Minecraft 原版红砖图标" width="16" height="16" loading="lazy"></div><strong>红砖</strong><small>建材</small></div><div class="demo-product mc-product" data-product-category="gear"><div class="mc-icon-holder"><img src="assets/minecraft/diamond_pickaxe.png" alt="Minecraft 原版钻石镐图标" width="16" height="16" loading="lazy"></div><strong>钻石镐</strong><small>装备</small></div><div class="demo-product mc-product" data-product-category="gear"><div class="mc-icon-holder"><img src="assets/minecraft/iron_sword.png" alt="Minecraft 原版铁剑图标" width="16" height="16" loading="lazy"></div><strong>铁剑</strong><small>装备</small></div><div class="demo-product mc-product" data-product-category="supplies"><div class="mc-icon-holder"><img src="assets/minecraft/golden_carrot.png" alt="Minecraft 原版金胡萝卜图标" width="16" height="16" loading="lazy"></div><strong>金胡萝卜</strong><small>补给</small></div><div class="demo-product mc-product" data-product-category="supplies"><div class="mc-icon-holder"><img src="assets/minecraft/bread.png" alt="Minecraft 原版面包图标" width="16" height="16" loading="lazy"></div><strong>面包</strong><small>补给</small></div></div><p class="demo-count visually-hidden" id="category-status" aria-live="polite">当前显示 6 种 Minecraft 物品</p></div><p class="panel-footer">按分类浏览，或搜索物品与玩家。</p></article>
+        <article class="mini-panel publish-panel reveal"><div class="panel-top"><span>发布你的好物</span><h3>让你的收藏，<br>遇见懂它的人。</h3></div><div class="publish-item" aria-hidden="true"><img src="assets/minecraft/writable_book.png" alt="" width="16" height="16" loading="lazy"></div><p class="panel-footer">图片、描述、库存与封面，一次整理清楚。<span class="publish-limit">最多 5 张图片</span></p></article>
+        <article class="mini-panel store-panel reveal"><div class="panel-top"><span>还有精选商城</span><h3>好物上新<br>随手逛逛</h3></div><div class="panel-phone store-preview provided-phone" data-depth style="--rest-angle:-3deg"><img src="assets/provided-store.png" alt="商城精选商品" loading="lazy" width="1291" height="2751"></div><button class="panel-footer panel-action" data-media="assets/provided-store.png" data-media-title="精选商城 · 用户提供截图"><span>分类、详情与购物袋，让每一步都顺手。</span><b>↗</b></button></article>
+      </div>
+    </section>
+
+    <section class="rich-section section-shell" id="connection" aria-labelledby="connection-title">
+      <div class="rich-heading reveal"><p class="section-kicker">消息与朋友</p><h2 id="connection-title">人不在线。<br>好朋友，一直在。</h2><p>从公共频道里的一声招呼，到只想对你说的话。<br>连接游戏里外，把聊天继续下去。</p></div>
+      <div class="social-scene grain reveal"><img src="assets/friends-closeup.png" alt="两位玩家在街边相依合影" loading="lazy" width="2560" height="1494"><div class="social-scene-shade"></div><div class="social-scene-copy"><p>有些默契，<br>隔着屏幕也懂。</p><span>那些一起度过的日常。</span></div><div class="chat-bubbles" aria-label="聊天情景演示"><div class="chat-bubble incoming"><small>Luna</small><p>今晚的小屋计划，还算数吗？</p></div><div class="chat-bubble outgoing"><p>当然。等你，一起上线。</p><span>✓</span></div></div></div>
+      <div class="social-bento">
+        <article class="mini-panel direct-panel reveal"><div class="panel-top"><span>私信与公共聊天</span><h3>聊给大家，<br>也聊给你。</h3></div><div class="panel-phone provided-phone provided-chat-detail" data-depth style="--rest-angle:3deg"><img src="assets/provided-chat.png" alt="玩家私聊界面" loading="lazy" width="1291" height="2751"></div><button class="panel-footer panel-action" data-media="assets/provided-chat.png" data-media-title="好友私信 · 用户提供截图"><span>从玩家资料页，一步开始聊天。</span><b>↗</b></button></article>
+        <article class="mini-panel mention-panel reveal"><div class="panel-top"><span>特别关心与提及</span><h3>重要的人，<br>自然多一点在意。</h3></div><div class="mention-ui"><div class="mention-avatar">M<span>★</span></div><p>Mori</p><span>把每一次日落，留在小花园里。</span><div class="mention-pill"><b>@Mori</b> 发现了你喜欢的花！</div><div class="notification-pill"><span>✦</span><div><b>特别关心</b><small>熟悉的消息，值得被留意。</small></div></div></div><p class="panel-footer">长按头像提及，或输入 @ 选择玩家。也可以为熟悉的朋友开启特别关心。</p></article>
+      </div>
+    </section>
+
+    <section class="wallet-section rich-section" id="wallet" aria-labelledby="wallet-title">
+      <div class="section-shell"><div class="rich-heading reveal"><p class="section-kicker">钱包与转账</p><h2 id="wallet-title">每一份心意，<br>都稳稳送达。</h2><p>余额、转账和交易记录，放在一起就清楚。<br>轻轻一点，把心意送给熟悉的玩家。</p></div>
+      <div class="wallet-stage grain reveal"><div class="wallet-copy"><span class="white-tag">你的游戏钱包</span><h3>拥有多少。<br>一眼知道。</h3><p>查看余额与最近流水，<br>把每一份心意，交给清楚的反馈。</p><button id="transfer-demo" class="button wallet-demo-button">播放 App 支付动画 <svg><use href="#i-arrow"/></svg></button><small class="simulation-label">项目实际录屏 · 体验版 0.9.0</small></div><div class="wallet-object wallet-user-phone provided-phone" data-depth style="--rest-angle:-3deg"><img src="assets/provided-wallet.png" alt="我的钱包 · 用户提供带壳截图" loading="lazy" width="1291" height="2751"></div></div>
+      <div class="wallet-mini-grid"><article class="reveal"><span>↗</span><h3>快速找到玩家</h3><p>搜索想转账的对象，最近联系人也在手边。</p></article><article class="reveal"><svg><use href="#i-check"/></svg><h3>结果清晰呈现</h3><p>从确认到完成，状态变化都有明确反馈。</p></article><article class="reveal"><svg><use href="#i-bag"/></svg><h3>与交易自然相连</h3><p>订单款项和交付状态，一起掌握。</p></article></div></div>
+    </section>
+
+    <section class="rich-section section-shell" id="transactions" aria-labelledby="transactions-title">
+      <div class="rich-heading reveal"><p class="section-kicker">交易全流程</p><h2 id="transactions-title">每一步进展，<br>都看得见。</h2><p>从发布好物，到确认交付。<br>交易有始有终，买卖双方都更从容。</p></div>
+      <div class="journey" id="journey"><div class="journey-visual"><div class="journey-glow"></div><div class="show-phone journey-phone provided-phone"><img id="journey-screen" src="assets/provided-commission.png" alt="玩家委托详情 · 用户提供带壳截图" loading="lazy" width="1291" height="2751"></div><div class="journey-controls" aria-label="切换交易相关界面"><button data-journey="0" aria-label="查看委托详情" aria-pressed="true">1</button><button data-journey="1" aria-label="查看工程验收" aria-pressed="false">2</button><button data-journey="2" aria-label="查看交易沟通" aria-pressed="false">3</button><button data-journey="3" aria-label="查看钱包流水" aria-pressed="false">4</button></div></div><div class="journey-steps"><article class="journey-step is-active" data-step="0"><span>01 / 玩家委托</span><h3>看清需要，<br>再接下这份委托。</h3><p>报酬、具体要求、地点与约定期限，集中呈现。先了解要做什么，再决定是否接取。</p></article><article class="journey-step" data-step="1"><span>02 / 工程验收</span><h3>从开始施工，<br>走到完成验收。</h3><p>待开工、施工中、已完成、已验收，各阶段清楚可见。工程完成后，等待买家验收再结算。</p></article><article class="journey-step" data-step="2"><span>03 / 直接沟通</span><h3>有需要，<br>就和对方聊一聊。</h3><p>通过玩家资料或订单联系对方，确认约定、交流细节。把事情说清楚，合作也更顺畅。</p></article><article class="journey-step" data-step="3"><span>04 / 钱包流水</span><h3>每一次收支，<br>都有记录可查。</h3><p>查看可用余额、近期收入与支出，也可以进入历史账单，了解资金的来往。</p><button class="inline-preview" data-media="assets/provided-wallet.png" data-media-title="我的钱包 · 用户提供截图">查看钱包界面 ↗</button></article></div></div>
+    </section>
+
+    <section class="rich-section section-shell" id="events" aria-labelledby="events-title">
+      <div class="rich-heading reveal"><p class="section-kicker">活动与社区</p><h2 id="events-title">下一个好故事，<br>等大家一起开始。</h2><p>发现正在发生的活动，留意下一次相聚。<br>一个人的灵感，也能成为一群人的计划。</p></div>
+      <div class="event-stage grain reveal"><img class="event-background" src="assets/plaza-sunset.png" alt="玩家们在樱花广场集合" loading="lazy" width="2560" height="1369"><div class="event-overlay"></div><div class="event-copy"><span class="white-tag">在这里，相遇。</span><h3>热闹，<br>是我们一起创造的。</h3><p>风景打卡、花园共建、组队远行。<br>让下一次上线，多一点期待。</p><button class="round-link" data-media="assets/plaza-sunset.png" data-media-title="社区实景 · 玩家提供素材">看看社区实景 <span>↗</span></button></div><figure class="event-photo-card" data-depth style="--rest-angle:2deg"><img src="assets/friends-group.png" alt="玩家们在建筑前合影" loading="lazy" width="3840" height="2160"><figcaption>下一次相聚，从一个新计划开始。</figcaption></figure></div>
+      <div class="event-highlights"><div class="reveal"><b>发现</b><p>发现社区里的新计划与新鲜事。</p></div><div class="reveal"><b>参与</b><p>和朋友约好时间，一起参与。</p></div><div class="reveal"><b>相聚</b><p>把各自的日常，变成共同的回忆。</p></div></div>
+    </section>
+
+    <section class="rich-section section-shell" id="profile" aria-labelledby="profile-title">
+      <div class="rich-heading reveal"><p class="section-kicker">玩家资料与个人空间</p><h2 id="profile-title">熟悉的身份，<br>也有新的表达。</h2><p>换一个头像，写下你的简介。<br>让别人认识你，也让联系变得更自然。</p></div>
+      <div class="profile-grid"><article class="mini-panel profile-main reveal"><div class="panel-top"><span>认识一个玩家</span><h3>从一句介绍开始。</h3></div><div class="profile-screen-frame provided-phone" data-depth style="--rest-angle:3deg"><img src="assets/provided-player.png" alt="玩家资料页，包含简介与消息、特别关心、转账入口" loading="lazy" width="1291" height="2751"></div><button class="panel-footer panel-action" data-media="assets/provided-player.png" data-media-title="玩家资料 · 用户提供截图"><span>简介、最近在线与常用操作，都在这里。</span><b>↗</b></button></article><div class="profile-side"><article class="identity-tile grain reveal"><div class="identity-avatars minecraft-identity" aria-hidden="true"><span><img src="assets/minecraft/name_tag.png" alt="" width="16" height="16" loading="lazy"></span><span><img src="assets/minecraft/writable_book.png" alt="" width="16" height="16" loading="lazy"></span><span><img src="assets/minecraft/compass_16.png" alt="" width="16" height="16" loading="lazy"></span></div><h3>不同的个性，<br>同一个世界。</h3><p>编辑头像与个人简介，<br>留下属于你的样子。</p></article><article class="quick-actions-tile reveal"><h3>想联系，就联系。</h3><div><span><svg><use href="#i-chat"/></svg>发消息</span><span><svg><use href="#i-spark"/></svg>特别关心</span><span><svg><use href="#i-arrow"/></svg>转账</span></div><p>从玩家资料，一步到你想做的事。</p></article></div></div>
+    </section>
+
+    <section class="rich-section appearance-section" id="appearance" aria-labelledby="appearance-title"><div class="section-shell"><div class="rich-heading reveal"><p class="section-kicker">细节与质感</p><h2 id="appearance-title">看起来轻盈。<br>用起来，也一样。</h2><p>通透的材质、清楚的层次、自然的反馈。<br>每一次打开，都让熟悉的操作更顺手。</p></div><div class="appearance-stage grain reveal"><img src="assets/street-evening.png" alt="暖光街景作为玻璃材质展示背景" loading="lazy" width="2560" height="1417"><div class="appearance-overlay"></div><div class="glass-example" id="glass-example"><div class="glass-example-top"><img src="assets/app-icon.svg" width="38" height="38" alt=""><b>Deuterium</b><span>9:41</span></div><h3>每个日常，<br>都值得好好对待。</h3><div class="glass-notice"><svg><use href="#i-chat"/></svg><div><b>来自熟悉的朋友</b><p>有空吗？一起看看新的街区。</p></div></div><div class="glass-tabbar"><span><svg><use href="#i-bag"/></svg></span><span class="glass-tab-active"><svg><use href="#i-grid"/></svg></span><span><svg><use href="#i-chat"/></svg></span><span><svg><use href="#i-user"/></svg></span></div></div><div class="material-controls"><label for="glass-range">试试通透的层次 <output id="glass-output">24</output></label><input id="glass-range" type="range" min="0" max="40" value="24" aria-label="调整网页玻璃材质模糊程度"><small>网页材质示意</small></div></div></div></section>
+
+    <section class="rich-section section-shell" id="gallery" aria-labelledby="gallery-title"><div class="rich-heading reveal"><p class="section-kicker">来自你们的真实瞬间</p><h2 id="gallery-title">世界之所以精彩，<br>因为有你们在。</h2><p>街角的花、一起看过的风景、并肩留下的合影。<br>这些真实的日常，就是 Deuterium 的样子。</p></div><div class="world-gallery reveal"><div class="gallery-photo"><img id="gallery-image" src="assets/friends-group.png" alt="玩家们在建筑前合影" loading="lazy" width="3840" height="2160"><button class="gallery-expand" data-gallery-expand aria-label="查看当前实景大图">↗</button></div><div class="gallery-bottom"><div><small id="gallery-counter" aria-live="polite">01 / 04</small><h3 id="gallery-caption">热闹，是大家一起创造的。</h3></div><div class="gallery-arrows"><button id="gallery-prev" aria-label="上一张实景"><svg><use href="#i-arrow"/></svg></button><button id="gallery-next" aria-label="下一张实景"><svg><use href="#i-arrow"/></svg></button></div></div></div></section>
+
+    <section class="rich-section section-shell" id="access" aria-labelledby="access-title"><div class="rich-heading reveal"><p class="section-kicker">选择你的入口</p><h2 id="access-title">随时打开，<br>以你习惯的方式。</h2></div><div class="access-grid"><article class="access-card reveal"><img src="assets/app-icon.svg" width="59" height="59" alt=""><span class="access-status">敬请期待</span><h3>Android App</h3><p>把玩家生活带在身边。<br>Android 8.0 及以上。</p><button class="button button-dark" data-coming="Android App">敬请期待 <svg><use href="#i-download"/></svg></button></article><article class="access-card reveal"><svg class="access-icon"><use href="#i-globe"/></svg><span class="access-status">敬请期待</span><h3>玩家网页版</h3><p>在浏览器里，<br>继续连接你的世界。</p><button class="access-soon" data-coming="玩家网页版">了解开放状态 ↗</button></article><article class="access-card reveal"><svg class="access-icon"><use href="#i-shop"/></svg><span class="access-status">敬请期待</span><h3>商家工作台</h3><p>打理店铺与订单，<br>让经营更顺手。</p><button class="access-soon" data-coming="商家工作台">了解开放状态 ↗</button></article></div></section>
+
+    <section class="faq-section section-shell" id="faq" aria-labelledby="faq-title"><div class="faq-title"><p class="section-kicker">开始之前</p><h2 id="faq-title">你可能想知道。</h2></div><div class="faq-list"><details><summary>现在可以下载体验吗？<span>+</span></summary><p>App 下载暂未开放，敬请期待。开放后会在这里提供下载入口。</p></details><details><summary>网页版和商家端在哪里？<span>+</span></summary><p>玩家网页版与商家工作台暂不开放入口，敬请期待。</p></details><details><summary>玩家市场支持哪些交易？<span>+</span></summary><p>玩家市场涵盖建材、装备、补给和建筑服务，支持发布、库存与图片管理，并展示交付、验收、退款和通知流程。建筑服务可以填写项目、地点和约定工期。</p></details><details><summary>网页上的截图来自哪里？<span>+</span></summary><p>App 截图展示实际界面，场景照片和玩家合影来自社区的真实游戏截图。</p></details></div></section>
+    <section class="download-section" id="download">
+      <div class="download-content reveal"><img class="download-brand" src="assets/app-icon.svg" alt="Deuterium App 图标" width="74" height="74"><p class="section-kicker">让热爱，随时相连。</p><h2>你的世界。<br>现在，随身携带。</h2><div class="download-actions"><button class="button button-primary" data-coming="Android App"><svg><use href="#i-download"/></svg>下载 App</button><button class="button button-light" data-coming="玩家网页版">进入网页版 <svg><use href="#i-arrow"/></svg></button></div><p class="download-note">App 下载与网页版暂未开放，敬请期待。</p></div>
+    </section>
+  </main>
+
+  <footer class="rich-footer"><div class="footer-grid section-shell"><div class="footer-brand"><a class="brand" href="#top"><img src="assets/app-icon.svg" width="38" height="38" alt="Deuterium App 图标"><span>Deuterium</span></a><p>属于玩家的，另一个日常。<br>让喜欢的世界，一直在身边。</p></div><nav class="footer-column" aria-label="探索服务"><h3>探索服务</h3><a href="#market">商城与玩家市场</a><a href="#connection">消息与朋友</a><a href="#wallet">钱包与转账</a><a href="#transactions">交易全流程</a><a href="#events">活动与社区</a></nav><nav class="footer-column" aria-label="体验入口"><h3>体验入口</h3><button data-coming="Android App">Android App · 敬请期待</button><button data-coming="玩家网页版">玩家网页版 · 敬请期待</button><button data-coming="商家工作台">商家工作台 · 敬请期待</button></nav><nav class="footer-column" aria-label="了解更多"><h3>了解更多</h3><a href="#profile">玩家资料</a><a href="#appearance">材质与细节</a><a href="#gallery">社区实景</a><a href="#faq">常见问题</a></nav></div><div class="section-shell"><div class="rich-footer-bottom"><span>© 2026 Deuterium</span><span>玩家场景来自社区截图。</span><a href="#top">回到顶部 ↑</a></div></div></footer>
+
+  <dialog id="coming-dialog" class="app-dialog coming-dialog" aria-labelledby="coming-title"><button class="dialog-close" aria-label="关闭提示" data-close><svg><use href="#i-close"/></svg></button><div class="coming-icon"><svg><use href="#i-globe"/></svg></div><p class="section-kicker" id="coming-platform">玩家网页版</p><h2 id="coming-title">好体验，正在路上。</h2><p class="dialog-description" id="coming-description">未来，在浏览器里也能连接你的世界。</p><span class="coming-badge"><span></span>敬请期待</span><button class="button button-dark" data-close>知道了</button></dialog>
+
+  <dialog id="media-dialog" class="app-dialog media-dialog" aria-labelledby="media-title"><button class="dialog-close" aria-label="关闭图片预览" data-close><svg><use href="#i-close"/></svg></button><h2 id="media-title">App 界面预览</h2><img id="media-image" src="assets/provided-commission.png" alt="App 界面预览"><p>Deuterium · 界面与实景预览</p></dialog>
+
+  <dialog id="payment-dialog" class="app-dialog payment-dialog" aria-labelledby="payment-video-title"><button class="dialog-close" aria-label="关闭支付录屏" data-close><svg><use href="#i-close"/></svg></button><p class="section-kicker">DEUTERIUM · APP 实际录屏</p><h2 id="payment-video-title">支付确认，亲眼看看。</h2><video id="payment-video" src="assets/payment-v09-original.mp4" controls playsinline preload="metadata" aria-label="Deuterium 0.9.0 支付动效原始录屏"></video><div class="payment-playback-actions"><button id="replay-payment">重播录屏 ↻</button><button id="preview-payment-sound">试听同版提示音 ♪</button></div><p id="payment-video-note">体验版 0.9.0 · 原录屏无设备音轨，提示音可单独试听。</p><audio id="payment-sound" src="assets/payment-confirmation.wav" preload="none"></audio></dialog>
+</body>
+</html>
