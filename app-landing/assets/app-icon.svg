@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Deuterium app icon</title>
+  <desc>Editable launcher icon source: white rounded app tile with an optically centered flat black D monogram.</desc>
+  <defs>
+    <linearGradient id="tile" x1="168" y1="112" x2="856" y2="912" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#FAFAFA"/>
+      <stop offset="1" stop-color="#F3F3F3"/>
+    </linearGradient>
+    <filter id="tileShadow" x="34" y="44" width="956" height="956" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#000000" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <rect x="80" y="80" width="864" height="864" rx="192" fill="url(#tile)" filter="url(#tileShadow)"/>
+  <rect x="82" y="82" width="860" height="860" rx="190" stroke="#E8E8E8" stroke-opacity="0.7" stroke-width="4"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M299 284H527C661 284 755 380 755 512C755 644 661 740 527 740H299V284ZM359 368V656H513C603 656 671 585 671 512C671 439 603 368 513 368H359Z" fill="#101010"/>
+</svg>
