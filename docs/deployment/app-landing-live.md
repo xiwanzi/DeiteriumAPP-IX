@@ -1,5 +1,7 @@
 # App 宣传页上线（2026-09-19）
 
+21:43 后续修正：用户指出旧图标，现已将页面五处图标及 favicon 替换为当前 App 正式白底黑色分体弧线 D，直接复用 `web-app/src/assets/launcher-icons/default.svg`。线上图标配置只读确认为 `default` / version 3。资源更名为 `app-icon-default-v208.svg` 避免旧缓存；页面保持圆角裁切。当前目录为 `/var/www/deuterium-app/releases/app-landing-icon-e352b6d`，前一静态版本仍保留用于回退。浏览器验证五处加载、favicon 新地址、期待弹窗及无 APK 链接通过；图标文件 SHA-256 为 `aca22a58f9740d02b7aa4bb192ba5a1372f7cac3ff9e05cae91688e2e77ae4ec`。下方为首次部署记录。
+
 **21:36:58（UTC+8）**，用户确认的第七版宣传页已部署到 https://app.deuteriumix.com 。用户本轮要求删除“尚未连接正式服务”等旧说明，App 下载和网页版仍为“敬请期待”。
 
 ## 范围与入口
