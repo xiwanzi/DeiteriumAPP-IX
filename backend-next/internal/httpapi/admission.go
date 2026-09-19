@@ -70,7 +70,7 @@ func admissionFailure(w http.ResponseWriter, r *http.Request, err error) {
 }
 func (s *Server) publicAdmissionOrigin(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
-	return s.Config.AdmissionPublicOrigin != "" && (origin == s.Config.AdmissionPublicOrigin || origin == s.Config.PublicOrigin || origin == "" && r.Header.Get("Sec-Fetch-Site") != "cross-site")
+	return s.Config.AdmissionPublicOrigin != "" && (origin == s.Config.AdmissionPublicOrigin || s.origin(r) || origin == "" && r.Header.Get("Sec-Fetch-Site") != "cross-site")
 }
 func (s *Server) admissionGateway(r *http.Request) bool {
 	if r.Header.Get("Origin") != "" {

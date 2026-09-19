@@ -213,7 +213,7 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 		failError(w, r, err)
 		return
 	}
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{s.Config.PublicOrigin}})
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: s.Config.PublicOrigins()})
 	if err != nil {
 		return
 	}

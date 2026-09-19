@@ -38,6 +38,7 @@ type Config struct {
 	SMTPKey                     []byte      `json:"-"`
 	Listen                      string      `json:"listen"`
 	PublicOrigin                string      `json:"publicOrigin"`
+	AdditionalPublicOrigins     []string    `json:"additionalPublicOrigins,omitempty"`
 	Development                 bool        `json:"development"`
 	TrustedProxyCIDRs           []string    `json:"trustedProxyCidrs"`
 	Nodes                       []Node      `json:"nodes"`
@@ -95,13 +96,13 @@ func (c Config) Validate() error {
 			}
 		}
 	}
-	u, err := url.Parse(c.PublicOrigin)
-	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Opaque != "" {
-		return errors.New("publicOrigin must be an exact origin without path")
-	}
-	if u.Scheme != "https" {
-		if !c.Development || u.Scheme != "http" || !loopback(u.Hostname()) {
-			return errors.New("HTTPS publicOrigin required")
+	for _, origin := range c.PublicOrigins() {
+		u, err := url.Parse(origin)
+		if err != nil || u.Host == "" || u.User != nil || origin != u.Scheme+"://"+u.Host || strings.ContainsAny(u.Hostname(), "*?[]\\") {
+			return errors.New("public origins must be exact origins without paths or wildcards")
+		}
+		if u.Scheme != "https" && (!c.Development || u.Scheme != "http" || !loopback(u.Hostname())) {
+			return errors.New("HTTPS public origin required")
 		}
 	}
 	host, _, err := net.SplitHostPort(c.Listen)
@@ -154,6 +155,23 @@ func (c Config) Validate() error {
 		return errors.New("only one Core economy authority is allowed")
 	}
 	return nil
+}
+
+// PublicOrigins preserves the canonical URL while allowing explicit migration aliases.
+func (c Config) PublicOrigins() []string {
+	return append([]string{c.PublicOrigin}, c.AdditionalPublicOrigins...)
+}
+
+func (c Config) AllowsPublicOrigin(origin string) bool {
+	if origin == "" {
+		return false
+	}
+	for _, allowed := range c.PublicOrigins() {
+		if origin == allowed {
+			return true
+		}
+	}
+	return false
 }
 
 func (c Config) AdmissionURL() string {
