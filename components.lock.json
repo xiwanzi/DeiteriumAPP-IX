@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-15",
+  "baselineDate": "2026-09-19",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
@@ -25,11 +25,11 @@
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
-      "publishedSourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
-      "publishedSha256": "ce12c2fb4bcc944d8abeae379ab9a888358eb64d427f3bf289fdffba7d2395e3",
-      "buildSourceCommit": "a824088cb518e1cbccf9ffe0d6a52a05ad31cadf",
-      "releaseNotes": "docs/deployment/backend-concurrency-live.md"
+      "sourceCommit": "a1064819ac0a00466352c78b66805ec32eb3aec7",
+      "publishedSourceCommit": "a1064819ac0a00466352c78b66805ec32eb3aec7",
+      "publishedSha256": "3020ba909cf019da3ca458ff54c6f75fd6d3462ff56c5f144805f305f8190aaf",
+      "buildSourceCommit": "a1064819ac0a00466352c78b66805ec32eb3aec7",
+      "releaseNotes": "docs/deployment/chat-domain-live.md"
     },
     {
       "name": "core",
