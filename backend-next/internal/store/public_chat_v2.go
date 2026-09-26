@@ -90,7 +90,7 @@ func (s *Store) PublishAppChatV2(ctx context.Context, u User, clientID, content,
 	}
 	for _, ref := range ordered {
 		var exists bool
-		err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM identities WHERE player_ref=?) OR EXISTS(SELECT 1 FROM chat_messages_next WHERE sender_ref=?)`, ref, ref).Scan(&exists)
+		err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM identities WHERE player_ref=?) OR EXISTS(SELECT 1 FROM chat_messages_next WHERE sender_ref=?) OR EXISTS(SELECT 1 FROM core_player_directory WHERE player_ref=?)`, ref, ref, ref).Scan(&exists)
 		if err != nil {
 			return "", false, err
 		}

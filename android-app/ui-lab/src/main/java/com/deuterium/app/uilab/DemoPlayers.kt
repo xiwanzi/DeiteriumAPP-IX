@@ -2,7 +2,7 @@ package com.deuterium.app.uilab
 
 import androidx.compose.runtime.mutableStateListOf
 
-data class PlayerProfile(val name: String, val qq: String = "", val bio: String = "", val online: Boolean = false, val lastSeen: String = "暂无记录", val playerRef: String = "",val avatar:String?=null)
+data class PlayerProfile(val name: String, val qq: String = "", val bio: String = "", val online: Boolean = false, val lastSeen: String = "暂无记录", val playerRef: String = "",val avatar:String?=null,val registered:Boolean=true)
 /** Session-scoped server directory. Never populated with sample players. */
 val Players = mutableStateListOf<PlayerProfile>()
 fun searchPlayers(query: String): List<PlayerProfile> = Players.filter {

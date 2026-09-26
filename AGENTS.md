@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-26：**聊天在线名单与连续返回修复已完成本机实现，尚未推送/部署**。从最新主线 `cbc522d14ba5` 建立 `xiwanzi/chat-online-back-fix`，复用 `.worktrees/chat-domain`；Android 基于当前线上 2.0.13（21300）且暂不升版。在线名单需配套 Go 接口，返回修复已通过模拟器事件回归，厂商侧滑仍待真机验收。见[本机验收](docs/qa/chat-online-back-fix.md)。下方为既有上线记录。
+
 2026-09-19：**App 宣传页 https://app.deuteriumix.com 已于 21:36 上线**。沿用第七版设计，删除未接正式服务等旧说明；下载和网页入口均为“敬请期待”，本域名不提供 APK。独立静态站与 HTTPS 自动续期验证通过，见[上线记录](docs/deployment/app-landing-live.md)。
 
 2026-09-19：**玩家社区域名 https://chat.deuteriumix.com 已于 21:12 上线**。独立 HTTPS 证书和自动续期验证通过，Go 精确兼容新旧来源，App 2.0.13 / Web 2.0.19 保持；旧 IP 接口和启动器入口保留。源码 `a1064819ac0a`，维护 `.worktrees/chat-domain`，见[上线记录](docs/deployment/chat-domain-live.md)。下方为较早记录。

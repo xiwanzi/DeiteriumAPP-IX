@@ -1179,6 +1179,13 @@ components:
       type: object
       required: [players]
       properties:
+        available:
+          type: boolean
+          description: 至少一个启用聊天的 Core 节点已连接并提供在线快照；false 时不得把空列表展示为无人在线。
+        onlineCount:
+          type: integer
+          minimum: 0
+          description: 本次快照去重及注销过滤后的玩家数，与 players 长度一致。
         players:
           type: array
           items:

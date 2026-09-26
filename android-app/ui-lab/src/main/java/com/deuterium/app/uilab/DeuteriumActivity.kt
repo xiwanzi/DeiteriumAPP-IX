@@ -228,7 +228,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
     fun showOrder(id:String){stack=stack.filterNot{it=="bag"||it.startsWith("order:")||it.startsWith("refund:")}+"order:$id"}
     fun goToNotice(target:String){destination=if(target=="wallet")Destination.Profile else Destination.Info;stack=listOf(target);state.notice=null}
     LaunchedEffect(incomingRoute){incomingRoute?.let{if(it=="wallet"||it=="public"||it.startsWith("order:")||it.startsWith("refund:")||it.startsWith("commission:")||it.startsWith("dm:")||it=="announcement"||it=="about"||it=="storage")goToNotice(it);consumeRoute()}}
-    BackHandler(!keyboard&&(stack.isNotEmpty()||destination!=Destination.Shop)&&!transfer&&!people&&record==null&&!tuner&&!resetPassword){back()}
+    NavigationBackHandler((stack.isNotEmpty()||destination!=Destination.Shop)&&!transfer&&!people&&record==null&&!tuner&&!resetPassword){back()}
     LaunchedEffect(state.notice?.id){if(state.notice!=null){delay(4200);state.notice=null}}
     val title=when {
         route=="storage"->"存储空间";route=="coupons"->"优惠券"
@@ -294,7 +294,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                     Text(title,Modifier.weight(1f),textAlign=androidx.compose.ui.text.style.TextAlign.Center,style=MaterialTheme.typography.titleMedium,maxLines=1)
                     when {
                         route in listOf("commissions","events","event","my-commissions")->Row{IconButton({open("my-commissions")}){Icon(Icons.Outlined.Assignment,"我的委托",tint=MaterialTheme.colorScheme.primary)};IconButton({open("publish-commission")}){Icon(Icons.Outlined.Add,"发布委托",tint=MaterialTheme.colorScheme.primary)}}
-                        route=="public"->IconButton({people=true}){Icon(Icons.Outlined.PeopleOutline,"在线玩家",tint=MaterialTheme.colorScheme.primary)}
+                        route=="public"->IconButton({keyboardController?.hide();people=true}){Icon(Icons.Outlined.PeopleOutline,"在线玩家",tint=MaterialTheme.colorScheme.primary)}
                         route=="bag"->IconButton({open("coupons")}){Icon(Icons.Outlined.ConfirmationNumber,"优惠券",tint=MaterialTheme.colorScheme.primary)}
                         route.startsWith("product:")->Box(Modifier.onGloballyPositioned{bagCenter=it.positionInRoot()+Offset(it.size.width/2f,it.size.height/2f)}){ShoppingBagButton(state.cart.values.sum()){open("bag")}}
                         route=="listings"->IconButton({open("publish")}){Icon(Icons.Outlined.Add,"发布商品",tint=MaterialTheme.colorScheme.primary)}
@@ -315,7 +315,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
         if(transfer)TransferSheet(state,transferTo){transfer=false}
         if(tuner)GlassTuner(parameters,onParameters){tuner=false}
         if(resetPassword)ResetPasswordSheet(userName){resetPassword=false}
-        if(people)IosSheet({people=false}){Column(Modifier.padding(horizontal=24.dp).padding(bottom=24.dp)){Text("在线玩家",style=MaterialTheme.typography.titleLarge);Players.filter{it.online}.forEach{person->Row(Modifier.fillMaxWidth().padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically){PlayerAvatar(person.name);Text(person.name,Modifier.weight(1f).padding(start=12.dp));PlainButton({people=false;open("dm:${person.name}")}){Text("私聊")};PlainButton({people=false;state.mentionPlayer(person.name)}){Text("@ 提及")}}}}}
+        if(people)OnlinePlayersSheet(state,{people=false}){open("dm:$it")}
         record?.let{entry->IosSheet({record=null}){Column(Modifier.padding(24.dp)){Text((if(entry.amount>0)"+" else "−")+credit(kotlin.math.abs(entry.amount)),style=MaterialTheme.typography.headlineLarge);DetailRow("交易状态","已完成");DetailRow("往来玩家",entry.name);DetailRow("备注",entry.detail);DetailRow("时间",entry.at.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));DetailRow("流水号","DT${entry.id.toString().padStart(10,'0')}");MotionButton({record=null},Modifier.fillMaxWidth().padding(top=18.dp)){Text("完成")}}}}
     }
 }
