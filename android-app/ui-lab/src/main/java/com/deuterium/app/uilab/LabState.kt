@@ -51,6 +51,10 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     var chatReplyPending by mutableStateOf(false)
     var chatStatus by mutableStateOf("正在连接…")
     var onlineCount by mutableStateOf<Int?>(null);private set
+    var onlinePlayers by mutableStateOf<List<PlayerProfile>>(emptyList());private set
+    var onlinePlayersKnown by mutableStateOf(false);private set
+    var onlinePlayersRefreshing by mutableStateOf(false);private set
+    var onlinePlayersError by mutableStateOf<String?>(null);private set
     var loadingChatHistory by mutableStateOf(false);private set
     var publicHistoryCursor by mutableStateOf<String?>(null);private set
     private var publicHistoryLoaded=false
@@ -398,6 +402,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         erasedRefs.addAll(refs.filter{it !in erasedRefs});unavailableAccounts.addAll(names.filter{it !in unavailableAccounts})
         names.forEach(::forgetConversation);followed.removeAll(names);saveFollowed(followed.toSet());recentTransfers.removeAll(names)
         Players.removeAll{it.playerRef in refs};commerce.listings.removeAll{it.sellerRef in refs}
+        onlinePlayers=onlinePlayers.filterNot{it.playerRef in refs}
         fun clean(line:ChatLine):ChatLine {
             val reply=line.reply?.let{if(it.name in names)it.copy(name=ErasedAccountName,text="原消息不可见")else it}
             val forwarded=line.forwarded?.let{if(it.name in names)it.copy(name=ErasedAccountName,text="原消息不可见")else it}
@@ -434,6 +439,28 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }
     }
     private suspend fun refreshPresence(){runCatching{api!!.request("GET","/chat/presence")}.onSuccess{onlineCount=if(it.optBoolean("available"))it.getInt("onlineCount")else null}.onFailure{onlineCount=null}}
+    suspend fun refreshOnlinePlayers(){
+        if(closed||onlinePlayersRefreshing)return
+        val service=api ?: return
+        onlinePlayersRefreshing=true
+        try {
+            val account=service.financialScope()
+            val response=service.request("GET","/chat/online-players")
+            account.verifyCurrent(service.financialScope())
+            if(closed)return
+            check(response.getBoolean("available")){"服务器在线状态暂不可用"}
+            val players=response.getJSONArray("players").objects().filterNot{isErasedPlayer(it.optString("playerRef"))}.map{value->
+                val ref=value.getString("playerRef")
+                val previous=Players.find{it.playerRef==ref} ?: PlayerProfile(value.getString("gameId"),playerRef=ref)
+                previous.copy(name=value.getString("gameId"),online=true,registered=value.getBoolean("registered"))
+            }.distinctBy{it.playerRef}
+            // Keep the sheet independent of profile/history caches with stale online flags.
+            onlinePlayers=players;onlineCount=players.size;onlinePlayersKnown=true;onlinePlayersError=null
+            players.filter{it.name!=userName}.forEach{player->Players.removeAll{it.playerRef==player.playerRef||it.name==player.name};Players.add(player)}
+        }catch(cancelled:CancellationException){throw cancelled}
+        catch(error:Exception){onlinePlayers=emptyList();onlineCount=null;onlinePlayersKnown=false;onlinePlayersError=error.message ?: "在线玩家暂时无法读取"}
+        finally{onlinePlayersRefreshing=false}
+    }
     suspend fun loadOlderDirect(name:String){
         val before=directHistoryCursors[name] ?: return;val id=conversationIds[name] ?: return;if(directHistoryLoading[name]==true)return
         directHistoryLoading[name]=true

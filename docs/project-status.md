@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-09-26：**聊天在线名单与连续返回修复为本机候选，尚未推送/部署**。基于最新 `origin/main` `cbc522d14ba5`，Android 与线上 2.0.13（21300）源码基线一致；维护 `.worktrees/chat-domain` / `xiwanzi/chat-online-back-fix`。配套 Go 在线快照接口、App 弹窗刷新和返回回调已实现，构建/单元/集成/模拟器事件验证通过；发布和用户真机側滑待后续。见[验收记录](qa/chat-online-back-fix.md)。
+
 2026-09-19：**App 宣传页 https://app.deuteriumix.com 已于 21:36 上线**。沿用第七版设计，删除未接正式服务等旧说明；下载和网页入口均为“敬请期待”，本域名不提供 APK。独立静态站与 HTTPS 自动续期验证通过，见[上线记录](deployment/app-landing-live.md)。
 
 2026-09-19：**玩家社区域名 https://chat.deuteriumix.com 已于 21:12 上线**。独立 HTTPS 证书和自动续期验证通过，Go 精确兼容新旧来源，App 2.0.13 / Web 2.0.19 保持；旧 IP 接口和启动器入口保留。源码 `a1064819ac0a`，维护 `.worktrees/chat-domain`，见[上线记录](deployment/chat-domain-live.md)。下方为较早记录。

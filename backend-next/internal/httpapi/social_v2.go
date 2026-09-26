@@ -18,6 +18,8 @@ func (s *Server) registerSocialV2(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/players/{playerRef}", s.socialProfileV2)
 	mux.HandleFunc("PATCH /api/v1/account/me/profile", s.socialPatchProfileV2)
 	mux.HandleFunc("GET /api/v1/chat/player-directory", s.socialDirectoryV2)
+	mux.HandleFunc("GET /api/v1/chat/presence", s.chatPresence)
+	mux.HandleFunc("GET /api/v1/chat/online-players", s.chatPresence)
 	mux.HandleFunc("GET /api/v1/chat/follows", s.socialFollowsV2)
 	mux.HandleFunc("POST /api/v1/chat/follows", s.socialFollowV2)
 	mux.HandleFunc("DELETE /api/v1/chat/follows/{playerRef}", s.socialUnfollowV2)

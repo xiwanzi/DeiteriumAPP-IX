@@ -16,6 +16,7 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        if(options.getString("chatNavigation")=="true"){ChatNavigationCheck.run(this);return}
         if(options.getString("accountErasure")=="true"){AccountErasureCheck.run(this);return}
         if(options.getString("authRegistration")=="true"){AuthRegistrationCheck.run(this);return}
         options.getString("overdrawPageCapture")?.let{OverdrawPageCapture.run(this,it);return}
