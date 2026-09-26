@@ -1,35 +1,36 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-19",
+  "baselineDate": "2026-09-26",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "components": [
     {
       "name": "android",
       "path": "android-app/ui-lab",
-      "version": "2.0.13",
-      "versionCode": 21300,
-      "sourceCommit": "15690c138288746188ea242379695be1f3e6622a",
-      "publishedSha256": "2d063c93d865c374be426e9aa263658869c96a6aeb8f4c4de029f990f5fd398b",
-      "buildSourceCommit": "6231ac2c833656ec259747dbeaa1c484a4a2904a",
-      "publishedSourceCommit": "15690c138288746188ea242379695be1f3e6622a"
+      "version": "2.0.14",
+      "versionCode": 21400,
+      "sourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+      "publishedSha256": "9d4d68e507ad7e84054d9ba3a833de6d9fdfb14504efdfb4fca088822072cb34",
+      "buildSourceCommit": "a24009cbf341f108d0b8fa3a93bb7cd46f38f5bd",
+      "publishedSourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+      "releaseNotes": "docs/deployment/deuterium-2.0.14-live.md"
     },
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.18",
-      "sourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
-      "publishedSourceCommit": "57878e526653dfbef157c696c3b304a1cf6a25e0",
-      "publishedArchiveSha256": "a29c4dc85f5d2c8f7f5f7897490c1a0608049936e175e1e99c3281cf66babbd2",
-      "buildSourceCommit": "dc53db8d4374d28105f18504573291662dc44d85"
+      "version": "2.0.19",
+      "sourceCommit": "25a2ed8cc1f19c3b9ea3986f09127529bb76d860",
+      "publishedSourceCommit": "f8a4d90818ba19290726ac1539a38fb618e8c05b",
+      "buildSourceCommit": "25a2ed8cc1f19c3b9ea3986f09127529bb76d860",
+      "releaseNotes": "docs/deployment/dlauncher-0.6.1-live.md"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "a1064819ac0a00466352c78b66805ec32eb3aec7",
-      "publishedSourceCommit": "a1064819ac0a00466352c78b66805ec32eb3aec7",
-      "publishedSha256": "3020ba909cf019da3ca458ff54c6f75fd6d3462ff56c5f144805f305f8190aaf",
-      "buildSourceCommit": "a1064819ac0a00466352c78b66805ec32eb3aec7",
-      "releaseNotes": "docs/deployment/chat-domain-live.md"
+      "sourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+      "publishedSourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+      "publishedSha256": "612326607c75e00d697e5653a56ef9709ffdf23221520ea945e7bc4f647fb368",
+      "buildSourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+      "releaseNotes": "docs/deployment/deuterium-2.0.14-live.md"
     },
     {
       "name": "core",
@@ -95,10 +96,10 @@
     }
   ],
   "currentRelease": {
-    "version": "2.0.13",
-    "androidVersionCode": 21300,
+    "version": "2.0.14",
+    "androidVersionCode": 21400,
     "status": "PUBLISHED",
-    "branch": "xiwanzi/mail-appearance-live-record",
+    "branch": "xiwanzi/release-v214-live",
     "coreVersion": "1.0.2",
     "xconomyVersion": "2.26.3-deuterium.3",
     "mail": {
@@ -111,22 +112,20 @@
       "pullRequest": 2,
       "buildSourceCommit": "2d69462c9a2bf705abb430b88dcad0437c387b24"
     },
-    "qa": "docs/plans/admission-review-email.md",
-    "releaseNotes": "docs/deployment/mail-appearance-live.md",
-    "sourceCommit": "a79eb664d28d49d8a7762518fcb32dec2357bafe",
-    "buildManifest": "docs/deployment/artifacts/mail-appearance/verification.json",
-    "migrations": [
-      "030_admission_review_email.sql"
-    ],
-    "publishedAt": "2026-09-12T14:49:14Z",
-    "webVersion": "2.0.18",
+    "qa": "docs/qa/chat-online-back-fix.md",
+    "releaseNotes": "docs/deployment/deuterium-2.0.14-live.md",
+    "sourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+    "buildManifest": "docs/deployment/artifacts/v214/manifest.json",
+    "migrations": [],
+    "publishedAt": "2026-09-26T12:00:39Z",
+    "webVersion": "2.0.19",
     "gatewayVersion": "1.0.0",
     "admissionURL": "https://47.103.99.34/admission/",
-    "webPublishedAt": "2026-09-12T18:03:15.064594+00:00",
-    "backendPublishedAt": "2026-09-15T12:47:45.804692+00:00",
+    "backendPublishedAt": "2026-09-26T12:00:27Z",
     "admissionVersion": "1.0.2",
     "admissionPublishedAt": "2026-09-13T12:48:51.870884+00:00",
     "admissionReleaseNotes": "docs/deployment/admission-1.0.2-live.md",
-    "backendReleaseNotes": "docs/deployment/backend-concurrency-live.md"
+    "backendReleaseNotes": "docs/deployment/deuterium-2.0.14-live.md",
+    "webReleaseNotes": "docs/deployment/dlauncher-0.6.1-live.md"
   }
 }

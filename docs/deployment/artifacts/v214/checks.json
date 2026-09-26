@@ -1,0 +1,16 @@
+{
+  "androidJvmTests": 152,
+  "lintErrors": 0,
+  "lintWarnings": 24,
+  "performanceApkInstrumentation": "PASS",
+  "rapidBackIntervalsMs": [
+    0,
+    30,
+    100,
+    500
+  ],
+  "relatedGoRaceAndIntegrationTests": "PASS",
+  "device": "Android 15 emulator",
+  "physicalVendorSwipeVerified": false,
+  "instrumentationOutput": "INSTRUMENTATION_RESULT: back_0_30_100_500ms_no_activity_exit=PASS\nINSTRUMENTATION_RESULT: live_list_empty_unavailable_failure_recovery=PASS\nINSTRUMENTATION_RESULT: online_requests=10\nINSTRUMENTATION_RESULT: page_callback_stays_registered_during_ime=PASS\nINSTRUMENTATION_RESULT: sheet_light_dark_retry_empty_mention_long_scroll=PASS\nINSTRUMENTATION_CODE: -1\n"
+}

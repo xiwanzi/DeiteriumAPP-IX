@@ -1,0 +1,11 @@
+{
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "oldOnlineEndpointStatus": 404,
+  "temporarySessionRevoked": true,
+  "businessWrites": 0
+}
