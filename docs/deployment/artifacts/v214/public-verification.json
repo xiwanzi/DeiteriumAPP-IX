@@ -1,0 +1,31 @@
+{
+  "checks": {
+    "20004": "21400 available",
+    "21200": "21400 available",
+    "21300": "21400 available",
+    "21399": "21400 available",
+    "21400": "no self/downgrade",
+    "21401": "no self/downgrade"
+  },
+  "apkSha256": "9d4d68e507ad7e84054d9ba3a833de6d9fdfb14504efdfb4fca088822072cb34",
+  "apkSize": 8891922,
+  "httpsVerified": true,
+  "origins": {
+    "https://47.103.99.34": {
+      "webVersion": "2.0.19",
+      "appVersion": 21400,
+      "anonymousEndpoints": {
+        "/api/v1/chat/presence": 401,
+        "/api/v1/chat/online-players": 401
+      }
+    },
+    "https://chat.deuteriumix.com": {
+      "webVersion": "2.0.19",
+      "appVersion": 21400,
+      "anonymousEndpoints": {
+        "/api/v1/chat/presence": 401,
+        "/api/v1/chat/online-players": 401
+      }
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "serverTime": "2026-09-26T11:51:52Z",
+  "health": {
+    "status": "ready"
+  },
+  "service": "active",
+  "backendDirectory": "/opt/deuterium/releases/chat-domain-a1064819ac0a",
+  "backendSha256": "3020ba909cf019da3ca458ff54c6f75fd6d3462ff56c5f144805f305f8190aaf",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.19-25a2ed8/dist",
+  "webConfigSha256": "4d0b9733f51db712d47f7ba444f0809de9747020ebf9423ccf86a0a073d989a2",
+  "webVersion": "2.0.19",
+  "configHashes": {
+    "config.json": "38f2760b0cf17216f3b655a4fc33c934f0642f4e9bdba443d7c0120074683f36",
+    "backend.env": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+    "releases.json": "725d226faf0b67d38ab97d35cc066a7f2c05c6580ed8afef30e1ea7b4f0904c3"
+  },
+  "runtimeFileHashes": {
+    "/etc/systemd/system/deuterium.service": "b71f5843f63943d59e3ee0eeed04a9169e6e5dfab68513bd1c3025922266f80e",
+    "/etc/systemd/system/deuterium.service.d/launcher.conf": "ed1e6a02947f2bd5c467fc0cd69666d95d71bba6bebccb5a357c0a71539ee5b1",
+    "/etc/deuterium/backend.env": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+    "/etc/deuterium/launcher.env": "aeef7cfb8f3558ef947744dffc856b95f5b598e9ad16024a71eccd46947e43c5"
+  },
+  "latestAppVersionCode": 21300,
+  "releaseCount": 14,
+  "activeFinancialOperations": 0,
+  "activeLauncherSyncs": 0,
+  "activeTransactions": 0,
+  "business": {
+    "identities": {
+      "count": 72,
+      "idsSha256": "b9bf44729eaa9b6d044fe74b353bd379b124535e17fc11ba7d19bb6d819ac865"
+    },
+    "resources": {
+      "count": 34,
+      "idsSha256": "d1253b1ce7fc6bb97f7a62e1d9495ee177b8a2e93c66fb1ccf4f61205be29495"
+    },
+    "counts": {
+      "COMMISSION": "5",
+      "ORDER": "29"
+    }
+  },
+  "migrations": {
+    "001_foundation.sql": "8c06aa76dc35447e851817d68dc8a8b870702f549542e22a4a71938c587e3a82",
+    "002_core_runtime.sql": "791d2d07cc1d473e7ae726fb2573a503d5c05e3a292404e4106720b80e0c69c4",
+    "003_game_verification.sql": "59afb9e32bea352b05a97627dec8d04b77831ae8432901cb0bfee427001f48c5",
+    "004_wallet.sql": "bbfb877f930a124c6059d6c04881c5b0b32204fe42527a0dbdfaa1494f9b395f",
+    "005_core_recovery_indexes.sql": "36021c519b9b31ccf92a7021f3a2082d9f77b7270dc6d9102428a85313ec1ccb",
+    "010_social_v2.sql": "9bbacb96b3189ba2aea9cf2445523ebce56177b94b56bd4d4dc3920e2894c332",
+    "011_catalog_v2.sql": "28e53fa6466413d8beebd71214f902a539d7f6f26c8078c7107f7905658bf95c",
+    "012_assets_v2.sql": "deb0c73c2f08d53088aadd48971a96dae0608e05f089b33e9900878ee2c56597",
+    "013_commerce_v2.sql": "556e39d842517f2a36d90b744e534c8e94f41a91b9b627180ea078c8525da310",
+    "014_social_reconcile.sql": "826d853ac6851fbe7606260d1dea3b46f7b24d4e04c7936092694a50c8b814b0",
+    "015_public_chat_metadata.sql": "f29d4aaefedf147ae48fad2e704582b93d8089bcb82f5ee087c674cf00c88731",
+    "016_ai_v2.sql": "bbad6ceb9f69d92051841229f0baa87f2c01c0ddfa6ff05d9933dc2d3a467ece",
+    "017_admin_audit.sql": "dc483b8b43cf438f62350ef45550332b360a6405f7c4a8b3708d28fef05085bc",
+    "018_asset_lifecycle.sql": "8d504f2b932c9bfb9e39d169d5d5da61bc6502d91723e7f97460d0bae79aacfa",
+    "019_record_visibility.sql": "82a9a915b14078e91d8f6a09b33c002d7a16a4fd5f002575c81a5d4123ae3c7a",
+    "020_admin_email_v204.sql": "eb0fbd39f46f357fab2e89abe34c656ce76f0437d2447131ca491f1efac68d7f",
+    "021_saki_admin.sql": "e08319d5660367e38106db47586e51f003e104344ce4aeca56953c4950d0ce8f",
+    "022_launcher_icons.sql": "a675c0c236a267790c8f06d47c1a72fdfb9fa82ac86f8929559f029ece284298",
+    "023_commerce_promotions.sql": "5cd4075289a8d273e536bd57d898d10bd059342bda960924e26701f35d06a211",
+    "024_coupon_attention.sql": "1e2aa63db7690ab7b92506de44b4de80960bc0e1e234041e3bcd00540f1bbdba",
+    "025_coupon_batches.sql": "05892fbcf081e782bbf9f0ae47408ccd55a8914bcf0da8a215cc81cdcb2445b6",
+    "026_refunded_coupon_release.sql": "ff3f8c794c75d1b9dde67a764d254f369524237136f45e0153893f6fc83e01c0",
+    "027_desktop_launcher.sql": "743a42c686d4726bffa2ad4dd6d95c0d553058c2707b16f46a1d7b23293bd5eb",
+    "028_account_deletion.sql": "5b68531560814e7365b96cac09d7a0b06a121ee1497f3a4c497054f4a2b858b0",
+    "029_admission.sql": "4b4ca11d29d24ef9049197bb5fe126f2e0d5c7e4f7c030610ffa222f9b6d70c3",
+    "030_admission_review_email.sql": "33bd93f655a40ae0e1c5068f22e89485d06c535aa8cb6def790432d3daa585c4",
+    "031_desktop_application.sql": "359dfb4fdd0b119314cb676797015eb2600af3bbc43a6c1b887013ae9c6e495b"
+  },
+  "launcherState": [
+    "9",
+    "9",
+    "bda9324f400d8a08815db7be7a452611a67aa7e9f50fc20eee2c92a05923bce1",
+    "bda9324f400d8a08815db7be7a452611a67aa7e9f50fc20eee2c92a05923bce1",
+    "bed1686ad6d9ac8490239b24bdf6b2802f82c934d164513d0200ab0f1b8935e3"
+  ],
+  "deletionCount": 1,
+  "freeBytes": 14346326016
+}

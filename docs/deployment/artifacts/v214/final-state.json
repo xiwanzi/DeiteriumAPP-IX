@@ -1,0 +1,23 @@
+{
+  "verifiedAt": "2026-09-26T12:01:56Z",
+  "service": "active",
+  "pid": "2225011",
+  "runningBackendSha256": "612326607c75e00d697e5653a56ef9709ffdf23221520ea945e7bc4f647fb368",
+  "sourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+  "business": {
+    "accounts": 72,
+    "resources": 34,
+    "counts": {
+      "COMMISSION": "5",
+      "ORDER": "29"
+    }
+  },
+  "allPreviousAccountAndResourceIdsPreserved": true,
+  "schemaUnchanged": true,
+  "configAndSystemdUnchangedExceptAppFeed": true,
+  "webUnchanged": true,
+  "webVersion": "2.0.19",
+  "launcherSettingsUnchanged": true,
+  "deletionCount": 1,
+  "previousReleaseEntriesPreserved": 14
+}

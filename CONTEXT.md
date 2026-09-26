@@ -1,5 +1,7 @@
 # Deuterium IX 项目上下文
 
+2026-09-26：**App 2.0.14（21400）与配套 Go 已于 20:00 上线**（PR #48，源码 `4e95ae0df69b`）。公共聊天在线名单改读 Core 实时快照，页面返回回调在键盘收起期间保持有效。Web 2.0.19、游戏插件和配置保留；72 条账号记录、29 笔订单、5 个委托及已有注销记录保留。维护 `.worktrees/chat-domain` / `xiwanzi/release-v214-live`，见[部署记录](docs/deployment/deuterium-2.0.14-live.md)。
+
 2026-09-19：**玩家社区域名 https://chat.deuteriumix.com 已于 21:12 上线**。独立 HTTPS 证书和自动续期验证通过，Go 精确兼容新旧来源，App 2.0.13 / Web 2.0.19 保持；旧 IP 接口和启动器入口保留。源码 `a1064819ac0a`，维护 `.worktrees/chat-domain`，见[上线记录](docs/deployment/chat-domain-live.md)。下方为较早记录。
 
 2026-09-15：**Go 并发优化已于 20:47:45 上线**（PR #43，源码 `a824088cb518`）。请求分组限额、公共聊天读取合并、AI/密码短时等待与管理员容量接口已部署。App 2.0.13、Web 2.0.19、启动器 0.6.1、申请站 1.0.2 保持；配置、71 条账号记录、27 笔订单和 5 个委托保留。按用户要求未运行测试或压测。维护工作区 `C:/DeiteriumAPP-IX/.worktrees/backend-concurrency`，见[上线记录](docs/deployment/backend-concurrency-live.md)。下方为较早记录。

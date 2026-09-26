@@ -1,0 +1,26 @@
+{
+  "versionName": "2.0.14",
+  "versionCode": 21400,
+  "packageName": "com.deuterium.app.uilab",
+  "mergeCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
+  "androidBuildCommit": "a24009cbf341f108d0b8fa3a93bb7cd46f38f5bd",
+  "androidTree": "58418009a2acbce61bc19f6e2e07b72d7f2ffbb6",
+  "backendTree": "b51d78be113f3e8e5d92b621d28bb32d108ff421",
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "releaseNotes": "修复公共聊天在线玩家列表不显示的问题，优化键盘收起后快速连续返回的稳定性。",
+  "files": [
+    {
+      "name": "Deuterium-2.0.14-21400-test.apk",
+      "sizeBytes": 8891922,
+      "sha256": "9d4d68e507ad7e84054d9ba3a833de6d9fdfb14504efdfb4fca088822072cb34"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 27808554,
+      "sha256": "612326607c75e00d697e5653a56ef9709ffdf23221520ea945e7bc4f647fb368"
+    }
+  ],
+  "databaseMigrationsRequired": false,
+  "webVersionPreserved": "2.0.19",
+  "pluginsPreserved": true
+}

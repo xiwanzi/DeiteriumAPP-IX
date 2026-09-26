@@ -1,0 +1,12 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.14-4e95ae0df69b",
+  "backendSha256": "612326607c75e00d697e5653a56ef9709ffdf23221520ea945e7bc4f647fb368",
+  "health": {
+    "status": "ready"
+  },
+  "schemaUnchanged": true,
+  "launcherSettingsUnchanged": true,
+  "deletionCount": 1,
+  "appFeedVersionCode": 21300,
+  "activatedAt": "2026-09-26T12:00:27Z"
+}

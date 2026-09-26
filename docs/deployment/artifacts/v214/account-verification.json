@@ -1,0 +1,18 @@
+{
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "previouslyOnlineNodesReconnected": true,
+  "onlineAvailable": true,
+  "onlineCount": 0,
+  "overviewAvailable": true,
+  "overviewCount": 0,
+  "uniquePlayerRefs": true,
+  "noUUIDOrQQExposed": true,
+  "listAndOverviewCountMatchAtCheck": true,
+  "temporarySessionRevoked": true,
+  "businessWrites": 0
+}

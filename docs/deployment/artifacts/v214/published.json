@@ -1,0 +1,24 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.14-21400-test",
+    "kind": "APK",
+    "versionName": "2.0.14",
+    "versionCode": 21400,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "修复公共聊天在线玩家列表不显示的问题，优化键盘收起后快速连续返回的稳定性。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.14-21400-test.apk",
+    "sizeBytes": 8891922,
+    "sha256": "9d4d68e507ad7e84054d9ba3a833de6d9fdfb14504efdfb4fca088822072cb34",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21399,
+    "channel": "stable",
+    "publishedAt": "2026-09-26T12:00:39Z"
+  },
+  "manifestSha256": "6ca15ddaea15f69d5249ee458f5d4d30951a74f3479a4c1cfd4d1bd5aa42bcb0",
+  "previousReleaseEntriesPreserved": 14,
+  "health": {
+    "status": "ready"
+  },
+  "backupDirectory": "/var/backups/deuterium/release-2.0.14-20260926-4e95ae0df69b"
+}

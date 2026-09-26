@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Build
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.compose.setContent
@@ -14,8 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.*
 import okhttp3.Protocol
 import okhttp3.Response
@@ -102,7 +101,9 @@ object ChatNavigationCheck {
             result.putString("sheet_light_dark_retry_empty_mention_long_scroll","PASS")
 
             val page=mutableStateOf("聊天页");val imeHeight=AtomicInteger(0)
-            fun imeVisible():Boolean{var visible=false;test.runOnMainSync{visible=ViewCompat.getRootWindowInsets(activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime())==true};return visible}
+            // Use the platform API in the test process: R8 may inline/remove
+            // AndroidX compatibility helpers from the separately packaged target.
+            fun imeVisible():Boolean{var visible=false;test.runOnMainSync{visible=if(Build.VERSION.SDK_INT>=30)activity.window.decorView.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime())==true else imeHeight.get()>0};return visible}
             test.runOnMainSync{activity.setContent{LabTheme(1,false,false){
                 var draft by remember{mutableStateOf("")}
                 val density=LocalDensity.current;val height=WindowInsets.ime.getBottom(density)
@@ -114,11 +115,15 @@ object ChatNavigationCheck {
                 }
             }}}
             test.waitForIdleSync()
-            var callbacksWhileIme=true
+            click("消息输入框");waitFor{imeVisible()&&imeHeight.get()>0}
+            // Simulate Back being delegated to the page before IME insets settle.
+            // The inherited Activity entry point survives release shrinking.
+            test.runOnMainSync{activity.onBackPressed()}
+            waitFor{!imeVisible()}
+            check(!activity.isFinishing&&page.value=="聊天页"){"Page callback was unavailable while keyboard was visible"}
             for(gap in listOf(0L,30L,100L,500L)){
                 test.runOnMainSync{page.value="聊天页"};test.waitForIdleSync()
                 click("消息输入框");waitFor{imeVisible()&&imeHeight.get()>0}
-                test.runOnMainSync{callbacksWhileIme=callbacksWhileIme&&activity.onBackPressedDispatcher.hasEnabledCallbacks()}
                 test.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
                 if(gap>0)Thread.sleep(gap)
                 test.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
@@ -126,10 +131,9 @@ object ChatNavigationCheck {
                 check(!activity.isFinishing&&!activity.isDestroyed){"Rapid back finished the activity at ${gap}ms"}
                 // Some IMEs consume both very fast events. Once hidden the app
                 // must navigate, even if an IME animation still reports height.
-                if(page.value=="聊天页")test.runOnMainSync{activity.onBackPressedDispatcher.onBackPressed()}
+                if(page.value=="聊天页")test.runOnMainSync{activity.onBackPressed()}
                 waitFor{page.value=="信息页"}
             }
-            check(callbacksWhileIme){"Page Back callback was disabled while keyboard was visible"}
             result.putString("back_0_30_100_500ms_no_activity_exit","PASS")
             result.putString("page_callback_stays_registered_during_ime","PASS")
             result.putInt("online_requests",requests.get())

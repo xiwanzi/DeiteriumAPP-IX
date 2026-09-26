@@ -895,7 +895,7 @@ AI 错误码：
 
 ### 6.2 获取在线概览
 
-2026-09-26 本机修复补充（尚未部署）：当前 Go 实现从启用聊天的已连接 Core 节点快照读取；`available=true` 表示至少一个节点已提供快照，不代表所有配置节点都在线。节点断开不再计入，UUID 跨服重叠去重，已注销身份过滤；没有可用快照与确认零人在线分别以 `available=false` 和 `available=true, onlineCount=0` 表达。Core 未提供快照时间，因此 `updatedAt=null`，不伪造更新时间。
+2026-09-26 修复补充（已随 App 2.0.14 配套 Go 上线）：当前 Go 实现从启用聊天的已连接 Core 节点快照读取；`available=true` 表示至少一个节点已提供快照，不代表所有配置节点都在线。节点断开不再计入，UUID 跨服重叠去重，已注销身份过滤；没有可用快照与确认零人在线分别以 `available=false` 和 `available=true, onlineCount=0` 表达。Core 未提供快照时间，因此 `updatedAt=null`，不伪造更新时间。
 
 `GET /api/v1/chat/presence`
 
@@ -916,7 +916,7 @@ AI 错误码：
 
 ### 6.3 获取在线玩家列表
 
-2026-09-26 本机修复补充（尚未部署）：响应同时提供 `available`、`onlineCount`、`players`、`updatedAt`，与在线概览使用相同数据源。`players` 包括已注册和未注册的游戏在线玩家及本人，返回 `playerRef`、`gameId`、`registered`、`online=true`。列表只读映射已存在的游戏身份，不创建账号；未注册玩家可以提及，App 不展示其私聊按钮。未收到快照时显示服务暂不可用；收到空快照才显示无人在线。App 弹窗首次打开及处于前台期间每 5 秒重新读取，不使用联系人 `online` 缓存筛选名单。
+2026-09-26 修复补充（已随 App 2.0.14 配套 Go 上线）：响应同时提供 `available`、`onlineCount`、`players`、`updatedAt`，与在线概览使用相同数据源。`players` 包括已注册和未注册的游戏在线玩家及本人，返回 `playerRef`、`gameId`、`registered`、`online=true`。列表只读映射已存在的游戏身份，不创建账号；未注册玩家可以提及，App 不展示其私聊按钮。未收到快照时显示服务暂不可用；收到空快照才显示无人在线。App 弹窗首次打开及处于前台期间每 5 秒重新读取，不使用联系人 `online` 缓存筛选名单。
 
 `GET /api/v1/chat/online-players`
 
