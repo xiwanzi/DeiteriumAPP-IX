@@ -1,5 +1,7 @@
 # YSM 管理整合本机验收
 
+2026-09-28 后续：已发布为 Web 2.0.20 与配套 Go，栏目改名「模型管理」。生产验证、真实分类对齐与部署范围见[上线记录](../deployment/model-management-live.md)；下文本机证据保留其原验证对象与限制。
+
 2026-09-28。对象为 `xiwanzi/ysm-admin-integration` 本机候选，基于 `df8f8df`；不是生产验收。
 
 ## 实现

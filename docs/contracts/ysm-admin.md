@@ -1,6 +1,6 @@
 # YSM 统一管理接口
 
-2026-09-28，本机候选。上游为 [Deuterium-IX/DeuteriumYSM](https://github.com/Deuterium-IX/DeuteriumYSM)，核对源码 `b45a3e42cc197f890ed12ca6f13abd2899fb1428` 的 `velocity-plugin` 管理 API。本轮没有修改上游协议或重新发布插件。
+2026-09-28，已随 Web 2.0.20 和配套 Go 上线，栏目名称「模型管理」，见[上线记录](../deployment/model-management-live.md)。上游为 [Deuterium-IX/DeuteriumYSM](https://github.com/Deuterium-IX/DeuteriumYSM)，核对源码 `b45a3e42cc197f890ed12ca6f13abd2899fb1428` 的 `velocity-plugin` 管理 API。本轮没有修改上游协议或重新发布插件。
 
 ## 入口与权限
 
@@ -45,4 +45,4 @@ JSON 返回使用现有 `{requestId, data}` 包装；错误使用 `{requestId, e
 
 ## 本机验证范围
 
-见 [本机验收](../qa/ysm-admin-integration.md)。本轮用独立数据库和受控上游夹具验证，尚未配置生产隧道或用该页面修改真实模型；真实模型分发、NPC 回退与玩家切服不计本次验收。
+见 [本机验收](../qa/ysm-admin-integration.md)。候选阶段使用独立数据库和受控上游夹具；上线后已配置生产隧道并完成实际管理员页面只读验收，详见上线记录。本次未用该页面修改真实模型；真实模型分发、NPC 回退与玩家切服不计本次验收。

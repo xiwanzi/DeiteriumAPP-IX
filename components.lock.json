@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
-  "baselineDate": "2026-09-26",
+  "baselineDate": "2026-09-28",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
   "integrationContracts": {
     "ysmAdmin": {
       "repository": "https://github.com/Deuterium-IX/DeuteriumYSM",
       "sourceCommit": "b45a3e42cc197f890ed12ca6f13abd2899fb1428",
       "contract": "docs/contracts/ysm-admin.md",
-      "status": "LOCAL_CANDIDATE"
+      "status": "PUBLISHED",
+      "releaseNotes": "docs/deployment/model-management-live.md"
     }
   },
   "components": [
@@ -25,20 +26,21 @@
     {
       "name": "web",
       "path": "web-app",
-      "version": "2.0.19",
-      "sourceCommit": "25a2ed8cc1f19c3b9ea3986f09127529bb76d860",
-      "publishedSourceCommit": "f8a4d90818ba19290726ac1539a38fb618e8c05b",
-      "buildSourceCommit": "25a2ed8cc1f19c3b9ea3986f09127529bb76d860",
-      "releaseNotes": "docs/deployment/dlauncher-0.6.1-live.md"
+      "version": "2.0.20",
+      "sourceCommit": "25931e2ce897459888cf8f05eb469172bd80fc47",
+      "publishedSourceCommit": "25931e2ce897459888cf8f05eb469172bd80fc47",
+      "buildSourceCommit": "928772f3d1ad36b5012c3ddd0a2621e7cc1edc2b",
+      "releaseNotes": "docs/deployment/model-management-live.md",
+      "publishedArchiveSha256": "618e7dea3790a10f4575a6aec2602d6b4dcabb4361b69ecba80bdb6e0a5651f7"
     },
     {
       "name": "go-backend",
       "path": "backend-next",
-      "sourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
-      "publishedSourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
-      "publishedSha256": "612326607c75e00d697e5653a56ef9709ffdf23221520ea945e7bc4f647fb368",
-      "buildSourceCommit": "4e95ae0df69b02c201f0748bbf9317aed53eeb7f",
-      "releaseNotes": "docs/deployment/deuterium-2.0.14-live.md"
+      "sourceCommit": "918584f72edf5b615b28daa112661a17cc42a0eb",
+      "publishedSourceCommit": "918584f72edf5b615b28daa112661a17cc42a0eb",
+      "publishedSha256": "0238c92ad316e3e300e0967eb0965fd373a4e45045dd207a0f01614bc9d9681d",
+      "buildSourceCommit": "918584f72edf5b615b28daa112661a17cc42a0eb",
+      "releaseNotes": "docs/deployment/model-management-live.md"
     },
     {
       "name": "core",
@@ -126,14 +128,15 @@
     "buildManifest": "docs/deployment/artifacts/v214/manifest.json",
     "migrations": [],
     "publishedAt": "2026-09-26T12:00:39Z",
-    "webVersion": "2.0.19",
+    "webVersion": "2.0.20",
     "gatewayVersion": "1.0.0",
     "admissionURL": "https://47.103.99.34/admission/",
-    "backendPublishedAt": "2026-09-26T12:00:27Z",
+    "backendPublishedAt": "2026-09-27T21:45:51Z",
     "admissionVersion": "1.0.2",
     "admissionPublishedAt": "2026-09-13T12:48:51.870884+00:00",
     "admissionReleaseNotes": "docs/deployment/admission-1.0.2-live.md",
-    "backendReleaseNotes": "docs/deployment/deuterium-2.0.14-live.md",
-    "webReleaseNotes": "docs/deployment/dlauncher-0.6.1-live.md"
+    "backendReleaseNotes": "docs/deployment/model-management-live.md",
+    "webReleaseNotes": "docs/deployment/model-management-live.md",
+    "webPublishedAt": "2026-09-27T21:51:28Z"
   }
 }

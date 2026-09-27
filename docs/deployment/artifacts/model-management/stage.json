@@ -1,0 +1,14 @@
+{
+  "backupDirectory": "/var/backups/deuterium/model-management-20260928-918584f72edf",
+  "databaseBackupBytes": 15011835,
+  "databaseBackupSha256": "19c5ba4deefa0d85355168357d7b23498ca17d4363313a405326f22f308ad66f",
+  "prepared": true,
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.20-918584f72edf/dist",
+  "paths": {
+    "backup": "/var/backups/deuterium/model-management-20260928-918584f72edf",
+    "backend": "/opt/deuterium/releases/model-management-918584f72edf",
+    "web": "/var/www/deuterium/releases/web-2.0.20-918584f72edf",
+    "stage": "/opt/deuterium/releases/staged-model-management-918584f72edf"
+  },
+  "liveWebGoChanged": false
+}

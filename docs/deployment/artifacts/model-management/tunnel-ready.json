@@ -1,0 +1,14 @@
+{
+  "service": "active",
+  "modelCount": 256,
+  "objectCount": 476,
+  "revision": 11,
+  "manifestDigest": "af541f09d49d75ef743cf8f02106882f6c413a4009ce7562273c77c39a6fb717",
+  "configRevision": 3,
+  "nodes": {
+    "amiya": "READY",
+    "login": "READY",
+    "mek": "READY",
+    "odyssey": "READY"
+  }
+}
