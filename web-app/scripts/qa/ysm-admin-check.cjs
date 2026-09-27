@@ -1,0 +1,98 @@
+async (page) => {
+  await page.unroute("**/api/v1/**");
+  const checks = [], writes = [], errors = [];
+  const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
+  page.on("pageerror", e => errors.push(e.message));
+  await page.addInitScript(() => { localStorage.setItem("deuterium-web-theme", "light"); window.confirm = () => true; });
+  const now = new Date().toISOString();
+  const config = { schemaVersion: 2, configRevision: 2, s3: { endpoint: "https://storage.example.invalid", region: "us-east-1", bucket: "ysm-models", publicBaseUrl: "https://models.example.invalid", pathStyleAccess: true, accessKeyConfigured: true, secretKeyConfigured: true }, distribution: { downloadConcurrency: 4, requestTimeoutMs: 30000, gcGraceSeconds: 604800, gcKeepRevisions: 3, gcEnabled: false }, fallback: { bytesPerSecond: 1048576, maxConcurrentDownloads: 4, timeoutSeconds: 60, maxSessionBytes: 134217728 }, security: { maxUploadBytes: 134217728 } };
+  let models = Array.from({ length: 27 }, (_, i) => ({ modelId: `${i % 2 ? "角色" : "生物"}/${["星野", "旅行者", "白狐", "夏日祭", "阿米娅", "雪原信使"][i % 6]}_${i + 1}.ysm`, directory: i % 2 ? "角色" : "生物", size: 1200000 + i * 3300, objectCount: 1, sha256: "a".repeat(64), verification: "VERIFIED" }));
+  let tasks = [], lastPreview = {}, disconnected = false;
+  await page.route("**/api/v1/**", async route => {
+    const request = route.request(), path = "/api/v1/" + request.url().split("/api/v1/")[1].split("?")[0];
+    const json = data => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data }) });
+    if (request.method() === "POST") writes.push({ path, headers: request.headers(), body: path.endsWith("/stage") ? null : request.postDataJSON() });
+    if (path === "/api/v1/web/session") return json({ user: { userId: "qa-admin", playerRef: "player_admin", gameId: "QA Admin", permissions: ["platform.admin"] }, csrfToken: "browser-csrf", expiresAt: "2030-01-01T00:00:00Z" });
+    if (path === "/api/v1/account/deletions") return json({ items: [], cursor: 0, hasMore: false });
+    if (path === "/api/v1/admin/interventions/summary") return json({ pending: 0 });
+    if (!path.startsWith("/api/v1/admin/ysm/")) return json({ items: [], messages: [], pending: 0 });
+    const key = path.replace("/api/v1/admin/ysm/", "");
+    if (disconnected) return route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ error: { code: "YSM_UNAVAILABLE", message: "暂时无法连接 YSM 管理服务。" } }) });
+    if (key === "config") return json({ config });
+    if (key === "catalog") return json({ revision: 11, models, modelCount: models.length, totalBytes: 408011832, objectCount: 476, lastSyncTime: now });
+    if (key === "cluster") return json({ modelRevision: 11, configRevision: config.configRevision, nodes: ["Login", "Amiya", "Odyssey"].map(nodeId => ({ nodeId, online: true, phase: "READY", modelRevision: 11, configRevision: 2, progressPermille: 1000, lastHeartbeat: now })) });
+    if (key === "tasks") return json(tasks);
+    if (key === "audit") return json({ entries: [{ time: now, action: "model.publish", actor: "web:loopback", revision: 11, result: "success" }] });
+    if (key === "migration") return json({ phase: "IDLE" });
+    if (key === "gc") return json({ phase: "PREVIEW", objects: 12, reclaimableBytes: 4194304 });
+    if (key === "diff") return json({ available: true, diff: { addedObjects: 2, addedPaths: ["角色/新模型.ysm"], modifiedObjects: 0, deletedObjects: 0 } });
+    if (key === "dashboard") return json({ configSource: "fixture", configRevision: 2 });
+    if (key.endsWith("/preview") || key === "models/stage") {
+      lastPreview = key === "models/stage" ? { modelId: decodeURIComponent(request.headers()["x-model-id"]), upload: true } : request.postDataJSON();
+      return json({ confirmationToken: "sealed-fixture", expiresAtEpochSecond: Math.floor(Date.now() / 1000) + 120, modelId: lastPreview.modelId, fileCount: 1, uploadedBytes: 3, extractedBytes: 3, effects: [], changedFields: ["s3.bucket"], s3VerificationRequired: true });
+    }
+    if (key.endsWith("/confirm")) {
+      if (key === "config/confirm") { Object.assign(config, lastPreview.config); config.configRevision++; return json({ configRevision: config.configRevision }); }
+      if (lastPreview.modelId && !lastPreview.upload) models = models.filter(m => m.modelId !== lastPreview.modelId);
+      tasks = [{ taskId: "qa-task-one", operation: lastPreview.upload ? "MODEL_ADD" : "MODEL_DELETE", status: "SUCCEEDED", summary: "本地夹具任务完成", createdAt: now, updatedAt: now }];
+      return json({ taskId: "qa-task-one" });
+    }
+    return json({});
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("http://127.0.0.1:5268/admin?section=ysm");
+  await page.getByRole("heading", { name: "YSM 模型", exact: true }).waitFor();
+  await page.locator(".ysm-model").first().waitFor();
+  check(await page.locator(".ysm-model").count() === 24, "native management route renders paged model library");
+  await page.screenshot({ path: "output/playwright/ysm-light.png", fullPage: false, animations: "disabled" });
+  await page.getByRole("button", { name: "下一页", exact: true }).click();
+  check(await page.locator(".ysm-model").count() === 3, "catalog pagination");
+  await page.getByRole("textbox", { name: "搜索模型" }).fill("星野_1.ysm");
+  check(await page.locator(".ysm-model").count() === 1, "Chinese search resets pagination");
+  await page.locator(".ysm-model").click();
+  await page.getByRole("button", { name: "删除模型", exact: true }).click();
+  await page.getByRole("button", { name: "确认执行", exact: true }).waitFor();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  check(writes.filter(w => w.path.endsWith("/confirm")).length === 0, "delete cancellation never submits mutation");
+  await page.locator(".ysm-model").click();
+  await page.getByRole("button", { name: "删除模型", exact: true }).click();
+  await page.getByRole("button", { name: "确认执行", exact: true }).click();
+  await page.getByText("已提交任务 qa-task-one", { exact: false }).waitFor();
+  check(writes.filter(w => w.path.endsWith("models/confirm")).length === 1, "delete confirms once and shows task result");
+  await page.getByRole("button", { name: "新增模型", exact: true }).click();
+  await page.getByRole("textbox", { name: "模型 ID", exact: true }).fill("角色/测试上传.ysm");
+  await page.getByLabel("模型文件", { exact: true }).setInputFiles("output/playwright/qa-model.ysm");
+  await page.getByRole("button", { name: "上传并预览", exact: true }).click();
+  await page.getByRole("heading", { name: "发布新模型", exact: true }).waitFor();
+  const stage = writes.find(w => w.path.endsWith("/stage"));
+  check(stage.headers["x-csrf-token"] === "browser-csrf" && decodeURIComponent(stage.headers["x-model-id"]) === "角色/测试上传.ysm", "upload uses unified login and encoded model ID");
+  await page.getByRole("button", { name: "确认执行", exact: true }).click();
+  await page.getByRole("heading", { name: "新增模型", exact: true }).waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "存储与配置", exact: true }).click();
+  await page.getByRole("button", { name: "编辑配置", exact: true }).click();
+  await page.getByRole("textbox", { name: "存储桶", exact: true }).fill("next-models");
+  await page.getByRole("button", { name: "预览配置变更", exact: true }).click();
+  await page.getByRole("heading", { name: "保存 YSM 配置", exact: true }).waitFor();
+  check(writes.find(w => w.path.endsWith("config/preview")).body.expectedRevision === 2, "configuration uses original revision and preview");
+  await page.getByRole("button", { name: "确认执行", exact: true }).click();
+  await page.getByText("配置已保存，版本 #3。", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "节点状态", exact: true }).click();
+  check(await page.locator(".ysm-node-grid article").count() === 3, "node status renders three nodes");
+  await page.getByRole("button", { name: "模型库", exact: true }).click();
+  await page.getByRole("textbox", { name: "搜索模型" }).fill("");
+  await page.getByRole("button", { name: "切换深色模式", exact: true }).click();
+  await page.screenshot({ path: "output/playwright/ysm-dark.png", fullPage: false, animations: "disabled" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "390px dark layout has no horizontal overflow");
+  await page.screenshot({ path: "output/playwright/ysm-mobile.png", fullPage: false, animations: "disabled" });
+  check(await page.evaluate(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1), "mobile sidebar does not cover content");
+  disconnected = true;
+  await page.getByRole("button", { name: "刷新", exact: true }).click();
+  await page.getByRole("alert").filter({ hasText: "暂时无法连接" }).waitFor();
+  check(await page.locator(".ysm-model").count() === 24, "offline error preserves last known catalog");
+  check(errors.length === 0, "no page exceptions during management workflow");
+  disconnected = false;
+  await page.getByRole("button", { name: "刷新", exact: true }).click();
+  await page.getByRole("alert").waitFor({ state: "hidden" });
+  return { checks, writes: writes.map(w => w.path), errors };
+}

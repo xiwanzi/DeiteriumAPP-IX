@@ -58,7 +58,8 @@ export function proxyHttp(req, res, target) {
     res.writeHead(reply.statusCode, reply.headers);
     reply.pipe(res);
   });
-  upstream.setTimeout(30000, () => upstream.destroy(new Error("timeout")));
+  const ysmMutation = req.method === "POST" && new URL(req.url, "http://localhost").pathname.startsWith("/api/v1/admin/ysm/");
+  upstream.setTimeout(ysmMutation ? 310000 : 30000, () => upstream.destroy(new Error("timeout")));
   upstream.on("error", () => {
     if (!res.headersSent)
       res.writeHead(502, {

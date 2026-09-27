@@ -1,0 +1,50 @@
+.ysm-workspace { min-width: 0; }
+.ysm-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.ysm-metrics > div, .ysm-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 24px; }
+.ysm-metrics span, .ysm-metrics small { display: block; color: var(--muted); }
+.ysm-metrics strong { display: block; font-size: 32px; font-weight: 600; margin: 8px 0; letter-spacing: -1px; }
+.ysm-metrics small { font-size: 12px; }
+.ysm-toolbar, .ysm-row, .ysm-actions, .ysm-pagination { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ysm-toolbar { justify-content: space-between; margin: 24px 0; }
+.ysm-toolbar p, .ysm-row h2, .ysm-row h3 { margin: 0; }
+.ysm-toolbar > span { font-size: 13px; color: var(--muted); }
+.ysm-search { display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; flex: 1; min-width: 220px; color: var(--muted); }
+.ysm-search input { width: 100%; min-height: 46px; border: 0; background: transparent; color: var(--text); }
+.ysm-toolbar select { max-width: 250px; min-height: 46px; border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; background: var(--surface); color: var(--text); }
+.ysm-model-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ysm-model { padding: 0; text-align: left; overflow: hidden; border: 1px solid var(--border); background: var(--surface); border-radius: 16px; }
+.ysm-model:hover { border-color: var(--blue); box-shadow: var(--shadow); }
+.ysm-cover { display: flex; align-items: center; justify-content: center; width: 100%; height: 144px; background: var(--hover); color: var(--muted); overflow: hidden; }
+.ysm-cover img { width: 100%; height: 100%; object-fit: contain; }
+.ysm-model-copy { display: block; padding: 16px; }
+.ysm-model-copy strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; line-height: 1.5; min-height: 42px; font-size: 14px; }
+.ysm-model-copy small { display: block; color: var(--muted); margin: 8px 0 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ysm-model-copy > span { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
+.ysm-pagination { justify-content: center; margin: 24px 0; font-size: 13px; }
+.ysm-node-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ysm-panel { margin: 16px 0; min-width: 0; }
+.ysm-panel h2 { font-size: 18px; }
+.ysm-panel p { margin-top: 16px; }
+.ysm-row { justify-content: space-between; }
+.ysm-row h3 { flex: 1; font-size: 16px; }
+.ysm-panel progress { width: 100%; accent-color: var(--blue); height: 8px; margin-bottom: 12px; }
+.ysm-panel small, .ysm-footnote { color: var(--muted); font-size: 12px; }
+.ysm-task { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.ysm-task > div { flex: 1; min-width: 0; }
+.ysm-task small { display: block; margin-top: 6px; overflow-wrap: anywhere; }
+.ysm-task:last-child { border-bottom: 0; }
+.ysm-facts { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; margin: 24px 0; font-size: 14px; }
+.ysm-facts dt { color: var(--muted); }
+.ysm-facts dd { margin: 0; overflow-wrap: anywhere; }
+.ysm-feedback { padding: 16px 20px; background: var(--blue-soft); border-radius: 12px; margin: 12px 0; overflow-wrap: anywhere; }
+.ysm-feedback.error, .ysm-error { color: var(--red); }
+.ysm-feedback.error { background: var(--surface); border: 1px solid var(--border); }
+.ysm-config-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; border: 0; padding: 0; margin: 24px 0; }
+.ysm-json { font-family: ui-monospace, monospace; font-size: 13px; }
+.ysm-break, .ysm-paths, .ysm-confirm-lines { overflow-wrap: anywhere; }
+.ysm-confirm-lines { padding-left: 20px; line-height: 1.8; }
+.ysm-paths { max-height: 300px; overflow: auto; font-size: 13px; line-height: 1.8; }
+.ysm-footnote { margin-top: 24px; }
+@media (max-width: 1250px) { .ysm-model-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ysm-node-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .ysm-metrics { gap: 8px; } .ysm-metrics > div { padding: 16px 12px; } .ysm-metrics strong { font-size: 26px; } .ysm-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .ysm-node-grid { grid-template-columns: 1fr; } .ysm-toolbar select { max-width: 100%; } .ysm-panel { padding: 20px 16px; } .ysm-config-fields { grid-template-columns: 1fr; } .ysm-task { flex-wrap: wrap; } .ysm-task > div { flex-basis: 65%; } }
+@media (max-width: 400px) { .ysm-metrics { grid-template-columns: 1fr; } .ysm-metrics > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; } .ysm-metrics small { width: 100%; } .ysm-cover { height: 120px; } .ysm-model-copy { padding: 12px; } }

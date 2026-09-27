@@ -41,7 +41,7 @@ export class DeuteriumClient {
   }
   async request(
     path,
-    { method = "GET", body, signal, sessionRequired = true, idempotencyKey } = {},
+    { method = "GET", body, signal, sessionRequired = true, idempotencyKey, ysmUpload } = {},
   ) {
     if (!path.startsWith("/api/v1/") || path.includes("://"))
       throw new ApiError("只允许本站 API 请求");
@@ -51,6 +51,16 @@ export class DeuteriumClient {
       headers["Idempotency-Key"] = idempotencyKey;
     }
     if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (ysmUpload) {
+      if (path !== "/api/v1/admin/ysm/models/stage" || method !== "POST" || !(body instanceof Blob)) throw new ApiError("模型上传请求不正确。");
+      Object.assign(headers, {
+        "Content-Type": ysmUpload.contentType,
+        "X-Model-Id": encodeURIComponent(ysmUpload.modelId),
+        "X-Model-Id-Encoding": "percent",
+        "X-Model-Operation": ysmUpload.operation,
+        "X-Expected-Revision": String(ysmUpload.revision),
+      });
+    }
     if (
       !["GET", "HEAD"].includes(method) &&
       path !== "/api/v1/web/session" &&
@@ -62,16 +72,16 @@ export class DeuteriumClient {
     try {
       response = await this.fetch(path, {
         method,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: ysmUpload ? body : body === undefined ? undefined : JSON.stringify(body),
         headers,
         credentials: "same-origin",
         cache: "no-store",
         signal: signal || AbortSignal.timeout(15000),
       });
     } catch (e) {
-      if (signal?.aborted) throw e;
+      if (signal?.aborted && !(path.startsWith("/api/v1/admin/ysm/") && path.endsWith("/confirm"))) throw e;
       throw new ApiError(
-        "无法连接服务，输入内容已保留，请稍后重试。",
+        path.startsWith("/api/v1/admin/ysm/") && path.endsWith("/confirm") ? "等待结果中断，请先核对任务和配置版本，不要重复提交。" : "无法连接服务，输入内容已保留，请稍后重试。",
         "NETWORK_ERROR",
       );
     }

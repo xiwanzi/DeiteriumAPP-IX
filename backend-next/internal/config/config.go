@@ -31,6 +31,8 @@ type Node struct {
 }
 
 type Config struct {
+	YSMAdminURL                 string      `json:"ysmAdminUrl,omitempty"`
+	YSMAdminOrigin              string      `json:"ysmAdminOrigin,omitempty"`
 	Concurrency                 Concurrency `json:"concurrency,omitempty"`
 	AdmissionApplicationURL     string      `json:"admissionApplicationUrl,omitempty"`
 	AdmissionPublicOrigin       string      `json:"admissionPublicOrigin,omitempty"`
@@ -70,6 +72,9 @@ func Load(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
+	if err := c.ValidateYSM(); err != nil {
+		return err
+	}
 	if err := c.Concurrency.Validate(); err != nil {
 		return err
 	}

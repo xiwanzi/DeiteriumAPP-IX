@@ -2,6 +2,14 @@
   "schemaVersion": 1,
   "baselineDate": "2026-09-26",
   "repository": "https://github.com/xiwanzi/DeiteriumAPP-IX",
+  "integrationContracts": {
+    "ysmAdmin": {
+      "repository": "https://github.com/Deuterium-IX/DeuteriumYSM",
+      "sourceCommit": "b45a3e42cc197f890ed12ca6f13abd2899fb1428",
+      "contract": "docs/contracts/ysm-admin.md",
+      "status": "LOCAL_CANDIDATE"
+    }
+  },
   "components": [
     {
       "name": "android",
