@@ -1,0 +1,9 @@
+{
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.20-25931e2ce897/dist",
+  "previousWebDirectory": "/var/www/deuterium/releases/web-2.0.20-918584f72edf/dist",
+  "webVersion": "2.0.20",
+  "sourceCommit": "25931e2ce897459888cf8f05eb469172bd80fc47",
+  "archiveSha256": "618e7dea3790a10f4575a6aec2602d6b4dcabb4361b69ecba80bdb6e0a5651f7",
+  "publishedAt": "2026-09-27T21:51:28Z",
+  "backendRestarted": false
+}

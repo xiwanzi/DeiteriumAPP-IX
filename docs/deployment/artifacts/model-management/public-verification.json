@@ -1,0 +1,18 @@
+{
+  "https://chat.deuteriumix.com": {
+    "version": "2.0.20",
+    "modelManagementLabel": true,
+    "originalCategories": true,
+    "anonymousStatus": 401,
+    "asset": "/assets/index-06PVVIIS.js",
+    "tlsVerified": true
+  },
+  "https://47.103.99.34": {
+    "version": "2.0.20",
+    "modelManagementLabel": true,
+    "originalCategories": true,
+    "anonymousStatus": 401,
+    "asset": "/assets/index-06PVVIIS.js",
+    "tlsVerified": true
+  }
+}

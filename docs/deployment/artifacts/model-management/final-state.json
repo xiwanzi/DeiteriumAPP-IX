@@ -1,0 +1,39 @@
+{
+  "time": "2026-09-27T21:53:00Z",
+  "service": "active",
+  "tunnel": "active",
+  "backendSha256": "0238c92ad316e3e300e0967eb0965fd373a4e45045dd207a0f01614bc9d9681d",
+  "webVersion": "2.0.20",
+  "appVersionCode": 21400,
+  "accountCount": 72,
+  "resourceCount": 34,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "29"
+  },
+  "existingBusinessIDsPreserved": true,
+  "deletionCount": 1,
+  "schemaUnchanged": true,
+  "existingRuntimeAndConfigPreserved": true,
+  "launcherState": [
+    "9",
+    "9",
+    "bda9324f400d8a08815db7be7a452611a67aa7e9f50fc20eee2c92a05923bce1",
+    "bda9324f400d8a08815db7be7a452611a67aa7e9f50fc20eee2c92a05923bce1",
+    "0a2a59859abc7fba9b125f5e29d22737a7453e9d7ce01e1e581d57114b262f18"
+  ],
+  "modelCount": 256,
+  "modelRevision": 11,
+  "modelConfigRevision": 3,
+  "modelDigest": "af541f09d49d75ef743cf8f02106882f6c413a4009ce7562273c77c39a6fb717",
+  "modelNodes": {
+    "amiya": "READY",
+    "login": "READY",
+    "mek": "READY",
+    "odyssey": "READY"
+  },
+  "temporarySessionRevoked": true,
+  "tunnelCommandExecutionDenied": true,
+  "tunnelOtherDestinationDenied": true,
+  "loopbackListener": "LISTEN 0      128    127.0.0.1:17655 0.0.0.0:*"
+}

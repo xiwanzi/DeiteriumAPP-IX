@@ -1,5 +1,7 @@
 # Deuterium IX 项目上下文
 
+2026-09-28：**Web 2.0.20 与配套 Go 已上线**（PR #50、#51）。后台新增「模型管理」，统一栏目、界面、Deuterium ID 登录和管理员权限，复用原 Velocity API；256 模型、476 文件、模型 revision 11 / 配置 revision 3 与四节点 READY 保留。App 仍为 2.0.14；72 条账号、29 笔订单、5 个委托及已有注销记录保留，游戏插件未更换。维护 `.worktrees/chat-domain` / `xiwanzi/model-management-record`，见[上线记录](docs/deployment/model-management-live.md)。下方为较早状态。
+
 2026-09-26：**App 2.0.14（21400）与配套 Go 已于 20:00 上线**（PR #48，源码 `4e95ae0df69b`）。公共聊天在线名单改读 Core 实时快照，页面返回回调在键盘收起期间保持有效。Web 2.0.19、游戏插件和配置保留；72 条账号记录、29 笔订单、5 个委托及已有注销记录保留。维护 `.worktrees/chat-domain` / `xiwanzi/release-v214-live`，见[部署记录](docs/deployment/deuterium-2.0.14-live.md)。
 
 2026-09-19：**玩家社区域名 https://chat.deuteriumix.com 已于 21:12 上线**。独立 HTTPS 证书和自动续期验证通过，Go 精确兼容新旧来源，App 2.0.13 / Web 2.0.19 保持；旧 IP 接口和启动器入口保留。源码 `a1064819ac0a`，维护 `.worktrees/chat-domain`，见[上线记录](docs/deployment/chat-domain-live.md)。下方为较早记录。

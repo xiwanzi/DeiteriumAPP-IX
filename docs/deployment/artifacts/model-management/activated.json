@@ -1,0 +1,25 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/model-management-918584f72edf",
+  "backendSha256": "0238c92ad316e3e300e0967eb0965fd373a4e45045dd207a0f01614bc9d9681d",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.20-918584f72edf/dist",
+  "webVersion": "2.0.20",
+  "health": {
+    "status": "ready"
+  },
+  "schemaUnchanged": true,
+  "originalConfigPreserved": true,
+  "launcherSettingsUnchangedSinceStop": true,
+  "launcherState": [
+    "9",
+    "9",
+    "bda9324f400d8a08815db7be7a452611a67aa7e9f50fc20eee2c92a05923bce1",
+    "bda9324f400d8a08815db7be7a452611a67aa7e9f50fc20eee2c92a05923bce1",
+    "0a2a59859abc7fba9b125f5e29d22737a7453e9d7ce01e1e581d57114b262f18"
+  ],
+  "appVersionCode": 21400,
+  "activatedAt": "2026-09-27T21:45:51Z",
+  "nginxSites": [
+    "/www/server/panel/vhost/nginx/deuterium-test.conf",
+    "/www/server/panel/vhost/nginx/deuterium-chat.conf"
+  ]
+}

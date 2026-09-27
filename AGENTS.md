@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-09-28：**Web 2.0.20 与配套 Go 已上线**（PR #50、#51）。后台新增「模型管理」，统一栏目、界面、Deuterium ID 登录和管理员权限，复用原 Velocity API；256 模型、476 文件、模型 revision 11 / 配置 revision 3 与四节点 READY 保留。App 仍为 2.0.14；72 条账号、29 笔订单、5 个委托及已有注销记录保留，游戏插件未更换。维护 `.worktrees/chat-domain` / `xiwanzi/model-management-record`，见[上线记录](docs/deployment/model-management-live.md)。下方为较早状态。
+
 2026-09-28：**YSM 统一管理本机候选已完成，未推送、未合并、未部署**。复用 `.worktrees/chat-domain`，分支 `xiwanzi/ysm-admin-integration`，基于主线 `df8f8df`。后台新增 YSM 模型栏目，统一界面、登录与管理员权限，通过受限 Go 适配现有 Velocity API。现有模型/配置权威和游戏插件保留，生产隧道及 Web/Go 发布待本轮授权。见[本机验收](docs/qa/ysm-admin-integration.md)与[候选上线步骤](docs/deployment/ysm-admin-candidate.md)。下方仍为现有上线版本。
 
 2026-09-26：**App 2.0.14（21400）与配套 Go 已于 20:00 上线**（PR #48，源码 `4e95ae0df69b`）。修复公共聊天在线名单及键盘收起期间快速返回的回调空档。Web 保持 2.0.19，游戏插件未更换；72 条账号记录、29 笔订单、5 个委托及 1 条已有注销记录保留。维护 `.worktrees/chat-domain` / `xiwanzi/release-v214-live`，见[部署记录](docs/deployment/deuterium-2.0.14-live.md)。下方“尚未部署”为本轮早期候选记录。

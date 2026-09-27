@@ -1,5 +1,7 @@
 # YSM 管理整合候选与上线步骤
 
+2026-09-28：本候选已按用户授权发布为 Web 2.0.20 和配套 Go，栏目名称为「模型管理」。最终结果以[上线记录](model-management-live.md)为准，下方为发布前候选快照。
+
 2026-09-28，**本机完成，未推送、未合并、未部署**。维护工作区为 `chat-domain`，分支 `xiwanzi/ysm-admin-integration`，基础源码 `df8f8df`。现有 App 2.0.14 / Web 2.0.19 的发布记录仍有效；本候选没有将提高版本号当作已发布。
 
 本轮用户确认将 YSM 栏目、界面和登录统一到现有后台。[实现边界](../plans/ysm-admin-integration.md)、[接口契约](../contracts/ysm-admin.md)、[本机验收](../qa/ysm-admin-integration.md)。用户已于本轮授权推送 PR、发布 Web/Go，并要求栏目名为「模型管理」。发布过程与最终结果另记上线记录。
