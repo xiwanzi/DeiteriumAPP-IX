@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-09-28：**YSM 管理整合已完成本机实现和验证，尚未推送/合并/部署**。工作区 `.worktrees/chat-domain` / `xiwanzi/ysm-admin-integration`，后台新增统一登录的 `/admin?section=ysm`；仅 Web/Go 候选，原游戏模型与插件未改。见[验收](qa/ysm-admin-integration.md)、[接入契约](contracts/ysm-admin.md)、[上线步骤](deployment/ysm-admin-candidate.md)。现有发布仍以下方记录为准。
+
 2026-09-26：**App 2.0.14（21400）与配套 Go 已于 20:00 上线**（PR #48，源码 `4e95ae0df69b`）。在线名单接口、正式安装包、签名、公网更新及四节点重连验证通过；Web 2.0.19、游戏插件和原业务数据保留。维护 `.worktrees/chat-domain` / `xiwanzi/release-v214-live`。见[部署记录](deployment/deuterium-2.0.14-live.md)，下方候选说明为早期状态。
 
 2026-09-26：**聊天在线名单与连续返回修复为本机候选，尚未推送/部署**。基于最新 `origin/main` `cbc522d14ba5`，Android 与线上 2.0.13（21300）源码基线一致；维护 `.worktrees/chat-domain` / `xiwanzi/chat-online-back-fix`。配套 Go 在线快照接口、App 弹窗刷新和返回回调已实现，构建/单元/集成/模拟器事件验证通过；发布和用户真机側滑待后续。见[验收记录](qa/chat-online-back-fix.md)。

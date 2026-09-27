@@ -36,6 +36,7 @@ type Server struct {
 	chatReads         sharedChatReads
 	ai                *aiGatewayV2
 	desktop           *desktopRuntime
+	ysm               *ysmBridge
 }
 
 func New(s *store.Store, c config.Config) *Server {
@@ -49,9 +50,16 @@ func New(s *store.Store, c config.Config) *Server {
 	go server.coreWorker(nodes)
 	go server.emailWorkerV204()
 	server.initDesktopLauncher()
+	server.ysm = newYSMBridge(c)
 	return server
 }
-func (s *Server) Close() { s.cancel(); s.Hub.Wake() }
+func (s *Server) Close() {
+	s.cancel()
+	s.Hub.Wake()
+	if s.ysm != nil {
+		s.ysm.client.CloseIdleConnections()
+	}
+}
 
 type requestIDKey struct{}
 
@@ -70,6 +78,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerLauncherIcons(mux)
 	s.registerDesktopLauncher(mux)
 	s.registerAdmission(mux)
+	s.registerYSM(mux)
 	mux.HandleFunc("GET /api/v1/admin/runtime/capacity", s.runtimeCapacity)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
