@@ -44,6 +44,9 @@ async (page) => {
   await page.getByRole("heading", { name: "模型管理", exact: true }).waitFor();
   await page.locator(".ysm-model").first().waitFor();
   check(await page.locator(".ysm-model").count() === 24, "native management route renders paged model library");
+  await page.getByRole("combobox", { name: "模型分类", exact: true }).selectOption("角色");
+  check(await page.locator(".ysm-model").count() === 13, "model categories follow top-level IDs from the source manager");
+  await page.getByRole("combobox", { name: "模型分类", exact: true }).selectOption("");
   await page.screenshot({ path: "output/playwright/ysm-light.png", fullPage: false, animations: "disabled" });
   await page.getByRole("button", { name: "下一页", exact: true }).click();
   check(await page.locator(".ysm-model").count() === 3, "catalog pagination");

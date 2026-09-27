@@ -10,6 +10,7 @@ const phases = { READY: "就绪", OFFLINE: "离线", SYNCING: "同步中", START
 const effects = { VERIFY_S3: "验证存储的读写、公共读取和删除权限，并清理测试对象。", DRY_RUN: "扫描源目录，查看增改删差异。", PUBLISH: "上传有变化的对象，校验后发布新的模型版本。", CLUSTER_RELOAD: "请求在线节点重载模型，并刷新玩家模型目录。", GC_DRY_RUN: "计算超过保留期限、可回收的对象。", GC: "按最近一次回收预览删除过期对象，保留仍被使用的模型和版本。" };
 const bytes = (n = 0) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KiB` : `${(n / 1048576).toFixed(1)} MiB`;
 const when = (v) => v ? new Date(v).toLocaleString("zh-CN", { hour12: false }) : "—";
+const categoryOf = (model) => model.modelId.includes("/") ? model.modelId.split("/")[0] : "未分类";
 const status = (value) => <Badge tone={["READY", "SUCCEEDED", "COMPLETED"].includes(value) ? "sage" : ["FAILED", "DEGRADED"].includes(value) ? "amber" : "neutral"}>{phases[value] || value || "—"}</Badge>;
 
 export default function YsmManagement({ client }) {
@@ -85,8 +86,8 @@ export default function YsmManagement({ client }) {
     if (result.taskId) setView("任务与审计");
     await load();
   });
-  const models = data.catalog?.models || [], categories = [...new Set(models.map((m) => m.directory).filter(Boolean))].sort();
-  const filtered = models.filter((m) => (!category || m.directory === category) && `${m.modelId} ${m.directory}`.toLowerCase().includes(query.toLowerCase()));
+  const models = data.catalog?.models || [], categories = [...new Set(models.map(categoryOf))].sort();
+  const filtered = models.filter((m) => (!category || categoryOf(m) === category) && `${m.modelId} ${m.directory}`.toLowerCase().includes(query.toLowerCase()));
   const pages = Math.max(1, Math.ceil(filtered.length / 24)), currentPage = Math.min(page, pages - 1);
   const nodes = data.cluster?.nodes || [];
   return <section className="ysm-workspace" aria-busy={busy}>
@@ -106,9 +107,9 @@ export default function YsmManagement({ client }) {
     {!loading && !data.catalog && <Empty title="YSM 管理暂不可用" text="恢复连接后即可读取现有模型库。"><Button secondary onClick={() => load()}>重新连接</Button></Empty>}
     {data.catalog && view === "模型库" && <>
       <div className="ysm-toolbar"><label className="ysm-search"><Search size={18} /><input aria-label="搜索模型" placeholder="搜索模型 ID 或目录" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} /></label>
-        <select aria-label="模型目录" value={category} onChange={(e) => { setCategory(e.target.value); setPage(0); }}><option value="">全部目录</option>{categories.map((v) => <option key={v}>{v}</option>)}</select><span>{filtered.length} 个模型</span></div>
+        <select aria-label="模型分类" value={category} onChange={(e) => { setCategory(e.target.value); setPage(0); }}><option value="">全部分类</option>{categories.map((v) => <option key={v}>{v}</option>)}</select><span>{filtered.length} 个模型</span></div>
       <div className="ysm-model-grid">{filtered.slice(currentPage * 24, currentPage * 24 + 24).map((m) => <button className="ysm-model" key={m.modelId} onClick={() => setSelected(m)}>
-        <ModelCover model={m} /><span className="ysm-model-copy"><strong>{m.modelId}</strong><small>{m.directory || "根目录"}</small><span>{bytes(m.size)} · {m.objectCount} 个文件 <ArrowRight size={14} /></span></span>
+        <ModelCover model={m} /><span className="ysm-model-copy"><strong>{m.modelId}</strong><small>{categoryOf(m)}</small><span>{bytes(m.size)} · {m.objectCount} 个文件 <ArrowRight size={14} /></span></span>
       </button>)}</div>
       {!filtered.length && <Empty title="没有匹配的模型" text="试试其他关键词，或选择全部目录。" />}
       <div className="ysm-pagination"><Button secondary disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>上一页</Button><span>{currentPage + 1} / {pages}</span><Button secondary disabled={currentPage + 1 >= pages} onClick={() => setPage(currentPage + 1)}>下一页</Button></div>
