@@ -41,7 +41,7 @@ async (page) => {
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("http://127.0.0.1:5268/admin?section=ysm");
-  await page.getByRole("heading", { name: "YSM 模型", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "模型管理", exact: true }).waitFor();
   await page.locator(".ysm-model").first().waitFor();
   check(await page.locator(".ysm-model").count() === 24, "native management route renders paged model library");
   await page.screenshot({ path: "output/playwright/ysm-light.png", fullPage: false, animations: "disabled" });

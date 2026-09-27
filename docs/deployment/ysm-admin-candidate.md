@@ -2,7 +2,7 @@
 
 2026-09-28，**本机完成，未推送、未合并、未部署**。维护工作区为 `chat-domain`，分支 `xiwanzi/ysm-admin-integration`，基础源码 `df8f8df`。现有 App 2.0.14 / Web 2.0.19 的发布记录仍有效；本候选没有将提高版本号当作已发布。
 
-本轮用户确认将 YSM 栏目、界面和登录统一到现有后台。[实现边界](../plans/ysm-admin-integration.md)、[接口契约](../contracts/ysm-admin.md)、[本机验收](../qa/ysm-admin-integration.md)。生产发布需取得本轮授权。
+本轮用户确认将 YSM 栏目、界面和登录统一到现有后台。[实现边界](../plans/ysm-admin-integration.md)、[接口契约](../contracts/ysm-admin.md)、[本机验收](../qa/ysm-admin-integration.md)。用户已于本轮授权推送 PR、发布 Web/Go，并要求栏目名为「模型管理」。发布过程与最终结果另记上线记录。
 
 本机 Linux amd64 / CGO=0 Go 构建位于 `output/ysm-admin/deuterium-linux-amd64`，SHA-256 为 `0d01154d599aa8029916b7cecb1f4cbab45cd89f1c76870801378056bbdcd6e5`。Web 构建位于 `web-app/dist`；这些是本机候选产物，没有上传服务器。
 

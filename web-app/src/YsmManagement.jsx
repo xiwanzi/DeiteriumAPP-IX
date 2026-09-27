@@ -90,7 +90,7 @@ export default function YsmManagement({ client }) {
   const pages = Math.max(1, Math.ceil(filtered.length / 24)), currentPage = Math.min(page, pages - 1);
   const nodes = data.cluster?.nodes || [];
   return <section className="ysm-workspace" aria-busy={busy}>
-    <PageHead eyebrow="YSM MODEL LIBRARY" title="YSM 模型" subtitle="模型、节点和发布进度，在同一处管理。">
+    <PageHead eyebrow="YSM MODEL LIBRARY" title="模型管理" subtitle="模型、节点和发布进度，在同一处管理。">
       <Button secondary disabled={loading || busy} onClick={() => load()}><RefreshCw size={16} />刷新</Button>
       <Button disabled={busy || !data.catalog} onClick={() => { setError(""); setUpload({ operation: "add", id: "" }); }}><Plus size={16} />新增模型</Button>
     </PageHead>
