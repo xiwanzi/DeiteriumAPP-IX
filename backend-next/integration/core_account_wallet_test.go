@@ -8,9 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity"
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/testdb"
 	"net/http"
+	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -139,28 +142,52 @@ func corePeer(f *fixture, handler func(string, map[string]any) (string, any)) {
 		return err
 	})
 }
-func TestGameRegistrationHTTPUsesSessionUUIDAndCookieBoundary(t *testing.T) {
+func setupRegistrationDM(t *testing.T, f *fixture) {
+	f.app.Config.SMTPKey = []byte(strings.Repeat("k", 32))
+	raw, _ := json.Marshal(notify.Settings{Enabled: true, Host: "127.0.0.1", Port: 9, Security: "TLS", From: "code@example.com", Recipients: []string{"operator@example.com"}})
+	if _, err := f.store.DB.Exec("INSERT INTO mail_channels VALUES('DM',?,'',1,UTC_TIMESTAMP(6))", raw); err != nil {
+		t.Fatal(err)
+	}
+}
+func registrationMailCode(t *testing.T, f *fixture, token string) string {
+	var cipher string
+	if err := f.store.DB.QueryRow("SELECT o.payload_cipher FROM mail_outbox o JOIN email_verifications v ON v.verification_id=o.reference_id WHERE v.token_hash=?", store.Digest([]byte(token))).Scan(&cipher); err != nil {
+		t.Fatal(err)
+	}
+	plain, err := notify.Open(f.app.Config.SMTPKey, cipher)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := regexp.MustCompile(`[0-9]{6}`).FindString(plain)
+	if code == "" {
+		t.Fatal("missing email code")
+	}
+	return code
+}
+func TestEmailRegistrationThenGameBindingUsesSessionUUIDAndCookieBoundary(t *testing.T) {
 	f := newFixture(t)
+	setupRegistrationDM(t, f)
 	uuid := "d97161f9-2a7c-4abd-a8e7-6fd64a64c009"
-	var code string
+	var gameCode string
 	corePeer(f, func(command string, p map[string]any) (string, any) {
-		if command != "verification.deliver" || p["playerUuid"] != uuid {
-			t.Error("wrong identity target", command)
+		if command != "verification.deliver" || p["playerUuid"] != uuid || p["purpose"] != "register" {
+			t.Error("wrong identity proof", command, p)
 		}
-		code = p["code"].(string)
+		gameCode = p["code"].(string)
 		return "COMPLETED", map[string]bool{"delivered": true}
 	})
 	presence, _ := json.Marshal(map[string]any{"players": []any{map[string]string{"playerUuid": uuid, "gameId": "NewPlayer", "sessionEpoch": "d97161f9-2a7c-4abd-a8e7-6fd64a64c099"}}})
 	f.app.Core.SetPresence("amiya", presence)
-	resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": "NewPlayer", "qq": "10009"}, nil, nil)
+	resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": "NewPlayer", "email": "new@example.com"}, nil, nil)
 	if resp.StatusCode != 200 {
 		t.Fatal(resp.StatusCode, result)
 	}
 	token := result["data"].(map[string]any)["verificationToken"].(string)
-	for _, invalidPassword := range []string{"", "short", string(make([]byte, 65))} {
-		resp, result = f.request(t, "POST", "/api/v1/account/register", map[string]string{"verificationToken": token, "code": code, "password": invalidPassword}, nil, nil)
+	code := registrationMailCode(t, f, token)
+	for _, bad := range []string{"", "short", strings.Repeat("a", 65)} {
+		resp, result = f.request(t, "POST", "/api/v1/account/register", map[string]string{"verificationToken": token, "code": code, "password": bad}, nil, nil)
 		if resp.StatusCode != 400 || result["error"].(map[string]any)["code"] != "PASSWORD_INVALID" {
-			t.Fatal("registration accepted an invalid password", resp.StatusCode, result)
+			t.Fatal("bad password", result)
 		}
 	}
 	in := map[string]string{"verificationToken": token, "code": code, "password": password}
@@ -172,60 +199,61 @@ func TestGameRegistrationHTTPUsesSessionUUIDAndCookieBoundary(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Fatal(result)
 	}
-	if _, ok := result["data"].(map[string]any)["token"]; ok {
-		t.Fatal("web leaked bearer")
+	data := result["data"].(map[string]any)
+	if data["token"] != nil || len(resp.Cookies()) != 1 || !resp.Cookies()[0].HttpOnly {
+		t.Fatal("registration session boundary")
 	}
-	if len(resp.Cookies()) != 1 || !resp.Cookies()[0].HttpOnly {
-		t.Fatal("missing HttpOnly registration session")
-	}
+	cookie := resp.Cookies()[0]
+	csrf := data["csrfToken"].(string)
 	u, err := f.store.UserByAlias(context.Background(), "newplayer")
-	if err != nil || u.ServerUUID != uuid {
-		t.Fatal("registration guessed UUID", err)
+	if err != nil || u.ServerUUID != "" || u.GameVerified {
+		t.Fatal("email registered a game identity", err)
+	}
+	resp, _ = f.request(t, "GET", "/api/v1/wallet/balance", nil, nil, cookie)
+	if resp.StatusCode != 403 {
+		t.Fatal("pending account has wallet access")
+	}
+	headers := http.Header{"Origin": []string{f.http.URL}, "X-CSRF-Token": []string{csrf}}
+	resp, result = f.request(t, "POST", "/api/v1/account/game-verification-code", map[string]string{"qq": "10009"}, headers, cookie)
+	if resp.StatusCode != 200 {
+		t.Fatal(resp.StatusCode, result)
+	}
+	gameToken := result["data"].(map[string]any)["verificationToken"].(string)
+	resp, result = f.request(t, "POST", "/api/v1/account/game-verification", map[string]string{"verificationToken": gameToken, "code": gameCode}, headers, cookie)
+	if resp.StatusCode != 200 {
+		t.Fatal(result)
+	}
+	after, err := f.store.UserByAlias(context.Background(), "newplayer")
+	if err != nil || after.ServerUUID != uuid || !after.GameVerified || after.ID != u.ID || after.PlayerRef != u.PlayerRef {
+		t.Fatal("binding authority failed", err)
 	}
 	resp, _ = f.request(t, "POST", "/api/v1/account/register", in, nil, nil)
 	if resp.StatusCode != 400 {
-		t.Fatal("consumed code accepted", resp.StatusCode)
-	}
-	for _, name := range []string{"DIMA", "DaoYu"} {
-		resp, _ = f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": name, "qq": "10019", "password": password}, nil, nil)
-		if resp.StatusCode != 400 {
-			t.Fatal("system registration allowed")
-		}
+		t.Fatal("consumed code accepted")
 	}
 }
-
-func TestRegistrationCodeIgnoresLegacyPasswordAndKeepsValidationAndCooldown(t *testing.T) {
+func TestEmailRegistrationCodeIgnoresPasswordAndKeepsValidationAndCooldown(t *testing.T) {
 	for _, legacyPassword := range []string{"", "short", password} {
-		t.Run(fmt.Sprintf("legacy-password-length-%d", len(legacyPassword)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("password-length-%d", len(legacyPassword)), func(t *testing.T) {
 			f := newFixture(t)
-			uuid := "d97161f9-2a7c-4abd-a8e7-6fd64a64c009"
-			var deliveries atomic.Int32
-			corePeer(f, func(command string, p map[string]any) (string, any) {
-				if command != "verification.deliver" || p["playerUuid"] != uuid || p["password"] != nil {
-					t.Error("unexpected verification payload", command)
-				}
-				deliveries.Add(1)
-				return "COMPLETED", map[string]bool{"delivered": true}
-			})
-			presence, _ := json.Marshal(map[string]any{"players": []any{map[string]string{"playerUuid": uuid, "gameId": "NewPlayer", "sessionEpoch": "d97161f9-2a7c-4abd-a8e7-6fd64a64c099"}}})
-			f.app.Core.SetPresence("amiya", presence)
-			for _, invalid := range []struct{ gameID, qq, code string }{{"", "10009", "GAME_ID_INVALID"}, {"NewPlayer", "123", "QQ_INVALID"}, {"NewPlayer", "１２３４５", "QQ_INVALID"}} {
-				resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": invalid.gameID, "qq": invalid.qq}, nil, nil)
+			setupRegistrationDM(t, f)
+			for _, invalid := range []struct{ gameID, email, code string }{{"", "new@example.com", "GAME_ID_INVALID"}, {"DIMA", "new@example.com", "GAME_ID_INVALID"}, {"DaoYu", "new@example.com", "GAME_ID_INVALID"}, {"NewPlayer", "invalid", "EMAIL_INVALID"}} {
+				resp, result := f.request(t, "POST", "/api/v1/account/registration-code", map[string]string{"gameId": invalid.gameID, "email": invalid.email}, nil, nil)
 				if resp.StatusCode != 400 || result["error"].(map[string]any)["code"] != invalid.code {
-					t.Fatal("incorrect identity validation", resp.StatusCode, result)
+					t.Fatal("identity validation", result)
 				}
 			}
-			request := map[string]string{"gameId": "NewPlayer", "qq": "10009", "password": legacyPassword}
-			resp, result := f.request(t, "POST", "/api/v1/account/registration-code", request, nil, nil)
+			input := map[string]string{"gameId": "NewPlayer", "email": "new@example.com", "password": legacyPassword}
+			resp, result := f.request(t, "POST", "/api/v1/account/registration-code", input, nil, nil)
 			if resp.StatusCode != 200 {
-				t.Fatal("legacy password prevented code delivery", resp.StatusCode, result)
+				t.Fatal(resp.StatusCode, result)
 			}
-			if _, exposed := result["data"].(map[string]any)["code"]; exposed {
-				t.Fatal("verification code exposed in HTTP response")
+			if result["data"].(map[string]any)["code"] != nil {
+				t.Fatal("code exposed")
 			}
-			resp, result = f.request(t, "POST", "/api/v1/account/registration-code", request, nil, nil)
-			if resp.StatusCode != 429 || deliveries.Load() != 1 {
-				t.Fatal("verification cooldown bypass", resp.StatusCode, result, deliveries.Load())
+			resp, _ = f.request(t, "POST", "/api/v1/account/registration-code", input, nil, nil)
+			if resp.StatusCode != 429 {
+				t.Fatal("cooldown bypassed")
 			}
 		})
 	}

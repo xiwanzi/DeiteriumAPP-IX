@@ -17,7 +17,7 @@ import {
 import { money } from "./format.js";
 export const media = (name) => `/media/${name}`;
 export function Avatar({ user = "玩家", size = "", onClick }) {
-  const p = user && typeof user === "object" ? { name: user.gameId || user.displayName || user.name || "玩家", color: "blue", avatar: user.avatar, avatarUrl: user.avatarUrl } : { name: user || "玩家", color: "blue" };
+  const p = user && typeof user === "object" ? { name: user.displayName || user.gameId || user.name || "玩家", color: "blue", avatar: user.avatar, avatarUrl: user.avatarUrl } : { name: user || "玩家", color: "blue" };
   const source = p.avatar?.url || (typeof p.avatar === "string" ? p.avatar : p.avatarUrl), [failed, setFailed] = useState(null);
   const content = source && failed !== source ? <img className={`avatar ${p.color} ${size}`} src={source} alt="" aria-hidden="true" onError={() => setFailed(source)} style={{ objectFit: "cover" }} /> : (
     <span className={`avatar ${p.color} ${size}`} aria-hidden="true">

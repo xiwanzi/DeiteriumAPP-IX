@@ -3,8 +3,6 @@ package httpapi
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/bridge"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity"
@@ -17,10 +15,12 @@ import (
 )
 
 func (s *Server) accountRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v1/account/registration-code", s.registrationCode)
+	mux.HandleFunc("POST /api/v1/account/registration-code", s.emailRegistrationCode)
 	mux.HandleFunc("POST /api/v1/account/password-reset-code", s.passwordResetCode)
-	mux.HandleFunc("POST /api/v1/account/register", func(w http.ResponseWriter, r *http.Request) { s.registerGame(w, r, "app") })
-	mux.HandleFunc("POST /api/v1/web/register", func(w http.ResponseWriter, r *http.Request) { s.registerGame(w, r, "web") })
+	mux.HandleFunc("POST /api/v1/account/register", func(w http.ResponseWriter, r *http.Request) { s.registerEmail(w, r, "app") })
+	mux.HandleFunc("POST /api/v1/web/register", func(w http.ResponseWriter, r *http.Request) { s.registerEmail(w, r, "web") })
+	mux.HandleFunc("POST /api/v1/account/game-verification-code", s.gameVerificationCode)
+	mux.HandleFunc("POST /api/v1/account/game-verification", s.completeGameVerification)
 	mux.HandleFunc("POST /api/v1/account/password-reset", s.resetGamePassword)
 }
 func (s *Server) publicAccountOrigin(r *http.Request) bool {
@@ -28,62 +28,6 @@ func (s *Server) publicAccountOrigin(r *http.Request) bool {
 }
 func validPassword(p string) bool {
 	return utf8.RuneCountInString(p) >= 8 && utf8.RuneCountInString(p) <= 64 && len(p) <= 256
-}
-func (s *Server) registrationCode(w http.ResponseWriter, r *http.Request) {
-	if !s.publicAccountOrigin(r) {
-		failError(w, r, ErrForbidden)
-		return
-	}
-	var in struct {
-		GameID string `json:"gameId"`
-		QQ     string `json:"qq"`
-		// Older clients send this field when requesting a code. Only registerGame validates it.
-		Password string `json:"password"`
-	}
-	if body(w, r, &in) != nil {
-		failError(w, r, bridge.ErrProtocol)
-		return
-	}
-	if !identity.ValidGameID(in.GameID) || identity.SystemGameID(in.GameID) {
-		failure(w, r, 400, "GAME_ID_INVALID", "请输入有效的游戏 ID（1–32 位字母、数字或下划线）。")
-		return
-	}
-	if !identity.ValidQQ(in.QQ) {
-		failure(w, r, 400, "QQ_INVALID", "请输入有效的 QQ 号（5–20 位数字）。")
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-	if err := s.Store.ReserveVerificationIssue(ctx, s.remoteIP(r)); err != nil {
-		failError(w, r, err)
-		return
-	}
-	for _, alias := range []string{strings.ToLower(in.GameID), in.QQ} {
-		_, err := s.Store.UserByAlias(ctx, alias)
-		if err == nil {
-			failure(w, r, 409, "ACCOUNT_ALREADY_EXISTS", "游戏账号或 QQ 已绑定，请直接登录或找回密码。")
-			return
-		}
-		if !errors.Is(err, sql.ErrNoRows) {
-			failError(w, r, err)
-			return
-		}
-	}
-	p, err := s.resolveCorePlayer(ctx, in.GameID, true)
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	var n int
-	if err = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE server_uuid=?", p.PlayerUUID).Scan(&n); err != nil {
-		failError(w, r, err)
-		return
-	}
-	if n > 0 {
-		failure(w, r, 409, "ACCOUNT_ALREADY_EXISTS", "该游戏身份已经注册。")
-		return
-	}
-	s.issueGameCode(w, r, ctx, store.GameVerification{Purpose: "register", PlayerUUID: p.PlayerUUID, GameID: p.GameID, QQ: in.QQ, NodeID: p.ServerID})
 }
 func (s *Server) passwordResetCode(w http.ResponseWriter, r *http.Request) {
 	if !s.publicAccountOrigin(r) {
@@ -93,7 +37,20 @@ func (s *Server) passwordResetCode(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Account string `json:"account"`
 	}
-	if body(w, r, &in) != nil || (!identity.ValidGameID(in.Account) && !identity.ValidQQ(in.Account)) || identity.SystemGameID(in.Account) {
+	if body(w, r, &in) != nil {
+		failError(w, r, bridge.ErrProtocol)
+		return
+	}
+	if strings.Contains(in.Account, "@") {
+		u, err := s.Store.UserByAlias(r.Context(), strings.ToLower(strings.TrimSpace(in.Account)))
+		if err != nil || u.Status != "active" || u.Email == "" {
+			failure(w, r, 400, "ACCOUNT_NOT_AVAILABLE", "账号不存在或不可用。")
+			return
+		}
+		s.issueEmailCode(w, r, store.EmailVerification{Email: u.Email, UserID: u.ID, Purpose: "password_reset"})
+		return
+	}
+	if (!identity.ValidGameID(in.Account) && !identity.ValidQQ(in.Account)) || identity.SystemGameID(in.Account) {
 		failError(w, r, bridge.ErrProtocol)
 		return
 	}
@@ -106,6 +63,10 @@ func (s *Server) passwordResetCode(w http.ResponseWriter, r *http.Request) {
 	u, err := s.Store.UserByAlias(ctx, strings.ToLower(in.Account))
 	if err != nil || u.Status != "active" {
 		failure(w, r, 400, "ACCOUNT_NOT_AVAILABLE", "账号不存在或不可用。")
+		return
+	}
+	if u.Email != "" {
+		s.issueEmailCode(w, r, store.EmailVerification{Email: u.Email, UserID: u.ID, Purpose: "password_reset"})
 		return
 	}
 	p, err := s.Core.Player("", u.ServerUUID)
@@ -135,7 +96,13 @@ func (s *Server) issueGameCode(w http.ResponseWriter, r *http.Request, ctx conte
 		failError(w, r, err)
 		return
 	}
-	op, err := s.coreCall(ctx, "game-verification", v.ID, v.NodeID, "verification.deliver", map[string]string{"playerUuid": v.PlayerUUID, "code": code, "purpose": v.Purpose})
+	// The installed Core understands register/password_reset; binding is still a
+	// registration proof on that wire. The local challenge keeps its own purpose.
+	wirePurpose := v.Purpose
+	if wirePurpose == "game_verify" {
+		wirePurpose = "register"
+	}
+	op, err := s.coreCall(ctx, "game-verification", v.ID, v.NodeID, "verification.deliver", map[string]string{"playerUuid": v.PlayerUUID, "code": code, "purpose": wirePurpose})
 	var result struct {
 		Delivered bool `json:"delivered"`
 	}
@@ -167,61 +134,6 @@ func validCode(token, code string) bool {
 	}
 	return true
 }
-func (s *Server) registerGame(w http.ResponseWriter, r *http.Request, kind string) {
-	if (kind == "web" && !s.origin(r)) || (kind == "app" && r.Header.Get("Origin") != "") {
-		failError(w, r, ErrForbidden)
-		return
-	}
-	var in struct {
-		VerificationToken string `json:"verificationToken"`
-		Code              string `json:"code"`
-		Password          string `json:"password"`
-	}
-	if body(w, r, &in) != nil || !validCode(in.VerificationToken, in.Code) {
-		failError(w, r, bridge.ErrProtocol)
-		return
-	}
-	if !validPassword(in.Password) {
-		failure(w, r, 400, "PASSWORD_INVALID", "密码需要 8–64 位。")
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-	v, err := s.Store.CheckGameVerification(ctx, store.Digest([]byte(in.VerificationToken)), store.Digest([]byte(in.VerificationToken+":"+in.Code)), "register")
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	hash, err := s.Identity.HashPassword(ctx, in.Password)
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	u, err := s.Store.RegisterGameUser(ctx, v, hash)
-	if err != nil {
-		failError(w, r, err)
-		return
-	}
-	token, csrf := identity.Secret(), identity.Secret()
-	expiry := time.Now().UTC().Add(7 * 24 * time.Hour)
-	if err = s.Store.CreateSession(ctx, u, store.Digest([]byte(token)), kind, csrf, expiry, ""); err != nil {
-		failError(w, r, err)
-		return
-	}
-	if kind == "web" {
-		if old, e := r.Cookie(s.cookieName()); e == nil {
-			if err = s.Store.Revoke(ctx, store.Digest([]byte(old.Value))); err != nil {
-				_ = s.Store.Revoke(ctx, store.Digest([]byte(token)))
-				failError(w, r, err)
-				return
-			}
-		}
-		s.setCookie(w, token, expiry)
-		success(w, r, map[string]any{"user": u, "csrfToken": csrf, "expiresAt": expiry})
-	} else {
-		success(w, r, map[string]any{"token": token, "user": u})
-	}
-}
 func (s *Server) resetGamePassword(w http.ResponseWriter, r *http.Request) {
 	if !s.publicAccountOrigin(r) {
 		failError(w, r, ErrForbidden)
@@ -238,6 +150,29 @@ func (s *Server) resetGamePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
+	var emailToken bool
+	if err := s.Store.DB.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM email_verifications WHERE token_hash=?)", store.Digest([]byte(in.VerificationToken))).Scan(&emailToken); err != nil {
+		failError(w, r, err)
+		return
+	}
+	if emailToken {
+		v, err := s.Store.CheckEmailVerification(ctx, store.Digest([]byte(in.VerificationToken)), store.Digest([]byte(in.VerificationToken+":"+in.Code)), "password_reset")
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+		hash, err := s.Identity.HashPassword(ctx, in.NewPassword)
+		if err == nil {
+			err = s.Store.ResetEmailPassword(ctx, v, hash)
+		}
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+		s.Hub.Wake()
+		success(w, r, map[string]bool{"passwordReset": true})
+		return
+	}
 	v, err := s.Store.CheckGameVerification(ctx, store.Digest([]byte(in.VerificationToken)), store.Digest([]byte(in.VerificationToken+":"+in.Code)), "password_reset")
 	if err != nil {
 		failError(w, r, err)

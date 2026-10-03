@@ -34,10 +34,12 @@ export class DeuteriumClient {
     fetchImpl = globalThis.fetch.bind(globalThis),
     onUnauthorized = () => {},
     onSession = () => {},
+    onVerificationRequired = () => {},
   } = {}) {
     this.fetch = fetchImpl;
     this.onUnauthorized = onUnauthorized;
     this.onSession = onSession;
+    this.onVerificationRequired = onVerificationRequired;
   }
   async request(
     path,
@@ -97,6 +99,7 @@ export class DeuteriumClient {
     }
     if (!response.ok || value.error) {
       const err = value.error || {};
+      if (err.code === "GAME_VERIFICATION_REQUIRED") this.onVerificationRequired();
       if (response.status === 401 && sessionRequired) {
         this.#csrf = "";
         this.onUnauthorized();
@@ -204,11 +207,7 @@ export class DeuteriumClient {
       `/api/v1/account/${type === "register" ? "registration-code" : "password-reset-code"}`,
       {
         method: "POST",
-        body: {
-          gameId: fields.gameId,
-          ...(fields.qq ? { qq: fields.qq } : {}),
-          ...(type === "register" ? { password: fields.password } : {}),
-        },
+        body: type === "register" ? { gameId: fields.gameId?.trim(), email: fields.email?.trim() } : { account: fields.gameId?.trim() || fields.account?.trim() },
         sessionRequired: false,
       },
     );

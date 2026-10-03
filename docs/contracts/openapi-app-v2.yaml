@@ -373,11 +373,64 @@ paths:
         default:
           $ref: '#/components/responses/Error'
       x-implementation-status: existing_route_extension_pending
+  /account/game-verification-code:
+    post:
+      tags: [Account]
+      summary: 为当前未验证账号发送游戏验证码
+      description: QQ 由用户补充；游戏 ID 从当前账号读取，UUID 由 Core 解析。需要当前会话，Web 还须 CSRF。
+      operationId: requestGameIdentityCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qq]
+              properties:
+                qq:
+                  type: string
+                  pattern: '^[0-9]{5,20}$'
+      responses:
+        '200':
+          description: 游戏验证码已投递
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationTokenResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /account/game-verification:
+    post:
+      tags: [Account]
+      summary: 将当前真实账号绑定到验证过的游戏身份
+      operationId: completeGameIdentityVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verificationToken, code]
+              properties:
+                verificationToken:
+                  type: string
+                code:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+      responses:
+        '200':
+          description: 当前账号验证完成，原 userId 与 playerRef 保持
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        default:
+          $ref: '#/components/responses/Error'
   /account/registration-code:
     post:
       tags:
       - Account
-      summary: 请求注册验证码
+      summary: 请求邮箱注册验证码
       security: []
       operationId: requestRegistrationCode
       requestBody:
@@ -388,7 +441,7 @@ paths:
               $ref: '#/components/schemas/RegistrationCodeRequest'
       responses:
         '200':
-          description: 验证码已通过服务器私聊发送
+          description: 邮箱验证码已加入 DM 队列，账号创建后仍需游戏身份验证
           content:
             application/json:
               schema:
@@ -12937,17 +12990,16 @@ components:
       type: object
       required:
       - gameId
-      - qq
+      - email
       properties:
         gameId:
           type: string
           minLength: 1
           maxLength: 32
-        qq:
+        email:
           type: string
-          minLength: 5
-          maxLength: 20
-          pattern: "^[0-9]{5,20}$"
+          format: email
+          maxLength: 254
         password:
           type: string
           deprecated: true
@@ -13015,6 +13067,9 @@ components:
       - expiresAt
       - resendAfterSeconds
       properties:
+        delivery:
+          type: string
+          enum: [EMAIL, GAME]
         verificationToken:
           type: string
         expiresAt:
@@ -13101,10 +13156,21 @@ components:
           type: string
         qq:
           type: string
+        gameVerified:
+          type: boolean
+          description: 游戏身份已验证；旧账号迁移默认 true，新邮箱账号在完成游戏验证码前为 false。
+        email:
+          type: string
+          format: email
+          description: 仅本人会话返回。
+        displayName:
+          type: string
+          maxLength: 24
         identityStatus:
           type: string
           enum:
           - bound
+          - unverified
         bio:
           type: string
           minLength: 0
@@ -14316,6 +14382,11 @@ components:
       type: object
       additionalProperties: false
       properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 24
+          description: 可修改的中文昵称，不改变游戏 ID。
         clientRequestId:
           type: string
           minLength: 1

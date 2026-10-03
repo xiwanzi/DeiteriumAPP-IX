@@ -56,7 +56,7 @@ fun InfoPage(state:LabState,topInset:Dp,query:String,onOpen:(String)->Unit) {
                 Row(Modifier.fillMaxWidth().clickable{onOpen("dm:${person.name}")}.padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
                     Box { PlayerAvatar(person.name,Modifier.size(46.dp).clickable{onOpen("player:${person.name}")});if(person.online)Box(Modifier.align(Alignment.BottomEnd).size(10.dp).background(Color(0xFF42AF72),CircleShape).border(2.dp,MaterialTheme.colorScheme.surface,CircleShape)) }
                     Column(Modifier.weight(1f).padding(horizontal=13.dp)) {
-                        Row(verticalAlignment=Alignment.CenterVertically){Text(person.name,style=MaterialTheme.typography.titleMedium);if(person.name in state.followed)Icon(Icons.Outlined.Star,null,Modifier.padding(start=6.dp).size(13.dp),tint=MaterialTheme.colorScheme.primary)}
+                        Row(verticalAlignment=Alignment.CenterVertically){Text(person.displayName,style=MaterialTheme.typography.titleMedium);if(person.name in state.followed)Icon(Icons.Outlined.Star,null,Modifier.padding(start=6.dp).size(13.dp),tint=MaterialTheme.colorScheme.primary)}
                         Text(entry.latest?.text ?: person.bio,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
                     }
                     Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(8.dp)){

@@ -27,6 +27,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     private val saveFollowed: (Set<String>) -> Unit = {}, val userName: String = "", private val postNotification: (DemoNotice) -> Unit = {}, val api: BackendApi? = null,private val notificationPreferences:NotificationPreferences?=null,private val launcherIcons:LauncherIcons?=null) {
     var restoring by mutableStateOf(false)
     var storageMessage by mutableStateOf<String?>(null)
+    var profileDisplayName by mutableStateOf(userName)
+    fun displayName(name:String)=if(name==userName)profileDisplayName else Players.find{it.name==name}?.displayName ?: name
     var profileBio by mutableStateOf("")
     var balance by mutableLongStateOf(0)
     var balanceKnown by mutableStateOf(false)
@@ -108,9 +110,9 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     fun connect() {
         val service = api ?: return
         scope.launch {
-            runCatching { service.verifySession() }.onSuccess { profileBio = service.user?.optString("bio").orEmpty() }
+            runCatching { service.verifySession() }.onSuccess { profileBio = service.user?.optString("bio").orEmpty();profileDisplayName=service.displayName }
                 .onFailure { report(it) }
-            if(!service.signedIn || closed) return@launch
+            if(!service.signedIn || !service.gameVerified || closed) return@launch
             openChat()
             scope.launch{notificationPreferences?.sync();preferencesSyncedAt=System.nanoTime()/1_000_000}
             service.pendingChat()?.let { previous ->
@@ -145,7 +147,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             { connected, error -> scope.launch {
                 chatStatus = if(connected) "已连接服务器" else error ?: "连接暂不可用"
                 if(!connected && !closed) {
-                    reconnect?.cancel(); reconnect = scope.launch { delay(4000); runCatching { service.verifySession() }; if(service.signedIn && !closed) openChat() }
+                    reconnect?.cancel(); reconnect = scope.launch { delay(4000); runCatching { service.verifySession() }; if(service.signedIn && service.gameVerified && !closed) openChat() }
                 }
             } }, { scope.launch { loadChat() };launcherIcons?.requestSync() },launcherIcons?.let{icons->{icons.requestSync()}}).also { it.connect() }
     }
@@ -330,11 +332,11 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }
     }
     fun readNotice(id:String){scope.launch{runCatching{api!!.request("POST","/notifications/read",JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("notificationIds",JSONArray(listOf(id))))}.onSuccess{commerce.markNoticeRead(id)}.onFailure{report(it)}}}
-    suspend fun saveBio(value:String):Boolean = runCatching {
+    suspend fun saveBio(value:String,displayName:String=profileDisplayName):Boolean = runCatching {
         val service=api ?: return false
         val original=service.request("GET", "/players/${service.playerRef}")
-        val profile=service.request("PATCH", "/account/me/profile", JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("expectedVersion",original.getLong("version")).put("bio",value.trim()))
-        profileBio=profile.getString("bio");true
+        val profile=service.request("PATCH", "/account/me/profile", JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("expectedVersion",original.getLong("version")).put("bio",value.trim()).put("displayName",displayName.trim()))
+        profileBio=profile.getString("bio");profileDisplayName=profile.optString("displayName",userName);service.verifySession();true
     }.getOrElse { report(it);false }
     fun mentionPlayer(name: String) {
         val value = chatDraft; val range = mentionRange(value); val start = range?.first ?: value.selection.min; val end = range?.last?.plus(1) ?: value.selection.max
@@ -348,7 +350,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         if(value.optBoolean("deleted")||isErasedPlayer(value.optString("playerRef")))return
         val name=value.optString("gameId");if(name.isBlank()||name==userName)return
         unavailableAccounts.remove(name)
-        val player=PlayerProfile(name,value.optString("qq").takeUnless{it=="null"}.orEmpty(),value.optString("bio"),value.optBoolean("online",value.optBoolean("serverOnline")),value.optString("lastSeenAt").takeUnless{it.isBlank()||it=="null"} ?: "暂无记录",value.optString("playerRef"),if(value.has("avatar"))value.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"} else Players.find{it.name==name}?.avatar)
+        val player=PlayerProfile(name,value.optString("qq").takeUnless{it=="null"}.orEmpty(),value.optString("bio"),value.optBoolean("online",value.optBoolean("serverOnline")),value.optString("lastSeenAt").takeUnless{it.isBlank()||it=="null"} ?: "暂无记录",value.optString("playerRef"),if(value.has("avatar"))value.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"} else Players.find{it.name==name}?.avatar,displayName=value.optString("displayName",name))
         Players.removeAll{it.name==name};Players.add(player)
     }
     private suspend fun loadDirectory() {
@@ -358,7 +360,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     suspend fun loadProfile(name:String) {
         val ref=if(name==userName)api?.playerRef else Players.find{it.name==name}?.playerRef
         if(ref.isNullOrBlank())return
-        runCatching { api!!.request("GET","/players/$ref") }.onSuccess { if(name==userName)profileBio=it.optString("bio") else rememberPlayer(it) }
+        runCatching { api!!.request("GET","/players/$ref") }.onSuccess { if(name==userName){profileBio=it.optString("bio");profileDisplayName=it.optString("displayName",userName)} else rememberPlayer(it) }
     }
     private suspend fun loadConversations() {
         if(closed)return

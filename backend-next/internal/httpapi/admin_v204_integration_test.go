@@ -319,6 +319,9 @@ func TestAdminSMTPEncryptionVersionReplayAndDurableRetryV204(t *testing.T) {
 	if preserved.PasswordCipher != saved.PasswordCipher {
 		t.Fatal("omitted password did not preserve stored secret")
 	}
+	if _, err := f.store.DB.Exec("INSERT INTO mail_channels SELECT 'DM',settings_json,password_cipher,version,updated_at FROM admin_email_settings_v204 WHERE id=1"); err != nil {
+		t.Fatal(err)
+	}
 	test := map[string]any{"clientRequestId": "smtp-test"}
 	f.request(t, "Alice", "POST", path+"/test", test, 200)
 	f.request(t, "Alice", "POST", path+"/test", test, 200)

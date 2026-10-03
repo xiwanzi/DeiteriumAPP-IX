@@ -46,7 +46,8 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if SystemGameID(account) {
 		return "", session, store.ErrUnauthorized
 	}
-	if (!gamePattern.MatchString(account) && !qqPattern.MatchString(account)) || utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 64 || len(password) > 256 || (kind != "app" && kind != "web") {
+	_, emailErr := store.NormalizeEmail(account)
+	if (!gamePattern.MatchString(account) && !qqPattern.MatchString(account) && emailErr != nil) || utf8.RuneCountInString(password) < 8 || utf8.RuneCountInString(password) > 64 || len(password) > 256 || (kind != "app" && kind != "web") {
 		return "", session, store.ErrUnauthorized
 	}
 	if err = s.acquirePasswordSlot(ctx); err != nil {

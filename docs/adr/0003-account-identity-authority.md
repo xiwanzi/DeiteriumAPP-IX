@@ -1,5 +1,7 @@
 # ADR 0003: 账号玩家身份权威
 
+2026-10-03：注册与游戏身份验证的时点已由 [ADR 0010](0010-email-account-game-verification.md) 更新：邮箱验证可先创建真实账号，游戏 UUID 随后由 Core 验证绑定。本 ADR 的服务器 UUID 权威、禁止自报与禁止自动合并规则继续适用。
+
 ## Status
 
 Accepted

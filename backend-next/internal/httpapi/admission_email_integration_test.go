@@ -19,6 +19,9 @@ func admissionEmailFixture(t *testing.T, enabled bool) *socialFixtureV2 {
 	f.app.Close()
 	f.app.Config.AdmissionApplicationURL = f.http.URL + "/admission/"
 	f.request(t, "Alice", "PUT", "/api/v1/admin/email-settings", map[string]any{"clientRequestId": "email-config", "expectedVersion": 0, "enabled": true, "host": "smtp.example.com", "port": 465, "security": "TLS", "username": "", "from": "sender@example.com", "recipients": []string{"admin@example.com"}, "admissionReviewEnabled": enabled}, 200)
+	if _, err := f.store.DB.Exec("INSERT INTO mail_channels SELECT 'DM',settings_json,password_cipher,version,updated_at FROM admin_email_settings_v204 WHERE id=1"); err != nil {
+		t.Fatal(err)
+	}
 	return f
 }
 

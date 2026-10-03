@@ -77,11 +77,11 @@ export default function AuthScreen({
           const result = await onVerify(screen, f);
           if (!result.data?.verificationToken) throw new Error("未取得验证码凭证，请稍后重试。");
           setVerification(result.data);
-          setSuccess("验证码已发送，请在游戏内查看。");
+          setSuccess(result.data.delivery === "EMAIL" || screen === "register" ? "验证码邮件已排队，请查收邮箱。" : "验证码已发送，请在游戏内查看。");
         }
         else
           throw new Error(
-            "游戏内身份验证尚未接入。请使用已有账号登录，或联系管理员。",
+            "身份验证服务暂不可用，请稍后重试。",
           );
       }
     } catch (e) {
@@ -187,20 +187,20 @@ export default function AuthScreen({
             </h1>
             <p className="auth-intro">
               {screen === "login"
-                ? "使用你的游戏 ID 或 QQ 登录 Deuterium。"
+                ? "使用邮箱、游戏 ID 或 QQ 登录 Deuterium。"
                 : screen === "register"
-                  ? "通过游戏内验证，把你的玩家身份与账号关联。"
-                  : "验证游戏内身份后，为你的账号设置新密码。"}
+                  ? "使用邮箱验证码创建账号，再验证你的游戏身份。"
+                  : "通过绑定邮箱或原有游戏验证方式找回密码。"}
             </p>
             {(statusMessage || success) && (
               <div className="auth-verification-note" role="status">
-                {statusMessage || success}
+                {success || statusMessage}
               </div>
             )}
             <form className="auth-form" onSubmit={submit}>
               <div className="auth-input-group">
                 <label htmlFor="auth-account">
-                  {screen === "login" ? "游戏 ID / QQ" : "游戏 ID"}
+                  {screen === "register" ? "游戏 ID" : "邮箱 / 游戏 ID / QQ"}
                 </label>
                 <div>
                   <UserRound size={17} />
@@ -212,23 +212,25 @@ export default function AuthScreen({
                     onChange={(e) => setAccount(e.target.value)}
                     placeholder={
                       screen === "login"
-                        ? "输入游戏 ID 或 QQ"
+                        ? "输入邮箱、游戏 ID 或 QQ"
                         : "你的完整游戏 ID"
                     }
                     required
-                    maxLength={64}
+                    maxLength={254}
                     readOnly={Boolean(verification)}
                   />
                 </div>
               </div>
               {screen === "register" && (
                 <Field
-                  label="QQ"
-                  name="qq"
-                  placeholder="用于登录与身份核对"
-                  inputMode="numeric"
+                  label="邮箱"
+                  name="email"
+                  autoComplete="email"
+                  placeholder="用于验证码、通知及找回账号"
+                  type="email"
+                  maxLength={254}
+                  readOnly={Boolean(verification)}
                   required
-                  pattern="[0-9]{5,20}"
                 />
               )}
               {screen === "login" ? (
@@ -267,11 +269,11 @@ export default function AuthScreen({
                 <div className="auth-verification-note">
                   <ShieldCheck size={20} />
                   <span>
-                    请先进入游戏，验证码会通过游戏内私聊发送给你。
+                    {screen === "register" ? "邮箱验证完成后即可创建账号，随后继续验证游戏身份。" : "已绑定邮箱的账号通过邮件验证；旧账号仍使用游戏内验证码。"}
                   </span>
                 </div>
               )}
-              {screen === "register" && <Field label="密码" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={64} />}
+              {verification && screen === "register" && <Field label="密码" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={64} />}
               {verification && screen !== "login" && <>
                 <Field label="验证码" name="code" inputMode="numeric" autoComplete="one-time-code" required maxLength={12} />
                 {screen === "reset" && <Field label="新密码" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={64} />}
@@ -295,11 +297,12 @@ export default function AuthScreen({
                   <>
                     {screen === "login"
                       ? "登录"
-                      : verification ? (screen === "register" ? "创建账号" : "保存新密码") : verification ? (screen === "register" ? "创建账号" : "保存新密码") : screen === "register" ? "获取注册验证码" : "获取重置验证码"}
+                      : verification ? (screen === "register" ? "创建账号" : "保存新密码") : screen === "register" ? "获取注册验证码" : "获取重置验证码"}
                     <ArrowRight size={18} />
                   </>
                 )}
               </Button>
+              {verification && <button type="button" className="text-button" disabled={busy} onClick={() => { setVerification(null); setSuccess(""); }}>修改信息或重新获取验证码</button>}
             </form>
             {screen === "login" && (
               <p className="auth-register">

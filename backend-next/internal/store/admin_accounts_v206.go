@@ -9,15 +9,18 @@ import (
 )
 
 type AdminAccountV206 struct {
-	UserID    string    `json:"userId"`
-	PlayerRef string    `json:"playerRef"`
-	GameID    string    `json:"gameId"`
-	QQ        string    `json:"qq"`
-	Status    string    `json:"status"`
-	Admin     bool      `json:"admin"`
-	BanReason string    `json:"banReason"`
-	Version   int64     `json:"version"`
-	CreatedAt time.Time `json:"createdAt"`
+	UserID       string    `json:"userId"`
+	PlayerRef    string    `json:"playerRef"`
+	GameID       string    `json:"gameId"`
+	QQ           string    `json:"qq"`
+	Status       string    `json:"status"`
+	Email        string    `json:"email"`
+	SupportAdmin bool      `json:"supportAdmin"`
+	GameVerified bool      `json:"gameVerified"`
+	Admin        bool      `json:"admin"`
+	BanReason    string    `json:"banReason"`
+	Version      int64     `json:"version"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 // All role/status changes use one small guard row before locking identities.
@@ -46,13 +49,13 @@ func (s *Store) AdminAccountsV206(ctx context.Context, search, status string, of
 		return nil, 0, ErrSocialInvalid
 	}
 	search = "%" + strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(search), "!", "!!"), "%", "!%"), "_", "!_") + "%"
-	where := ` WHERE i.status<>'deleted' AND (?='' OR i.status=?) AND (i.game_id LIKE ? ESCAPE '!' OR i.qq LIKE ? ESCAPE '!' OR i.player_ref LIKE ? ESCAPE '!')`
-	args := []any{status, status, search, search, search}
+	where := ` WHERE i.status<>'deleted' AND (?='' OR i.status=?) AND (i.game_id LIKE ? ESCAPE '!' OR i.qq LIKE ? ESCAPE '!' OR i.player_ref LIKE ? ESCAPE '!' OR i.email LIKE ? ESCAPE '!')`
+	args := []any{status, status, search, search, search, search}
 	var total int
 	if err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities i"+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	rows, err := s.DB.QueryContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,i.status,EXISTS(SELECT 1 FROM identity_permissions p WHERE p.user_id=i.id AND p.permission='platform.admin'),i.ban_reason,i.admin_version,i.created_at FROM identities i`+where+" ORDER BY i.created_at DESC,i.id LIMIT ? OFFSET ?", append(args, limit, offset)...)
+	rows, err := s.DB.QueryContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,i.status,EXISTS(SELECT 1 FROM identity_permissions p WHERE p.user_id=i.id AND p.permission='platform.admin'),i.ban_reason,i.admin_version,i.created_at,COALESCE(i.email,''),i.game_verified,EXISTS(SELECT 1 FROM identity_permissions sp WHERE sp.user_id=i.id AND sp.permission='support.manage') FROM identities i`+where+" ORDER BY i.created_at DESC,i.id LIMIT ? OFFSET ?", append(args, limit, offset)...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -60,7 +63,7 @@ func (s *Store) AdminAccountsV206(ctx context.Context, search, status string, of
 	result := []AdminAccountV206{}
 	for rows.Next() {
 		var a AdminAccountV206
-		if err = rows.Scan(&a.UserID, &a.PlayerRef, &a.GameID, &a.QQ, &a.Status, &a.Admin, &a.BanReason, &a.Version, &a.CreatedAt); err != nil {
+		if err = rows.Scan(&a.UserID, &a.PlayerRef, &a.GameID, &a.QQ, &a.Status, &a.Admin, &a.BanReason, &a.Version, &a.CreatedAt, &a.Email, &a.GameVerified, &a.SupportAdmin); err != nil {
 			return nil, 0, err
 		}
 		result = append(result, a)
@@ -76,7 +79,7 @@ type AdminAccountChangeV206 struct {
 }
 
 func (s *Store) ChangeAdminAccountV206(ctx context.Context, actor, target string, input AdminAccountChangeV206) (json.RawMessage, error) {
-	if !ValidSocialID(target) || input.ExpectedVersion < 1 || !catalogEnum(input.Action, "grant-admin", "revoke-admin", "ban", "unban") || !ValidSocialText(input.Reason, 0, 500) {
+	if !ValidSocialID(target) || input.ExpectedVersion < 1 || !catalogEnum(input.Action, "grant-admin", "revoke-admin", "grant-support", "revoke-support", "ban", "unban") || !ValidSocialText(input.Reason, 0, 500) {
 		return nil, ErrSocialInvalid
 	}
 	if actor == target {
@@ -111,6 +114,13 @@ func (s *Store) ChangeAdminAccountV206(ctx context.Context, actor, target string
 		}
 		var err error
 		switch input.Action {
+		case "grant-support":
+			if status != "active" {
+				return nil, ErrUnauthorized
+			}
+			_, err = tx.ExecContext(ctx, "INSERT IGNORE INTO identity_permissions VALUES(?,'support.manage')", target)
+		case "revoke-support":
+			_, err = tx.ExecContext(ctx, "DELETE FROM identity_permissions WHERE user_id=? AND permission='support.manage'", target)
 		case "grant-admin":
 			if status != "active" {
 				return nil, catalogError(409, "ACCOUNT_DISABLED", "请先解封账号，再授予管理权限。")
@@ -126,7 +136,7 @@ func (s *Store) ChangeAdminAccountV206(ctx context.Context, actor, target string
 		if err != nil {
 			return nil, err
 		}
-		if input.Action == "ban" || input.Action == "revoke-admin" {
+		if input.Action == "ban" || input.Action == "revoke-admin" || input.Action == "revoke-support" {
 			if _, err = tx.ExecContext(ctx, "UPDATE identity_sessions SET revoked_at=COALESCE(revoked_at,UTC_TIMESTAMP(6)) WHERE user_id=?", target); err != nil {
 				return nil, err
 			}

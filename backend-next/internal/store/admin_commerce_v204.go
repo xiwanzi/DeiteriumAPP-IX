@@ -40,7 +40,7 @@ func (s *Store) AdminPlayersV204(ctx context.Context, actor, query, after string
 		return nil, ErrSocialInvalid
 	}
 	rows, err := s.DB.QueryContext(ctx, `SELECT player_ref,uuid,game_id,qq,registered,status FROM (
- SELECT player_ref,server_uuid AS uuid,game_id,qq,TRUE AS registered,status FROM identities WHERE status<>'deleted'
+ SELECT player_ref,server_uuid AS uuid,game_id,qq,TRUE AS registered,status FROM identities WHERE status<>'deleted' AND game_verified=TRUE
  UNION ALL SELECT p.player_ref,p.player_uuid,p.game_id,'',FALSE,'game_only' FROM core_player_directory p WHERE NOT EXISTS(SELECT 1 FROM identities i WHERE i.server_uuid=p.player_uuid)
  ) players WHERE uuid>? AND (?='' OR LOCATE(?,LOWER(CONCAT(game_id,' ',qq,' ',uuid,' ',player_ref)))>0) ORDER BY uuid LIMIT ?`, after, query, strings.ToLower(query), limit)
 	if err != nil {

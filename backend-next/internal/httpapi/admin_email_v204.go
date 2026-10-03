@@ -106,7 +106,7 @@ func (s *Server) adminEmailTestV204(w http.ResponseWriter, r *http.Request) {
 		socialFailureV2(w, r, err)
 		return
 	}
-	settings, err := s.Store.EmailSettingsV204(r.Context())
+	settings, err := s.Store.MailChannel(r.Context(), "DM")
 	if err != nil {
 		failError(w, r, err)
 		return
@@ -160,6 +160,11 @@ func (s *Server) emailWorkerV204() {
 			return
 		case <-ticker.C:
 			for n := 0; n < 5; n++ {
+				if err := s.processSystemMail(s.ctx, notify.SendMessage); err != nil {
+					break
+				}
+			}
+			for n := 0; n < 5; n++ {
 				if err := s.processEmailV204(s.ctx, notify.SendMessage); err != nil {
 					if !errors.Is(err, sql.ErrNoRows) && !errors.Is(err, context.Canceled) {
 						slog.Warn("email delivery worker deferred", "error", err)
@@ -174,13 +179,18 @@ func (s *Server) emailWorkerV204() {
 type emailSenderV204 func(context.Context, notify.Settings, string, string, notify.Message) error
 
 func (s *Server) processEmailV204(ctx context.Context, send emailSenderV204) error {
-	settings, err := s.Store.EmailSettingsV204(ctx)
+	settings, err := s.Store.MailChannel(ctx, "DM")
 	if err != nil {
 		return err
 	}
 	if !settings.Enabled {
 		return sql.ErrNoRows
 	}
+	notifications, err := s.Store.EmailSettingsV204(ctx)
+	if err != nil {
+		return err
+	}
+	settings.Recipients = notifications.Recipients
 	event, err := s.Store.ClaimEmailV204(ctx)
 	if err != nil {
 		return err
