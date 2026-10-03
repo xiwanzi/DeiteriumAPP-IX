@@ -22,6 +22,8 @@ func (s *Server) accountRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/account/game-verification-code", s.gameVerificationCode)
 	mux.HandleFunc("POST /api/v1/account/game-verification", s.completeGameVerification)
 	mux.HandleFunc("POST /api/v1/account/password-reset", s.resetGamePassword)
+	mux.HandleFunc("POST /api/v1/account/password-change-code", s.passwordChangeCode)
+	mux.HandleFunc("POST /api/v1/account/password-change", s.changeAccountPassword)
 }
 func (s *Server) publicAccountOrigin(r *http.Request) bool {
 	return r.Header.Get("Origin") == "" || s.origin(r)
@@ -101,6 +103,9 @@ func (s *Server) issueGameCode(w http.ResponseWriter, r *http.Request, ctx conte
 	wirePurpose := v.Purpose
 	if wirePurpose == "game_verify" {
 		wirePurpose = "register"
+	}
+	if wirePurpose == "password_change" {
+		wirePurpose = "password_reset"
 	}
 	op, err := s.coreCall(ctx, "game-verification", v.ID, v.NodeID, "verification.deliver", map[string]string{"playerUuid": v.PlayerUUID, "code": code, "purpose": wirePurpose})
 	var result struct {

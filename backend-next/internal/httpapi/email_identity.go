@@ -18,10 +18,103 @@ import (
 
 func unverifiedAccountRoute(r *http.Request) bool {
 	switch r.URL.Path {
-	case "/api/v1/account/me", "/api/v1/account/logout", "/api/v1/web/session", "/api/v1/account/game-verification-code", "/api/v1/account/game-verification":
+	case "/api/v1/account/me", "/api/v1/account/logout", "/api/v1/web/session", "/api/v1/account/game-verification-code", "/api/v1/account/game-verification", "/api/v1/account/password-change-code", "/api/v1/account/password-change":
 		return true
 	}
 	return r.URL.Path == "/api/v1/support/submissions"
+}
+
+func (s *Server) passwordChangeCode(w http.ResponseWriter, r *http.Request) {
+	session, err := s.authenticate(r)
+	if err != nil {
+		failError(w, r, err)
+		return
+	}
+	var in struct{}
+	if err = body(w, r, &in); err != nil {
+		failError(w, r, err)
+		return
+	}
+	u := session.User
+	if u.Email != "" {
+		s.issueEmailCode(w, r, store.EmailVerification{Email: u.Email, GameID: u.GameID, UserID: u.ID, Purpose: "password_change"})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	if err = s.Store.ReserveVerificationIssue(ctx, s.remoteIP(r)); err != nil {
+		failError(w, r, err)
+		return
+	}
+	p, err := s.Core.Player("", u.ServerUUID)
+	if err != nil {
+		failError(w, r, err)
+		return
+	}
+	if p.PlayerUUID == "" {
+		failError(w, r, &CoreError{"PLAYER_OFFLINE", "请先使用已绑定的游戏账号进入服务器。"})
+		return
+	}
+	s.issueGameCode(w, r, ctx, store.GameVerification{Purpose: "password_change", PlayerUUID: u.ServerUUID, GameID: p.GameID, QQ: u.QQ, UserID: u.ID, NodeID: p.ServerID})
+}
+func (s *Server) changeAccountPassword(w http.ResponseWriter, r *http.Request) {
+	session, err := s.authenticate(r)
+	if err != nil {
+		failError(w, r, err)
+		return
+	}
+	var in struct {
+		VerificationToken string `json:"verificationToken"`
+		Code              string `json:"code"`
+		NewPassword       string `json:"newPassword"`
+	}
+	if body(w, r, &in) != nil || !validCode(in.VerificationToken, in.Code) || !validPassword(in.NewPassword) {
+		failError(w, r, bridge.ErrProtocol)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	token, code := store.Digest([]byte(in.VerificationToken)), store.Digest([]byte(in.VerificationToken+":"+in.Code))
+	if session.User.Email != "" {
+		v, e := s.Store.CheckEmailVerification(ctx, token, code, "password_change")
+		if e != nil {
+			failError(w, r, e)
+			return
+		}
+		if v.UserID != session.User.ID {
+			failError(w, r, store.ErrVerification)
+			return
+		}
+		hash, e := s.Identity.HashPassword(ctx, in.NewPassword)
+		if e == nil {
+			e = s.Store.ResetEmailPassword(ctx, v, hash)
+		}
+		err = e
+	} else {
+		v, e := s.Store.CheckGameVerification(ctx, token, code, "password_change")
+		if e != nil {
+			failError(w, r, e)
+			return
+		}
+		if v.UserID != session.User.ID {
+			failError(w, r, store.ErrVerification)
+			return
+		}
+		hash, e := s.Identity.HashPassword(ctx, in.NewPassword)
+		if e == nil {
+			e = s.Store.ResetGamePassword(ctx, v, hash)
+		}
+		err = e
+	}
+	if err != nil {
+		failError(w, r, err)
+		return
+	}
+	if session.Kind == "web" {
+		s.setCookie(w, "", time.Unix(1, 0))
+	}
+	s.Hub.Wake()
+	success(w, r, map[string]bool{"passwordChanged": true})
 }
 func (s *Server) emailRegistrationCode(w http.ResponseWriter, r *http.Request) {
 	if !s.publicAccountOrigin(r) {

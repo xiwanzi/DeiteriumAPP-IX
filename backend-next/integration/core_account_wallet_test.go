@@ -12,7 +12,6 @@ import (
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/testdb"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -158,7 +157,11 @@ func registrationMailCode(t *testing.T, f *fixture, token string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	code := regexp.MustCompile(`[0-9]{6}`).FindString(plain)
+	var payload notify.VerificationMail
+	if err = json.Unmarshal([]byte(plain), &payload); err != nil {
+		t.Fatal(err)
+	}
+	code := payload.Code
 	if code == "" {
 		t.Fatal("missing email code")
 	}

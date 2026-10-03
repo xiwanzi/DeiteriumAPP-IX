@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/subtle"
 	"database/sql"
+	"encoding/json"
 	"errors"
-	"fmt"
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
 	"strings"
 	"time"
 )
@@ -50,11 +51,21 @@ func (s *Store) NewEmailVerification(ctx context.Context, v EmailVerification, c
 	if _, err = tx.ExecContext(ctx, `INSERT INTO email_verifications(verification_id,token_hash,code_hash,email,purpose,user_id,game_id,state,expires_at,created_at) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,UTC_TIMESTAMP(6))`, v.ID, v.TokenHash, v.CodeHash, v.Email, v.Purpose, nullString(v.UserID), v.GameID, v.ExpiresAt); err != nil {
 		return err
 	}
-	label := "创建账号"
-	if v.Purpose == "password_reset" {
-		label = "重置密码"
+	payload := notify.VerificationMail{TemplateVersion: notify.VerificationTemplateVersion, Purpose: v.Purpose, GameID: v.GameID, Code: code}
+	if payload.GameID == "" && v.UserID != "" {
+		if err = tx.QueryRowContext(ctx, "SELECT game_id FROM identities WHERE id=?", v.UserID).Scan(&payload.GameID); err != nil {
+			return err
+		}
 	}
-	_, err = enqueueMailTx(ctx, tx, "DM", "CODE_"+strings.ToUpper(v.Purpose), v.Email, "Deuterium ID · "+label+"验证码", fmt.Sprintf("你的验证码是：%s\n\n用于%s，10 分钟内有效。请勿向他人透露。\n如非本人操作，请忽略此邮件。", code, label), v.ID, "", key)
+	message, err := notify.RenderVerification(payload)
+	if err != nil {
+		return err
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	_, err = enqueueMailTx(ctx, tx, "DM", "CODE_"+strings.ToUpper(v.Purpose), v.Email, message.Subject, string(encoded), v.ID, "", key)
 	if err != nil {
 		return err
 	}

@@ -261,7 +261,7 @@ export default function ConnectedApp() {
         ) : path === "/commissions" ? (
           <BusinessPages client={client} user={session.user} type="COMMISSION" />
         ) : path === "/me" ? (
-          <ConnectedProfile client={client} user={session.user} onLogout={logout} navigate={navigate} onProfileUpdated={setOwnProfile} />
+          <ConnectedProfile client={client} user={session.user} onLogout={logout} onPasswordChanged={()=>{client.clear();sessionRef.current=null;setSession(null);setNotice("密码已更改，请重新登录。");setModal(null)}} navigate={navigate} onProfileUpdated={setOwnProfile} />
         ) : path === "/notification-settings" ? (
           <ConnectedNotificationSettings client={client} />
         ) : path === "/support" ? (

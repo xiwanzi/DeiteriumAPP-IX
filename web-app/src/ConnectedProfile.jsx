@@ -4,9 +4,10 @@ import { Avatar, Badge, Button, Empty, Field, Modal, PageHead, Toggle } from "./
 import { id } from "./format.js";
 import { uploadAsset } from "./assets.js";
 
-export default function ConnectedProfile({ client, user, onLogout, navigate, onProfileUpdated }) {
+export default function ConnectedProfile({ client, user, onLogout, onPasswordChanged, navigate, onProfileUpdated }) {
   const [profile, setProfile] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false), [bio, setBio] = useState(""), [displayName, setDisplayName] = useState(""), [progress, setProgress] = useState(null);
+  const [changingPassword,setChangingPassword]=useState(false);
   const pendingBio = useRef(null), fileInput = useRef(null);
   const load = async () => { setError(""); try { const r = await client.profile(user.playerRef); setProfile(r.data); } catch (e) { setError(e.message); } };
   useEffect(() => { load(); }, [user.playerRef]);
@@ -34,9 +35,10 @@ export default function ConnectedProfile({ client, user, onLogout, navigate, onP
         <input ref={fileInput} type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={(e) => saveAvatar(e.target.files?.[0])} />
         {progress && <div role="status"><p>{progress.label} · {progress.value}%</p><progress value={progress.value} max="100" style={{ width: "100%" }} aria-label="头像上传进度" /></div>}
       </div>
-      <div className="button-row"><Button secondary onClick={() => navigate("/notification-settings")}><Bell size={16} />通知设置</Button><Button secondary onClick={() => navigate("/support")}>邮件支持</Button><Button secondary onClick={() => navigate("/wallet")}>查看钱包</Button><Button secondary onClick={() => navigate("/orders")}>我的订单</Button><Button secondary onClick={() => navigate("/merchant")}>我的商店</Button><Button secondary onClick={onLogout}><LogOut size={16} />退出登录</Button></div>
+      <div className="button-row"><Button secondary onClick={()=>setChangingPassword(true)}>更改密码</Button><Button secondary onClick={() => navigate("/notification-settings")}><Bell size={16} />通知设置</Button><Button secondary onClick={() => navigate("/support")}>邮件支持</Button><Button secondary onClick={() => navigate("/wallet")}>查看钱包</Button><Button secondary onClick={() => navigate("/orders")}>我的订单</Button><Button secondary onClick={() => navigate("/merchant")}>我的商店</Button><Button secondary onClick={onLogout}><LogOut size={16} />退出登录</Button></div>
     </>}
     {!profile && !error && <p className="muted">正在读取资料…</p>}
+    {changingPassword && <Modal title="更改密码" close={()=>setChangingPassword(false)} dismissOnBackdrop={false}><PasswordChangeForm client={client} user={user} onChanged={onPasswordChanged} /></Modal>}
     {editing && <Modal title="编辑个人资料" close={() => { if (!busy) setEditing(false); }}><form onSubmit={saveBio}><Field label="昵称" hint="支持中文，最多 24 个字符；不会改变游戏 ID。" required maxLength={24} value={displayName} onChange={e => { setDisplayName(e.target.value); pendingBio.current=null; }} /><Field label="个人简介"><textarea value={bio} onChange={(e) => { setBio(e.target.value); pendingBio.current = null; }} maxLength={200} rows={5} /></Field><p className="muted">{bio.length} / 200</p>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? "正在保存…" : "保存"}</Button></form></Modal>}
   </section>;
 }
@@ -62,4 +64,12 @@ export function ConnectedNotificationSettings({ client }) {
   return <><PageHead eyebrow="NOTIFICATIONS" title="通知设置" subtitle="提醒偏好在 App 与网页间同步。"><Button secondary onClick={load} disabled={busy}>刷新</Button></PageHead>{error && <p className="notice-box" role="alert">{error}</p>}
     {value && <fieldset className="panel" disabled={busy} style={{ padding: 24, minWidth: 0, margin: 0, border: "1px solid var(--line)" }}>{topics.map(([key, label, description]) => <Toggle key={key} label={label} description={description} checked={Boolean(value[key])} onChange={(checked) => change(key, checked)} />)}</fieldset>}
   </>;
+}
+
+function PasswordChangeForm({client,user,onChanged}){
+ const [verification,setVerification]=useState(null),[code,setCode]=useState(""),[password,setPassword]=useState(""),[confirm,setConfirm]=useState(""),[busy,setBusy]=useState(false),[wait,setWait]=useState(0),[error,setError]=useState("");
+ useEffect(()=>{if(!wait)return;const timer=setTimeout(()=>setWait(n=>n-1),1000);return()=>clearTimeout(timer)},[wait]);
+ const send=async()=>{if(busy||wait)return;setBusy(true);setError("");try{const r=await client.request("/api/v1/account/password-change-code",{method:"POST",body:{}});setVerification(r.data);setWait(r.data.resendAfterSeconds||60)}catch(e){setError(e.message)}finally{setBusy(false)}};
+ const save=async e=>{e.preventDefault();if(busy)return;if(password!==confirm){setError("两次输入的密码不一致。");return}setBusy(true);setError("");try{await client.request("/api/v1/account/password-change",{method:"POST",body:{verificationToken:verification.verificationToken,code,newPassword:password}});setPassword("");setConfirm("");onChanged?.()}catch(e){setError(e.message)}finally{setBusy(false)}};
+ return <form onSubmit={save}><p>正在为 <strong>{user.gameId}</strong> 更改密码。</p><p className="muted">{user.email?`验证码将发送至 ${user.email}。`:"此账号尚未绑定邮箱，请进入游戏接收验证码。"}</p><Button secondary disabled={busy||wait>0} onClick={send}>{wait?`${wait} 秒后可重发`:"发送验证码"}</Button>{verification&&<><Field label={verification.delivery==="EMAIL"?"邮箱验证码":"游戏验证码"} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,6))} required maxLength={6} inputMode="numeric" autoComplete="one-time-code"/><Field label="新密码" type="password" value={password} onChange={e=>setPassword(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password"/><Field label="再次输入新密码" type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password"/><p className="muted">保存后会退出所有设备，请使用新密码重新登录。</p></>}{error&&<p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy||!verification||code.length!==6}>确认更改密码</Button></form>
 }

@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
@@ -15,6 +16,19 @@ import (
 )
 
 func (s *Server) registerMailSupport(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/v1/admin/mail/templates/verification/{purpose}", func(w http.ResponseWriter, r *http.Request) {
+		u, err := s.admin(r, "platform.admin")
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+		m, err := notify.RenderVerification(notify.VerificationMail{TemplateVersion: notify.VerificationTemplateVersion, Purpose: r.PathValue("purpose"), GameID: u.GameID, Code: "482691"})
+		if err != nil {
+			failure(w, r, 400, "VERIFICATION_TEMPLATE_INVALID", err.Error())
+			return
+		}
+		v2Success(w, r, map[string]any{"subject": m.Subject, "html": notify.AdmissionPreviewHTML(m), "preview": true, "purpose": r.PathValue("purpose")})
+	})
 	for _, path := range []string{"/api/v1/admin/mail/events/{eventId}/retry", "/api/v1/admin/support/tickets/{ticketId}/mail/{eventId}/retry"} {
 		mux.HandleFunc("POST "+path, func(w http.ResponseWriter, r *http.Request) {
 			permission := "platform.admin"
@@ -345,6 +359,9 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 	if sendErr == nil {
 		channel.Recipients = []string{event.Recipient}
 		message := notify.Message{Subject: event.Subject, Text: text, FromName: "Deuterium IX"}
+		if strings.HasPrefix(event.Kind, "CODE_") {
+			message, sendErr = notify.DecodeVerificationPayload(text)
+		}
 		if event.Kind == "HELP_SUBMISSION" {
 			message.FromName = event.ReplyTo + "（Help 转交）"
 		}

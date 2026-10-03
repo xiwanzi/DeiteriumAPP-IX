@@ -317,7 +317,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
         }
         if(transfer)TransferSheet(state,transferTo){transfer=false}
         if(tuner)GlassTuner(parameters,onParameters){tuner=false}
-        if(resetPassword)ResetPasswordSheet(userName){resetPassword=false}
+        if(resetPassword)ResetPasswordSheet(userName,changing=true){resetPassword=false}
         if(people)OnlinePlayersSheet(state,{people=false}){open("dm:$it")}
         record?.let{entry->IosSheet({record=null}){Column(Modifier.padding(24.dp)){Text((if(entry.amount>0)"+" else "−")+credit(kotlin.math.abs(entry.amount)),style=MaterialTheme.typography.headlineLarge);DetailRow("交易状态","已完成");DetailRow("往来玩家",entry.name);DetailRow("备注",entry.detail);DetailRow("时间",entry.at.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));DetailRow("流水号","DT${entry.id.toString().padStart(10,'0')}");MotionButton({record=null},Modifier.fillMaxWidth().padding(top=18.dp)){Text("完成")}}}}
     }

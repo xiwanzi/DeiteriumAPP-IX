@@ -13,13 +13,17 @@
 | POST `/account/game-verification` | `verificationToken,code` → user | 凭证须属于当前账号；消费与绑定同事务，原账号 ID/playerRef 不变 |
 | POST `/account/password-reset-code` | `account` | 有邮箱账号发邮箱验证码，旧无邮箱账号仍使用游戏验证 |
 | POST `/account/password-reset` | `verificationToken,code,newPassword` | 对应类型验证，修改密码后撤销已有会话 |
+| POST `/account/password-change-code` | 当前会话，无需提交账号标识 | 邮件或旧游戏验证码；用途固定 password_change |
+| POST `/account/password-change` | `verificationToken,code,newPassword` | 必须匹配当前会话账号与用途，成功撤销全部会话 |
 | PATCH `/account/me/profile` | 原版本/请求键，新增可选 `displayName` | 昵称 1–24 字符、支持中文、禁止换行；不改变游戏 ID |
 
 user 增加 `email`（本人可见）、`gameVerified`、`displayName`；`identityStatus` 为 `bound` 或 `unverified`。公开资料新增 displayName，不暴露邮箱。
 
-未验证时除会话查询、退出、游戏验证和未来 Help 邮件提交接口外，鉴权接口返回 HTTP 403 / `GAME_VERIFICATION_REQUIRED`，客户端保留账号会话并显示验证页，不当作密码错误。未验证账号不进入玩家目录、私聊目标和钱包收款人列表。现有账号迁移默认已验证，账号停用/注销仍优先拒绝。
+未验证时除会话查询、退出、游戏验证、密码更改和未来 Help 邮件提交接口外，鉴权接口返回 HTTP 403 / `GAME_VERIFICATION_REQUIRED`，客户端保留账号会话并显示验证页，不当作密码错误。未验证账号不进入玩家目录、私聊目标和钱包收款人列表。现有账号迁移默认已验证，账号停用/注销仍优先拒绝。
 
 邮箱验证码 10 分钟、每邮箱 60 秒冷却、每日 20 次；错误 5 次失效，消费同事务。公开发码还沿用 IP 限额。OTP 只存散列，邮件正文加密入队；消费、过期或被新验证码替换后取消尚未投递的旧验证码，发送后清除队列中的验证码密文。请求不返回明文验证码。
+
+2026-10-04 验证码模板分别支持注册、找回密码和更改密码，后台通过 `/admin/mail/templates/verification/{register|password_reset|password_change}` 预览。带版本的用途、游戏 ID 和验证码参数加密入队，发送前生成 HTML、纯文本及 CID Logo。帮助中心仅预留 `https://help.deuteriumix.com` 链接。
 
 ## 邮件后台
 

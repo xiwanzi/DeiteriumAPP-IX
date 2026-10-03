@@ -109,7 +109,7 @@ private fun VerificationCodeField(code: String, onCode: (String) -> Unit, sent: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResetPasswordSheet(initialAccount: String, onClose: () -> Unit) {
+fun ResetPasswordSheet(initialAccount: String, changing:Boolean=false, onClose: () -> Unit) {
     var account by rememberSaveable { mutableStateOf(initialAccount) }
     var code by remember { mutableStateOf("") }
     var codeSent by remember { mutableStateOf(false) }
@@ -122,20 +122,20 @@ fun ResetPasswordSheet(initialAccount: String, onClose: () -> Unit) {
     val api=BackendApi.get(LocalContext.current);val scope=rememberCoroutineScope()
     IosSheet(onDismissRequest = onClose, containerColor = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp).navigationBarsPadding()) {
-            Text(if(done) "密码修改完成" else "重置密码", style = MaterialTheme.typography.headlineSmall)
+            Text(if(done) "密码修改完成" else if(changing)"更改密码" else "找回密码", style = MaterialTheme.typography.headlineSmall)
             if(done) {
                 Text("密码已更新，请使用新密码登录。", Modifier.padding(vertical = 22.dp), style = MaterialTheme.typography.bodyMedium)
                 MotionButton(onClose, Modifier.fillMaxWidth().height(52.dp)) { Text("完成") }
             } else {
-                Text("通过绑定邮箱找回密码；旧账号仍可使用游戏内验证。", Modifier.padding(top = 8.dp, bottom = 18.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                RefinedField(account, { account = it.take(254) }, label = { Text("邮箱、玩家 ID 或 QQ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp))
-                VerificationCodeField(code, { code = it }, codeSent,emailCode) { if(!busy)scope.launch{busy=true;runCatching{api.request("POST","/account/password-reset-code",JSONObject().put("account",account.trim()),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");emailCode=it.optString("delivery")=="EMAIL";codeSent=true;error=null}.onFailure{error=it.message};busy=false} }
+                Text(if(changing)"通过绑定邮箱验证；尚未绑定邮箱的账号仍使用游戏内验证码。" else "通过绑定邮箱找回密码；旧账号仍可使用游戏内验证。", Modifier.padding(top = 8.dp, bottom = 18.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if(changing)Text("账号：$account",Modifier.fillMaxWidth().padding(bottom=12.dp),style=MaterialTheme.typography.titleMedium) else RefinedField(account, { account = it.take(254) }, label = { Text("邮箱、玩家 ID 或 QQ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp))
+                VerificationCodeField(code, { code = it }, codeSent,emailCode) { if(!busy)scope.launch{busy=true;runCatching{api.request("POST",if(changing)"/account/password-change-code" else "/account/password-reset-code",if(changing)JSONObject() else JSONObject().put("account",account.trim()),authenticated=changing)}.onSuccess{verificationToken=it.getString("verificationToken");emailCode=it.optString("delivery")=="EMAIL";codeSent=true;error=null}.onFailure{error=it.message};busy=false} }
                 Spacer(Modifier.height(12.dp)); SecretField(password, { password = it }, "新密码（至少 8 位）")
                 Spacer(Modifier.height(12.dp)); SecretField(confirm, { confirm = it }, "再次确认新密码")
                 error?.let { Text(it, Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                 MotionButton(onClick = {
                     error = when { account.isBlank() -> "请输入账号"; !codeSent || code.length != 6 -> "请输入验证码"; password.length < 8 -> "新密码至少 8 位"; password != confirm -> "两次输入的密码不一致"; else -> null }
-                    if(error == null && !busy)scope.launch{busy=true;runCatching{api.request("POST","/account/password-reset",JSONObject().put("verificationToken",verificationToken).put("code",code).put("newPassword",password),authenticated=false)}.onSuccess{password="";confirm="";done=true;api.forgetSession()}.onFailure{error=it.message};busy=false}
+                    if(error == null && !busy)scope.launch{busy=true;runCatching{api.request("POST",if(changing)"/account/password-change" else "/account/password-reset",JSONObject().put("verificationToken",verificationToken).put("code",code).put("newPassword",password),authenticated=changing)}.onSuccess{password="";confirm="";done=true;api.forgetSession()}.onFailure{error=it.message};busy=false}
                 }, modifier = Modifier.fillMaxWidth().padding(top = 22.dp).height(54.dp)) { Text("确认修改") }
             }
             Spacer(Modifier.height(18.dp))

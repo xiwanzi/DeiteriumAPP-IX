@@ -373,6 +373,54 @@ paths:
         default:
           $ref: '#/components/responses/Error'
       x-implementation-status: existing_route_extension_pending
+  /account/password-change-code:
+    post:
+      tags: [Account]
+      summary: 发送当前登录账号的更改密码验证码
+      operationId: requestPasswordChangeCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+      responses:
+        '200':
+          description: 已向绑定邮箱或原有游戏身份投递验证码
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationTokenResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /account/password-change:
+    post:
+      tags: [Account]
+      summary: 验证当前账号的专用凭证并更改密码
+      operationId: changeCurrentAccountPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: 密码已更改，旧会话全部失效
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [passwordChanged]
+                    properties:
+                      passwordChanged:
+                        type: boolean
+        default:
+          $ref: '#/components/responses/Error'
   /account/game-verification-code:
     post:
       tags: [Account]
