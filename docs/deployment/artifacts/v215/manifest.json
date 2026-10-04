@@ -1,0 +1,33 @@
+{
+  "mergeCommit": "6d5a2fdde8f15ce172c00b9b6fe170745e6ffe6d",
+  "androidSourceCommit": "9497f7cf459f3e30ef0533df34fb88999a464ca3",
+  "androidTree": "647b52be4af1fd2d93c1b6442c7366ed640784ff",
+  "appVersion": "2.0.15",
+  "versionCode": 21500,
+  "webVersion": "2.0.21",
+  "packageName": "com.deuterium.app.uilab",
+  "certificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "releaseNotes": "新增邮箱注册与游戏身份验证，支持中文昵称；优化账号与密码管理，新增邮件客服入口，提升使用体验。",
+  "files": [
+    {
+      "name": "Deuterium-2.0.15-21500-test.apk",
+      "sizeBytes": 8891922,
+      "sha256": "fd675f0587f99e06f0e7f1004888b87b4ea10f93ffee7d3e4280cad90711574c"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 29805957,
+      "sha256": "215fc855e80d8e5189f8b3c1ddab743ed134b48d405c43b37abf1b4a6ba44ea9"
+    },
+    {
+      "name": "mapping.txt",
+      "sizeBytes": 77917626,
+      "sha256": "62e7ffcdd905f834df3a951e3f27b3871590e2d87f2e9e047434ccd2e57bd20b"
+    },
+    {
+      "name": "web-2.0.21-6d5a2fdde8f1.zip",
+      "sizeBytes": 33733811,
+      "sha256": "440441011baa0bf4658b20cddae8a38c3fce8a9899b4ccce4a02921f6b6bf259"
+    }
+  ]
+}

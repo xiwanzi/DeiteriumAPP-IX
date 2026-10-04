@@ -1,0 +1,22 @@
+{
+  "origin": "https://chat.deuteriumix.com",
+  "pages": [
+    "mail overview",
+    "verification template preview",
+    "support queue"
+  ],
+  "pageErrors": 0,
+  "mobileViewport": {
+    "width": 390,
+    "height": 844,
+    "documentScrollWidth": 390,
+    "horizontalOverflow": false
+  },
+  "supportTickets": 0,
+  "productionBusinessWrites": 0,
+  "temporarySessionsRevoked": true,
+  "nativeOverlayInstall": "2.0.10 -> 2.0.15",
+  "nativeAuthFixture": "PASS",
+  "physicalDeviceVerified": false,
+  "realSMTPIMAPVerified": false
+}
