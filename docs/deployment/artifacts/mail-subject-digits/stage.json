@@ -1,0 +1,11 @@
+{
+  "backupDirectory": "/var/backups/deuterium/mail-subject-digits-20261004-cf94741842ec",
+  "databaseBackupBytes": 20850472,
+  "databaseBackupSha256": "d2d46169cfe29ff4887ad72fe127a6999b7aeb558387ae894ec430e519f2e93f",
+  "paths": {
+    "backup": "/var/backups/deuterium/mail-subject-digits-20261004-cf94741842ec",
+    "backend": "/opt/deuterium/releases/mail-subject-digits-cf94741842ec",
+    "stage": "/opt/deuterium/releases/mail-subject-digits-staged-cf94741842ec"
+  },
+  "liveServiceChanged": false
+}
