@@ -1,0 +1,14 @@
+{
+  "version": "2.0.24",
+  "publicAssetsMatch": true,
+  "assets": [
+    {
+      "path": "/assets/index-Bc_NLNqF.js",
+      "sha256": "46e6714d03e6a10cf953aa5d2cc6affdb68a6353845bb176ee5fb1ffed5842b7"
+    },
+    {
+      "path": "/assets/index-COk8ET0J.css",
+      "sha256": "2b7740708e0f53f6621de0df4776d45148cfeaa4c2f466472fa8258b02b210ab"
+    }
+  ]
+}

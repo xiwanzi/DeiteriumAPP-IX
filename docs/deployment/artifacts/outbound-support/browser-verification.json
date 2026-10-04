@@ -1,0 +1,18 @@
+{
+  "version": "2.0.24",
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "mailChannelsEnabled": true,
+  "inboxEnabled": true,
+  "inboxError": "",
+  "createEntryVerified": true,
+  "gameIdEntryVerified": true,
+  "editButtonsVisible": 30,
+  "productionMutationSubmitted": false,
+  "scriptErrors": [],
+  "temporarySessionRevoked": true
+}

@@ -1,0 +1,21 @@
+{
+  "activatedAt": "2026-10-04T11:56:12Z",
+  "backendDirectory": "/opt/deuterium/releases/outbound-support-0a6fea8d047c",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.24-0a6fea8d047c/dist",
+  "backendSha256": "e4330a3811c04c86fb46a6a4e04e1eea7cdf0a2809a8f076c70ccefa9dda8fa1",
+  "health": {
+    "status": "ready"
+  },
+  "schemaUnchanged": true,
+  "existingBusinessIDsPreserved": true,
+  "mailConfigurationUnchanged": true,
+  "appUnchanged": true,
+  "webVersion": "2.0.24",
+  "accounts": 40,
+  "tickets": 6,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "deletionCount": 1
+}
