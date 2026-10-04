@@ -13,7 +13,7 @@ import (
 
 const AdmissionTemplateVersion = "admission-20260913-v1"
 
-//go:embed templates/*
+//go:embed templates/*.html templates/*.css
 var admissionFiles embed.FS
 
 var admissionTemplates = template.Must(template.ParseFS(admissionFiles, "templates/*.html"))
@@ -52,11 +52,6 @@ func RenderAdmission(in AdmissionMail) (Message, error) {
 		return Message{}, err
 	}
 	m.HTML = mailHTML(b.String())
-	images, err := mailBrandImages(true)
-	if err != nil {
-		return Message{}, err
-	}
-	m.Images = images
 	return m, nil
 }
 

@@ -29,7 +29,7 @@ var verificationTemplate = template.Must(template.New("verification").Parse(`<!d
 <p style="margin:0 0 18px;font-size:14px;line-height:1.95;color:#414a55!important">{{.Instruction}}</p>
 <p style="margin:0 0 30px;font-size:14px;line-height:1.95;color:#414a55!important">验证码将在 <strong>10 分钟</strong>后失效。请勿向任何人透露验证码，包括自称 Deuterium IX 工作人员的人。</p>
 <p style="margin:0;font-size:14px;line-height:1.95;color:#414a55!important">感谢您的信任与支持。<br>Deuterium IX 团队</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:38px"><tr><td width="64" style="width:64px;padding-right:0"><img src="cid:deuterium-ix-emblem-small-v1" width="48" height="48" alt="Deuterium IX 标志" style="display:block;width:48px;height:48px;border:0"></td><td style="font-family:'D9 Mail Digits','HarmonyOS Sans SC','HarmonyOS Sans SC Complete','Microsoft YaHei','PingFang SC','Segoe UI',sans-serif;font-size:19px;line-height:1.5;font-weight:700;letter-spacing:1px;color:#20252b!important"><img src="cid:deuterium-ix-wordmark-v1" width="143" height="26" alt="DEUTERIUM IX" style="display:block;width:143px;height:26px;border:0"></td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:38px"><tr><td width="64" style="width:64px;padding-right:0"><img src="https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/v1/deuterium-ix-emblem-b34da374f70be05d.png" width="48" height="48" alt="Deuterium IX 标志" style="display:block;width:48px;height:48px;border:0"></td><td style="font-family:'D9 Mail Digits','HarmonyOS Sans SC','HarmonyOS Sans SC Complete','Microsoft YaHei','PingFang SC','Segoe UI',sans-serif;font-size:19px;line-height:1.5;font-weight:700;letter-spacing:1px;color:#20252b!important"><img src="https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/v1/deuterium-ix-wordmark-dark-4bef42e7d6e84f35.png" width="143" height="26" alt="DEUTERIUM IX" style="display:block;width:143px;height:26px;border:0"></td></tr></table>
 <p class="mail-muted" style="margin:15px 0 25px;font-size:11px;line-height:1.8;letter-spacing:.35px;color:#7c858f!important">© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED.</p>
 <p class="mail-muted" style="margin:0;padding-top:22px;border-top:1px solid #e7ebef;font-size:12px;line-height:1.9;color:#7c858f!important">请勿回复本邮件，此发信地址无法接收或处理您的回复。<br>如需帮助，请访问<a href="https://help.deuteriumix.com" style="color:#2874d0!important;text-decoration:underline">帮助中心</a>，或发送邮件至 <a href="mailto:support@deuteriumix.com" style="color:#2874d0!important;text-decoration:underline">support@deuteriumix.com</a>。</p>
 </td></tr></table></td></tr></table></body></html>`))
@@ -66,11 +66,7 @@ func RenderVerification(in VerificationMail) (Message, error) {
 	if err = verificationTemplate.Execute(&html, data); err != nil {
 		return Message{}, err
 	}
-	images, err := mailBrandImages(false)
-	if err != nil {
-		return Message{}, err
-	}
-	return Message{Subject: subject, FromName: "Deuterium IX", HTML: mailHTML(html.String()), Text: fmt.Sprintf("您的 Deuterium ID 验证码：\n\n%s\n\n%s\n%s\n\n%s\n\n验证码将在 10 分钟后失效。请勿向任何人透露验证码，包括自称 Deuterium IX 工作人员的人。\n\n感谢您的信任与支持。\nDeuterium IX 团队\n\nDEUTERIUM IX\n© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED.\n\n请勿回复本邮件，此发信地址无法接收或处理您的回复。\n如需帮助，请访问帮助中心：%s，或发送邮件至 %s。", in.Code, lead, in.GameID, instruction, HelpCenterURL, SupportEmail), Images: images, Headers: map[string]string{"Auto-Submitted": "auto-generated", "X-Auto-Response-Suppress": "All"}}, nil
+	return Message{Subject: subject, FromName: "Deuterium IX", HTML: mailHTML(html.String()), Text: fmt.Sprintf("您的 Deuterium ID 验证码：\n\n%s\n\n%s\n%s\n\n%s\n\n验证码将在 10 分钟后失效。请勿向任何人透露验证码，包括自称 Deuterium IX 工作人员的人。\n\n感谢您的信任与支持。\nDeuterium IX 团队\n\nDEUTERIUM IX\n© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED.\n\n请勿回复本邮件，此发信地址无法接收或处理您的回复。\n如需帮助，请访问帮助中心：%s，或发送邮件至 %s。", in.Code, lead, in.GameID, instruction, HelpCenterURL, SupportEmail), Headers: map[string]string{"Auto-Submitted": "auto-generated", "X-Auto-Response-Suppress": "All"}}, nil
 }
 func DecodeVerificationPayload(payload string) (Message, error) {
 	var in VerificationMail

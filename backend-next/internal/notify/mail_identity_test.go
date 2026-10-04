@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestAllMailUsesOfficialTypographyAndEmbeddedBrand(t *testing.T) {
+func TestAllMailUsesOfficialTypographyAndHostedBrand(t *testing.T) {
 	messages := map[string]Message{}
 	for _, purpose := range []string{"register", "password_reset", "password_change"} {
 		m, err := RenderVerification(VerificationMail{TemplateVersion: VerificationTemplateVersion, Purpose: purpose, GameID: "xiwanzi", Code: "001234"})
@@ -37,13 +37,13 @@ func TestAllMailUsesOfficialTypographyAndEmbeddedBrand(t *testing.T) {
 	messages["system-notice"] = system
 	for name, m := range messages {
 		t.Run(name, func(t *testing.T) {
-			for _, s := range []string{"HarmonyOS Sans SC", "Novecentosanswide", "unicode-range:U+0030-0039", "deuterium-mail-fonts", "cid:deuterium-ix-wordmark-v1"} {
+			for _, s := range []string{"HarmonyOS Sans SC", "Novecentosanswide", "unicode-range:U+0030-0039", "deuterium-mail-fonts", "/mail-assets/v1/deuterium-ix-wordmark-"} {
 				if !strings.Contains(m.HTML, s) {
 					t.Fatalf("missing official font or brand: %s", s)
 				}
 			}
-			if len(m.Images) != 2 || len(m.Images[1].Data) == 0 {
-				t.Fatal("brand assets missing")
+			if len(m.Images) != 0 || strings.Contains(m.HTML, "cid:") {
+				t.Fatal("brand assets should use public URLs")
 			}
 			wrapped, err := RenderSystemMessage(m)
 			if err != nil || wrapped.HTML != m.HTML {

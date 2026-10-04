@@ -22,8 +22,8 @@ func TestVerificationTemplatesHaveDistinctIntentCodeAndBrand(t *testing.T) {
 					t.Fatalf("missing %q", value)
 				}
 			}
-			if len(m.Images) != 2 || m.Images[0].ContentType != "image/png" || !strings.Contains(m.HTML, "cid:"+m.Images[0].CID) {
-				t.Fatal("brand image not embedded")
+			if len(m.Images) != 0 || strings.Contains(m.HTML, "cid:") || !strings.Contains(m.HTML, "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/") {
+				t.Fatal("brand image not hosted")
 			}
 			raw, err := composeMessage(testSettings(), "verification-test", m)
 			if err != nil {
@@ -49,8 +49,8 @@ func TestVerificationTemplatesHaveDistinctIntentCodeAndBrand(t *testing.T) {
 				}
 				parts++
 			}
-			if parts < 3 {
-				t.Fatal("missing plain text, HTML or logo MIME part")
+			if parts != 2 {
+				t.Fatal("expected plain text and HTML only")
 			}
 			if dir := os.Getenv("DEUTERIUM_MAIL_PREVIEW_DIR"); dir != "" {
 				if err = os.MkdirAll(dir, 0700); err != nil {

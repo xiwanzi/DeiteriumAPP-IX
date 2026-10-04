@@ -278,7 +278,7 @@ func (s *Store) IngestSupportMail(ctx context.Context, inbox SupportInbox, valid
 		}
 	}
 	if created {
-		if _, err = enqueueThreadMailTx(ctx, tx, "DM", "TICKET_CREATED", customer, message.Subject, message.Text, ticket, "", inbox.Address, message.MessageID, nil, key); err != nil {
+		if _, err = enqueueThreadMailTx(ctx, tx, "DM", "TICKET_CREATED", customer, message.Subject, "", ticket, "", inbox.Address, message.MessageID, nil, key); err != nil {
 			return result, err
 		}
 	}

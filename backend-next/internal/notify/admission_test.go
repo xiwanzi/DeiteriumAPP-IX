@@ -26,7 +26,7 @@ func TestAdmissionTemplatesEscapeDetailsAndSeparatePreview(t *testing.T) {
 	}
 	input.Preview = true
 	preview, err := RenderAdmission(input)
-	if err != nil || !strings.Contains(preview.HTML, "此邮件为模板测试") || !strings.Contains(preview.Subject, "模板测试") || !strings.Contains(AdmissionPreviewHTML(preview), "data:image/png;base64,") {
+	if err != nil || !strings.Contains(preview.HTML, "此邮件为模板测试") || !strings.Contains(preview.Subject, "模板测试") || !strings.Contains(AdmissionPreviewHTML(preview), "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/") {
 		t.Fatal("preview was not clearly marked")
 	}
 	input.Preview = false
@@ -42,7 +42,7 @@ func TestAdmissionTemplatesEscapeDetailsAndSeparatePreview(t *testing.T) {
 	}
 }
 
-func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
+func TestAdmissionMIMEUsesAlternativesAndHostedBrandImages(t *testing.T) {
 	m, err := RenderAdmission(AdmissionMail{TemplateVersion: AdmissionTemplateVersion, GameID: "RecipientOne", Decision: "APPROVED", ApplicationURL: "https://example.com/admission/"})
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +53,7 @@ func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(raw) > 100*1024 || len(m.Images[0].Data) > 40*1024 {
+	if len(raw) > 100*1024 || len(m.Images) != 0 {
 		t.Fatal("email emblem or message is oversized")
 	}
 	if !strings.Contains(m.HTML, "color-scheme:only light") || !strings.Contains(m.HTML, "-webkit-text-fill-color:") || !strings.Contains(m.HTML, "background-image:linear-gradient(") {
@@ -66,17 +66,11 @@ func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
 	if email.Header.Get("To") != s.Recipients[0] || email.Header.Get("Message-ID") != "<stable-request-id@deuterium-notifications>" {
 		t.Fatal("wrong delivery headers")
 	}
-	_, params, _ := mime.ParseMediaType(email.Header.Get("Content-Type"))
-	reader := multipart.NewReader(email.Body, params["boundary"])
-	part, err := reader.NextPart()
-	if err != nil {
-		t.Fatal(err)
-	}
-	kind, params, _ := mime.ParseMediaType(part.Header.Get("Content-Type"))
+	kind, params, _ := mime.ParseMediaType(email.Header.Get("Content-Type"))
 	if kind != "multipart/alternative" {
-		t.Fatal("missing text alternative")
+		t.Fatal("expected direct plain/HTML alternatives without image attachments")
 	}
-	alt := multipart.NewReader(part, params["boundary"])
+	alt := multipart.NewReader(email.Body, params["boundary"])
 	for _, want := range []struct{ kind, content string }{{"text/plain", m.Text}, {"text/html", m.HTML}} {
 		p, err := alt.NextPart()
 		if err != nil {
@@ -88,18 +82,11 @@ func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
 			t.Fatalf("broken %s alternative", want.kind)
 		}
 	}
-	for _, image := range m.Images {
-		img, err := reader.NextPart()
-		if err != nil || img.Header.Get("Content-ID") != "<"+image.CID+">" {
-			t.Fatal("CID brand image missing")
-		}
-		data, err := io.ReadAll(base64.NewDecoder(base64.StdEncoding, img))
-		if err != nil || !bytes.Equal(data, image.Data) {
-			t.Fatal("CID brand image changed")
-		}
+	if _, err = alt.NextPart(); err != io.EOF {
+		t.Fatal("unexpected image attachment")
 	}
-	if _, err = reader.NextPart(); err != io.EOF {
-		t.Fatal("unexpected attachment")
+	if strings.Contains(string(raw), "Content-ID:") || strings.Contains(m.HTML, "cid:") {
+		t.Fatal("brand assets still attached")
 	}
 	m.Subject = "title\r\nBcc: stranger@example.com"
 	if _, err = composeMessage(s, "stable-id", m); err == nil {
