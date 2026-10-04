@@ -14,6 +14,8 @@ import {
   Moon,
   Sun,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   ChevronRight,
   ArrowUpRight,
   Info,
@@ -53,6 +55,9 @@ export default function AppShell({
   const links = managing ? adminNavigation(user.permissions) : navigation;
   const section = new URLSearchParams(search).get("section");
   const activePath = path === "/admin" ? links.find(([to]) => to === `/admin?section=${section}`)?.[0] || links.find(([to]) => to.startsWith("/admin?"))?.[0] || "/merchant" : path;
+  const support = path === "/admin" && activePath === "/admin?section=support";
+  const [supportNavExpanded, setSupportNavExpanded] = useState(false);
+  useEffect(() => { setSupportNavExpanded(false); }, [support]);
   useEffect(() => {
     setMobile(false);
   }, [path, search]);
@@ -70,7 +75,7 @@ export default function AppShell({
     setMobile(false);
   };
   return (
-    <div className={`app-shell ${chat ? "chat-shell" : ""} ${managing ? "management-shell" : ""}`}>
+    <div className={`app-shell ${chat ? "chat-shell" : ""} ${managing ? "management-shell" : ""} ${support ? `support-shell ${supportNavExpanded ? "nav-expanded" : "nav-collapsed"}` : ""}`}>
       <a className="skip-link" href="#main-content">
         跳到主要内容
       </a>
@@ -81,12 +86,13 @@ export default function AppShell({
           onClick={() => setMobile(false)}
         />
       )}
-      <aside className={`sidebar ${mobile ? "open" : ""}`}>
+      <aside id="app-navigation" className={`sidebar ${mobile ? "open" : ""}`}>
         <a
           className="brand"
           href={`${basePath}/`}
           onClick={(e) => link(e, "/")}
           title="Deuterium"
+          aria-label="Deuterium 玩家首页"
         >
           <img src={launcherIcon} alt="Deuterium App 图标" />
           <span>
@@ -119,7 +125,7 @@ export default function AppShell({
             </span>
             <div className="world-lines" />
           </div>
-          {managing && <a className="admin-nav" href={`${basePath}/`} onClick={(e) => link(e, "/")}><Store size={19} /><span>返回玩家商城</span><ArrowUpRight size={14} /></a>}
+          {managing && <a className="admin-nav" title="返回玩家商城" aria-label="返回玩家商城" href={`${basePath}/`} onClick={(e) => link(e, "/")}><Store size={19} /><span>返回玩家商城</span><ArrowUpRight size={14} /></a>}
           {user.admin && !managing && (
             <a
               title="官方管理"
@@ -159,6 +165,7 @@ export default function AppShell({
       <div className="main-shell">
         <header className="topbar">
           <div className="topbar-left">
+            {support && <button className="icon-button support-nav-toggle" aria-label={supportNavExpanded ? "收起全站导航" : "展开全站导航"} title={supportNavExpanded ? "收起全站导航" : "展开全站导航"} aria-expanded={supportNavExpanded} aria-controls="app-navigation" onClick={() => setSupportNavExpanded(!supportNavExpanded)}>{supportNavExpanded ? <PanelLeftClose size={19} /> : <PanelLeftOpen size={19} />}</button>}
             <button
               className="icon-button mobile-menu"
               aria-label="打开导航菜单"
@@ -176,7 +183,7 @@ export default function AppShell({
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.21
+              Deuterium · 2.0.22
             </button>
             {!managing && <button className="top-search" onClick={onSearch}>
               <Search size={17} />
@@ -218,14 +225,14 @@ export default function AppShell({
         >
           {children}
         </main>
-        {!chat && (
+        {!chat && !support && (
           <footer className="site-footer">
             <span>
               DEUTERIUM <i />
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.21 <b>·</b> Deuterium ID
+              Web 2.0.22 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}

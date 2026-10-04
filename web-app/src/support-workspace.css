@@ -1,0 +1,193 @@
+/* A ticket desk occupies the viewport. Other management pages keep their layout. */
+.support-shell .main-shell { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.support-shell .topbar { height: 48px; min-height: 48px; padding: 0 12px; position: relative; gap: 8px; }
+.support-shell .topbar .demo-badge, .support-shell .topbar .bag-icon { display: none; }
+.support-shell .topbar-left { min-width: 0; gap: 8px; }
+.support-shell .topbar .breadcrumb { font-size: 12px; }
+.support-shell .topbar .icon-button { width: 34px; height: 34px; }
+.support-shell.management-shell .main-content { flex: 1; min-height: 0; max-width: none; width: 100%; padding: 0; margin: 0; display: flex; overflow: hidden; animation: none; }
+.support-shell .sidebar nav { min-height: 0; overflow-y: auto; overscroll-behavior: contain; flex: 1; scrollbar-width: thin; }
+.support-shell .sidebar-bottom { flex-shrink: 0; margin-top: 8px; }
+@media (min-width: 768px) {
+  .support-shell.nav-collapsed .sidebar { width: 64px; padding: 12px 8px; align-items: center; }
+  .support-shell.nav-collapsed .main-shell { margin-left: 64px; }
+  .support-shell.nav-collapsed .brand { padding: 0; }
+  .support-shell.nav-collapsed .brand img { width: 32px; height: 32px; }
+  .support-shell.nav-collapsed .brand > span, .support-shell.nav-collapsed .sidebar-caption,
+  .support-shell.nav-collapsed .sidebar nav a > span, .support-shell.nav-collapsed .admin-nav > span,
+  .support-shell.nav-collapsed .admin-nav > svg:last-child, .support-shell.nav-collapsed .sidebar-about > span,
+  .support-shell.nav-collapsed .sidebar-profile > span:not(.avatar), .support-shell.nav-collapsed .sidebar-profile > svg { display: none; }
+  .support-shell.nav-collapsed .sidebar nav { width: 100%; margin-top: 16px; gap: 3px; }
+  .support-shell.nav-collapsed .sidebar nav a { min-height: 38px; height: 38px; padding: 0; justify-content: center; border-radius: 7px; }
+  .support-shell.nav-collapsed .sidebar nav a.active::before { display: none; }
+  .support-shell.nav-collapsed .sidebar-bottom { width: 100%; align-items: center; gap: 6px; }
+  .support-shell.nav-collapsed .admin-nav, .support-shell.nav-collapsed .sidebar-about, .support-shell.nav-collapsed .sidebar-profile { padding: 8px 0; width: 100%; justify-content: center; }
+  .support-shell.nav-collapsed .sidebar-profile .avatar { width: 30px; height: 30px; }
+  .support-shell.nav-expanded .sidebar { width: 224px; padding: 16px 12px 12px; align-items: stretch; }
+  .support-shell.nav-expanded .main-shell { margin-left: 224px; }
+  .support-shell.nav-expanded .sidebar .brand > span, .support-shell.nav-expanded .sidebar-caption,
+  .support-shell.nav-expanded .sidebar nav a > span, .support-shell.nav-expanded .admin-nav > span,
+  .support-shell.nav-expanded .sidebar-about > span, .support-shell.nav-expanded .sidebar-profile > span:not(.avatar) { display: block; }
+  .support-shell.nav-expanded .sidebar nav { margin-top: 0; gap: 3px; }
+  .support-shell.nav-expanded .sidebar nav a { min-height: 38px; height: 38px; justify-content: flex-start; padding: 0 12px; }
+  .support-shell.nav-expanded .sidebar-caption { margin: 22px 12px 10px; }
+}
+.support-efficient { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; color: var(--text); }
+.support-efficient button:focus-visible, .support-efficient select:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.support-efficient .support-toolbar { display: flex; align-items: center; gap: 12px; padding: 0 12px; min-height: 46px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.support-efficient .support-toolbar h1 { font-size: 17px; margin: 0; flex-shrink: 0; }
+.support-efficient .support-status-tabs { display: flex; align-self: stretch; gap: 2px; min-width: 0; overflow: auto; scrollbar-width: none; }
+.support-efficient .support-status-tabs button { display: flex; align-items: center; gap: 6px; padding: 0 10px; white-space: nowrap; border-bottom: 2px solid transparent; font-size: 12px; color: var(--muted); }
+.support-efficient .support-status-tabs button.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 650; }
+.support-efficient .support-status-tabs button:hover { background: var(--hover); }
+.support-efficient .support-status-tabs button span { font-size: 11px; font-variant-numeric: tabular-nums; background: var(--hover); border-radius: 4px; padding: 1px 5px; }
+.support-efficient .support-mailbox-health { margin-left: auto; display: flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--muted); font-size: 11px; }
+.support-efficient .support-mailbox-health i { width: 6px; height: 6px; background: var(--red); border-radius: 50%; }
+.support-efficient .support-mailbox-health.online i { background: var(--green); }
+.support-efficient .support-toolbar > .icon-button { width: 30px; height: 30px; flex-shrink: 0; }
+.support-efficient .support-feedback { display: flex; align-items: center; gap: 8px; padding: 6px 14px; min-height: 32px; font-size: 12px; background: var(--sage); color: var(--green); flex-shrink: 0; }
+.support-efficient .support-feedback span { flex: 1; overflow-wrap: anywhere; }
+.support-efficient .support-feedback button { padding: 4px; display: inline-flex; }
+.support-efficient .support-feedback.error { background: color-mix(in srgb, var(--red) 9%, var(--surface)); color: var(--red); }
+.support-efficient .support-workspace { flex: 1; min-height: 0; height: auto; max-height: none; border: 0; border-radius: 0; display: grid; grid-template-columns: clamp(260px, 22vw, 320px) minmax(0, 1fr); position: relative; }
+.support-efficient .support-workspace.context-open { grid-template-columns: clamp(260px, 22vw, 320px) minmax(0, 1fr) 270px; }
+.support-efficient .support-queue { height: auto; min-width: 0; min-height: 0; overflow: hidden; }
+.support-efficient .support-views { padding: 8px 10px; gap: 3px; flex-shrink: 0; }
+.support-efficient .support-views button { flex: 1; padding: 7px 4px; border-radius: 5px; }
+.support-efficient .support-search { margin: 0 10px 8px; border-radius: 6px; padding: 4px 8px; min-height: 34px; flex-shrink: 0; }
+.support-efficient .support-search input { font-size: 12px; }
+.support-efficient .support-search button { display: flex; }
+.support-efficient .support-list-filters { display: flex; padding: 0 10px; gap: 8px; align-items: center; flex-shrink: 0; }
+.support-efficient .support-list-filters select { min-width: 0; flex: 1; padding: 6px; font-size: 12px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); }
+.support-efficient .support-list-filters button { font-size: 11px; color: var(--muted); padding: 6px 0; white-space: nowrap; }
+.support-efficient .support-list-caption { padding: 8px 12px; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); min-height: 30px; }
+.support-efficient .support-ticket-list { min-height: 0; overscroll-behavior: contain; }
+.support-efficient .support-ticket { padding: 10px 12px; border-left-width: 3px; }
+.support-efficient .support-ticket > strong { font-size: 13px; line-height: 1.45; margin: 6px 0 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.support-efficient .support-ticket .support-ticket-tags { margin-top: 5px; }
+.support-efficient .support-state { padding: 2px 5px; }
+.support-efficient .support-category { padding: 2px 5px; }
+.support-efficient .support-ticket-flags { min-height: 16px; margin-top: 5px; font-size: 10px; color: var(--muted); justify-content: flex-start; }
+.support-efficient .support-ticket-flags strong { color: var(--red); font-weight: 500; }
+.support-efficient .support-ticket-flags .support-draft-marker { color: var(--blue); margin-left: auto; }
+.support-efficient .support-pagination { height: 36px; flex-shrink: 0; padding: 0 8px; }
+.support-efficient .support-pagination button { display: flex; padding: 8px; }
+.support-efficient .support-queue-empty { padding: 36px 14px; }
+.support-efficient .support-queue-empty button { color: var(--blue); padding: 8px; }
+.support-efficient .support-conversation { height: auto; min-height: 0; overflow: hidden; position: relative; }
+.support-efficient .support-welcome { padding: 20px; }
+.support-efficient .support-welcome > svg { color: var(--muted); margin: auto; }
+.support-efficient .support-welcome h2 { font-size: 18px; }
+.support-efficient .support-welcome p { font-size: 13px; }
+.support-efficient .support-conversation-head { padding: 10px 16px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; flex-shrink: 0; }
+.support-efficient .support-subject-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.support-efficient .support-subject-row > div:first-of-type { flex: 1; min-width: 0; }
+.support-efficient .support-conversation-head .support-number { color: var(--muted); font-size: 11px; letter-spacing: 0; }
+.support-efficient .support-conversation-head h2 { margin: 2px 0 0; font-size: 16px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.support-efficient .support-ticket-navigation { display: flex; flex-shrink: 0; }
+.support-efficient .support-ticket-navigation .icon-button { width: 30px; height: 30px; }
+.support-efficient .support-handling { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.support-efficient .support-handling select, .support-efficient .support-send-actions select { border: 1px solid var(--border); border-radius: 5px; padding: 5px 7px; background: var(--surface); color: var(--text); font-size: 12px; min-height: 30px; max-width: 160px; }
+.support-efficient .support-handling button { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 5px 7px; min-height: 30px; color: var(--blue); border-radius: 5px; }
+.support-efficient .support-handling button:hover { background: var(--hover); }
+.support-efficient .support-handling .support-resolve { margin-left: auto; color: var(--green); }
+.support-efficient .support-filter-note { padding: 5px 16px; font-size: 11px; color: var(--muted); background: var(--bg); flex-shrink: 0; }
+.support-efficient .support-filter-note button { color: var(--blue); margin-left: 6px; }
+.support-efficient .support-messages { min-height: 0; padding: 14px 16px; background: color-mix(in srgb, var(--bg) 55%, var(--surface)); overscroll-behavior: contain; overflow-anchor: auto; }
+.support-efficient .support-message { padding: 12px; margin-bottom: 12px; border-radius: 7px; gap: 10px; }
+.support-efficient .support-message:last-child { margin-bottom: 0; }
+.support-efficient .support-message > .avatar { width: 28px; height: 28px; }
+.support-efficient .support-message header { gap: 7px; min-height: 20px; }
+.support-efficient .support-message header strong { overflow-wrap: anywhere; }
+.support-efficient .support-message p { font-size: 14px; line-height: 1.7; margin-top: 10px; }
+.support-efficient .support-mail-addresses { font-size: 11px; color: var(--muted); margin-top: 3px; overflow-wrap: anywhere; }
+.support-efficient .support-mail-addresses summary { cursor: pointer; }
+.support-efficient .support-mail-addresses p { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.support-efficient .support-mail-receipt { padding-top: 6px; margin-top: 8px; }
+.support-efficient .support-new-messages { position: absolute; bottom: 232px; align-self: center; display: flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 2px 10px #0002; padding: 5px 12px; font-size: 12px; color: var(--blue); }
+.support-efficient .support-composer { flex-shrink: 0; margin: 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; overflow: visible; }
+.support-efficient .support-composer.internal { background: color-mix(in srgb, #b99745 7%, var(--surface)); border-top-color: #b99745; }
+.support-efficient .support-composer-toolbar { padding: 5px 12px; gap: 8px; flex-wrap: nowrap; }
+.support-efficient .support-composer-toolbar > div { display: flex; min-width: 0; gap: 4px; }
+.support-efficient .support-composer-toolbar button { padding: 6px 8px; white-space: nowrap; font-size: 12px; }
+.support-efficient .support-composer-toolbar select { padding: 6px; max-width: 150px; font-size: 12px; }
+.support-efficient .support-recipient { padding: 5px 16px 0; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.support-efficient .support-recipient span { margin-left: auto; white-space: nowrap; font-size: 10px; }
+.support-efficient .support-composer textarea { min-height: 64px; height: 86px; max-height: min(180px, 25dvh); padding: 8px 16px; font-size: 14px; line-height: 1.6; }
+.support-efficient .support-composer footer { padding: 7px 12px; gap: 6px; flex-wrap: wrap; border-top: 1px solid var(--border); }
+.support-efficient .support-advance { display: inline-flex; gap: 5px; align-items: center; font-size: 11px; color: var(--muted); cursor: pointer; min-height: 30px; }
+.support-efficient .support-advance input { width: 14px; height: 14px; accent-color: var(--blue); margin: 0; }
+.support-efficient .support-send-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.support-efficient .support-send-actions .button { font-size: 12px; min-height: 34px; padding: 7px 12px; border-radius: 6px; }
+.support-efficient .support-context { padding: 0 14px 16px; display: block; min-height: 0; height: auto; max-height: none; grid-column: auto; border-top: 0; border-left: 1px solid var(--border); background: var(--surface); z-index: 3; overscroll-behavior: contain; }
+.support-efficient .support-context-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding: 9px 0; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+.support-efficient .support-context-heading h2 { font-size: 14px; margin: 0; }
+.support-efficient .support-context-heading .icon-button { width: 30px; height: 30px; }
+.support-efficient .support-context h3, .support-efficient .support-context h3:not(:first-child) { font-size: 12px; margin: 16px 0 12px; padding-top: 0; border: 0; }
+.support-efficient .support-context dl { margin: 14px 0; }
+.support-efficient .support-context dl > div { margin: 8px 0; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px; }
+.support-efficient .support-context dt { margin: 0; font-size: 11px; }
+.support-efficient .support-context .field { margin-bottom: 10px; }
+.support-efficient .support-context select { min-height: 34px; padding: 6px; }
+.support-efficient .support-delivery { padding: 8px 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.support-efficient .support-delivery .button { margin: 4px 0 0; }
+.support-efficient .support-context-backdrop { display: none; }
+@media (max-width: 1279px) {
+  .support-efficient .support-workspace.context-open, .support-efficient .support-workspace { grid-template-columns: clamp(250px, 26vw, 290px) minmax(0, 1fr); }
+  .support-efficient .support-context { position: absolute; right: 0; top: 0; bottom: 0; width: min(330px, 90%); box-shadow: -6px 0 24px #0002; }
+  .support-efficient .support-context-backdrop { display: block; position: absolute; inset: 0; z-index: 2; background: #0004; }
+  .support-efficient .support-mailbox-health { display: none; }
+  .support-efficient .support-toolbar { gap: 8px; }
+  .support-efficient .support-toolbar > .icon-button { margin-left: auto; }
+  .support-efficient .support-status-tabs button { padding: 0 8px; }
+  .support-efficient .support-recipient span { display: none; }
+}
+@media (max-width: 767px) {
+  .support-shell .main-shell { margin-left: 0; }
+  .support-shell .support-nav-toggle { display: none; }
+  .support-shell .topbar { padding: 0 10px; }
+  .support-shell .topbar .icon-button { width: 34px; height: 34px; }
+}
+@media (max-width: 760px) {
+  .support-efficient .support-toolbar { padding: 0 8px; min-height: 44px; }
+  .support-efficient .support-toolbar h1 { display: none; }
+  .support-efficient .support-status-tabs { flex: 1; }
+  .support-efficient .support-status-tabs button { padding: 0 10px; min-height: 44px; }
+  .support-efficient .support-workspace, .support-efficient .support-workspace.context-open { display: flex; min-height: 0; height: auto; border-radius: 0; }
+  .support-efficient .support-queue { display: flex; width: 100%; height: auto; border: 0; }
+  .support-efficient .support-conversation { display: none; width: 100%; height: auto; }
+  .support-efficient .support-workspace.has-selection .support-queue { display: none; }
+  .support-efficient .support-workspace.has-selection .support-conversation { display: flex; min-height: 0; height: auto; }
+  .support-efficient .support-workspace.has-selection .support-context { display: block; }
+  .support-efficient .support-conversation-head { padding: 8px 10px; gap: 7px; }
+  .support-efficient .support-conversation-head h2 { font-size: 14px; }
+  .support-efficient .support-conversation .support-mobile-back { display: flex; width: 34px; height: 40px; }
+  .support-efficient .support-ticket-navigation .icon-button { width: 32px; height: 40px; }
+  .support-efficient .support-handling { gap: 5px; }
+  .support-efficient .support-handling select { font-size: 11px; min-height: 34px; max-width: 106px; padding: 4px; }
+  .support-efficient .support-handling button { font-size: 11px; min-height: 34px; padding: 5px; }
+  .support-efficient .support-handling .support-resolve { margin-left: 0; }
+  .support-efficient .support-messages { padding: 10px; }
+  .support-efficient .support-message { padding: 10px; gap: 7px; }
+  .support-efficient .support-message > .avatar { display: none; }
+  .support-efficient .support-message header { gap: 5px; }
+  .support-efficient .support-message p { font-size: 14px; }
+  .support-efficient .support-composer-toolbar { padding: 4px 8px; gap: 4px; }
+  .support-efficient .support-composer-toolbar button { min-height: 38px; padding: 5px; font-size: 11px; }
+  .support-efficient .support-composer-toolbar select { max-width: 110px; font-size: 11px; padding: 5px 2px; }
+  .support-efficient .support-recipient { padding: 5px 10px 0; font-size: 10px; }
+  .support-efficient .support-composer textarea { padding: 8px 10px; height: 70px; min-height: 50px; font-size: 16px; }
+  .support-efficient .support-composer footer { padding: 5px 8px; }
+  .support-efficient .support-send-actions { gap: 4px; }
+  .support-efficient .support-send-actions select { font-size: 11px; max-width: 122px; min-height: 38px; padding: 4px; }
+  .support-efficient .support-send-actions .button { font-size: 11px; min-height: 40px; padding: 7px 9px; }
+  .support-efficient .support-advance { min-height: 24px; font-size: 10px; }
+  .support-efficient .support-list-filters select, .support-efficient .support-search, .support-efficient .support-views button { min-height: 40px; }
+  .support-efficient .support-pagination { height: 44px; }
+}
+@media (max-height: 600px) {
+  .support-efficient .support-composer textarea { height: 50px; min-height: 40px; max-height: 90px; }
+  .support-efficient .support-conversation-head { padding-top: 6px; padding-bottom: 6px; }
+  .support-efficient .support-recipient { padding-top: 2px; }
+  .support-efficient .support-message { padding: 8px; }
+}

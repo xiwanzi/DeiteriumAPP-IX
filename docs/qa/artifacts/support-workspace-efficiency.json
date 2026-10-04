@@ -1,0 +1,307 @@
+{
+  "date": "2026-10-04",
+  "environment": "loopback-isolated-synthetic",
+  "workflow": {
+    "passed": [
+      "reselect current ticket stays readable",
+      "drafts isolated by ticket and visibility",
+      "live search, empty result and category reset",
+      "claim and assigned-to-me filter",
+      "internal note saves with no outbound mail or status change",
+      "failed send preserves draft and ticket; retry once resolves then advances",
+      "priority panel and global navigation toggle"
+    ]
+  },
+  "recovery": {
+    "passed": [
+      "committed reply with lost response retries idempotently after refresh",
+      "version conflict keeps draft; keyboard submit and deliberate retry",
+      "late response from previous ticket cannot replace current conversation",
+      "support-only role retains only ticket management"
+    ]
+  },
+  "responsive": {
+    "checks": [
+      "light/dark and desktop context panel",
+      "mobile back, navigation, context focus/escape",
+      "eight viewports no clipping; normal admin layout restored on exit"
+    ],
+    "measurements": [
+      {
+        "width": 1920,
+        "height": 1080,
+        "work": {
+          "x": 64,
+          "y": 94,
+          "width": 1856,
+          "height": 986,
+          "bottom": 1080,
+          "right": 1920
+        },
+        "messages": {
+          "x": 384,
+          "y": 198.390625,
+          "width": 1536,
+          "height": 672.609375,
+          "bottom": 871,
+          "right": 1920
+        },
+        "send": {
+          "x": 1777,
+          "y": 1039,
+          "width": 131,
+          "height": 34,
+          "bottom": 1073,
+          "right": 1908
+        },
+        "doc": [
+          1920,
+          1080
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 1440,
+        "height": 900,
+        "work": {
+          "x": 64,
+          "y": 94,
+          "width": 1376,
+          "height": 806,
+          "bottom": 900,
+          "right": 1440
+        },
+        "messages": {
+          "x": 380.796875,
+          "y": 198.390625,
+          "width": 1059.203125,
+          "height": 492.609375,
+          "bottom": 691,
+          "right": 1440
+        },
+        "send": {
+          "x": 1297,
+          "y": 859,
+          "width": 131,
+          "height": 34,
+          "bottom": 893,
+          "right": 1428
+        },
+        "doc": [
+          1440,
+          900
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 1366,
+        "height": 768,
+        "work": {
+          "x": 64,
+          "y": 94,
+          "width": 1302,
+          "height": 674,
+          "bottom": 768,
+          "right": 1366
+        },
+        "messages": {
+          "x": 364.515625,
+          "y": 198.390625,
+          "width": 1001.484375,
+          "height": 360.609375,
+          "bottom": 559,
+          "right": 1366
+        },
+        "send": {
+          "x": 1223,
+          "y": 727,
+          "width": 131,
+          "height": 34,
+          "bottom": 761,
+          "right": 1354
+        },
+        "doc": [
+          1366,
+          768
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 1024,
+        "height": 768,
+        "work": {
+          "x": 64,
+          "y": 94,
+          "width": 960,
+          "height": 674,
+          "bottom": 768,
+          "right": 1024
+        },
+        "messages": {
+          "x": 330.234375,
+          "y": 198.390625,
+          "width": 693.765625,
+          "height": 360.609375,
+          "bottom": 559,
+          "right": 1024
+        },
+        "send": {
+          "x": 881,
+          "y": 727,
+          "width": 131,
+          "height": 34,
+          "bottom": 761,
+          "right": 1012
+        },
+        "doc": [
+          1024,
+          768
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 768,
+        "height": 1024,
+        "work": {
+          "x": 64,
+          "y": 94,
+          "width": 704,
+          "height": 930,
+          "bottom": 1024,
+          "right": 768
+        },
+        "messages": {
+          "x": 314,
+          "y": 198.390625,
+          "width": 454,
+          "height": 616.609375,
+          "bottom": 815,
+          "right": 768
+        },
+        "send": {
+          "x": 625,
+          "y": 983,
+          "width": 131,
+          "height": 34,
+          "bottom": 1017,
+          "right": 756
+        },
+        "doc": [
+          768,
+          1024
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "work": {
+          "x": 0,
+          "y": 93,
+          "width": 390,
+          "height": 751,
+          "bottom": 844,
+          "right": 390
+        },
+        "messages": {
+          "x": 0,
+          "y": 193.59375,
+          "width": 390,
+          "height": 458.40625,
+          "bottom": 652,
+          "right": 390
+        },
+        "send": {
+          "x": 264,
+          "y": 799,
+          "width": 118,
+          "height": 40,
+          "bottom": 839,
+          "right": 382
+        },
+        "doc": [
+          390,
+          844
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 320,
+        "height": 667,
+        "work": {
+          "x": 0,
+          "y": 93,
+          "width": 320,
+          "height": 574,
+          "bottom": 667,
+          "right": 320
+        },
+        "messages": {
+          "x": 0,
+          "y": 232.59375,
+          "width": 320,
+          "height": 242.40625,
+          "bottom": 475,
+          "right": 320
+        },
+        "send": {
+          "x": 194,
+          "y": 622,
+          "width": 118,
+          "height": 40,
+          "bottom": 662,
+          "right": 312
+        },
+        "doc": [
+          320,
+          667
+        ],
+        "sendUncovered": true
+      },
+      {
+        "width": 390,
+        "height": 480,
+        "work": {
+          "x": 0,
+          "y": 93,
+          "width": 390,
+          "height": 387,
+          "bottom": 480,
+          "right": 390
+        },
+        "messages": {
+          "x": 0,
+          "y": 189.59375,
+          "width": 390,
+          "height": 121.40625,
+          "bottom": 311,
+          "right": 390
+        },
+        "send": {
+          "x": 264,
+          "y": 435,
+          "width": 118,
+          "height": 40,
+          "bottom": 475,
+          "right": 382
+        },
+        "doc": [
+          390,
+          480
+        ],
+        "sendUncovered": true
+      }
+    ]
+  },
+  "baseline1440": {
+    "work": {
+      "x": 264,
+      "y": 327.296875,
+      "width": 1136,
+      "height": 620
+    },
+    "messagesHeight": 181.015625,
+    "composerBottom": 924.296875,
+    "documentHeight": 1070
+  }
+}
