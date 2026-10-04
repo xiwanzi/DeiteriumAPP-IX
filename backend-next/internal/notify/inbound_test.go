@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -50,6 +52,26 @@ func TestTicketReceiptEscapingReplyToAndThreadHeaders(t *testing.T) {
 	for _, header := range []string{"Reply-To: support@example.com", "In-Reply-To: <inbound@example.com>", "References: <inbound@example.com>", "Auto-Submitted: auto-replied"} {
 		if !strings.Contains(string(data), header) {
 			t.Fatal("missing header", header)
+		}
+	}
+	if len(m.Images) != 1 || len(m.Images[0].Data) == 0 || len(m.Images[0].Data) > 40*1024 || !strings.Contains(string(data), "Content-ID: <"+m.Images[0].CID+">") {
+		t.Fatal("receipt logo must travel with the email")
+	}
+	preview := AdmissionPreviewHTML(m)
+	if strings.Contains(preview, "cid:") || !strings.Contains(preview, "data:image/png;base64,") || !strings.Contains(m.Text, "直接回复本邮件") {
+		t.Fatal("receipt preview or reply instructions missing")
+	}
+	if dir := os.Getenv("DEUTERIUM_MAIL_PREVIEW_DIR"); dir != "" {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		for name, message := range map[string]Message{
+			"support-received":      RenderSupportAcknowledgement("202610040427", "游戏登录遇到问题", "进入服务器时提示连接中断，重新登录后仍未恢复。\n已附上提示截图，希望协助确认。"),
+			"support-received-long": RenderSupportAcknowledgement("202610040427", strings.Repeat("LongPlayerSubject", 7), strings.Repeat("https://example.invalid/long-unbroken-details/", 18)),
+		} {
+			if err := os.WriteFile(filepath.Join(dir, name+".html"), []byte(AdmissionPreviewHTML(message)), 0600); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 	m.ReplyTo = "victim@example.com\r\nBcc: other@example.com"
