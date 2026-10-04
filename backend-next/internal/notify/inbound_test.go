@@ -54,11 +54,14 @@ func TestTicketReceiptEscapingReplyToAndThreadHeaders(t *testing.T) {
 			t.Fatal("missing header", header)
 		}
 	}
-	if len(m.Images) != 2 || len(m.Images[0].Data) == 0 || len(m.Images[0].Data) > 40*1024 || !strings.Contains(string(data), "Content-ID: <"+m.Images[0].CID+">") {
-		t.Fatal("receipt logo must travel with the email")
+	if len(m.Images) != 0 || strings.Contains(string(data), "Content-ID:") {
+		t.Fatal("receipt must not carry brand attachments")
+	}
+	if strings.Contains(m.HTML+m.Text, "问题摘要") || strings.Contains(m.HTML+m.Text, "<img src=x>正文") {
+		t.Fatal("receipt contains removed summary")
 	}
 	preview := AdmissionPreviewHTML(m)
-	if strings.Contains(preview, "cid:") || !strings.Contains(preview, "data:image/png;base64,") || !strings.Contains(m.Text, "直接回复本邮件") {
+	if strings.Contains(preview, "cid:") || !strings.Contains(preview, "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/") || !strings.Contains(m.Text, "直接回复本邮件") {
 		t.Fatal("receipt preview or reply instructions missing")
 	}
 	if dir := os.Getenv("DEUTERIUM_MAIL_PREVIEW_DIR"); dir != "" {

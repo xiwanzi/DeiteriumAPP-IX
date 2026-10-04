@@ -258,7 +258,7 @@ func TestEmailSupportInboxTicketNumbersThreadingAndRoleIsolation(t *testing.T) {
 			if c.From == "dm@example.com" && (!strings.Contains(m.HTML, ticket) && !strings.Contains(m.HTML, isolated.TicketID)) {
 				t.Fatal("receipt template missing number")
 			}
-			if c.From == "enterprise@example.com" && (!strings.Contains(m.HTML, "Bob") || strings.Contains(m.HTML, "NewSupportName") || !strings.Contains(m.HTML, "请重新进入游戏后再试一次。") || !strings.Contains(m.HTML, "DEUTERIUM IX") || len(m.Images) != 2 || strings.Contains(m.HTML+m.Text, "PRIVATE OPERATOR NOTE")) {
+			if c.From == "enterprise@example.com" && (!strings.Contains(m.HTML, "Bob") || strings.Contains(m.HTML, "NewSupportName") || !strings.Contains(m.HTML, "请重新进入游戏后再试一次。") || !strings.Contains(m.HTML, "DEUTERIUM IX") || len(m.Images) != 0 || strings.Contains(m.HTML+m.Text, "PRIVATE OPERATOR NOTE")) {
 				t.Fatal("human reply signature, footer or private-note isolation changed")
 			}
 			return nil
@@ -299,7 +299,7 @@ func TestManualEnterpriseMailAddsFooterWithoutInventingTicket(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := f.app.processSystemMail(ctx, func(_ context.Context, c notify.Settings, _, _ string, m notify.Message) error {
-		if c.From != "enterprise@example.com" || m.ReplyTo != c.From || m.Subject != "关于您的问题" || !strings.HasPrefix(m.Text, body) || !strings.Contains(m.HTML, "Alice") || !strings.Contains(m.HTML, "DEUTERIUM IX") || strings.Contains(m.Text, "工单编号：") || len(m.Images) != 2 {
+		if c.From != "enterprise@example.com" || m.ReplyTo != c.From || m.Subject != "关于您的问题" || !strings.HasPrefix(m.Text, body) || !strings.Contains(m.HTML, "Alice") || !strings.Contains(m.HTML, "DEUTERIUM IX") || strings.Contains(m.Text, "工单编号：") || len(m.Images) != 0 {
 			t.Fatal("manual correspondence lost its content or footer")
 		}
 		return nil

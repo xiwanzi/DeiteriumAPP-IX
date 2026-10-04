@@ -92,8 +92,6 @@ func composeMessage(s Settings, id string, m Message) ([]byte, error) {
 		}
 		return b.Bytes(), nil
 	}
-	related := multipart.NewWriter(&b)
-	fmt.Fprintf(&b, "Content-Type: multipart/related; boundary=%q\r\n\r\n", related.Boundary())
 	var alternative bytes.Buffer
 	alt := multipart.NewWriter(&alternative)
 	for _, part := range []struct{ kind, body string }{{"text/plain", m.Text}, {"text/html", m.HTML}} {
@@ -108,6 +106,13 @@ func composeMessage(s Settings, id string, m Message) ([]byte, error) {
 	if err := alt.Close(); err != nil {
 		return nil, err
 	}
+	if len(m.Images) == 0 {
+		fmt.Fprintf(&b, "Content-Type: multipart/alternative; boundary=%q\r\n\r\n", alt.Boundary())
+		b.Write(alternative.Bytes())
+		return b.Bytes(), nil
+	}
+	related := multipart.NewWriter(&b)
+	fmt.Fprintf(&b, "Content-Type: multipart/related; boundary=%q\r\n\r\n", related.Boundary())
 	w, err := related.CreatePart(textproto.MIMEHeader{"Content-Type": {fmt.Sprintf("multipart/alternative; boundary=%q", alt.Boundary())}})
 	if err != nil {
 		return nil, err

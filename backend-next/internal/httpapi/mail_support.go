@@ -298,7 +298,7 @@ func (s *Server) registerMailSupport(mux *http.ServeMux) {
 			failError(w, r, err)
 			return
 		}
-		m := notify.RenderSupportAcknowledgement(time.Now().In(time.FixedZone("UTC+8", 8*3600)).Format("20060102")+"0427", "游戏登录遇到问题", "玩家已提供问题类型和详细信息。支持人员会通过邮件继续联系。")
+		m := notify.RenderSupportAcknowledgement(time.Now().In(time.FixedZone("UTC+8", 8*3600)).Format("20060102")+"0427", "游戏登录遇到问题", "")
 		success(w, r, map[string]string{"subject": m.Subject, "html": notify.AdmissionPreviewHTML(m)})
 	})
 	mux.HandleFunc("GET /api/v1/admin/support/tools", func(w http.ResponseWriter, r *http.Request) {
@@ -367,7 +367,7 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 			message.FromName = event.ReplyTo + "（Help 转交）"
 		}
 		if event.Kind == "TICKET_CREATED" {
-			message = notify.RenderSupportAcknowledgement(event.Reference, event.Subject, text)
+			message = notify.RenderSupportAcknowledgement(event.Reference, event.Subject, "")
 		}
 		if event.Channel == "ENTERPRISE" && (event.Kind == "TICKET_REPLY" || event.Kind == "MANUAL") {
 			if replyTo == "" {
