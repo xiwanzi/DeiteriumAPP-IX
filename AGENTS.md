@@ -1,5 +1,9 @@
 # Deuterium IX 工程约定
 
+## 邮件视觉约定（2026-10-04）
+
+所有邮件复用[邮件品牌与字体规范](docs/contracts/mail-visual-standard.md)：正文 HarmonyOS Sans SC，数字 Novecento Sans Wide（六位验证码保留原 Consolas 等宽字体），字标沿官网页脚字形。徽章 48px，联系文字 12px、版权 11px；不能再以缩小品牌与页脚解决重心。自定义字体与回退都须按实际渲染验收，不宣称所有邮箱客户端均支持。字体及邮件样式候选尚未部署，线上版本见下文。
+
 2026-10-04：**App 2.0.15（21500）、社区 Web 2.0.21 与配套 Go 已于 09:30 上线**（PR #53，源码 `6d5a2fdde8f1`）。新增邮箱注册、独立游戏验证、中文昵称、邮件系统及邮件工单，旧账号保持已验证。7 账号、27 订单、5 委托和 0 注销记录保留，四个 Core 节点在线；游戏插件未更换。新 DM / 企业邮箱授权码尚待后台配置，邮箱注册及工单收发暂未启用；旧审核邮件沿用原 SMTP。维护 `.worktrees/mail-identity-support` / `xiwanzi/release-v215-live`，见[上线记录](docs/deployment/deuterium-2.0.15-live.md)。下方未部署说明为早期候选记录。
 
 2026-10-04：**按用户确认名单，00:08 已物理清除其余 65 条 App 账号，仅保留七个 active 账号，注销记录为 0**。关联 1 笔 App 转账、2 笔取消未付款订单和 3 个所属图片对象已清理；其余 27 订单、5 委托及游戏余额/存档/白名单保持。见[清理记录](docs/deployment/account-purge-20261004.md)，不得从旧备份自动恢复。注册/找回/改密验证码模板及邮件卡片改动仅为本机候选，未上线，见[模板验收](docs/qa/verification-mail-templates-20261004.md)。

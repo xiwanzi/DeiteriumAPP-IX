@@ -1,0 +1,96 @@
+{
+  "officialFontBaseURL": "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/r82-e455d305512e/assets/",
+  "verifiedAssets": [
+    {
+      "path": "fonts/HarmonyOS_Sans_SC_Regular.4e6868.woff2",
+      "sizeBytes": 206276,
+      "sha256": "80b0445e19792ae9ffc36c9afd1ac4227ed6dde3059cbfee49feca0fd0e6265b",
+      "publicGETMatchesLocal": true,
+      "cors": "*"
+    },
+    {
+      "path": "fonts/HarmonyOS_Sans_SC_Bold.06d3d0.woff2",
+      "sizeBytes": 207852,
+      "sha256": "5025f4ed60cf256fcf1c21032f033cfe990992b678e6365a31cc8df5cd7f254d",
+      "publicGETMatchesLocal": true,
+      "cors": "*"
+    },
+    {
+      "path": "fonts/HarmonyOS_Sans_SC_Regular.ttf",
+      "sizeBytes": 8261128,
+      "sha256": "297b088424be212207df2ce8b98e335468b782aa6b96832af0b8b773d711e2b1",
+      "publicGETMatchesLocal": true,
+      "cors": "*"
+    },
+    {
+      "path": "fonts/Novecentosanswide-Medium.748604.woff2",
+      "sizeBytes": 16080,
+      "sha256": "21b79f2bd3f3a120bfd6b0838602cfd452df4f5456c551021c670fe461e843ec",
+      "publicGETMatchesLocal": true,
+      "cors": "*"
+    },
+    {
+      "path": "fonts/Novecentosanswide-Bold.3fdbac.woff2",
+      "sizeBytes": 16932,
+      "sha256": "0f8211da5ae0352aa3d0f7f35b168d3150c54f7c4447ce7c02b65a2e6dd140fc",
+      "publicGETMatchesLocal": true,
+      "cors": "*"
+    },
+    {
+      "path": "geist-latin.woff2",
+      "sizeBytes": 29288,
+      "sha256": "9b6f5ff45b278c744b5f379a2c4ecbaf858a842b8eaf82ac8d21b699ca16c608",
+      "publicGETMatchesLocal": true,
+      "cors": "*"
+    }
+  ],
+  "renderedFonts": {
+    "body": "HarmonyOS_Sans_SC",
+    "numbers": "Novecentosanswide-Medium",
+    "verificationCode": "Consolas-Bold",
+    "wordmark": "Geist-Bold (CSS weight 650)"
+  },
+  "blockedFontFallback": "MicrosoftYaHei",
+  "blockedFontBrandImagesLoaded": true,
+  "testedWidths": [
+    320,
+    390,
+    760
+  ],
+  "horizontalOverflow": false,
+  "wordmarkDisplaySize": [
+    143,
+    26
+  ],
+  "emblemDisplaySize": [
+    48,
+    48
+  ],
+  "wordmarkSource": {
+    "family": "Geist",
+    "weight": 650,
+    "fontSize": 21,
+    "letterSpacing": -0.45,
+    "zoom": 2,
+    "sourceURL": "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/r82-e455d305512e/assets/geist-latin.woff2"
+  },
+  "brandAssets": [
+    {
+      "name": "deuterium-ix-wordmark-dark.png",
+      "sizeBytes": 4249,
+      "sha256": "4bef42e7d6e84f3532cb9fefbe46f5b3f23432193c09ee0776d14324d853cbb0"
+    },
+    {
+      "name": "deuterium-ix-wordmark-light.png",
+      "sizeBytes": 3846,
+      "sha256": "a58243bf1d93a25a5ddd33f59e023009cc25dbf09d3c21434b96e0513867187d"
+    }
+  ],
+  "customFonts": {
+    "body": true,
+    "numbers": true,
+    "verificationCode": false,
+    "wordmark": true
+  },
+  "verificationCodeException": "User retains original Consolas bold numerals: desktop 48px/9px spacing, mobile 42px/7px spacing."
+}

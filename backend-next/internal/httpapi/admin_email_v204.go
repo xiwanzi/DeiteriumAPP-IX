@@ -228,6 +228,9 @@ func (s *Server) processEmailV204(ctx context.Context, send emailSenderV204) err
 			message.Text = fmt.Sprintf("案件：%s\n状态：%s\n更新时间：%s\n\n请登录平台管理页查看并处理：\n%s/admin?section=interventions&case=%s\n\n邮件不包含交易双方提交的证据正文。", *event.CaseID, state, event.CreatedAt.In(time.FixedZone("UTC+8", 8*3600)).Format("2006-01-02 15:04:05"), s.Config.PublicOrigin, url.QueryEscape(*event.CaseID))
 		}
 		if sendError == nil {
+			message, sendError = notify.RenderSystemMessage(message)
+		}
+		if sendError == nil {
 			sendError = send(ctx, settings.Settings, password, store.Digest([]byte(event.EventID))[:40], message)
 		}
 	}

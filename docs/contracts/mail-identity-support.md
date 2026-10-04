@@ -67,8 +67,10 @@ user 增加 `email`（本人可见）、`gameVerified`、`displayName`；`identi
 - POST `/{ticketId}/mail/{eventId}/retry`：工单人员可对该工单已 FAILED 的业务邮件重新入队，保留原 Message-ID；全局 `/admin/mail/events/{eventId}/retry` 仅超级管理员。验证码禁止重发旧任务，应重新获取。
 - GET `/admin/support/tools`：负责人、快捷回复、状态统计和脱敏收件运行状态。
 - PUT `/admin/support/macros/{macroId}`：`clientRequestId,title,body,version`，version=0 新建。
-- GET `/admin/mail/templates/support-received`：超级管理员预览 DM 收件回执模板。回执包括主题、摘要、工单编号及等待审查说明；Reply-To 为客服邮箱，玩家直接回复即可接续。
+- GET `/admin/mail/templates/support-received`：超级管理员预览 DM 收件回执模板。回执包括主题、摘要及工单编号，不显示「待审查」；Reply-To 为客服邮箱，玩家直接回复即可接续。
 
 归并优先使用 In-Reply-To / References 中的邮件编号，且要求发信回复邮箱与工单玩家邮箱一致；缺少引用时，只有主题中明确的 `[工单 YYYYMMDDNNNN]` 与相同邮箱可以接续。不同玩家不能凭工单号或伪造引用并入别人的邮件记录。收件与出件保存稳定 Message-ID，重复拉取或 Help 重发不重复建单和自动回执。
 
 角色：原 `platform.admin` 显示超级管理员；新增 `support.manage` 显示管理员，仅访问工单管理。账号管理内部动作 grant-admin/revoke-admin 保留为超级管理员语义；新增 grant-support/revoke-support 用于工单管理员。版本冲突返回 `STATE_VERSION_CONFLICT`，草稿保留；请求键重放不重复发信。
+
+所有邮件遵循[邮件品牌与字体规范](mail-visual-standard.md)：正文使用官网鸿蒙字体，数字使用官网 Novecento，品牌字标与徽章内嵌，保留可复制文字和明确的客户端回退。

@@ -299,7 +299,7 @@ func (s *Server) registerMailSupport(mux *http.ServeMux) {
 			return
 		}
 		m := notify.RenderSupportAcknowledgement(time.Now().In(time.FixedZone("UTC+8", 8*3600)).Format("20060102")+"0427", "游戏登录遇到问题", "玩家已提供问题类型和详细信息。支持人员会通过邮件继续联系。")
-		success(w, r, map[string]string{"subject": m.Subject, "html": m.HTML})
+		success(w, r, map[string]string{"subject": m.Subject, "html": notify.AdmissionPreviewHTML(m)})
 	})
 	mux.HandleFunc("GET /api/v1/admin/support/tools", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := s.admin(r, "support.manage"); err != nil {
@@ -358,6 +358,7 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 	}
 	if sendErr == nil {
 		channel.Recipients = []string{event.Recipient}
+		replyTo := event.ReplyTo
 		message := notify.Message{Subject: event.Subject, Text: text, FromName: "Deuterium IX"}
 		if strings.HasPrefix(event.Kind, "CODE_") {
 			message, sendErr = notify.DecodeVerificationPayload(text)
@@ -368,7 +369,17 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 		if event.Kind == "TICKET_CREATED" {
 			message = notify.RenderSupportAcknowledgement(event.Reference, event.Subject, text)
 		}
-		message.ReplyTo = event.ReplyTo
+		if event.Channel == "ENTERPRISE" && (event.Kind == "TICKET_REPLY" || event.Kind == "MANUAL") {
+			if replyTo == "" {
+				replyTo = channel.From
+			}
+			var author string
+			author, sendErr = s.Store.SystemMailAuthorName(ctx, event.EventID)
+			if sendErr == nil {
+				message, sendErr = notify.RenderSupportReply(notify.SupportReplyMail{Subject: event.Subject, Body: text, AuthorName: author, TicketNumber: event.Reference, ReplyAddress: replyTo})
+			}
+		}
+		message.ReplyTo = replyTo
 		message.InReplyTo = event.InReplyTo
 		if event.InReplyTo != "" {
 			message.References = []string{event.InReplyTo}
@@ -380,6 +391,9 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 			} else {
 				sendErr = json.Unmarshal([]byte(raw), &message.Headers)
 			}
+		}
+		if sendErr == nil {
+			message, sendErr = notify.RenderSystemMessage(message)
 		}
 		if sendErr == nil {
 			sendErr = send(ctx, channel.Settings, password, event.EventID, message)

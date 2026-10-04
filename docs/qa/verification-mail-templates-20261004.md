@@ -1,5 +1,7 @@
 # 验证码邮件与邮件卡片候选验收
 
+后续已统一为[官网字体与品牌规范](../contracts/mail-visual-standard.md)，见[最新字体验收](mail-typography-20261004.md)。下文保留早期样式和实现记录，早期字号不再作为当前规范。
+
 2026-10-04，本机候选，未发布。沿用 `.worktrees/mail-identity-support` / `xiwanzi/mail-identity-support`。
 
 ## 模板
