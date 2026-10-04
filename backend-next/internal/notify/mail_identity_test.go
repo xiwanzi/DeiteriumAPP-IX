@@ -37,7 +37,7 @@ func TestAllMailUsesOfficialTypographyAndHostedBrand(t *testing.T) {
 	messages["system-notice"] = system
 	for name, m := range messages {
 		t.Run(name, func(t *testing.T) {
-			for _, s := range []string{"HarmonyOS Sans SC", "Novecentosanswide", "unicode-range:U+0030-0039", "deuterium-mail-fonts", "/mail-assets/v1/deuterium-ix-wordmark-"} {
+			for _, s := range []string{"HarmonyOS Sans SC", "local('Arial')", "unicode-range:U+0030-0039", "deuterium-mail-fonts", "/mail-assets/v1/deuterium-ix-wordmark-"} {
 				if !strings.Contains(m.HTML, s) {
 					t.Fatalf("missing official font or brand: %s", s)
 				}

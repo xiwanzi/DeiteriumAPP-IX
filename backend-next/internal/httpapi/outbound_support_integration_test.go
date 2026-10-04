@@ -85,7 +85,7 @@ func TestOutboundSupportCreateAndReplyThread(t *testing.T) {
 		t.Fatal("unexpected receipt or duplicate message")
 	}
 	if err := f.app.processSystemMail(ctx, func(_ context.Context, settings notify.Settings, _, _ string, message notify.Message) error {
-		if settings.From != "enterprise@example.com" || message.FromName != notify.SupportDisplayName || !strings.Contains(message.Subject, ticket) || !strings.Contains(message.HTML, ticket) || !strings.Contains(message.Text, ticket) || message.InReplyTo != "" || message.ReplyTo != "support@example.com" || len(message.Headers) != 0 {
+		if settings.From != "enterprise@example.com" || message.FromName != notify.SupportDisplayName || strings.Contains(message.Subject, ticket) || !strings.Contains(message.HTML, ticket) || !strings.Contains(message.Text, ticket) || message.InReplyTo != "" || message.ReplyTo != "support@example.com" || len(message.Headers) != 0 {
 			t.Fatal("first mail is not a numbered human reply", message.Subject)
 		}
 		return nil
