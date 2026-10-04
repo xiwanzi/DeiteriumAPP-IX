@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-10-04：**Web 2.0.24 与配套 Go 已于 19:56 上线**（PR #62，源码 `0a6fea8d047c`）。工作台支持主动建单、首封带编号人工邮件且不发自动回执；超级管理员可修改其他账号游戏 ID，保留原游戏身份及资产。App 2.0.15 不变；本轮基线 40 账号、6 工单、27 订单、5 委托、1 注销记录保留，四节点在线。维护 `.worktrees/mail-identity-support` / `xiwanzi/outbound-support-ticket`，见[上线记录](deployment/outbound-support-2.0.24-live.md)。下方为较早记录。
+
 2026-10-04：**Web 2.0.23 与配套 Go 已于 14:09 上线**（PR #60，源码 `77af63a1b290`）。自动工单回执、人工回复及相关网页称呼统一为“Deuterium IX 玩家支持”；邮箱地址、样式和配置保持。App 2.0.15 不变，8 账号、4 工单、27 订单、5 委托保留。维护 `.worktrees/mail-identity-support` / `xiwanzi/player-support-name`，见[上线记录](deployment/player-support-name-live.md)。下方为较早记录。
 
 2026-10-04：**工单工作区 Web 2.0.22 与配套 Go 已于 13:46 上线**（PR #58，源码 `939d0b780f77`）。默认收起全站导航，铺满可用宽高，固定回复区，前置处理操作；草稿/重试与中文搜索修复。App 2.0.15、邮件样式和配置保持；8 账号、3 工单、27 订单、5 委托、0 注销记录保留，四节点在线。维护 `.worktrees/mail-identity-support` / `xiwanzi/support-workspace-efficiency`，见[上线记录](deployment/support-workspace-2.0.22-live.md)。下方为较早记录。
