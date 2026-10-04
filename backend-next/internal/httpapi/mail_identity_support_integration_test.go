@@ -245,6 +245,9 @@ func TestEmailSupportInboxTicketNumbersThreadingAndRoleIsolation(t *testing.T) {
 	if err != nil || ignored.Status != "IGNORED" {
 		t.Fatal("auto reply loop", err)
 	}
+	if _, err := f.store.DB.Exec("UPDATE identities SET display_name='NewSupportName' WHERE id=?", f.users["Bob"].ID); err != nil {
+		t.Fatal(err)
+	}
 	sent := 0
 	for n := 0; n < 5; n++ {
 		err = f.app.processSystemMail(ctx, func(_ context.Context, c notify.Settings, _ string, _ string, m notify.Message) error {
@@ -254,6 +257,9 @@ func TestEmailSupportInboxTicketNumbersThreadingAndRoleIsolation(t *testing.T) {
 			}
 			if c.From == "dm@example.com" && (!strings.Contains(m.HTML, ticket) && !strings.Contains(m.HTML, isolated.TicketID)) {
 				t.Fatal("receipt template missing number")
+			}
+			if c.From == "enterprise@example.com" && (!strings.Contains(m.HTML, "Bob") || strings.Contains(m.HTML, "NewSupportName") || !strings.Contains(m.HTML, "请重新进入游戏后再试一次。") || !strings.Contains(m.HTML, "DEUTERIUM IX") || len(m.Images) != 1 || strings.Contains(m.HTML+m.Text, "PRIVATE OPERATOR NOTE")) {
+				t.Fatal("human reply signature, footer or private-note isolation changed")
 			}
 			return nil
 		})
@@ -283,6 +289,34 @@ func TestEmailSupportInboxTicketNumbersThreadingAndRoleIsolation(t *testing.T) {
 		t.Fatal(err)
 	}
 
+}
+
+func TestManualEnterpriseMailAddsFooterWithoutInventingTicket(t *testing.T) {
+	f := mailSupportFixture(t)
+	ctx := context.Background()
+	body := "您好，\n\n这是客服独立编写的回复正文。"
+	if _, err := f.store.QueueManualMail(ctx, f.users["Alice"].ID, "manual-footer", "ENTERPRISE", "reader@example.com", "关于您的问题", body, f.app.Config.SMTPKey); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.app.processSystemMail(ctx, func(_ context.Context, c notify.Settings, _, _ string, m notify.Message) error {
+		if c.From != "enterprise@example.com" || m.ReplyTo != c.From || m.Subject != "关于您的问题" || !strings.HasPrefix(m.Text, body) || !strings.Contains(m.HTML, "Alice") || !strings.Contains(m.HTML, "DEUTERIUM IX") || strings.Contains(m.Text, "工单编号：") || len(m.Images) != 1 {
+			t.Fatal("manual correspondence lost its content or footer")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.store.QueueManualMail(ctx, f.users["Alice"].ID, "manual-dm", "DM", "reader@example.com", "系统通知", body, f.app.Config.SMTPKey); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.app.processSystemMail(ctx, func(_ context.Context, _ notify.Settings, _, _ string, m notify.Message) error {
+		if m.Text != body || m.HTML != "" || m.ReplyTo != "" {
+			t.Fatal("non-support channel received a human-reply footer")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestInboxCutoffAttachmentsAndConcurrentTicketNumbers(t *testing.T) {

@@ -225,6 +225,16 @@ func (s *Store) SystemMailEvents(ctx context.Context) ([]SystemMailEvent, error)
 	return out, rows.Err()
 }
 
+// Ticket replies retain the public signature recorded when the reply was written.
+func (s *Store) SystemMailAuthorName(ctx context.Context, eventID string) (string, error) {
+	var name string
+	err := s.DB.QueryRowContext(ctx, `SELECT COALESCE(
+	 (SELECT m.author_name FROM support_messages m WHERE m.ticket_id=e.reference_id AND m.mail_message_id=CONCAT(e.event_id,'@deuterium-notifications') AND m.direction='OUTBOUND' AND m.visibility='PUBLIC' LIMIT 1),
+	 NULLIF(i.display_name,''),NULLIF(i.game_id,''),'')
+	 FROM mail_outbox e LEFT JOIN identities i ON i.id=e.actor_id AND i.status='active' WHERE e.event_id=?`, eventID).Scan(&name)
+	return name, err
+}
+
 func (s *Store) ClaimMail(ctx context.Context) (SystemMailEvent, error) {
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {

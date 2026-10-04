@@ -358,6 +358,7 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 	}
 	if sendErr == nil {
 		channel.Recipients = []string{event.Recipient}
+		replyTo := event.ReplyTo
 		message := notify.Message{Subject: event.Subject, Text: text, FromName: "Deuterium IX"}
 		if strings.HasPrefix(event.Kind, "CODE_") {
 			message, sendErr = notify.DecodeVerificationPayload(text)
@@ -368,7 +369,17 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 		if event.Kind == "TICKET_CREATED" {
 			message = notify.RenderSupportAcknowledgement(event.Reference, event.Subject, text)
 		}
-		message.ReplyTo = event.ReplyTo
+		if event.Channel == "ENTERPRISE" && (event.Kind == "TICKET_REPLY" || event.Kind == "MANUAL") {
+			if replyTo == "" {
+				replyTo = channel.From
+			}
+			var author string
+			author, sendErr = s.Store.SystemMailAuthorName(ctx, event.EventID)
+			if sendErr == nil {
+				message, sendErr = notify.RenderSupportReply(notify.SupportReplyMail{Subject: event.Subject, Body: text, AuthorName: author, TicketNumber: event.Reference, ReplyAddress: replyTo})
+			}
+		}
+		message.ReplyTo = replyTo
 		message.InReplyTo = event.InReplyTo
 		if event.InReplyTo != "" {
 			message.References = []string{event.InReplyTo}
