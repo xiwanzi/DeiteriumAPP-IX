@@ -1,0 +1,15 @@
+{
+  "version": "2.0.22",
+  "assets": [
+    {
+      "path": "/assets/index-DskksZpi.js",
+      "sha256": "bd34c9abc160e2c558db25f3df52c8dd6cdc2749b4ea1b4c26fae8a078954b56"
+    },
+    {
+      "path": "/assets/index-Bt_5xGpS.css",
+      "sha256": "6e3a4016000b3c40d7097e10af4d792bf0dc235a48b354406dbbc5316eb6b600"
+    }
+  ],
+  "publicFilesMatchBuild": true,
+  "browserSessionRevoked": true
+}

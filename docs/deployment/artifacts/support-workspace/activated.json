@@ -1,0 +1,21 @@
+{
+  "activatedAt": "2026-10-04T05:46:36Z",
+  "backendDirectory": "/opt/deuterium/releases/support-workspace-939d0b780f77",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.22-939d0b780f77/dist",
+  "backendSha256": "a3c8baf6b59d3be3f355c85025ac9b63adadd15e80fdbfd44d4a0a87cd1975bf",
+  "health": {
+    "status": "ready"
+  },
+  "schemaUnchanged": true,
+  "existingBusinessIDsPreserved": true,
+  "mailConfigurationUnchanged": true,
+  "appUnchanged": true,
+  "webVersion": "2.0.22",
+  "accounts": 8,
+  "tickets": 3,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "deletionCount": 0
+}
