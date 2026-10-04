@@ -13,7 +13,7 @@ body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
 table,td{mso-table-lspace:0;mso-table-rspace:0}table{border-collapse:collapse}
 img{border:0;outline:none;-ms-interpolation-mode:bicubic}
 body{margin:0;padding:0;width:100%!important}
-@media screen and (max-width:600px){.receipt-outside{padding:12px 0!important}.receipt-pad{padding-left:24px!important;padding-right:24px!important}.receipt-brand{font-size:19px!important}.receipt-heading{font-size:23px!important}}
+@media screen and (max-width:600px){.receipt-outside{padding:12px 0!important}.receipt-pad{padding-left:24px!important;padding-right:24px!important}.receipt-brand{font-size:19px!important}.receipt-heading{font-size:24px!important}.receipt-number{font-size:28px!important}}
 </style>
 </head>
 <body bgcolor="#ffffff" style="margin:0;padding:0;color-scheme:only light;background-color:#ffffff!important;background-image:linear-gradient(#ffffff,#ffffff)!important;">
@@ -23,11 +23,12 @@ body{margin:0;padding:0;width:100%!important}
 <!--[if mso]><table role="presentation" width="600"><tr><td><![endif]-->
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;font-family:Arial,'Microsoft YaHei','PingFang SC',sans-serif;">
 <tr><td class="receipt-pad" bgcolor="#f6f6f6" style="padding:24px 36px;background-color:#f6f6f6!important;background-image:linear-gradient(#f6f6f6,#f6f6f6)!important;">
-<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="50" style="width:50px;vertical-align:middle;"><img src="cid:deuterium-ix-emblem-small-v1" width="36" height="36" alt="Deuterium IX" style="display:block;width:36px;height:36px;border:0;"></td><td style="vertical-align:middle;"><div class="receipt-brand" style="font-family:Arial,sans-serif;font-size:20px;font-weight:600;line-height:1.3;color:#454a50!important;-webkit-text-fill-color:#454a50!important;">DEUTERIUM IX</div><div style="padding-top:4px;font-size:12px;line-height:1.5;color:#70757a!important;-webkit-text-fill-color:#70757a!important;">玩家支持</div></td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="65" style="width:65px;vertical-align:middle;"><img src="cid:deuterium-ix-emblem-small-v1" width="46" height="46" alt="Deuterium IX 标志" style="display:block;width:46px;height:46px;border:0;"></td><td style="vertical-align:middle;"><div class="receipt-brand" style="font-family:Arial,'Microsoft YaHei',sans-serif;font-size:19px;font-weight:700;letter-spacing:1px;line-height:1.5;color:#20252b!important;-webkit-text-fill-color:#20252b!important;">DEUTERIUM IX</div><div style="padding-top:3px;font-size:11px;letter-spacing:.5px;line-height:1.6;color:#68727e!important;-webkit-text-fill-color:#68727e!important;">玩家支持</div></td></tr></table>
 </td></tr>
 <tr><td class="receipt-pad" bgcolor="#ffffff" style="padding:32px 36px 0;background-color:#ffffff!important;background-image:linear-gradient(#ffffff,#ffffff)!important;">
-<h1 class="receipt-heading" style="margin:0 0 13px;font-size:24px;font-weight:600;line-height:1.5;color:#353a40!important;-webkit-text-fill-color:#353a40!important;">工单已收到</h1>
-<p style="margin:0 0 30px;font-size:13px;line-height:1.8;color:#70757a!important;-webkit-text-fill-color:#70757a!important;">工单编号 <span class="receipt-number" style="font-family:Arial,sans-serif;font-size:19px;font-weight:500;white-space:nowrap;color:#454a50!important;-webkit-text-fill-color:#454a50!important;">{{.Number}}</span></p>
+<h1 class="receipt-heading" style="margin:0 0 22px;font-size:25px;font-weight:600;line-height:1.5;color:#20252b!important;-webkit-text-fill-color:#20252b!important;">工单已收到</h1>
+<p style="margin:0 0 7px;font-size:12px;line-height:1.8;color:#68727e!important;-webkit-text-fill-color:#68727e!important;">工单编号</p>
+<p class="receipt-number" style="margin:0 0 30px;font-family:Consolas,'Courier New',monospace;font-size:30px;font-weight:700;letter-spacing:.6px;line-height:1.4;white-space:nowrap;color:#20252b!important;-webkit-text-fill-color:#20252b!important;">{{.Number}}</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.85;color:#5f6368!important;-webkit-text-fill-color:#5f6368!important;">您好，</p>
 <p style="margin:0 0 26px;font-size:15px;line-height:1.85;color:#5f6368!important;-webkit-text-fill-color:#5f6368!important;">感谢您联系 Deuterium IX 玩家支持。<br>我们已收到您的来信。</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;"><tr><td style="word-break:break-word;overflow-wrap:anywhere;">
