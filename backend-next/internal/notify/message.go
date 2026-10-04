@@ -24,6 +24,9 @@ type InlineImage struct {
 type Message struct {
 	Subject, Text, HTML, FromName string
 	Images                        []InlineImage
+	ReplyTo, InReplyTo            string
+	References                    []string
+	Headers                       map[string]string
 }
 
 var messageToken = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}$`)
@@ -50,6 +53,38 @@ func composeMessage(s Settings, id string, m Message) ([]byte, error) {
 	}
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\nMessage-ID: <%s@deuterium-notifications>\r\nMIME-Version: 1.0\r\n", from, strings.Join(s.Recipients, ", "), mime.BEncoding.Encode("UTF-8", m.Subject), time.Now().UTC().Format(time.RFC1123Z), id)
+	if m.ReplyTo != "" {
+		a, err := mail.ParseAddress(m.ReplyTo)
+		if err != nil || a.Address != m.ReplyTo || strings.ContainsAny(m.ReplyTo, "\r\n") {
+			return nil, errors.New("回复邮箱格式无效。")
+		}
+		fmt.Fprintf(&b, "Reply-To: %s\r\n", m.ReplyTo)
+	}
+	if m.InReplyTo != "" {
+		if !ValidMessageID(m.InReplyTo) {
+			return nil, errors.New("邮件引用编号无效。")
+		}
+		fmt.Fprintf(&b, "In-Reply-To: <%s>\r\n", m.InReplyTo)
+	}
+	if len(m.References) > 20 {
+		return nil, errors.New("邮件引用过多。")
+	}
+	if len(m.References) > 0 {
+		b.WriteString("References:")
+		for _, ref := range m.References {
+			if !ValidMessageID(ref) {
+				return nil, errors.New("邮件引用编号无效。")
+			}
+			fmt.Fprintf(&b, " <%s>", ref)
+		}
+		b.WriteString("\r\n")
+	}
+	for name, value := range m.Headers {
+		if (name != "X-Deuterium-Submission" && name != "X-Deuterium-Proof" && name != "Auto-Submitted" && name != "X-Auto-Response-Suppress") || strings.ContainsAny(value, "\r\n") || len(value) > 200 {
+			return nil, errors.New("邮件标记无效。")
+		}
+		fmt.Fprintf(&b, "%s: %s\r\n", name, value)
+	}
 	if m.HTML == "" {
 		b.WriteString("Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n")
 		if err := writeEncoded(&b, []byte(m.Text)); err != nil {
@@ -96,4 +131,8 @@ func composeMessage(s Settings, id string, m Message) ([]byte, error) {
 		return nil, err
 	}
 	return b.Bytes(), nil
+}
+
+func ValidMessageID(value string) bool {
+	return len(value) > 2 && len(value) <= 998 && strings.Contains(value, "@") && strings.IndexFunc(value, func(r rune) bool { return r <= 32 || r >= 127 || strings.ContainsRune("<>", r) }) < 0
 }

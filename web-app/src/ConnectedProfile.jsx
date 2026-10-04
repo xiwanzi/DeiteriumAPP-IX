@@ -4,16 +4,17 @@ import { Avatar, Badge, Button, Empty, Field, Modal, PageHead, Toggle } from "./
 import { id } from "./format.js";
 import { uploadAsset } from "./assets.js";
 
-export default function ConnectedProfile({ client, user, onLogout, navigate, onProfileUpdated }) {
+export default function ConnectedProfile({ client, user, onLogout, onPasswordChanged, navigate, onProfileUpdated }) {
   const [profile, setProfile] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
-    [editing, setEditing] = useState(false), [bio, setBio] = useState(""), [progress, setProgress] = useState(null);
+    [editing, setEditing] = useState(false), [bio, setBio] = useState(""), [displayName, setDisplayName] = useState(""), [progress, setProgress] = useState(null);
+  const [changingPassword,setChangingPassword]=useState(false);
   const pendingBio = useRef(null), fileInput = useRef(null);
   const load = async () => { setError(""); try { const r = await client.profile(user.playerRef); setProfile(r.data); } catch (e) { setError(e.message); } };
   useEffect(() => { load(); }, [user.playerRef]);
   const saveBio = async (event) => {
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
-    if (!pendingBio.current || pendingBio.current.bio !== bio) pendingBio.current = { clientRequestId: id(), expectedVersion: profile.version, bio };
-    try { const r = await client.patchProfile(pendingBio.current); setProfile(r.data); setEditing(false); pendingBio.current = null; }
+    if (!pendingBio.current || pendingBio.current.bio !== bio || pendingBio.current.displayName !== displayName) pendingBio.current = { clientRequestId: id(), expectedVersion: profile.version, bio, displayName };
+    try { const r = await client.patchProfile(pendingBio.current); setProfile(r.data); onProfileUpdated?.(r.data); setEditing(false); pendingBio.current = null; }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
   const saveAvatar = async (file) => {
@@ -26,18 +27,19 @@ export default function ConnectedProfile({ client, user, onLogout, navigate, onP
   };
   return <section className="connected-profile">
     <PageHead eyebrow="DEUTERIUM ID" title="你的账号" subtitle="同一个身份，连接 App、网页和游戏。"><Button secondary disabled={busy} onClick={load}><RefreshCw size={16} />刷新</Button></PageHead>
-    <div className="profile-card"><div className="profile-identity"><Avatar user={profile || user} size="large" /><div><h2>{user.gameId}</h2><p>QQ · {user.qq}</p><small>Deuterium ID · {user.userId}</small></div></div></div>
+    <div className="profile-card"><div className="profile-identity"><Avatar user={profile || user} size="large" /><div><h2>{profile?.displayName || user.displayName || user.gameId}</h2><p>游戏 ID · {user.gameId}</p><p>QQ · {user.qq}</p><small>Deuterium ID · {user.userId}</small></div></div></div>
     {error && <p className="notice-box" role="alert">{error}</p>}
     {profile && <>
       <div className="panel" style={{ padding: 24, marginTop: 24 }}><h3>个人简介</h3><p style={{ whiteSpace: "pre-wrap" }}>{profile.bio || "还没有填写个人简介。"}</p>
-        <div className="button-row"><Button secondary disabled={busy} onClick={() => { setBio(profile.bio); setEditing(true); }}><PenLine size={16} />编辑简介</Button><Button secondary disabled={busy} onClick={() => fileInput.current?.click()}><Upload size={16} />更换头像</Button></div>
+        <div className="button-row"><Button secondary disabled={busy} onClick={() => { setBio(profile.bio); setDisplayName(profile.displayName || profile.gameId); setEditing(true); }}><PenLine size={16} />编辑资料</Button><Button secondary disabled={busy} onClick={() => fileInput.current?.click()}><Upload size={16} />更换头像</Button></div>
         <input ref={fileInput} type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={(e) => saveAvatar(e.target.files?.[0])} />
         {progress && <div role="status"><p>{progress.label} · {progress.value}%</p><progress value={progress.value} max="100" style={{ width: "100%" }} aria-label="头像上传进度" /></div>}
       </div>
-      <div className="button-row"><Button secondary onClick={() => navigate("/notification-settings")}><Bell size={16} />通知设置</Button><Button secondary onClick={() => navigate("/wallet")}>查看钱包</Button><Button secondary onClick={() => navigate("/orders")}>我的订单</Button><Button secondary onClick={() => navigate("/merchant")}>我的商店</Button><Button secondary onClick={onLogout}><LogOut size={16} />退出登录</Button></div>
+      <div className="button-row"><Button secondary onClick={()=>setChangingPassword(true)}>更改密码</Button><Button secondary onClick={() => navigate("/notification-settings")}><Bell size={16} />通知设置</Button><Button secondary onClick={() => navigate("/support")}>邮件支持</Button><Button secondary onClick={() => navigate("/wallet")}>查看钱包</Button><Button secondary onClick={() => navigate("/orders")}>我的订单</Button><Button secondary onClick={() => navigate("/merchant")}>我的商店</Button><Button secondary onClick={onLogout}><LogOut size={16} />退出登录</Button></div>
     </>}
     {!profile && !error && <p className="muted">正在读取资料…</p>}
-    {editing && <Modal title="编辑个人简介" close={() => { if (!busy) setEditing(false); }}><form onSubmit={saveBio}><Field label="个人简介"><textarea value={bio} onChange={(e) => { setBio(e.target.value); pendingBio.current = null; }} maxLength={200} rows={5} /></Field><p className="muted">{bio.length} / 200</p>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? "正在保存…" : "保存"}</Button></form></Modal>}
+    {changingPassword && <Modal title="更改密码" close={()=>setChangingPassword(false)} dismissOnBackdrop={false}><PasswordChangeForm client={client} user={user} onChanged={onPasswordChanged} /></Modal>}
+    {editing && <Modal title="编辑个人资料" close={() => { if (!busy) setEditing(false); }}><form onSubmit={saveBio}><Field label="昵称" hint="支持中文，最多 24 个字符；不会改变游戏 ID。" required maxLength={24} value={displayName} onChange={e => { setDisplayName(e.target.value); pendingBio.current=null; }} /><Field label="个人简介"><textarea value={bio} onChange={(e) => { setBio(e.target.value); pendingBio.current = null; }} maxLength={200} rows={5} /></Field><p className="muted">{bio.length} / 200</p>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? "正在保存…" : "保存"}</Button></form></Modal>}
   </section>;
 }
 
@@ -46,8 +48,8 @@ export function PlayerProfile({ client, user, playerRef, onMessage }) {
   useEffect(() => { let active = true; setProfile(null); client.profile(playerRef).then((r) => { if (active && !client.erasedPlayerRefs.has(playerRef)) setProfile(r.data); }).catch((e) => { if (active) setError(e.message); }); const unsubscribe = client.onAccountDeletions((refs) => { if (refs.has(playerRef)) { setProfile(null); setError("该账号已注销"); } }); return () => { active = false; unsubscribe(); }; }, [client, playerRef]);
   const follow = async () => { setBusy(true); setError(""); try { const r = profile.followed ? await client.request(`/api/v1/chat/follows/${encodeURIComponent(playerRef)}`, { method: "DELETE" }) : await client.request("/api/v1/chat/follows", { method: "POST", body: { playerRef } }); setProfile({ ...profile, followed: r.data.followed }); } catch (e) { setError(e.message); } finally { setBusy(false); } };
   if (!profile) return <Empty title={error ? "暂时无法读取资料" : "正在读取资料"} text={error || "请稍候…"} />;
-  return <><div className="player-detail"><Avatar user={profile} size="large" /><h2>{profile.gameId}</h2><Badge tone="neutral">{profile.online ? "游戏在线" : profile.lastSeenAt ? `上次在线 ${new Date(profile.lastSeenAt).toLocaleString("zh-CN")}` : "玩家"}</Badge></div>
-    <p className="description" style={{ whiteSpace: "pre-wrap" }}>{profile.bio || "还没有填写个人简介。"}</p><p>QQ · {profile.qq}</p>
+  return <><div className="player-detail"><Avatar user={profile} size="large" /><h2>{profile.displayName || profile.gameId}</h2><Badge tone="neutral">{profile.online ? "游戏在线" : profile.lastSeenAt ? `上次在线 ${new Date(profile.lastSeenAt).toLocaleString("zh-CN")}` : "玩家"}</Badge></div>
+    <p className="description" style={{ whiteSpace: "pre-wrap" }}>{profile.bio || "还没有填写个人简介。"}</p><p>游戏 ID · {profile.gameId}</p><p>QQ · {profile.qq}</p>
     {user.playerRef !== playerRef && <div className="button-row"><Button disabled={busy} onClick={async () => { setBusy(true); try { await onMessage(profile); } catch (e) { setError(e.message); } finally { setBusy(false); } }}><MessageCircle size={16} />私聊</Button><Button secondary disabled={busy} onClick={follow}>{profile.followed ? "取消特别关心" : "特别关心"}</Button></div>}
     {error && <p className="auth-error" role="alert">{error}</p>}
   </>;
@@ -62,4 +64,12 @@ export function ConnectedNotificationSettings({ client }) {
   return <><PageHead eyebrow="NOTIFICATIONS" title="通知设置" subtitle="提醒偏好在 App 与网页间同步。"><Button secondary onClick={load} disabled={busy}>刷新</Button></PageHead>{error && <p className="notice-box" role="alert">{error}</p>}
     {value && <fieldset className="panel" disabled={busy} style={{ padding: 24, minWidth: 0, margin: 0, border: "1px solid var(--line)" }}>{topics.map(([key, label, description]) => <Toggle key={key} label={label} description={description} checked={Boolean(value[key])} onChange={(checked) => change(key, checked)} />)}</fieldset>}
   </>;
+}
+
+function PasswordChangeForm({client,user,onChanged}){
+ const [verification,setVerification]=useState(null),[code,setCode]=useState(""),[password,setPassword]=useState(""),[confirm,setConfirm]=useState(""),[busy,setBusy]=useState(false),[wait,setWait]=useState(0),[error,setError]=useState("");
+ useEffect(()=>{if(!wait)return;const timer=setTimeout(()=>setWait(n=>n-1),1000);return()=>clearTimeout(timer)},[wait]);
+ const send=async()=>{if(busy||wait)return;setBusy(true);setError("");try{const r=await client.request("/api/v1/account/password-change-code",{method:"POST",body:{}});setVerification(r.data);setWait(r.data.resendAfterSeconds||60)}catch(e){setError(e.message)}finally{setBusy(false)}};
+ const save=async e=>{e.preventDefault();if(busy)return;if(password!==confirm){setError("两次输入的密码不一致。");return}setBusy(true);setError("");try{await client.request("/api/v1/account/password-change",{method:"POST",body:{verificationToken:verification.verificationToken,code,newPassword:password}});setPassword("");setConfirm("");onChanged?.()}catch(e){setError(e.message)}finally{setBusy(false)}};
+ return <form onSubmit={save}><p>正在为 <strong>{user.gameId}</strong> 更改密码。</p><p className="muted">{user.email?`验证码将发送至 ${user.email}。`:"此账号尚未绑定邮箱，请进入游戏接收验证码。"}</p><Button secondary disabled={busy||wait>0} onClick={send}>{wait?`${wait} 秒后可重发`:"发送验证码"}</Button>{verification&&<><Field label={verification.delivery==="EMAIL"?"邮箱验证码":"游戏验证码"} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,6))} required maxLength={6} inputMode="numeric" autoComplete="one-time-code"/><Field label="新密码" type="password" value={password} onChange={e=>setPassword(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password"/><Field label="再次输入新密码" type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} required minLength={8} maxLength={64} autoComplete="new-password"/><p className="muted">保存后会退出所有设备，请使用新密码重新登录。</p></>}{error&&<p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy||!verification||code.length!==6}>确认更改密码</Button></form>
 }

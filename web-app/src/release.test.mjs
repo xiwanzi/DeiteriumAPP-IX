@@ -5,7 +5,7 @@ import { credit, transferAmount } from "./format.js";
 import { publicConfig, backendOrigin } from "../gateway.mjs";
 
 test("release configuration cannot activate a demo login without an upstream", () => {
-  assert.deepEqual(publicConfig(null), { mode: "connected", version: "2.0.20", configured: false });
+  assert.deepEqual(publicConfig(null), { mode: "connected", version: "2.0.21", configured: false });
   assert.equal(publicConfig(backendOrigin("http://127.0.0.1:8080")).mode, "connected");
 });
 
@@ -44,14 +44,16 @@ test("wallet requests keep CSRF, decimal amounts, confirmed recipient refs and s
   assert.equal(calls.at(-1).path, "/api/v1/wallet/transfers/opaque%2Freference");
 });
 
-test("registration and reset preserve the game verification token contract", async () => {
+test("registration requests email proof without a password and reset preserves the token", async () => {
   const calls = [];
   const client = new DeuteriumClient({ fetchImpl: async (path, options) => {
     calls.push({ path, body: JSON.parse(options.body) });
     return new Response(JSON.stringify({ data: {} }));
   } });
-  await client.requestVerification("register", { gameId: "Player", qq: "123456", password: "test-password" });
-  assert.deepEqual(calls[0].body, { gameId: "Player", qq: "123456", password: "test-password" });
+  await client.requestVerification("register", { gameId: "Player", email: "player@example.com", password: "test-password" });
+  assert.deepEqual(calls[0].body, { gameId: "Player", email: "player@example.com" });
   await client.completeVerification("reset", { verificationToken: "opaque-token", code: "123456", password: "new-test-password" });
   assert.deepEqual(calls[1].body, { verificationToken: "opaque-token", code: "123456", newPassword: "new-test-password" });
+  await client.requestVerification("reset", { gameId: "player@example.com" });
+  assert.deepEqual(calls[2].body, { account: "player@example.com" });
 });

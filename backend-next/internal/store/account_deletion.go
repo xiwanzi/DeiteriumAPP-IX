@@ -71,7 +71,7 @@ func (s *Store) DeleteAccount(ctx context.Context, proof AccountDeletionProof, t
 	}
 	var u User
 	var version int64
-	err = tx.QueryRowContext(ctx, "SELECT id,player_ref,server_uuid,game_id,qq,status,admin_version FROM identities WHERE id=? FOR UPDATE", target).Scan(&u.ID, &u.PlayerRef, &u.ServerUUID, &u.GameID, &u.QQ, &u.Status, &version)
+	err = tx.QueryRowContext(ctx, "SELECT id,player_ref,COALESCE(server_uuid,''),game_id,qq,status,admin_version FROM identities WHERE id=? FOR UPDATE", target).Scan(&u.ID, &u.PlayerRef, &u.ServerUUID, &u.GameID, &u.QQ, &u.Status, &version)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrSocialNotFound
 	}
@@ -98,7 +98,7 @@ func (s *Store) DeleteAccount(ctx context.Context, proof AccountDeletionProof, t
 	tombstone[8] = (tombstone[8] & 63) | 128
 	h := hex.EncodeToString(tombstone[:])
 	uuid := h[:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:]
-	if _, err = tx.ExecContext(ctx, "UPDATE identities SET status='deleted',game_id=?,qq='',password_hash='',server_uuid=?,legacy_fingerprint='deleted',ban_reason='',admin_version=admin_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=?", DeletedAccountName, uuid, target); err != nil {
+	if _, err = tx.ExecContext(ctx, "UPDATE identities SET status='deleted',email=NULL,display_name=NULL,game_id=?,qq='',password_hash='',server_uuid=?,legacy_fingerprint='deleted',ban_reason='',admin_version=admin_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=?", DeletedAccountName, uuid, target); err != nil {
 		return nil, err
 	}
 	if _, err = tx.ExecContext(ctx, "INSERT INTO account_deletions(user_id,player_ref,original_uuid,deleted_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", target, u.PlayerRef, u.ServerUUID); err != nil {

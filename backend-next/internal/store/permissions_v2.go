@@ -4,7 +4,7 @@ import "context"
 
 func ValidPermission(permission string) bool {
 	switch permission {
-	case "core.read", "core.manage", "platform.admin", "announcements.manage", "moderation.read", "store.manage", "store.members.manage", "commerce.manage", "intervention.manage", "interventions.manage", "audit.read", "releases.manage", "appearance.manage":
+	case "core.read", "core.manage", "platform.admin", "support.manage", "announcements.manage", "moderation.read", "store.manage", "store.members.manage", "commerce.manage", "intervention.manage", "interventions.manage", "audit.read", "releases.manage", "appearance.manage":
 		return true
 	default:
 		return false

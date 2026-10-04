@@ -36,6 +36,8 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     var token: String? by mutableStateOf(readToken()); private set
     var user: JSONObject? by mutableStateOf(prefs.getString("user", null)?.let { runCatching { JSONObject(it) }.getOrNull() }); private set
     val signedIn: Boolean get() = !token.isNullOrBlank() && user != null
+    val gameVerified: Boolean get() = user?.optBoolean("gameVerified",true) == true
+    val displayName: String get() = user?.optString("displayName")?.takeIf{it.isNotBlank()} ?: userName
     val userName: String get() = user?.optString("gameId").orEmpty()
     val playerRef: String get() = user?.optString("playerRef").orEmpty()
 
@@ -71,7 +73,7 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
         val data = request("POST", "/account/login", JSONObject().put("account", account).put("password", password), authenticated = false)
         rememberSession(data); return userName
     }
-    suspend fun register(gameId: String, qq: String, password: String, verificationToken: String, code: String): String {
+    suspend fun register(gameId: String, email: String, password: String, verificationToken: String, code: String): String {
         val data = request("POST", "/account/register", JSONObject()
             .put("password", password).put("verificationToken", verificationToken).put("code", code), authenticated = false)
         rememberSession(data); return userName
@@ -100,6 +102,7 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
                 if(!response.isSuccessful) {
                     val error = root?.optJSONObject("error")
                     if(response.code == 401 && authenticated) withContext(Dispatchers.Main) { if(token==requestToken)forgetSession() }
+                    if(error?.optString("code")=="GAME_VERIFICATION_REQUIRED") withContext(Dispatchers.Main) { if(token==requestToken) { user=user?.let{JSONObject(it.toString()).put("gameVerified",false)};prefs.edit().putString("user",user.toString()).apply() } }
                     throw ApiFailure(error?.optString("code") ?: "HTTP_${response.code}",
                         error?.optString("message")?.takeIf { it.isNotBlank() } ?: "服务暂不可用（${response.code}）", response.code)
                 }

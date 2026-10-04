@@ -109,13 +109,13 @@ class DeuteriumActivity : ComponentActivity() {
             var avatar by remember { mutableStateOf(prefs.getString("avatar:${api.userName}",null).takeIf{api.signedIn}) }
             val userName = api.userName
             val signedIn = api.signedIn
-            LaunchedEffect(signedIn,userName){
-                if(!signedIn)avatar=null else {
+            LaunchedEffect(signedIn,userName,api.gameVerified){
+                if(!signedIn||!api.gameVerified)avatar=null else {
                     avatar=prefs.getString("avatar:$userName",null)
                     runCatching{api.request("GET","/players/${api.playerRef}")}.onSuccess{profile->avatar=profile.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"};prefs.edit().putString("avatar:$userName",avatar).apply()}
                 }
             }
-            LaunchedEffect(signedIn) { if(!signedIn)session.clearSession() }
+            LaunchedEffect(signedIn) { if(!signedIn)session.clearSession() else runCatching{api.verifySession()} }
             var params by remember { mutableStateOf(materialStore.load()) }
             var paymentAssetsReady by remember { mutableStateOf(FacePayAssets.movie!=null) }
             LaunchedEffect(Unit) {
@@ -151,9 +151,10 @@ class DeuteriumActivity : ComponentActivity() {
                 }
                 CompositionLocalProvider(LocalHeaderGlassParameters provides params.header,LocalAppUpdates provides updates,LocalContentColor provides MaterialTheme.colorScheme.onSurface, LocalOverlayGlassEnabled provides overlayGlass,LocalDeviceTilt provides rememberDeviceTilt(tilt && motion && (glass||overlayGlass))) {
                     Box(Modifier.fillMaxSize()) {
-                    if(!signedIn) AuthPage { name ->
+                    Crossfade(targetState=if(!signedIn)"login" else if(!api.gameVerified)"verify" else "app",animationSpec=tween(if(motion)240 else 0),label="identity-gate"){identityStage ->
+                    if(identityStage=="login") AuthPage { name ->
                         session.clearSession()
-                    } else LabApp(
+                    } else if(identityStage=="verify") GameVerificationPage(motion,{session.clearSession()},{scope.launch{runCatching{api.logout()}.onSuccess{session.clearSession()}.onFailure{Toast.makeText(this@DeuteriumActivity,it.message,Toast.LENGTH_LONG).show()}}}) else LabApp(
                         theme, motion, glass, params, avatar, userName,
                         { theme = it; prefs.edit().putInt("theme",it).apply();syncSystemTheme(it) },
                         { motion = it; prefs.edit().putBoolean("motion",it).apply() },
@@ -165,11 +166,12 @@ class DeuteriumActivity : ComponentActivity() {
                         { prefs.edit().putStringSet("followed:$userName",it).apply() },
                         tilt,{tilt=it;prefs.edit().putBoolean("tilt",it).apply()},overlayGlass,{overlayGlass=it;prefs.edit().putBoolean("overlayGlass",it).apply()},incomingRoute,{incomingRoute=null;intent.removeExtra("route")},session
                     )
+                    }
                     cropSource?.let { source ->
                         fun releaseSource(){cropSource=null;scope.launch(Dispatchers.IO){AppStorage.removeImageWorkFile(this@DeuteriumActivity,source)}}
                         AvatarCropper(source,::releaseSource){avatar=it;prefs.edit().putString("avatar:$userName",it).apply();releaseSource()}
                     }
-                    AppLaunchOverlay(paymentAssetsReady&&(!signedIn||session.readyFor(userName)),motion,session,nativeLaunchReady)
+                    AppLaunchOverlay(paymentAssetsReady&&(!signedIn||!api.gameVerified||session.readyFor(userName)),motion,session,nativeLaunchReady)
                     }
                 }
             }
@@ -234,7 +236,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
         route=="storage"->"存储空间";route=="coupons"->"优惠券"
         route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->route.removePrefix("dm:").let{if(it=="AI 助手"||Players.any{p->p.name==it})it else "私聊"}
         route=="announcement"->"官方公告";route=="event"->"委托大厅";route=="bag"->"购物袋";route=="orders"->"我的订单";route?.startsWith("order:")==true->"订单详情"
-        route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"个人简介";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
+        route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"编辑资料";route=="support"->"邮件支持";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"
         route?.startsWith("market-product:")==true->"商品详情";else->destination.title
     }
@@ -251,6 +253,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                             current=="Profile"->ProfilePage(state,avatar,userName,inset,"",::open,onAvatar)
                             current=="appearance"->AppearancePage(theme,motion,glass,tilt,inset,onTheme,onMotion,onGlass,onTilt,{tuner=true},sensorAvailable,overlayGlass,onOverlayGlass)
                             current=="account"->AccountPage(avatar,userName,inset,onAvatar,{resetPassword=true},onLogout){open("bio")}
+                            current=="support"->SupportContactPage(inset)
                             current=="bio"->BioEditorPage(state,inset){back()}
                             current.startsWith("player:")->PlayerProfilePage(current.removePrefix("player:"),state,avatar,inset,{open("dm:${current.removePrefix("player:")}")},{openTransfer(current.removePrefix("player:"))})
                             current.startsWith("search:")->SearchPage(current.removePrefix("search:"),state,{back()},::open,active=current==page)
@@ -314,7 +317,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
         }
         if(transfer)TransferSheet(state,transferTo){transfer=false}
         if(tuner)GlassTuner(parameters,onParameters){tuner=false}
-        if(resetPassword)ResetPasswordSheet(userName){resetPassword=false}
+        if(resetPassword)ResetPasswordSheet(userName,changing=true){resetPassword=false}
         if(people)OnlinePlayersSheet(state,{people=false}){open("dm:$it")}
         record?.let{entry->IosSheet({record=null}){Column(Modifier.padding(24.dp)){Text((if(entry.amount>0)"+" else "−")+credit(kotlin.math.abs(entry.amount)),style=MaterialTheme.typography.headlineLarge);DetailRow("交易状态","已完成");DetailRow("往来玩家",entry.name);DetailRow("备注",entry.detail);DetailRow("时间",entry.at.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));DetailRow("流水号","DT${entry.id.toString().padStart(10,'0')}");MotionButton({record=null},Modifier.fillMaxWidth().padding(top=18.dp)){Text("完成")}}}}
     }

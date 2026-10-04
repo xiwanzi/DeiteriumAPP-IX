@@ -27,10 +27,11 @@ import org.json.JSONObject
 
 @Composable
 fun AuthPage(onSignedIn:(String)->Unit) {
-    var register by rememberSaveable{mutableStateOf(false)};var account by rememberSaveable{mutableStateOf("")};var qq by rememberSaveable{mutableStateOf("")}
+    var register by rememberSaveable{mutableStateOf(false)};var account by rememberSaveable{mutableStateOf("")};var email by rememberSaveable{mutableStateOf("")}
     var password by remember{mutableStateOf("")};var code by remember{mutableStateOf("")};var codeSent by remember{mutableStateOf(false)};var busy by remember{mutableStateOf(false)}
     var error by remember{mutableStateOf<String?>(null)};var reset by remember{mutableStateOf(false)};var privacy by remember{mutableStateOf(false)}
-    var verificationToken by remember{mutableStateOf("")}
+    var verificationToken by remember{mutableStateOf("")};var resendSeconds by remember{mutableIntStateOf(0)}
+    LaunchedEffect(resendSeconds){if(resendSeconds>0){delay(1000);resendSeconds--}}
     val api=BackendApi.get(LocalContext.current)
     val scope=rememberCoroutineScope();val colors=MaterialTheme.colorScheme
     val backdrop=rememberGraphicsLayer()
@@ -40,34 +41,34 @@ fun AuthPage(onSignedIn:(String)->Unit) {
         LoginVersionBadge(Modifier.align(Alignment.CenterHorizontally).size(138.dp))
         Spacer(Modifier.height(18.dp))
         Text("Deuterium",Modifier.fillMaxWidth(),fontSize=32.sp,fontWeight=androidx.compose.ui.text.font.FontWeight.Bold,letterSpacing=(-.7).sp,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
-        Text(if(register)"从你的游戏身份开始" else "钱包、消息与交易，随时相连",Modifier.fillMaxWidth().padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=colors.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+        Text(if(register)"创建账号，再连接你的游戏身份" else "钱包、消息与交易，随时相连",Modifier.fillMaxWidth().padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=colors.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
         Spacer(Modifier.height(27.dp))
         SegmentedControl(listOf("登录","创建账号"),if(register)1 else 0,{register=it==1;error=null})
         Spacer(Modifier.height(21.dp))
         Surface(shape=RoundedCornerShape(24.dp),color=colors.surface){Column {
-            AuthInput(account,{account=it.take(32);codeSent=false;verificationToken=""},if(register)"游戏内 ID" else "玩家 ID 或 QQ",Icons.Outlined.PersonOutline)
+            AuthInput(account,{account=it.take(if(register)32 else 254);codeSent=false;verificationToken=""},if(register)"游戏内 ID" else "邮箱、玩家 ID 或 QQ",Icons.Outlined.PersonOutline)
             AuthLine()
-            if(register){AuthInput(qq,{qq=it.filter{char->char in '0'..'9'}.take(20);codeSent=false;verificationToken=""},"QQ 号",Icons.Outlined.AlternateEmail,keyboard=KeyboardType.Number);AuthLine();AuthInput(code,{code=it.filter(Char::isDigit).take(6)},"游戏内验证码",Icons.Outlined.VerifiedUser,keyboard=KeyboardType.Number,trailing={PlainButton({
-                if(!busy){
-                    error=when{!account.trim().matches(Regex("[A-Za-z0-9_]{1,32}"))->"请输入有效的游戏 ID（1–32 位字母、数字或下划线）";qq.length !in 5..20->"请输入有效的 QQ 号（5–20 位数字）";else->null}
-                    if(error==null)scope.launch{busy=true;runCatching{api.request("POST","/account/registration-code",JSONObject().put("gameId",account.trim()).put("qq",qq),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");codeSent=true;error=null}.onFailure{error=it.message};busy=false}
+            if(register){AuthInput(email,{email=it.take(254);codeSent=false;verificationToken=""},"邮箱",Icons.Outlined.AlternateEmail,keyboard=KeyboardType.Email);AuthLine();AuthInput(code,{code=it.filter(Char::isDigit).take(6)},"邮箱验证码",Icons.Outlined.VerifiedUser,keyboard=KeyboardType.Number,trailing={PlainButton({
+                if(!busy&&resendSeconds==0){
+                    error=when{!account.trim().matches(Regex("[A-Za-z0-9_]{1,32}"))->"请输入有效的游戏 ID（1–32 位字母、数字或下划线）";!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()->"请输入有效的邮箱";else->null}
+                    if(error==null)scope.launch{busy=true;runCatching{api.request("POST","/account/registration-code",JSONObject().put("gameId",account.trim()).put("email",email.trim()),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");codeSent=true;resendSeconds=it.optInt("resendAfterSeconds",60);error=null}.onFailure{error=it.message};busy=false}
                 }
-            }){Text(if(codeSent)"重发" else "获取",style=MaterialTheme.typography.bodyMedium)}});AuthLine()}
+            }){Text(if(resendSeconds>0)"${resendSeconds}s" else if(codeSent)"重发" else "获取",style=MaterialTheme.typography.bodyMedium)}});AuthLine()}
             AuthInput(password,{password=it.take(72)},if(register)"设置密码（至少8位）" else "密码",Icons.Outlined.Lock,secret=true)
         }}
-        if(codeSent&&register)Text("验证码已发送至游戏内，请在服务器中查看",Modifier.padding(start=5.dp,top=10.dp),style=MaterialTheme.typography.bodySmall,color=colors.onSurfaceVariant)
+        if(codeSent&&register)Text("验证码邮件已排队，请查收邮箱",Modifier.padding(start=5.dp,top=10.dp),style=MaterialTheme.typography.bodySmall,color=colors.onSurfaceVariant)
         error?.let{Text(it,Modifier.padding(top=12.dp,start=5.dp),style=MaterialTheme.typography.bodySmall,color=colors.error)}
         if(!register)PlainButton({reset=true},Modifier.align(Alignment.End).padding(top=4.dp)){Text("忘记密码？",style=MaterialTheme.typography.bodyMedium)} else Spacer(Modifier.height(18.dp))
         MotionButton({
-            error=when{account.isBlank()->"请输入玩家 ID 或 QQ";register&&qq.length !in 5..20->"请输入有效的 QQ 号";register&&(!codeSent||code.length!=6)->"请获取游戏内验证码";password.codePointCount(0,password.length) !in 8..64->"密码需要 8–64 位";else->null}
-            if(error==null&&!busy)scope.launch{busy=true;runCatching{if(register)api.register(account.trim(),qq,password,verificationToken,code) else api.login(account.trim(),password)}.onSuccess{name->password="";onSignedIn(name)}.onFailure{error=it.message ?: "登录失败，请稍后重试"};busy=false}
+            error=when{account.isBlank()->"请输入玩家 ID 或 QQ";register&&!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()->"请输入有效的邮箱";register&&(!codeSent||code.length!=6)->"请获取邮箱验证码";password.codePointCount(0,password.length) !in 8..64->"密码需要 8–64 位";else->null}
+            if(error==null&&!busy)scope.launch{busy=true;runCatching{if(register)api.register(account.trim(),email.trim(),password,verificationToken,code) else api.login(account.trim(),password)}.onSuccess{name->password="";onSignedIn(name)}.onFailure{error=it.message ?: "登录失败，请稍后重试"};busy=false}
         },Modifier.fillMaxWidth().height(54.dp),enabled=!busy){Text(if(busy)"正在进入…" else if(register)"创建账号并继续" else "登录")}
         Spacer(Modifier.height(22.dp))
         Text("Deuterium ${BuildConfig.VERSION_NAME} · 与游戏世界保持连接",Modifier.fillMaxWidth(),style=MaterialTheme.typography.bodySmall,color=colors.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
         PlainButton({privacy=true},Modifier.align(Alignment.CenterHorizontally).padding(bottom=12.dp)){Text("账号与隐私说明",style=MaterialTheme.typography.bodySmall)}
     }
     if(reset)ResetPasswordSheet(account){reset=false}
-    if(privacy)IosDialog({privacy=false},{Text("账号与隐私")},{Text("账号通过服务器验证，密码仅用于本次身份校验，不会保存在设备中。登录凭据加密保存在本机；交易与消息由后端处理。注册和改密通过游戏内验证码确认身份。")},{PlainButton({privacy=false}){Text("知道了")}})
+    if(privacy)IosDialog({privacy=false},{Text("账号与隐私")},{Text("账号通过服务器验证，密码仅用于本次身份校验，不会保存在设备中。登录凭据加密保存在本机；交易与消息由后端处理。注册通过邮箱验证码创建账号，游戏身份在登录后单独验证。支持通过绑定邮箱找回密码。")},{PlainButton({privacy=false}){Text("知道了")}})
     }
 }
 @Composable
@@ -96,19 +97,19 @@ private fun SecretField(value: String, onValue: (String) -> Unit, label: String)
 }
 
 @Composable
-private fun VerificationCodeField(code: String, onCode: (String) -> Unit, sent: Boolean, send: () -> Unit) {
+private fun VerificationCodeField(code: String, onCode: (String) -> Unit, sent: Boolean, email: Boolean = false, send: () -> Unit) {
     Spacer(Modifier.height(14.dp))
-    RefinedField(code, { onCode(it.filter(Char::isDigit).take(6)) }, label = { Text("游戏内验证码") }, singleLine = true,
+    RefinedField(code, { onCode(it.filter(Char::isDigit).take(6)) }, label = { Text(if(email)"邮箱验证码" else "游戏内验证码") }, singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
         PlainButton(onClick = send) { Text(if(sent) "重新获取验证码" else "获取验证码") }
     }
-    if(sent) Text("验证码已发送至游戏内", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+    if(sent) Text(if(email)"验证码邮件已排队，请查收邮箱" else "验证码已发送至游戏内", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResetPasswordSheet(initialAccount: String, onClose: () -> Unit) {
+fun ResetPasswordSheet(initialAccount: String, changing:Boolean=false, onClose: () -> Unit) {
     var account by rememberSaveable { mutableStateOf(initialAccount) }
     var code by remember { mutableStateOf("") }
     var codeSent by remember { mutableStateOf(false) }
@@ -117,24 +118,24 @@ fun ResetPasswordSheet(initialAccount: String, onClose: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var done by remember { mutableStateOf(false) }
     var busy by remember{mutableStateOf(false)}
-    var verificationToken by remember{mutableStateOf("")}
+    var verificationToken by remember{mutableStateOf("")};var emailCode by remember{mutableStateOf(false)}
     val api=BackendApi.get(LocalContext.current);val scope=rememberCoroutineScope()
     IosSheet(onDismissRequest = onClose, containerColor = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp).navigationBarsPadding()) {
-            Text(if(done) "密码修改完成" else "重置密码", style = MaterialTheme.typography.headlineSmall)
+            Text(if(done) "密码修改完成" else if(changing)"更改密码" else "找回密码", style = MaterialTheme.typography.headlineSmall)
             if(done) {
                 Text("密码已更新，请使用新密码登录。", Modifier.padding(vertical = 22.dp), style = MaterialTheme.typography.bodyMedium)
                 MotionButton(onClose, Modifier.fillMaxWidth().height(52.dp)) { Text("完成") }
             } else {
-                Text("通过游戏内验证码验证身份。", Modifier.padding(top = 8.dp, bottom = 18.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                RefinedField(account, { account = it.take(32) }, label = { Text("玩家 ID 或 QQ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp))
-                VerificationCodeField(code, { code = it }, codeSent) { if(!busy)scope.launch{busy=true;runCatching{api.request("POST","/account/password-reset-code",JSONObject().put("account",account.trim()),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");codeSent=true;error=null}.onFailure{error=it.message};busy=false} }
+                Text(if(changing)"通过绑定邮箱验证；尚未绑定邮箱的账号仍使用游戏内验证码。" else "通过绑定邮箱找回密码；旧账号仍可使用游戏内验证。", Modifier.padding(top = 8.dp, bottom = 18.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if(changing)Text("账号：$account",Modifier.fillMaxWidth().padding(bottom=12.dp),style=MaterialTheme.typography.titleMedium) else RefinedField(account, { account = it.take(254) }, label = { Text("邮箱、玩家 ID 或 QQ") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp))
+                VerificationCodeField(code, { code = it }, codeSent,emailCode) { if(!busy)scope.launch{busy=true;runCatching{api.request("POST",if(changing)"/account/password-change-code" else "/account/password-reset-code",if(changing)JSONObject() else JSONObject().put("account",account.trim()),authenticated=changing)}.onSuccess{verificationToken=it.getString("verificationToken");emailCode=it.optString("delivery")=="EMAIL";codeSent=true;error=null}.onFailure{error=it.message};busy=false} }
                 Spacer(Modifier.height(12.dp)); SecretField(password, { password = it }, "新密码（至少 8 位）")
                 Spacer(Modifier.height(12.dp)); SecretField(confirm, { confirm = it }, "再次确认新密码")
                 error?.let { Text(it, Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                 MotionButton(onClick = {
-                    error = when { account.isBlank() -> "请输入账号"; !codeSent || code.length != 6 -> "请输入游戏内验证码"; password.length < 8 -> "新密码至少 8 位"; password != confirm -> "两次输入的密码不一致"; else -> null }
-                    if(error == null && !busy)scope.launch{busy=true;runCatching{api.request("POST","/account/password-reset",JSONObject().put("verificationToken",verificationToken).put("code",code).put("newPassword",password),authenticated=false)}.onSuccess{password="";confirm="";done=true;api.forgetSession()}.onFailure{error=it.message};busy=false}
+                    error = when { account.isBlank() -> "请输入账号"; !codeSent || code.length != 6 -> "请输入验证码"; password.length < 8 -> "新密码至少 8 位"; password != confirm -> "两次输入的密码不一致"; else -> null }
+                    if(error == null && !busy)scope.launch{busy=true;runCatching{api.request("POST",if(changing)"/account/password-change" else "/account/password-reset",JSONObject().put("verificationToken",verificationToken).put("code",code).put("newPassword",password),authenticated=changing)}.onSuccess{password="";confirm="";done=true;api.forgetSession()}.onFailure{error=it.message};busy=false}
                 }, modifier = Modifier.fillMaxWidth().padding(top = 22.dp).height(54.dp)) { Text("确认修改") }
             }
             Spacer(Modifier.height(18.dp))

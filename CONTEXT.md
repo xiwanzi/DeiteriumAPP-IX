@@ -1,5 +1,11 @@
 # Deuterium IX 项目上下文
 
+2026-10-04：**按用户确认名单，00:08 已物理清除其余 65 条 App 账号，仅保留七个 active 账号，注销记录为 0**。关联 1 笔 App 转账、2 笔取消未付款订单和 3 个所属图片对象已清理；其余 27 订单、5 委托及游戏余额/存档/白名单保持。见[清理记录](docs/deployment/account-purge-20261004.md)，不得从旧备份自动恢复。注册/找回/改密验证码模板及邮件卡片改动仅为本机候选，未上线，见[模板验收](docs/qa/verification-mail-templates-20261004.md)。
+
+
+2026-10-03：**邮件系统、独立游戏验证与邮件工单本机候选已完成，未推送/部署**。工作区 `.worktrees/mail-identity-support`、分支 `xiwanzi/mail-identity-support`。邮箱注册后再补 QQ/游戏验证码；旧账号默认已验证，中文昵称与游戏 ID 分离。工单按客服邮箱收件生成日期＋四位随机编号，DM 自动回执，企业邮箱人工回复；没有玩家在线工单对话。原管理员为超级管理员，新管理员仅工单。真实 SMTP/IMAP 授权码及真机验收待完成，App/Web 发布版本未变。见[本机验收](docs/qa/mail-identity-support.md)。下方为既有发布记录。
+
+
 2026-09-28：**Web 2.0.20 与配套 Go 已上线**（PR #50、#51）。后台新增「模型管理」，统一栏目、界面、Deuterium ID 登录和管理员权限，复用原 Velocity API；256 模型、476 文件、模型 revision 11 / 配置 revision 3 与四节点 READY 保留。App 仍为 2.0.14；72 条账号、29 笔订单、5 个委托及已有注销记录保留，游戏插件未更换。维护 `.worktrees/chat-domain` / `xiwanzi/model-management-record`，见[上线记录](docs/deployment/model-management-live.md)。下方为较早状态。
 
 2026-09-26：**App 2.0.14（21400）与配套 Go 已于 20:00 上线**（PR #48，源码 `4e95ae0df69b`）。公共聊天在线名单改读 Core 实时快照，页面返回回调在键盘收起期间保持有效。Web 2.0.19、游戏插件和配置保留；72 条账号记录、29 笔订单、5 个委托及已有注销记录保留。维护 `.worktrees/chat-domain` / `xiwanzi/release-v214-live`，见[部署记录](docs/deployment/deuterium-2.0.14-live.md)。

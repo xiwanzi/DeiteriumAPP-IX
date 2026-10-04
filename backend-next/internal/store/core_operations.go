@@ -169,7 +169,7 @@ func (s *Store) RememberCorePlayer(ctx context.Context, p CorePlayerIdentity) (s
 	return ref, err
 }
 func (s *Store) CoreRecipient(ctx context.Context, ref string) (uuid string, err error) {
-	err = s.DB.QueryRowContext(ctx, "SELECT server_uuid FROM identities WHERE player_ref=? AND status='active'", ref).Scan(&uuid)
+	err = s.DB.QueryRowContext(ctx, "SELECT server_uuid FROM identities WHERE player_ref=? AND status='active' AND game_verified=TRUE", ref).Scan(&uuid)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = s.DB.QueryRowContext(ctx, "SELECT player_uuid FROM core_player_directory WHERE player_ref=?", ref).Scan(&uuid)
 	}

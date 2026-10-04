@@ -14,6 +14,9 @@ type User struct {
 	GameID         string   `json:"gameId"`
 	QQ             string   `json:"qq"`
 	IdentityStatus string   `json:"identityStatus"`
+	Email          string   `json:"email,omitempty"`
+	GameVerified   bool     `json:"gameVerified"`
+	DisplayName    string   `json:"displayName"`
 	Permissions    []string `json:"permissions,omitempty"`
 	ServerUUID     string   `json:"-"`
 	PasswordHash   string   `json:"-"`
@@ -27,9 +30,12 @@ type Session struct {
 }
 
 func (s *Store) UserByAlias(ctx context.Context, alias string) (u User, err error) {
-	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,i.server_uuid,i.password_hash,i.status
-	 FROM identities i JOIN identity_aliases a ON a.user_id=i.id WHERE a.alias_key=?`, alias).Scan(&u.ID, &u.PlayerRef, &u.GameID, &u.QQ, &u.ServerUUID, &u.PasswordHash, &u.Status)
+	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.password_hash,i.status,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id)
+	 FROM identities i JOIN identity_aliases a ON a.user_id=i.id WHERE a.alias_key=?`, alias).Scan(&u.ID, &u.PlayerRef, &u.GameID, &u.QQ, &u.ServerUUID, &u.PasswordHash, &u.Status, &u.Email, &u.GameVerified, &u.DisplayName)
 	u.IdentityStatus = "bound"
+	if !u.GameVerified {
+		u.IdentityStatus = "unverified"
+	}
 	return
 }
 
@@ -62,9 +68,12 @@ func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf s
 }
 
 func (s *Store) Session(ctx context.Context, hash string) (v Session, err error) {
-	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,i.server_uuid,i.status,s.client_kind,s.csrf_token,s.expires_at
-	 FROM identity_sessions s JOIN identities i ON i.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>UTC_TIMESTAMP(6) AND i.status='active'`, hash).Scan(&v.User.ID, &v.User.PlayerRef, &v.User.GameID, &v.User.QQ, &v.User.ServerUUID, &v.User.Status, &v.Kind, &v.CSRF, &v.ExpiresAt)
+	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.status,s.client_kind,s.csrf_token,s.expires_at,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id)
+	 FROM identity_sessions s JOIN identities i ON i.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>UTC_TIMESTAMP(6) AND i.status='active'`, hash).Scan(&v.User.ID, &v.User.PlayerRef, &v.User.GameID, &v.User.QQ, &v.User.ServerUUID, &v.User.Status, &v.Kind, &v.CSRF, &v.ExpiresAt, &v.User.Email, &v.User.GameVerified, &v.User.DisplayName)
 	v.User.IdentityStatus = "bound"
+	if !v.User.GameVerified {
+		v.User.IdentityStatus = "unverified"
+	}
 	v.TokenHash = hash
 	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrUnauthorized
@@ -79,7 +88,7 @@ func (s *Store) Revoke(ctx context.Context, hash string) error {
 
 func (s *Store) HasPermission(ctx context.Context, user, permission string) (bool, error) {
 	var n int
-	err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM identity_permissions WHERE user_id=? AND (permission=? OR permission='platform.admin')", user, permission).Scan(&n)
+	err := s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM identity_permissions p WHERE p.user_id=? AND (p.permission='platform.admin' OR (p.permission=? AND (p.permission='support.manage' OR NOT EXISTS(SELECT 1 FROM identity_permissions support WHERE support.user_id=p.user_id AND support.permission='support.manage'))))", user, permission).Scan(&n)
 	return n > 0, err
 }
 

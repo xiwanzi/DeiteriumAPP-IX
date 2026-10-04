@@ -105,7 +105,7 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                         }
                         Column(Modifier.widthIn(max = 268.dp), horizontalAlignment = if(line.mine) Alignment.End else Alignment.Start) {
                             if(!line.mine) Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(line.name, Modifier.padding(start = 3.dp, bottom = 5.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(state.displayName(line.name), Modifier.padding(start = 3.dp, bottom = 5.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 if(line.name in state.followed) Icon(Icons.Outlined.Star, "特别关心", Modifier.padding(start = 4.dp, bottom = 5.dp).size(13.dp), tint = MaterialTheme.colorScheme.primary)
                             }
                             val shape = RoundedCornerShape(topStart = 19.dp, topEnd = 19.dp, bottomStart = if(line.mine)19.dp else 6.dp, bottomEnd = if(line.mine)6.dp else 19.dp)

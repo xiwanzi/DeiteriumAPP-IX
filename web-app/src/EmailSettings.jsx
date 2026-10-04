@@ -7,7 +7,7 @@ import { useUnsavedChanges } from "./unsaved-changes.js";
 const kinds = { TEST: "连接测试", INTERVENTION: "平台介入提醒", ADMISSION_APPROVED: "白名单审核通过", ADMISSION_REJECTED: "白名单审核拒绝", TEST_APPROVED: "通过邮件模板测试", TEST_REJECTED: "拒绝邮件模板测试" };
 const statuses = { PENDING: "等待发送", SENDING: "正在发送", RETRY: "失败，等待重试", SENT: "已被邮件服务器接收", SKIPPED: "提醒关闭，已跳过", CANCELLED: "旧通知已取消" };
 
-export default function EmailSettings({ client }) {
+export default function EmailSettings({ client, embedded = false }) {
   const [data, setData] = useState(null), [error, setError] = useState("");
   const active = useRef(true), loading = useRef(false);
   const load = async () => {
@@ -20,7 +20,7 @@ export default function EmailSettings({ client }) {
   useEffect(() => { active.current = true; load(); const timer = setInterval(load, 5000); return () => { active.current = false; clearInterval(timer); }; }, [client]);
   const saved = async settings => { if (settings) setData(old => ({ ...old, settings })); await load(); };
   return <>
-    <PageHead eyebrow="PLATFORM NOTIFICATIONS" title="邮件提醒" subtitle="管理平台提醒与白名单审核结果邮件。"><Button secondary onClick={load}><RefreshCw size={16} />刷新投递状态</Button></PageHead>
+    {!embedded && <PageHead eyebrow="PLATFORM NOTIFICATIONS" title="邮件提醒" subtitle="管理平台提醒与白名单审核结果邮件。"><Button secondary onClick={load}><RefreshCw size={16} />刷新投递状态</Button></PageHead>}
     {error && <p className="notice-box" role="alert">{error}</p>}
     {data ? <EmailForm client={client} initial={data.settings} delivery={data.delivery} secretReady={data.secretStorageReady} onSaved={saved} /> : !error && <p role="status">正在读取邮件配置…</p>}
   </>;

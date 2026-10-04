@@ -20,17 +20,19 @@ var ErrSocialVersion = errors.New("social resource version changed")
 var ErrSocialCapability = errors.New("social asset capability unavailable")
 
 type SocialProfile struct {
-	PlayerRef  string     `json:"playerRef"`
-	GameID     string     `json:"gameId"`
-	QQ         string     `json:"qq"`
-	Bio        string     `json:"bio"`
-	Avatar     any        `json:"avatar"`
-	Online     bool       `json:"online"`
-	LastSeenAt *time.Time `json:"lastSeenAt"`
-	Followed   bool       `json:"followed"`
-	Version    int64      `json:"version"`
+	DisplayName string     `json:"displayName"`
+	PlayerRef   string     `json:"playerRef"`
+	GameID      string     `json:"gameId"`
+	QQ          string     `json:"qq"`
+	Bio         string     `json:"bio"`
+	Avatar      any        `json:"avatar"`
+	Online      bool       `json:"online"`
+	LastSeenAt  *time.Time `json:"lastSeenAt"`
+	Followed    bool       `json:"followed"`
+	Version     int64      `json:"version"`
 }
 type SocialProfilePatch struct {
+	DisplayName     *string         `json:"displayName,omitempty"`
 	ClientRequestID string          `json:"clientRequestId"`
 	ExpectedVersion int64           `json:"expectedVersion"`
 	Bio             *string         `json:"bio,omitempty"`
@@ -211,10 +213,10 @@ func (s *Store) PublicProfileV2(ctx context.Context, viewerID, playerRef string)
 	var p SocialProfile
 	var avatar sql.NullString
 	var ownerID string
-	err := s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(p.bio,''),p.avatar_json,COALESCE(p.version,1),EXISTS(SELECT 1 FROM social_follows_v2 f WHERE f.follower_id=? AND f.followed_id=i.id)
+	err := s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.display_name,i.game_id),COALESCE(p.bio,''),p.avatar_json,COALESCE(p.version,1),EXISTS(SELECT 1 FROM social_follows_v2 f WHERE f.follower_id=? AND f.followed_id=i.id)
  FROM identities i LEFT JOIN social_profiles_v2 p ON p.user_id=i.id
  JOIN identities viewer ON viewer.id=? AND viewer.status='active'
-	 WHERE i.player_ref=? AND i.status<>'deleted'`, viewerID, viewerID, playerRef).Scan(&ownerID, &p.PlayerRef, &p.GameID, &p.QQ, &p.Bio, &avatar, &p.Version, &p.Followed)
+	 WHERE i.player_ref=? AND i.status<>'deleted' AND i.game_verified=TRUE`, viewerID, viewerID, playerRef).Scan(&ownerID, &p.PlayerRef, &p.GameID, &p.QQ, &p.DisplayName, &p.Bio, &avatar, &p.Version, &p.Followed)
 	if err != nil {
 		return p, socialMissing(err)
 	}
@@ -234,8 +236,15 @@ func (s *Store) PublicProfileV2(ctx context.Context, viewerID, playerRef string)
 	return p, nil
 }
 func (s *Store) PatchProfileV2(ctx context.Context, u User, input SocialProfilePatch) (json.RawMessage, error) {
-	if input.ExpectedVersion < 1 || (input.Bio == nil && input.AvatarAssetID == nil) || input.Bio != nil && !ValidSocialText(*input.Bio, 0, 200) {
+	if input.ExpectedVersion < 1 || (input.Bio == nil && input.AvatarAssetID == nil && input.DisplayName == nil) || input.Bio != nil && !ValidSocialText(*input.Bio, 0, 200) {
 		return nil, ErrSocialInvalid
+	}
+	if input.DisplayName != nil {
+		name := strings.TrimSpace(*input.DisplayName)
+		if !ValidSocialText(name, 1, 24) || strings.ContainsAny(name, "\r\n\t") {
+			return nil, ErrSocialInvalid
+		}
+		input.DisplayName = &name
 	}
 	var avatarValue any
 	var avatarJSON []byte
@@ -280,6 +289,14 @@ func (s *Store) PatchProfileV2(ctx context.Context, u User, input SocialProfileP
 		if _, err := tx.ExecContext(ctx, `UPDATE social_profiles_v2 SET bio=?,avatar_json=?,version=version+1,updated_at=UTC_TIMESTAMP(6) WHERE user_id=?`, p.Bio, avatar, u.ID); err != nil {
 			return nil, err
 		}
+		if input.DisplayName != nil {
+			if _, err := tx.ExecContext(ctx, "UPDATE identities SET display_name=?,updated_at=UTC_TIMESTAMP(6) WHERE id=?", *input.DisplayName, u.ID); err != nil {
+				return nil, err
+			}
+		}
+		if err := tx.QueryRowContext(ctx, "SELECT COALESCE(display_name,game_id) FROM identities WHERE id=?", u.ID).Scan(&p.DisplayName); err != nil {
+			return nil, err
+		}
 		p.PlayerRef, p.GameID, p.QQ, p.Version = u.PlayerRef, u.GameID, u.QQ, p.Version+1
 		if input.AvatarAssetID != nil {
 			p.Avatar = avatarValue
@@ -303,7 +320,8 @@ func (s *Store) PlayerDirectoryV2(ctx context.Context, userID, query string, lim
 	if limit < 1 || limit > 100 || !ValidSocialText(query, 0, 80) {
 		return nil, ErrSocialInvalid
 	}
-	rows, err := s.DB.QueryContext(ctx, `SELECT player_ref FROM identities WHERE status='active' AND (game_id LIKE ? OR qq=?) ORDER BY game_id,id LIMIT ?`, "%"+strings.NewReplacer("\\", "\\\\", "%", "\\%", "_", "\\_").Replace(query)+"%", query, limit)
+	search := "%" + strings.NewReplacer("\\", "\\\\", "%", "\\%", "_", "\\_").Replace(query) + "%"
+	rows, err := s.DB.QueryContext(ctx, `SELECT player_ref FROM identities WHERE status='active' AND game_verified=TRUE AND (game_id LIKE ? OR qq=? OR display_name LIKE ?) ORDER BY game_id,id LIMIT ?`, search, query, search, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -374,14 +392,14 @@ func (s *Store) FollowV2(ctx context.Context, u User, ref string, follow bool) (
 	}
 	defer tx.Rollback()
 	var target int
-	if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE player_ref=? AND status='active'", ref).Scan(&target); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE player_ref=? AND status='active' AND game_verified=TRUE", ref).Scan(&target); err != nil {
 		return p, err
 	}
 	if target != 1 {
 		return p, ErrSocialNotFound
 	}
 	if follow {
-		_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_follows_v2(follower_id,followed_id,created_at) SELECT ?,id,UTC_TIMESTAMP(6) FROM identities WHERE player_ref=? AND status='active'`, u.ID, ref)
+		_, err = tx.ExecContext(ctx, `INSERT IGNORE INTO social_follows_v2(follower_id,followed_id,created_at) SELECT ?,id,UTC_TIMESTAMP(6) FROM identities WHERE player_ref=? AND status='active' AND game_verified=TRUE`, u.ID, ref)
 	} else {
 		_, err = tx.ExecContext(ctx, `DELETE f FROM social_follows_v2 f JOIN identities i ON i.id=f.followed_id WHERE f.follower_id=? AND i.player_ref=?`, u.ID, ref)
 	}
@@ -405,7 +423,7 @@ func (s *Store) CreateConversationV2(ctx context.Context, u User, key, ref strin
 	}
 	return s.socialMutate(ctx, u.ID, "conversation.create", key, map[string]string{"otherPlayerRef": ref}, func(tx *sql.Tx) (any, error) {
 		var other string
-		if err := tx.QueryRowContext(ctx, `SELECT id FROM identities WHERE player_ref=? AND status='active'`, ref).Scan(&other); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT id FROM identities WHERE player_ref=? AND status='active' AND game_verified=TRUE`, ref).Scan(&other); err != nil {
 			return nil, socialMissing(err)
 		}
 		pair := []string{u.ID, other}
@@ -425,7 +443,7 @@ func (s *Store) CreateConversationV2(ctx context.Context, u User, key, ref strin
 		}
 		// Read through the same transaction so a newly created conversation is complete.
 		var avatar sql.NullString
-		if err := tx.QueryRowContext(ctx, `SELECT i.player_ref,i.game_id,i.qq,COALESCE(p.bio,''),p.avatar_json,COALESCE(p.version,1),EXISTS(SELECT 1 FROM social_follows_v2 WHERE follower_id=? AND followed_id=i.id) FROM identities i LEFT JOIN social_profiles_v2 p ON p.user_id=i.id WHERE i.id=?`, u.ID, other).Scan(&result.OtherPlayer.PlayerRef, &result.OtherPlayer.GameID, &result.OtherPlayer.QQ, &result.OtherPlayer.Bio, &avatar, &result.OtherPlayer.Version, &result.OtherPlayer.Followed); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT i.player_ref,i.game_id,i.qq,COALESCE(i.display_name,i.game_id),COALESCE(p.bio,''),p.avatar_json,COALESCE(p.version,1),EXISTS(SELECT 1 FROM social_follows_v2 WHERE follower_id=? AND followed_id=i.id) FROM identities i LEFT JOIN social_profiles_v2 p ON p.user_id=i.id WHERE i.id=?`, u.ID, other).Scan(&result.OtherPlayer.PlayerRef, &result.OtherPlayer.GameID, &result.OtherPlayer.QQ, &result.OtherPlayer.DisplayName, &result.OtherPlayer.Bio, &avatar, &result.OtherPlayer.Version, &result.OtherPlayer.Followed); err != nil {
 			return nil, err
 		}
 		if avatar.Valid {

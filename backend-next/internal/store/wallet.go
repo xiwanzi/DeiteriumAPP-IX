@@ -22,7 +22,7 @@ type Recipient struct {
 
 func (s *Store) WalletRecipient(ctx context.Context, ref string) (p Recipient, err error) {
 	var qq string
-	err = s.DB.QueryRowContext(ctx, "SELECT player_ref,game_id,qq,server_uuid FROM identities WHERE player_ref=? AND status='active'", ref).Scan(&p.PlayerRef, &p.GameID, &qq, &p.UUID)
+	err = s.DB.QueryRowContext(ctx, "SELECT player_ref,game_id,qq,server_uuid FROM identities WHERE player_ref=? AND status='active' AND game_verified=TRUE", ref).Scan(&p.PlayerRef, &p.GameID, &qq, &p.UUID)
 	if err == nil {
 		p.QQ = &qq
 		p.Registered = true
@@ -37,13 +37,13 @@ func (s *Store) WalletRecipientSearch(ctx context.Context, query, kind string) (
 	out = []Recipient{}
 	var rows *sql.Rows
 	if kind == "qq" {
-		rows, err = s.DB.QueryContext(ctx, "SELECT player_ref FROM identities WHERE qq=? AND status='active' LIMIT 20", query)
+		rows, err = s.DB.QueryContext(ctx, "SELECT player_ref FROM identities WHERE qq=? AND status='active' AND game_verified=TRUE LIMIT 20", query)
 	} else {
 		comparison := "LOWER(game_id)=LOWER(?)"
 		if kind == "search" {
 			comparison = "LOCATE(LOWER(?),LOWER(game_id))=1"
 		}
-		rows, err = s.DB.QueryContext(ctx, `SELECT player_ref FROM identities WHERE status='active' AND `+comparison+` UNION SELECT player_ref FROM core_player_directory WHERE `+comparison+` LIMIT 20`, query, query)
+		rows, err = s.DB.QueryContext(ctx, `SELECT player_ref FROM identities WHERE status='active' AND game_verified=TRUE AND `+comparison+` UNION SELECT player_ref FROM core_player_directory WHERE `+comparison+` LIMIT 20`, query, query)
 	}
 	if err != nil {
 		return

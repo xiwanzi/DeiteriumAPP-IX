@@ -43,3 +43,6 @@ backend-next/releases.json
 backend-next/ai-config.json
 **/src/main/local-resources/
 **/logs/
+
+# Kotlin compiler local session state
+**/.kotlin/

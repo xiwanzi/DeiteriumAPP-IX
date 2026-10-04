@@ -49,6 +49,7 @@ export default function AppShell({
   const [mobile, setMobile] = useState(false),
     chat = path === "/information";
   const managing = path === "/admin" || path === "/merchant";
+  const supportOnly = user.permissions?.includes("support.manage") && !user.permissions?.includes("platform.admin");
   const links = managing ? adminNavigation(user.permissions) : navigation;
   const section = new URLSearchParams(search).get("section");
   const activePath = path === "/admin" ? links.find(([to]) => to === `/admin?section=${section}`)?.[0] || links.find(([to]) => to.startsWith("/admin?"))?.[0] || "/merchant" : path;
@@ -89,10 +90,10 @@ export default function AppShell({
         >
           <img src={launcherIcon} alt="Deuterium App 图标" />
           <span>
-            Deuterium<small>{managing ? "官方管理工作台" : "属于我们的世界"}</small>
+            Deuterium<small>{managing ? supportOnly ? "客户支持工作台" : "官方管理工作台" : "属于我们的世界"}</small>
           </span>
         </a>
-        <div className="sidebar-caption">{managing ? "店铺与运营" : "探索与连接"}</div>
+        <div className="sidebar-caption">{managing ? supportOnly ? "客户支持" : "店铺与运营" : "探索与连接"}</div>
         <nav aria-label={managing ? "管理导航" : "主要导航"}>
           {links.map(([to, label, Icon]) => (
             <a
@@ -175,7 +176,7 @@ export default function AppShell({
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.20
+              Deuterium · 2.0.21
             </button>
             {!managing && <button className="top-search" onClick={onSearch}>
               <Search size={17} />
@@ -224,7 +225,7 @@ export default function AppShell({
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.20 <b>·</b> Deuterium ID
+              Web 2.0.21 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}

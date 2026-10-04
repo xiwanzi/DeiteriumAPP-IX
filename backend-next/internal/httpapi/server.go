@@ -49,6 +49,7 @@ func New(s *store.Store, c config.Config) *Server {
 	}
 	go server.coreWorker(nodes)
 	go server.emailWorkerV204()
+	go server.supportInboxWorker()
 	server.initDesktopLauncher()
 	server.ysm = newYSMBridge(c)
 	return server
@@ -73,6 +74,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAIV2(mux)
 	s.registerAdminAuditV2(mux)
 	s.registerAdminEmailV204(mux)
+	s.registerMailSupport(mux)
 	s.registerAdminAccountsV206(mux)
 	s.registerAdminCommerceV204(mux)
 	s.registerLauncherIcons(mux)
@@ -142,6 +144,8 @@ func failError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	switch {
+	case errors.Is(err, store.ErrGameVerificationRequired):
+		failure(w, r, 403, "GAME_VERIFICATION_REQUIRED", "账号已创建，请先完成游戏身份验证。")
 	case errors.Is(err, store.ErrVerification):
 		failure(w, r, 400, "VERIFICATION_INVALID", "验证码无效、已使用、已过期或尝试次数过多。")
 	case errors.Is(err, store.ErrUnauthorized):
@@ -244,6 +248,9 @@ func (s *Server) authenticate(r *http.Request) (v store.Session, err error) {
 		if !s.origin(r) || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-CSRF-Token")), []byte(v.CSRF)) != 1 {
 			return v, ErrForbidden
 		}
+	}
+	if !v.User.GameVerified && !unverifiedAccountRoute(r) {
+		return v, store.ErrGameVerificationRequired
 	}
 	return
 }

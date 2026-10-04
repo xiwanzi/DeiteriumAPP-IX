@@ -15,6 +15,7 @@ import {
 import AppShell from "./AppShell.jsx";
 import ConnectedWallet from "./ConnectedWallet.jsx";
 import RemoteCollection from "./RemoteCollection.jsx";
+import GameVerification, { SupportContact } from "./GameVerification.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import OfficialAdmin from "./OfficialAdmin.jsx";
 import CatalogManagement from "./CatalogManagement.jsx";
@@ -50,8 +51,10 @@ export default function ConnectedApp() {
   const sessionRef = useRef(null),
     clientRef = useRef(null);
   const currentUrl = useRef(location.href);
+  const returnAfterVerification = useRef(["/support", "/admin", "/merchant", "/me", "/orders", "/wallet"].includes(location.pathname) ? location.pathname + location.search : "/information");
   if (!clientRef.current)
     clientRef.current = new DeuteriumClient({
+      onVerificationRequired: () => { if (sessionRef.current) applySession({...sessionRef.current,user:{...sessionRef.current.user,gameVerified:false}}); },
       onSession: (value) => applySession(value),
       onUnauthorized: () => {
         if (sessionRef.current) setNotice("会话已失效，请重新登录。");
@@ -63,19 +66,19 @@ export default function ConnectedApp() {
     });
   const client = clientRef.current;
   useEffect(() => {
-    if (!session?.user.userId) return;
+    if (!session?.user.userId || session.user.gameVerified === false) return;
     const sync = () => { if (!document.hidden) client.syncAccountDeletions().catch(() => {}); };
     sync(); const timer = setInterval(sync, 4000);
     const unsubscribe = client.onAccountDeletions((refs) => setModal((old) => old?.type === "player" && refs.has(old.player.id) ? null : old));
     return () => { clearInterval(timer); unsubscribe(); };
-  }, [client, session?.user.userId]);
+  }, [client, session?.user.userId, session?.user.gameVerified]);
   const [ownProfile, setOwnProfile] = useState(null);
   useEffect(() => {
     let active = true;
     setOwnProfile(null);
-    if (session?.user.playerRef) client.profile(session.user.playerRef).then((r) => { if (active) setOwnProfile(r.data); }).catch(() => {});
+    if (session?.user.playerRef && session.user.gameVerified !== false) client.profile(session.user.playerRef).then((r) => { if (active) setOwnProfile(r.data); }).catch(() => {});
     return () => { active = false; };
-  }, [client, session?.user.playerRef]);
+  }, [client, session?.user.playerRef, session?.user.gameVerified]);
   function applySession(s) {
     if (!s?.user?.userId) throw new Error("账号响应格式不正确，请重新连接。");
     if (sessionRef.current?.user.userId !== s.user.userId) { setRequestedConversation(null); setModal(null); }
@@ -114,6 +117,8 @@ export default function ConnectedApp() {
       document.title =
         ({
           "/information": "信息",
+          "/verify": "验证游戏身份",
+          "/support": "邮件支持",
           "/admin": "官方管理",
           "/merchant": "商店管理",
           "/me": "我的",
@@ -152,6 +157,12 @@ export default function ConnectedApp() {
     setModal(null);
     window.scrollTo(0, 0);
   };
+  useEffect(() => {
+    if (session?.user.gameVerified === false && path !== "/verify") {
+      if (["/support", "/admin", "/merchant", "/me", "/orders", "/wallet"].includes(path)) returnAfterVerification.current=path+search;
+      history.replaceState({}, "", "/verify"); currentUrl.current=location.href;setPath("/verify");setSearch("");
+    }
+  }, [session?.user.gameVerified,path,search]);
   const logout = async () => {
     try {
       await client.logout();
@@ -196,19 +207,20 @@ export default function ConnectedApp() {
         onLogin={async ({ account, password }) => {
           applySession(await client.login(account, password));
           setNotice("");
-          navigate("/information");
+          if(sessionRef.current?.user.gameVerified !== false) navigate(returnAfterVerification.current);
         }}
         onVerify={(type, fields) => client.requestVerification(type, fields)}
-        onComplete={async (type, fields) => { const result = await client.completeVerification(type, fields); if (type === "register") { applySession(result.data); navigate("/information"); } }}
+        onComplete={async (type, fields) => { const result = await client.completeVerification(type, fields); if (type === "register") { applySession(result.data); navigate("/verify"); } }}
       />
     );
+  if (session.user.gameVerified === false) return <GameVerification client={client} user={session.user} onVerified={async () => { await client.restore(); navigate(returnAfterVerification.current); }} onLogout={logout} dark={dark} toggleTheme={() => setDark(!dark)} />;
   const user = {
     ...session.user,
     avatar: ownProfile?.avatar || session.user.avatar,
     id: session.user.userId,
-    name: session.user.gameId,
+    name: ownProfile?.displayName || session.user.displayName || session.user.gameId,
     qq: session.user.qq,
-    admin: (session.user.permissions || session.permissions || []).some((permission) => ["core.read", "commerce.audit", "announcements.manage", "intervention.manage", "audit.read", "platform.admin", "ADMIN"].includes(permission)),
+    admin: (session.user.permissions || session.permissions || []).some((permission) => ["core.read", "commerce.audit", "announcements.manage", "intervention.manage", "audit.read", "platform.admin", "support.manage", "ADMIN"].includes(permission)),
   };
   const openUnavailable = () => setModal({ type: "capability" });
   return (
@@ -235,7 +247,7 @@ export default function ConnectedApp() {
           <ConnectedChat
             key={session.user.userId}
             client={client}
-            user={session.user}
+            user={{...session.user,displayName:ownProfile?.displayName || session.user.displayName}}
             requestedConversation={new URLSearchParams(search).get("conversation") || requestedConversation}
             onProfile={(p) => setModal({ type: "player", player: p })}
             onUnavailable={() => navigate("/announcements")}
@@ -249,9 +261,11 @@ export default function ConnectedApp() {
         ) : path === "/commissions" ? (
           <BusinessPages client={client} user={session.user} type="COMMISSION" />
         ) : path === "/me" ? (
-          <ConnectedProfile client={client} user={session.user} onLogout={logout} navigate={navigate} onProfileUpdated={setOwnProfile} />
+          <ConnectedProfile client={client} user={session.user} onLogout={logout} onPasswordChanged={()=>{client.clear();sessionRef.current=null;setSession(null);setNotice("密码已更改，请重新登录。");setModal(null)}} navigate={navigate} onProfileUpdated={setOwnProfile} />
         ) : path === "/notification-settings" ? (
           <ConnectedNotificationSettings client={client} />
+        ) : path === "/support" ? (
+          <SupportContact client={client} user={session.user} />
         ) : path === "/admin" ? (
           <OfficialAdmin client={client} user={session.user} navigate={navigate} search={search} />
         ) : path === "/merchant" ? (
@@ -267,7 +281,7 @@ export default function ConnectedApp() {
       </AppShell>
       {modal?.type === "about" && (
         <Modal title="Deuterium Web" close={() => setModal(null)}>
-          <h2>2.0.20</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
+          <h2>2.0.21</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
           <p className="muted">账号、聊天和交易以服务器记录为准。</p>
         </Modal>
       )}
