@@ -10,6 +10,13 @@ import (
 
 const SupportDisplayName = "Deuterium IX 玩家支持"
 
+func SupportMailSubject(subject, number string) string {
+	if number != "" {
+		subject = strings.ReplaceAll(subject, "[工单 "+number+"]", "")
+	}
+	return strings.TrimSpace(subject)
+}
+
 type SupportReplyMail struct {
 	Subject, Body, AuthorName, TicketNumber, ReplyAddress string
 }
@@ -17,6 +24,7 @@ type SupportReplyMail struct {
 var supportReplyTemplate = template.Must(template.ParseFS(admissionFiles, "templates/support-reply-v1.html"))
 
 func RenderSupportReply(in SupportReplyMail) (Message, error) {
+	in.Subject = SupportMailSubject(in.Subject, in.TicketNumber)
 	address, err := mail.ParseAddress(in.ReplyAddress)
 	if strings.TrimSpace(in.Body) == "" || err != nil || address.Address != in.ReplyAddress || strings.ContainsAny(in.ReplyAddress, "\r\n") {
 		return Message{}, errors.New("人工回复邮件内容或回复地址无效。")

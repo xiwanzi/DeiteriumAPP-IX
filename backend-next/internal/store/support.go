@@ -115,7 +115,7 @@ func (s *Store) CreateSupport(ctx context.Context, actor string, in SupportCreat
 		if _, err = tx.ExecContext(ctx, "INSERT INTO support_messages(message_id,ticket_id,actor_id,author_name,direction,visibility,body,created_at) VALUES(?,?,?,?,'OUTBOUND','PUBLIC',?,UTC_TIMESTAMP(6))", message, ticket, actor, actorName, in.Body); err != nil {
 			return nil, err
 		}
-		event, err := enqueueThreadMailTx(ctx, tx, "ENTERPRISE", "TICKET_REPLY", in.Email, "[工单 "+ticket+"] "+in.Subject, in.Body, ticket, actor, inbox.Address, "", nil, key)
+		event, err := enqueueThreadMailTx(ctx, tx, "ENTERPRISE", "TICKET_REPLY", in.Email, notify.SupportMailSubject(in.Subject, ticket), in.Body, ticket, actor, inbox.Address, "", nil, key)
 		if err != nil {
 			return nil, err
 		}
@@ -356,7 +356,7 @@ func (s *Store) ChangeSupport(ctx context.Context, actor, id string, in SupportC
 				if err := tx.QueryRowContext(ctx, "SELECT mail_message_id FROM support_messages WHERE ticket_id=? AND direction IN ('INBOUND','OUTBOUND') AND mail_message_id<>'' ORDER BY (direction='INBOUND') DESC,created_at DESC,message_id DESC LIMIT 1", id).Scan(&latest); err != nil && !errors.Is(err, sql.ErrNoRows) {
 					return nil, err
 				}
-				event, err := enqueueThreadMailTx(ctx, tx, "ENTERPRISE", "TICKET_REPLY", email, "[工单 "+id+"] "+subject, in.Body, id, actor, inbox.Address, latest, nil, key)
+				event, err := enqueueThreadMailTx(ctx, tx, "ENTERPRISE", "TICKET_REPLY", email, notify.SupportMailSubject(subject, id), in.Body, id, actor, inbox.Address, latest, nil, key)
 				if err != nil {
 					return nil, err
 				}
