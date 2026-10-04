@@ -22,7 +22,7 @@ func TestVerificationTemplatesHaveDistinctIntentCodeAndBrand(t *testing.T) {
 					t.Fatalf("missing %q", value)
 				}
 			}
-			if len(m.Images) != 1 || m.Images[0].ContentType != "image/png" || !strings.Contains(m.HTML, "cid:"+m.Images[0].CID) {
+			if len(m.Images) != 2 || m.Images[0].ContentType != "image/png" || !strings.Contains(m.HTML, "cid:"+m.Images[0].CID) {
 				t.Fatal("brand image not embedded")
 			}
 			raw, err := composeMessage(testSettings(), "verification-test", m)

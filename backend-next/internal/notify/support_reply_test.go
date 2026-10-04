@@ -27,7 +27,7 @@ func TestSupportReplyPreservesFreeBodyAndAddsReplyableFooter(t *testing.T) {
 	m.InReplyTo = "customer@example.com"
 	m.References = []string{m.InReplyTo}
 	raw, err := composeMessage(testSettings(), "staff-reply", m)
-	if err != nil || len(m.Images) != 1 || !strings.Contains(string(raw), "Content-ID: <"+m.Images[0].CID+">") || !strings.Contains(string(raw), "In-Reply-To: <customer@example.com>") || !strings.Contains(string(raw), "Reply-To: "+SupportEmail) {
+	if err != nil || len(m.Images) != 2 || !strings.Contains(string(raw), "Content-ID: <"+m.Images[0].CID+">") || !strings.Contains(string(raw), "In-Reply-To: <customer@example.com>") || !strings.Contains(string(raw), "Reply-To: "+SupportEmail) {
 		t.Fatal("reply MIME or threading invalid", err)
 	}
 	if strings.Contains(AdmissionPreviewHTML(m), "cid:") {

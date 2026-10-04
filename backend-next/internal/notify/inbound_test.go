@@ -54,7 +54,7 @@ func TestTicketReceiptEscapingReplyToAndThreadHeaders(t *testing.T) {
 			t.Fatal("missing header", header)
 		}
 	}
-	if len(m.Images) != 1 || len(m.Images[0].Data) == 0 || len(m.Images[0].Data) > 40*1024 || !strings.Contains(string(data), "Content-ID: <"+m.Images[0].CID+">") {
+	if len(m.Images) != 2 || len(m.Images[0].Data) == 0 || len(m.Images[0].Data) > 40*1024 || !strings.Contains(string(data), "Content-ID: <"+m.Images[0].CID+">") {
 		t.Fatal("receipt logo must travel with the email")
 	}
 	preview := AdmissionPreviewHTML(m)

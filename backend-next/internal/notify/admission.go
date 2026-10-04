@@ -51,12 +51,12 @@ func RenderAdmission(in AdmissionMail) (Message, error) {
 	if err = admissionTemplates.ExecuteTemplate(&b, name, in); err != nil {
 		return Message{}, err
 	}
-	m.HTML = b.String()
-	badge, err := admissionFiles.ReadFile("templates/deuterium-ix-emblem.png")
+	m.HTML = mailHTML(b.String())
+	images, err := mailBrandImages(true)
 	if err != nil {
 		return Message{}, err
 	}
-	m.Images = []InlineImage{{CID: "deuterium-ix-emblem-small-v1", Filename: "deuterium-ix-emblem-mail-132.png", ContentType: "image/png", Data: badge}}
+	m.Images = images
 	return m, nil
 }
 

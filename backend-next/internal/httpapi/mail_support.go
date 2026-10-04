@@ -393,6 +393,9 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 			}
 		}
 		if sendErr == nil {
+			message, sendErr = notify.RenderSystemMessage(message)
+		}
+		if sendErr == nil {
 			sendErr = send(ctx, channel.Settings, password, event.EventID, message)
 		}
 	}

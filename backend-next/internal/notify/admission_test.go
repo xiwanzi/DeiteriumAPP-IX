@@ -17,7 +17,8 @@ func TestAdmissionTemplatesEscapeDetailsAndSeparatePreview(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(m.HTML, "<script>") || !strings.Contains(m.HTML, "&lt;script&gt;") || strings.Contains(m.HTML, "xiwanzi") || !strings.Contains(m.Text, input.Reason) {
+	withoutAssetOrigin := strings.ReplaceAll(m.HTML, "https://xiwanzi.cn-nb2.rains3.com/", "")
+	if strings.Contains(m.HTML, "<script>") || !strings.Contains(m.HTML, "&lt;script&gt;") || strings.Contains(withoutAssetOrigin, "xiwanzi") || !strings.Contains(m.Text, input.Reason) {
 		t.Fatal("dynamic reason or player was not rendered safely")
 	}
 	if strings.Contains(m.HTML, "此邮件为模板测试") || strings.Contains(m.HTML, "示例原因") || strings.Contains(m.Subject, "测试") {
@@ -87,13 +88,15 @@ func TestAdmissionMIMEIncludesTextHTMLAndCIDImage(t *testing.T) {
 			t.Fatalf("broken %s alternative", want.kind)
 		}
 	}
-	img, err := reader.NextPart()
-	if err != nil || img.Header.Get("Content-ID") != "<deuterium-ix-emblem-small-v1>" {
-		t.Fatal("CID image missing")
-	}
-	data, err := io.ReadAll(base64.NewDecoder(base64.StdEncoding, img))
-	if err != nil || !bytes.Equal(data, m.Images[0].Data) {
-		t.Fatal("CID image changed")
+	for _, image := range m.Images {
+		img, err := reader.NextPart()
+		if err != nil || img.Header.Get("Content-ID") != "<"+image.CID+">" {
+			t.Fatal("CID brand image missing")
+		}
+		data, err := io.ReadAll(base64.NewDecoder(base64.StdEncoding, img))
+		if err != nil || !bytes.Equal(data, image.Data) {
+			t.Fatal("CID brand image changed")
+		}
 	}
 	if _, err = reader.NextPart(); err != io.EOF {
 		t.Fatal("unexpected attachment")
