@@ -18,6 +18,7 @@ import (
 )
 
 var supportSubjectNumber = regexp.MustCompile(`\[工单\s*([0-9]{12})\]`)
+var supportBodyNumber = regexp.MustCompile(`工单编号[\s\p{Zs}：:#]*([0-9]{12})\b`)
 
 func ticketNumberTx(ctx context.Context, tx *sql.Tx, now time.Time) (string, error) {
 	day := now.In(time.FixedZone("UTC+8", 8*3600)).Format("20060102")
@@ -235,10 +236,25 @@ func (s *Store) IngestSupportMail(ctx context.Context, inbox SupportInbox, valid
 		}
 	}
 	if ticket == "" && source != "HELP" {
-		if match := supportSubjectNumber.FindStringSubmatch(message.Subject); len(match) == 2 {
-			err = tx.QueryRowContext(ctx, "SELECT ticket_id FROM support_tickets WHERE ticket_id=? AND requester_email=?", match[1], customer).Scan(&ticket)
+		matches := supportSubjectNumber.FindAllStringSubmatch(message.Subject, -1)
+		if len(matches) == 0 {
+			matches = supportBodyNumber.FindAllStringSubmatch(message.Text, -1)
+		}
+		for _, match := range matches {
+			canonical, e := resolveSupportTicket(ctx, tx, match[1])
+			if e != nil {
+				return result, e
+			}
+			var candidate string
+			err = tx.QueryRowContext(ctx, "SELECT ticket_id FROM support_tickets WHERE ticket_id=? AND requester_email=?", canonical, customer).Scan(&candidate)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return result, err
+			}
+			if err == nil {
+				if ticket != "" && ticket != candidate {
+					return finish("NEEDS_REVIEW", "邮件引用多个工单，请人工核对。", "")
+				}
+				ticket = candidate
 			}
 		}
 	}

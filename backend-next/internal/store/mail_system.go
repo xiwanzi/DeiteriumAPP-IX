@@ -272,6 +272,13 @@ func (s *Store) ClaimMail(ctx context.Context) (SystemMailEvent, error) {
 
 func (s *Store) RetrySystemMail(ctx context.Context, actor, event, ticket, request string) (json.RawMessage, error) {
 	return s.socialMutate(ctx, actor, "mail.retry:"+event, request, ticket, func(tx *sql.Tx) (any, error) {
+		if ticket != "" {
+			canonical, err := resolveSupportTicket(ctx, tx, ticket)
+			if err != nil {
+				return nil, err
+			}
+			ticket = canonical
+		}
 		if ticket == "" {
 			if err := requirePlatformAdminTxV206(ctx, tx, actor); err != nil {
 				return nil, err

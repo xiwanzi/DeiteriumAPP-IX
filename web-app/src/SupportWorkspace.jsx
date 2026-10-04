@@ -69,6 +69,7 @@ export default function SupportWorkspace({ client, user }) {
     try {
       const response = await client.request(`${base}/${encodeURIComponent(ticketId)}`);
       if (generation === detailGeneration.current && ticketId === selectedRef.current) {
+        if (response.data.ticket.ticketId !== ticketId) { choose(response.data.ticket.ticketId); return; }
         setDetail(response.data); setDetailError("");
       }
     } catch (e) { if (generation === detailGeneration.current) setDetailError(e.message); }
@@ -83,7 +84,7 @@ export default function SupportWorkspace({ client, user }) {
   };
   const refresh = () => { load(); loadDetail(); loadTools(); };
   useEffect(() => {
-    const timer = setTimeout(() => { setSearch(query.trim()); setOffset(0); }, 250);
+    const timer = setTimeout(() => { setSearch(query.trim()); if (query.trim()) setStatus(""); setOffset(0); }, 250);
     return () => clearTimeout(timer);
   }, [query]);
   useEffect(() => { load(); return () => { ++listGeneration.current; }; }, [status, queue, search, category, offset]);
@@ -179,7 +180,7 @@ export default function SupportWorkspace({ client, user }) {
       <h1>工单</h1>
       <div className="support-status-tabs" role="group" aria-label="全站工单状态">
         {[["", "全部"], ...Object.entries(states)].map(([value, label]) => <button key={value} type="button" aria-pressed={status === value} className={status === value ? "active" : ""} onClick={() => { setStatus(value); setOffset(0); }}>
-          {label}<span>{value ? tools.counts?.[value] || 0 : Object.values(tools.counts || {}).reduce((a, b) => a + b, 0)}</span>
+          {label}<span>{value ? tools.counts?.[value] || 0 : Object.entries(tools.counts || {}).reduce((sum, [state, count]) => sum + (state === "CLOSED" ? 0 : count), 0)}</span>
         </button>)}
       </div>
       <span className={`support-mailbox-health ${mailboxHealthy ? "online" : ""}`} title={`${tools.mailbox?.email || "玩家支持邮箱待配置"} · ${mailboxTitle}`}><i />{mailboxHealthy ? "收件正常" : "收件待检查"}</span>

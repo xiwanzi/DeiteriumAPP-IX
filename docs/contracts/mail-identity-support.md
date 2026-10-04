@@ -70,8 +70,10 @@ user 增加 `email`（本人可见）、`gameVerified`、`displayName`；`identi
 - PUT `/admin/support/macros/{macroId}`：`clientRequestId,title,body,version`，version=0 新建。
 - GET `/admin/mail/templates/support-received`：超级管理员预览 DM 收件回执模板。回执确认已收到来信并提供工单编号，不显示问题摘要或「待审查」；Reply-To 为客服邮箱，玩家直接回复即可接续。
 
-归并优先使用 In-Reply-To / References 中的邮件编号，且要求发信回复邮箱与工单玩家邮箱一致；缺少引用时，只有主题中明确的 `[工单 YYYYMMDDNNNN]` 与相同邮箱可以接续。不同玩家不能凭工单号或伪造引用并入别人的邮件记录。收件与出件保存稳定 Message-ID，重复拉取或 Help 重发不重复建单和自动回执。
+归并优先使用 In-Reply-To / References 中的邮件编号，且要求发信回复邮箱与工单玩家邮箱一致；缺少引用时，兼容主题中明确的 `[工单 YYYYMMDDNNNN]`，或正文中带「工单编号」标识的编号，且必须匹配相同玩家邮箱。正文包含多个不同的有效工单时进入人工核对，不猜测归并。历史误拆单合并后保留编号别名，旧邮件、详情链接、附件和操作都解析到原工单；首封管理员邮件及后续历史按时间保留。玩家回复原工单转为 OPEN，不另发新建回执。不同玩家不能凭工单号或伪造引用并入别人的邮件记录。收件与出件保存稳定 Message-ID，重复拉取或 Help 重发不重复建单和自动回执。
 
 角色：原 `platform.admin` 显示超级管理员；新增 `support.manage` 显示管理员，仅访问工单管理。账号管理内部动作 grant-admin/revoke-admin 保留为超级管理员语义；新增 grant-support/revoke-support 用于工单管理员。版本冲突返回 `STATE_VERSION_CONFLICT`，草稿保留；请求键重放不重复发信。
 
 所有邮件遵循[邮件品牌与字体规范](mail-visual-standard.md)：正文使用官网鸿蒙字体，数字使用官网 Novecento，品牌字标与徽章通过固定 HTTPS 图片地址加载，保留可复制文字和明确的客户端回退。
+
+2026-10-04 队列修正：全部视图无搜索时排除 CLOSED；搜索可命中已关闭与历史合并编号。状态排序为 OPEN、IN_PROGRESS、WAITING_CUSTOMER、RESOLVED、CLOSED，同状态按优先级、更新时间排序。全部计数排除 CLOSED。

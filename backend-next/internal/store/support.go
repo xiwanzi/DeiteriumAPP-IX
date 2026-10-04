@@ -146,6 +146,7 @@ func requireSupportTx(ctx context.Context, tx *sql.Tx, actor string) error {
 	return nil
 }
 func (s *Store) SupportTickets(ctx context.Context, actor string, status, queue, search, category string, offset int) ([]SupportTicket, error) {
+	search = strings.TrimSpace(search)
 	if !catalogEnum(category, "", "ACCOUNT", "GAME", "ORDER", "ACCESS", "OTHER") || !catalogEnum(status, "", "OPEN", "IN_PROGRESS", "WAITING_CUSTOMER", "RESOLVED", "CLOSED") || !catalogEnum(queue, "", "mine", "unassigned") || !ValidSocialText(search, 0, 120) || offset < 0 {
 		return nil, ErrSocialInvalid
 	}
@@ -159,6 +160,8 @@ func (s *Store) SupportTickets(ctx context.Context, actor string, status, queue,
 	if status != "" {
 		where += " AND t.status=?"
 		args = append(args, status)
+	} else if search == "" {
+		where += " AND t.status<>'CLOSED'"
 	}
 	if queue == "mine" {
 		where += " AND t.assignee_id=?"
@@ -171,10 +174,10 @@ func (s *Store) SupportTickets(ctx context.Context, actor string, status, queue,
 		// Queries may contain Chinese even when ticket IDs and email addresses
 		// are ASCII. Convert those columns before comparing, rather than asking
 		// MariaDB to coerce the search text to ascii_bin (error 1267).
-		where += " AND (LOCATE(LOWER(?),LOWER(t.subject))>0 OR LOCATE(?,CONVERT(t.ticket_id USING utf8mb4) COLLATE utf8mb4_bin)>0 OR LOCATE(LOWER(?),LOWER(CONVERT(t.requester_email USING utf8mb4)) COLLATE utf8mb4_bin)>0 OR LOCATE(LOWER(?),LOWER(i.game_id))>0)"
-		args = append(args, search, search, search, search)
+		where += " AND (LOCATE(LOWER(?),LOWER(t.subject))>0 OR LOCATE(?,CONVERT(t.ticket_id USING utf8mb4) COLLATE utf8mb4_bin)>0 OR LOCATE(LOWER(?),LOWER(CONVERT(t.requester_email USING utf8mb4)) COLLATE utf8mb4_bin)>0 OR LOCATE(LOWER(?),LOWER(i.game_id))>0 OR EXISTS(SELECT 1 FROM support_ticket_aliases a WHERE a.ticket_id=t.ticket_id AND LOCATE(?,CONVERT(a.alias_ticket_id USING utf8mb4) COLLATE utf8mb4_bin)>0))"
+		args = append(args, search, search, search, search, search)
 	}
-	rows, err := s.DB.QueryContext(ctx, supportSelect+where+" ORDER BY t.updated_at DESC,t.ticket_id DESC LIMIT 51 OFFSET ?", append(args, offset)...)
+	rows, err := s.DB.QueryContext(ctx, supportSelect+where+" ORDER BY FIELD(t.status,'OPEN','IN_PROGRESS','WAITING_CUSTOMER','RESOLVED','CLOSED'),FIELD(t.priority,'URGENT','HIGH','NORMAL','LOW'),t.updated_at DESC,t.ticket_id DESC LIMIT 51 OFFSET ?", append(args, offset)...)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +201,10 @@ type SupportAttachment struct {
 }
 
 func (s *Store) SupportDetail(ctx context.Context, id string) (map[string]any, error) {
-
+	id, err := resolveSupportTicket(ctx, s.DB, id)
+	if err != nil {
+		return nil, err
+	}
 	ticket, err := scanSupport(s.DB.QueryRowContext(ctx, supportSelect+" WHERE t.ticket_id=?", id))
 	if err != nil {
 		return nil, socialMissing(err)
@@ -285,8 +291,12 @@ func (s *Store) SupportDetail(ctx context.Context, id string) (map[string]any, e
 }
 func (s *Store) SupportAttachment(ctx context.Context, ticket, id string, key []byte) (SupportAttachment, []byte, error) {
 	var a SupportAttachment
+	ticket, err := resolveSupportTicket(ctx, s.DB, ticket)
+	if err != nil {
+		return a, nil, err
+	}
 	var cipher string
-	err := s.DB.QueryRowContext(ctx, "SELECT attachment_id,filename,mime_type,size_bytes,content_cipher FROM support_attachments WHERE attachment_id=? AND ticket_id=?", id, ticket).Scan(&a.ID, &a.Filename, &a.ContentType, &a.Size, &cipher)
+	err = s.DB.QueryRowContext(ctx, "SELECT attachment_id,filename,mime_type,size_bytes,content_cipher FROM support_attachments WHERE attachment_id=? AND ticket_id=?", id, ticket).Scan(&a.ID, &a.Filename, &a.ContentType, &a.Size, &cipher)
 	if err != nil {
 		return a, nil, socialMissing(err)
 	}
@@ -304,6 +314,10 @@ func (s *Store) ChangeSupport(ctx context.Context, actor, id string, in SupportC
 		return nil, ErrSocialInvalid
 	}
 	return s.socialMutate(ctx, actor, "support.change:"+id, in.ClientRequestID, in, func(tx *sql.Tx) (any, error) {
+		id, err := resolveSupportTicket(ctx, tx, id)
+		if err != nil {
+			return nil, err
+		}
 		if err := requireSupportTx(ctx, tx, actor); err != nil {
 			return nil, err
 		}
