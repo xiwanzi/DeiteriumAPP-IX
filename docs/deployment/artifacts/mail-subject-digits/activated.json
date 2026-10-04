@@ -1,0 +1,17 @@
+{
+  "activatedAt": "2026-10-04T12:07:32Z",
+  "backendDirectory": "/opt/deuterium/releases/mail-subject-digits-cf94741842ec",
+  "backendSha256": "958cb2961d8af3c059f3f3ff33f080e4fae3097f8010db656c61fa03074da931",
+  "health": {
+    "status": "ready"
+  },
+  "schemaUnchanged": true,
+  "existingBusinessIDsPreserved": true,
+  "appAndWebUnchanged": true,
+  "accounts": 40,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "deletionCount": 1
+}
