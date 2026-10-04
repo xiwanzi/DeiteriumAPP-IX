@@ -1,3 +1,5 @@
+2026-10-04：**工单归并修复 Web 2.0.25 与配套 Go 已于 20:52 上线**（PR #66，源码 `54c389cc9a43`）。无引用头回复通过正文编号与同邮箱接续原工单；3 组误拆记录已合并，完整历史保留，已关闭默认移出全部但可搜索，待处理优先。App 2.0.15 保持；41 账号、27 订单、5 委托、1 条已有注销记录保留，工单 15→12。维护 `.worktrees/mail-identity-support` / `xiwanzi/support-threading-fix`，见[上线记录](docs/deployment/support-threading-2.0.25-live.md)。下方为较早记录。
+
 # 当前项目状态
 
 2026-10-04：**邮件主题与数字字体修正已于 20:07 上线**（PR #64，源码 `cf94741842ec`）。工单号仅留正文，不再写入邮件主题；工单号恢复 Consolas，普通数字恢复 Arial，中文和排版不变。App 2.0.15 / Web 2.0.24 保持。维护 `.worktrees/mail-identity-support` / `xiwanzi/mail-subject-digits`，见[上线记录](deployment/mail-subject-digits-live.md)。下方为较早记录。
