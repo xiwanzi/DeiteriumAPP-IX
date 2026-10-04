@@ -13,7 +13,7 @@ func TestSupportReplyPreservesFreeBodyAndAddsReplyableFooter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Subject != in.Subject || !strings.HasPrefix(m.Text, in.Body+"\n\n") || m.ReplyTo != in.ReplyAddress || strings.Contains(m.HTML, "<script>") || !strings.Contains(m.HTML, "&lt;script&gt;") || !strings.Contains(m.HTML, "客服 &amp; &lt;测试&gt;") {
+	if m.Subject != in.Subject || !strings.HasPrefix(m.Text, "工单编号："+in.TicketNumber+"\n\n"+in.Body+"\n\n") || m.ReplyTo != in.ReplyAddress || strings.Contains(m.HTML, "<script>") || !strings.Contains(m.HTML, "&lt;script&gt;") || !strings.Contains(m.HTML, "客服 &amp; &lt;测试&gt;") {
 		t.Fatal("reply body, author or delivery details changed")
 	}
 	for _, value := range []string{in.TicketNumber, "直接回复本邮件", "© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED.", HelpCenterURL, SupportEmail} {

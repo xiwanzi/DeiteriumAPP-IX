@@ -29,14 +29,15 @@ func RenderSupportReply(in SupportReplyMail) (Message, error) {
 	if err != nil {
 		return Message{}, err
 	}
-	text := in.Body + "\n\n"
+	text := ""
+	if in.TicketNumber != "" {
+		text = "工单编号：" + in.TicketNumber + "\n\n"
+	}
+	text += in.Body + "\n\n"
 	if in.AuthorName != "" {
 		text += in.AuthorName + "\n"
 	}
 	text += "Deuterium IX 玩家支持\n\nDEUTERIUM IX\n"
-	if in.TicketNumber != "" {
-		text += "工单编号：" + in.TicketNumber + "\n"
-	}
 	text += "您可以直接回复本邮件继续沟通。\n帮助中心：" + HelpCenterURL + "\n客服邮箱：" + in.ReplyAddress + "\n© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED."
 	return Message{Subject: in.Subject, Text: text, HTML: html.String(), FromName: "Deuterium IX 玩家支持", ReplyTo: in.ReplyAddress,
 		Images: []InlineImage{{CID: "deuterium-ix-emblem-small-v1", Filename: "deuterium-ix.png", ContentType: "image/png", Data: logo}}}, nil
