@@ -1,0 +1,47 @@
+{
+  "existingAccountSessionsHealthy": true,
+  "nodes": {
+    "login": true,
+    "amiya": true,
+    "odyssey": true,
+    "mek": true
+  },
+  "onlineAvailable": true,
+  "onlineCount": 0,
+  "mailChannels": {
+    "DM": {
+      "from": "noreply@notify.deuteriumix.com",
+      "enabled": false,
+      "passwordConfigured": false
+    },
+    "ENTERPRISE": {
+      "from": "support@deuteriumix.com",
+      "enabled": false,
+      "passwordConfigured": false
+    },
+    "SYSTEM": {
+      "from": "go@deuteriumix.com",
+      "enabled": false,
+      "passwordConfigured": false
+    }
+  },
+  "mailSecretStorageReady": true,
+  "legacyReviewNotificationsEnabled": true,
+  "supportWorkspaceAccessible": true,
+  "templates": {
+    "register": "PASS",
+    "password_reset": "PASS",
+    "password_change": "PASS"
+  },
+  "anonymousAndPlayerAccessDenied": true,
+  "unconfiguredRegistrationSafelyRejected": true,
+  "probeCreatedNoAccountOrMail": true,
+  "accountCount": 7,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "deletionCount": 0,
+  "temporarySessionsRevoked": true,
+  "realMailSentByVerification": false
+}

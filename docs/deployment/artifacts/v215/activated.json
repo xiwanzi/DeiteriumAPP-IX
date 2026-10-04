@@ -1,0 +1,39 @@
+{
+  "backendDirectory": "/opt/deuterium/releases/release-2.0.15-6d5a2fdde8f1",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.21-6d5a2fdde8f1/dist",
+  "backendSha256": "215fc855e80d8e5189f8b3c1ddab743ed134b48d405c43b37abf1b4a6ba44ea9",
+  "health": {
+    "status": "ready"
+  },
+  "migration": {
+    "name": "032_mail_identity_support.sql",
+    "sha256": "070236afa081f1acbe9c553df5882585a722afa1d9ed6cc1d14d9975ddfc1c2f"
+  },
+  "existingIdentityFieldsUnchanged": true,
+  "existingBusinessAndConfigurationUnchanged": true,
+  "preservedTables": [
+    "account_deletions",
+    "admin_email_settings_v204",
+    "admission_applications",
+    "admission_entries",
+    "admission_events",
+    "commerce_events_v2",
+    "commerce_interventions_v2",
+    "commerce_operations_v2",
+    "commerce_refunds_v2",
+    "commerce_requests_v2",
+    "commerce_resources_v2",
+    "commerce_snapshots_v2",
+    "commerce_stock_holds_v2",
+    "desktop_launcher_settings",
+    "identity_aliases",
+    "identity_permissions"
+  ],
+  "accounts": 7,
+  "gameVerifiedAccounts": 7,
+  "deletionCount": 0,
+  "newMailChannelsConfigured": 0,
+  "stoppedBackupSha256": "8cab51a791c5da447091c5c9e8a1a62cb6ee7d3b453f1abe66b584568854f45f",
+  "appFeedVersionCode": 21400,
+  "activatedAt": "2026-10-04T01:28:32Z"
+}

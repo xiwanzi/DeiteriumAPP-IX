@@ -1,0 +1,24 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.15-21500-test",
+    "kind": "APK",
+    "versionName": "2.0.15",
+    "versionCode": 21500,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "新增邮箱注册与游戏身份验证，支持中文昵称；优化账号与密码管理，新增邮件客服入口，提升使用体验。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.15-21500-test.apk",
+    "sizeBytes": 8891922,
+    "sha256": "fd675f0587f99e06f0e7f1004888b87b4ea10f93ffee7d3e4280cad90711574c",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21499,
+    "channel": "stable",
+    "publishedAt": "2026-10-04T01:30:23Z"
+  },
+  "manifestSha256": "d2df39b8afbf2a8435b94ec903f011bb8f40541defb19cc9f964cec0f17e0ac2",
+  "previousReleaseEntriesPreserved": 15,
+  "health": {
+    "status": "ready"
+  },
+  "backupDirectory": "/var/backups/deuterium/release-2.0.15-20261004-6d5a2fdde8f1"
+}

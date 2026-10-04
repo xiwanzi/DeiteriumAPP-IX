@@ -1,0 +1,14 @@
+{
+  "backupDirectory": "/var/backups/deuterium/release-2.0.15-20261004-6d5a2fdde8f1",
+  "databaseBackupBytes": 19699165,
+  "databaseBackupSha256": "9de0200982d5b13751f985ec8ffd4abfdb551c52197f9411b70c7555441b989a",
+  "paths": {
+    "backup": "/var/backups/deuterium/release-2.0.15-20261004-6d5a2fdde8f1",
+    "backend": "/opt/deuterium/releases/release-2.0.15-6d5a2fdde8f1",
+    "web": "/var/www/deuterium/releases/web-2.0.21-6d5a2fdde8f1",
+    "stage": "/opt/deuterium/releases/staged-v215-6d5a2fdde8f1"
+  },
+  "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.15-21500-test.apk",
+  "publicApkVerified": true,
+  "liveServiceChanged": false
+}

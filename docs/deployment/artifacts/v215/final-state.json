@@ -1,0 +1,22 @@
+{
+  "service": "active",
+  "backend": "/opt/deuterium/releases/release-2.0.15-6d5a2fdde8f1",
+  "runningBinarySha256": "215fc855e80d8e5189f8b3c1ddab743ed134b48d405c43b37abf1b4a6ba44ea9",
+  "web": "/var/www/deuterium/releases/web-2.0.21-6d5a2fdde8f1/dist",
+  "accounts": 7,
+  "verified": 7,
+  "deletionCount": 0,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "smtpAndRuntimeConfigurationUnchanged": true,
+  "latestApp": 21500,
+  "supportTickets": 0,
+  "newMailEvents": 0,
+  "schemaMigrationCount": 28,
+  "launcherVersions": [
+    "9",
+    "9"
+  ]
+}
