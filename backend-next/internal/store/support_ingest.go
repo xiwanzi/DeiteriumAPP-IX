@@ -79,8 +79,8 @@ func guessSupportCategory(subject string) string {
 	return "OTHER"
 }
 
-// Only the receiver creates a ticket. Help submissions are ordinary outbound
-// system mail carrying a one-time server-bound proof and the player's Reply-To.
+// Player Help submissions reach ticket creation through the receiver. Staff
+// can separately create outbound tickets through the protected admin endpoint.
 func (s *Store) SubmitSupportMail(ctx context.Context, user string, in SupportSubmission, key []byte) (json.RawMessage, error) {
 	in.Subject = strings.TrimSpace(in.Subject)
 	in.Body = strings.TrimSpace(in.Body)

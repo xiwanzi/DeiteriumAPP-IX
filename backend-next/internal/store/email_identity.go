@@ -162,12 +162,15 @@ func (s *Store) BindGameIdentity(ctx context.Context, userID string, v GameVerif
 	}
 	defer tx.Rollback()
 	var verified bool
-	var ref string
-	if err = tx.QueryRowContext(ctx, "SELECT game_verified,player_ref FROM identities WHERE id=? FOR UPDATE", userID).Scan(&verified, &ref); err != nil {
+	var ref, currentGameID string
+	if err = tx.QueryRowContext(ctx, "SELECT game_verified,player_ref,game_id FROM identities WHERE id=? FOR UPDATE", userID).Scan(&verified, &ref, &currentGameID); err != nil {
 		return err
 	}
 	if verified {
 		return ErrConflict
+	}
+	if !strings.EqualFold(currentGameID, v.GameID) {
+		return ErrVerification
 	}
 	if err = consumeVerification(ctx, tx, v); err != nil {
 		return err

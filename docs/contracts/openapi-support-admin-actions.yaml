@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info: {title: Deuterium staff support and game ID administration, version: 2.0.24}
+servers: [{url: /api/v1}]
+paths:
+  /admin/support/tickets:
+    post:
+      operationId: createOutboundSupportTicket
+      summary: 工作人员主动创建工单并排队发送首封人工邮件，不发送收件回执
+      description: 需要 support.manage 或 platform.admin。原子生成编号、ADMIN 来源工单、OUTBOUND 消息、ENTERPRISE/TICKET_REPLY 队列和邮件关联；默认分配创建人且状态 WAITING_CUSTOMER。
+      security: [{WebSession: [], CsrfToken: []}, {AppBearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId, email, subject, category, body]
+              properties:
+                clientRequestId: {type: string, minLength: 1, maxLength: 128}
+                email: {type: string, format: email, maxLength: 254}
+                subject: {type: string, minLength: 2, maxLength: 120}
+                category: {type: string, enum: [ACCOUNT, GAME, ORDER, ACCESS, OTHER]}
+                body: {type: string, minLength: 2, maxLength: 12000}
+      responses:
+        '200':
+          description: 创建并入队成功，或同请求键重试返回原结果；不表示已送达收件箱
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [ticketId, eventId, version, status]
+                    properties:
+                      ticketId: {type: string, pattern: '^[0-9]{12}$'}
+                      eventId: {type: string}
+                      version: {type: integer, enum: [1]}
+                      status: {type: string, enum: [WAITING_CUSTOMER]}
+        '400': {description: 输入无效、多个收件人或系统自身邮箱}
+        '401': {description: 会话无效}
+        '403': {description: 无工单权限或网页 Origin/CSRF 拒绝}
+        '409': {description: 发信/收件通道未启用或幂等键内容冲突}
+        '503': {description: 暂不可用，保留输入与原请求键重试}
+  /admin/accounts/{userId}/game-id:
+    post:
+      operationId: renameAccountGameId
+      summary: 超级管理员修改其他账号的游戏 ID，保留原绑定身份和业务资产
+      description: 未验证账号可纠正游戏名；已验证账号改名须由 Core 确认同一 UUID。同步登录别名，失效旧游戏验证码并撤销目标账号会话。不得传入或修改 UUID、userId、playerRef、权限及验证标记。
+      security: [{WebSession: [], CsrfToken: []}, {AppBearer: []}]
+      parameters:
+        - {in: path, name: userId, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId, expectedVersion, gameId]
+              properties:
+                clientRequestId: {type: string, minLength: 1, maxLength: 128}
+                expectedVersion: {type: integer, format: int64, minimum: 1}
+                gameId: {type: string, pattern: '^[A-Za-z0-9_]{1,32}$'}
+      responses:
+        '200':
+          description: 已保存或原成功请求的重试；完全相同的名称 changed=false，不撤销会话
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [userId, gameId, previousGameId, version, changed]
+                    properties:
+                      userId: {type: string}
+                      gameId: {type: string}
+                      previousGameId: {type: string}
+                      version: {type: integer, format: int64}
+                      changed: {type: boolean}
+        '400': {description: 格式无效或保留的系统名称}
+        '401': {description: 会话无效}
+        '403': {description: 非超级管理员或网页 Origin/CSRF 拒绝}
+        '404': {description: 目标账号或服务器玩家不存在}
+        '409': {description: 自身账号、已注销、重名、版本/请求键冲突或新名称属于另一游戏身份}
+        '503': {description: Core 或服务暂不可用，未完成改名}
+components:
+  securitySchemes:
+    WebSession: {type: apiKey, in: cookie, name: __Host-deuterium_session}
+    CsrfToken: {type: apiKey, in: header, name: X-CSRF-Token}
+    AppBearer: {type: http, scheme: bearer}

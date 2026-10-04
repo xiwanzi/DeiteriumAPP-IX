@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
 	"strings"
 	"time"
@@ -51,6 +52,81 @@ type SupportChange struct {
 	Status          string  `json:"status"`
 	Priority        string  `json:"priority"`
 	AssigneeID      *string `json:"assigneeId"`
+}
+
+type SupportCreate struct {
+	ClientRequestID string `json:"clientRequestId"`
+	Email           string `json:"email"`
+	Subject         string `json:"subject"`
+	Category        string `json:"category"`
+	Body            string `json:"body"`
+}
+
+func (s *Store) CreateSupport(ctx context.Context, actor string, in SupportCreate, key []byte) (json.RawMessage, error) {
+	var err error
+	in.Email, err = NormalizeEmail(in.Email)
+	in.Subject, in.Body = strings.TrimSpace(in.Subject), strings.TrimSpace(in.Body)
+	if err != nil || !ValidSocialText(in.Subject, 2, 120) || strings.ContainsAny(in.Subject, "\r\n") || !ValidSocialText(in.Body, 2, 12000) || !catalogEnum(in.Category, "ACCOUNT", "GAME", "ORDER", "ACCESS", "OTHER") {
+		return nil, ErrSocialInvalid
+	}
+	return s.socialMutate(ctx, actor, "support.create", in.ClientRequestID, in, func(tx *sql.Tx) (any, error) {
+		if err := requireSupportTx(ctx, tx, actor); err != nil {
+			return nil, err
+		}
+		var inboxJSON, channelJSON string
+		if err := tx.QueryRowContext(ctx, "SELECT settings_json FROM support_inbox WHERE id=1").Scan(&inboxJSON); err != nil {
+			return nil, err
+		}
+		var inbox notify.InboxSettings
+		if json.Unmarshal([]byte(inboxJSON), &inbox) != nil || !inbox.Enabled || inbox.Address == "" {
+			return nil, catalogError(409, "SUPPORT_INBOX_NOT_READY", "请先配置并启用玩家支持收件箱。")
+		}
+		err := tx.QueryRowContext(ctx, "SELECT settings_json FROM mail_channels WHERE channel_id='ENTERPRISE'").Scan(&channelJSON)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+		var channel notify.Settings
+		if err != nil || json.Unmarshal([]byte(channelJSON), &channel) != nil || !channel.Enabled {
+			return nil, catalogError(409, "MAIL_CHANNEL_DISABLED", "请先配置并启用玩家支持发信通道。")
+		}
+		var self int
+		if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM mail_channels WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(settings_json,'$.from')))=?", in.Email).Scan(&self); err != nil {
+			return nil, err
+		}
+		if self > 0 || strings.EqualFold(in.Email, inbox.Address) {
+			return nil, catalogError(400, "SUPPORT_RECIPIENT_INVALID", "请填写玩家邮箱，不能向系统自身邮箱建单。")
+		}
+		var owner, name, actorName string
+		err = tx.QueryRowContext(ctx, "SELECT id,COALESCE(NULLIF(display_name,''),game_id,'') FROM identities WHERE status='active' AND (email=? OR (email IS NULL AND CONCAT(qq,'@qq.com')=?)) ORDER BY id LIMIT 1", in.Email, in.Email).Scan(&owner, &name)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+		if err := tx.QueryRowContext(ctx, "SELECT COALESCE(NULLIF(display_name,''),game_id,'') FROM identities WHERE id=?", actor).Scan(&actorName); err != nil {
+			return nil, err
+		}
+		ticket, err := ticketNumberTx(ctx, tx, time.Now().UTC())
+		if err != nil {
+			return nil, err
+		}
+		if _, err = tx.ExecContext(ctx, "INSERT INTO support_tickets(ticket_id,requester_id,requester_email,requester_name,source,subject,category,status,assignee_id,created_at,updated_at) VALUES(?,?,?,?,'ADMIN',?,?,'WAITING_CUSTOMER',?,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))", ticket, nullString(owner), in.Email, name, in.Subject, in.Category, actor); err != nil {
+			return nil, err
+		}
+		message := ID("reply_")
+		if _, err = tx.ExecContext(ctx, "INSERT INTO support_messages(message_id,ticket_id,actor_id,author_name,direction,visibility,body,created_at) VALUES(?,?,?,?,'OUTBOUND','PUBLIC',?,UTC_TIMESTAMP(6))", message, ticket, actor, actorName, in.Body); err != nil {
+			return nil, err
+		}
+		event, err := enqueueThreadMailTx(ctx, tx, "ENTERPRISE", "TICKET_REPLY", in.Email, "[工单 "+ticket+"] "+in.Subject, in.Body, ticket, actor, inbox.Address, "", nil, key)
+		if err != nil {
+			return nil, err
+		}
+		if _, err = tx.ExecContext(ctx, "UPDATE support_messages SET author_email=?,mail_message_id=? WHERE message_id=?", inbox.Address, event+"@deuterium-notifications", message); err != nil {
+			return nil, err
+		}
+		if _, err = tx.ExecContext(ctx, "INSERT INTO audit_events_next(actor_id,action,resource_id,created_at) VALUES(?,'support.create',?,UTC_TIMESTAMP(6))", actor, ticket); err != nil {
+			return nil, err
+		}
+		return map[string]any{"ticketId": ticket, "eventId": event, "version": 1, "status": "WAITING_CUSTOMER"}, nil
+	})
 }
 
 const supportSelect = `SELECT t.ticket_id,COALESCE(t.requester_id,''),t.subject,t.category,t.status,t.priority,COALESCE(t.assignee_id,''),t.version,t.created_at,t.updated_at,COALESCE(NULLIF(t.requester_name,''),t.requester_email),t.requester_email,t.source FROM support_tickets t LEFT JOIN identities i ON i.id=t.requester_id`
@@ -275,7 +351,9 @@ func (s *Store) ChangeSupport(ctx context.Context, actor, id string, in SupportC
 					return nil, catalogError(409, "SUPPORT_INBOX_NOT_READY", "请先配置玩家支持邮箱。")
 				}
 				var latest string
-				if err := tx.QueryRowContext(ctx, "SELECT mail_message_id FROM support_messages WHERE ticket_id=? AND direction='INBOUND' ORDER BY created_at DESC,message_id DESC LIMIT 1", id).Scan(&latest); err != nil {
+				// Staff-created tickets may not have any inbound mail yet. Thread
+				// follow-ups to a previous outbound message until the player replies.
+				if err := tx.QueryRowContext(ctx, "SELECT mail_message_id FROM support_messages WHERE ticket_id=? AND direction IN ('INBOUND','OUTBOUND') AND mail_message_id<>'' ORDER BY (direction='INBOUND') DESC,created_at DESC,message_id DESC LIMIT 1", id).Scan(&latest); err != nil && !errors.Is(err, sql.ErrNoRows) {
 					return nil, err
 				}
 				event, err := enqueueThreadMailTx(ctx, tx, "ENTERPRISE", "TICKET_REPLY", email, "[工单 "+id+"] "+subject, in.Body, id, actor, inbox.Address, latest, nil, key)

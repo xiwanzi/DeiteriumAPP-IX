@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -25,6 +26,16 @@ func (s *Store) NewGameVerification(ctx context.Context, v GameVerification) err
 		return err
 	}
 	defer tx.Rollback()
+	if v.Purpose == "game_verify" {
+		var gameID string
+		var verified bool
+		if err = tx.QueryRowContext(ctx, "SELECT game_id,game_verified FROM identities WHERE id=? FOR UPDATE", v.UserID).Scan(&gameID, &verified); err != nil {
+			return err
+		}
+		if verified || !strings.EqualFold(gameID, v.GameID) {
+			return ErrVerification
+		}
+	}
 	key := Digest([]byte(v.Purpose + ":" + v.PlayerUUID))
 	if _, err = tx.ExecContext(ctx, "INSERT INTO game_verification_cooldowns VALUES (?,TIMESTAMP('2000-01-01')) ON DUPLICATE KEY UPDATE cooldown_key=VALUES(cooldown_key)", key); err != nil {
 		return err

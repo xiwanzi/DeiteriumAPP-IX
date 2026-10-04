@@ -45,6 +45,12 @@
 .support-efficient .support-mailbox-health i { width: 6px; height: 6px; background: var(--red); border-radius: 50%; }
 .support-efficient .support-mailbox-health.online i { background: var(--green); }
 .support-efficient .support-toolbar > .icon-button { width: 30px; height: 30px; flex-shrink: 0; }
+.support-efficient .support-toolbar .support-create-button { flex-shrink: 0; min-height: 32px; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; }
+.support-create-form > p { font-size: 13px; color: var(--muted); }
+.support-create-form fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.support-create-form textarea { resize: vertical; max-height: 35dvh; }
+.support-create-form footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.support-create-form footer small { color: var(--muted); }
 .support-efficient .support-feedback { display: flex; align-items: center; gap: 8px; padding: 6px 14px; min-height: 32px; font-size: 12px; background: var(--sage); color: var(--green); flex-shrink: 0; }
 .support-efficient .support-feedback span { flex: 1; overflow-wrap: anywhere; }
 .support-efficient .support-feedback button { padding: 4px; display: inline-flex; }

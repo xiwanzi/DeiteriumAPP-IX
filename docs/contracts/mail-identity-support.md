@@ -41,7 +41,7 @@ user 增加 `email`（本人可见）、`gameVerified`、`displayName`；`identi
 
 ## 客服收件与未来 Help
 
-工单以真实客服邮箱收到邮件为入口，没有玩家工单列表或在线回复接口。
+工单可由玩家支持邮箱收件创建，也可由工作人员在后台主动创建并发信；没有玩家工单列表或在线回复接口。
 
 - PUT `/admin/mail/inbox`：仅超级管理员，`clientRequestId,expectedVersion,settings,password?`。settings 为 `enabled,host,port,username,address,folder,importExisting`；TLS 强制开启，密码不回传。GET `/admin/mail` 包含脱敏收件设置及同步状态。
 - GET `/support/contact`：公开客服邮箱地址，供 App/Web 打开邮件应用使用。
@@ -58,10 +58,11 @@ user 增加 `email`（本人可见）、`gameVerified`、`displayName`；`identi
 基址 `/admin/support/tickets`，要求 `support.manage` 或 `platform.admin`。
 
 - 编号是 **12 位纯数字**：UTC+8 创建日期 `YYYYMMDD` 加随机四位（含前导零）。同一天从尚未使用的 0000–9999 中均匀随机选取并加数据库日锁；每日最多 10000 件，编号空间用完时保留来信等待处理，不改用其他编号格式。
+- POST 基址：`clientRequestId,email,subject,category,body`，主动创建工单并原子入队首封人工邮件；返回 `ticketId,eventId,version,status`，默认分配创建人、WAITING_CUSTOMER。来源 ADMIN，不发送 TICKET_CREATED 自动回执；玩家首次回复继续原单且不补发回执。未收到玩家回信前也可继续发邮件。详见 [主动建单与游戏 ID 管理接口](openapi-support-admin-actions.yaml)。
 - GET 列表：`status,queue,category,q,offset`，每页 50 条与 hasMore；queue 支持 mine/unassigned；可搜索主题、工单编号、邮箱或游戏 ID。
-- GET `/{ticketId}`：邮件往来、内部备注、附件、申请人资料和邮件投递状态。工单包含 `requesterEmail,requesterName,source=EMAIL|HELP`。
+- GET `/{ticketId}`：邮件往来、内部备注、附件、申请人资料和邮件投递状态。工单包含 `requesterEmail,requesterName,source=EMAIL|HELP|ADMIN`。
 - POST `/{ticketId}`：`clientRequestId,expectedVersion,body?,visibility?,status?,priority?,assigneeId?,category?`。PUBLIC 是发邮件，INTERNAL 是仅后台备注；发送与更新状态可一次提交。
-- 状态：OPEN（待审查）、IN_PROGRESS、WAITING_CUSTOMER、RESOLVED、CLOSED。新来信重新打开为 OPEN；人工回复默认等待回复，也可同步选择继续处理或已解决。
+- 状态：OPEN（待处理）、IN_PROGRESS、WAITING_CUSTOMER、RESOLVED、CLOSED。新来信重新打开为 OPEN；人工回复默认等待回复，也可同步选择继续处理或已解决。
 - 类型：ACCOUNT、GAME、ORDER、ACCESS、OTHER。Help 使用表单类型，直接来信由主题初分，可由支持人员更正。优先级 LOW/NORMAL/HIGH/URGENT。
 - GET `/{ticketId}/attachments/{attachmentId}`：仅工单工作人员可下载该工单附件。
 - POST `/{ticketId}/mail/{eventId}/retry`：工单人员可对该工单已 FAILED 的业务邮件重新入队，保留原 Message-ID；全局 `/admin/mail/events/{eventId}/retry` 仅超级管理员。验证码禁止重发旧任务，应重新获取。
