@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | 人工回复中文正文 | `HarmonyOS_Sans_SC` | true |
 | 正文数字、十二位工单号 | `Novecentosanswide-Medium` | true |
-| 六位验证码 | `Novecentosanswide-Bold` | true |
+| 六位验证码（用户最新指定保留原样） | `Consolas-Bold` | false，本机系统字体 |
 | 字标源文件渲染 | `Geist-Bold`，CSS 权重 650 | true |
 
 已对官网六份代表性资源作匿名 GET：HarmonyOS Regular/Bold WOFF2、完整 Regular TTF、Novecento Medium/Bold WOFF2、Geist WOFF2。内容 SHA-256 与本机官网源文件匹配，均返回正确字体类型及 CORS `*`。[实际字体与资产摘要记录](artifacts/mail-typography/font-verification.json)。
@@ -36,3 +36,5 @@
 入口：`output/mail-typography/index.html`。各邮件有独立 HTML、`*-mobile.png` 与 `*-desktop.png`；`support-reply-fallback.png` 为字体请求被阻断后的效果。
 
 生成方法：设置 `DEUTERIUM_MAIL_PREVIEW_DIR` 后运行通知包的 `TestAllMailUsesOfficialTypographyAndEmbeddedBrand`，浏览器等待 `document.fonts.ready` 后验证实际字体并截图。通用系统通知预览使用正常示例文字，安全转义测试另行断言。
+
+用户随后明确要求验证码保留原等宽字形；三种用途同步恢复 Consolas 700 与原字距，正文鸿蒙、其他数字 Novecento 和品牌页脚规范继续执行。

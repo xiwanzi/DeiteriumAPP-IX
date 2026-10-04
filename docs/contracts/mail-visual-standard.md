@@ -7,7 +7,8 @@
 | 内容 | 字体 / 规格 |
 | --- | --- |
 | 中文及正文 | HarmonyOS Sans SC，真实 Regular / Medium / Bold（400 / 500 / 700）；缺字使用官网的完整字库补齐 |
-| 数字、验证码、工单号 | 官网 Novecento Sans Wide，Medium / DemiBold / Bold；通过独立数字字体的 Unicode 范围覆盖 0–9 |
+| 一般数字、工单号 | 官网 Novecento Sans Wide，Medium / DemiBold / Bold；通过独立数字字体的 Unicode 范围覆盖 0–9 |
+| 六位验证码（用户明确例外） | 保留原 Consolas / Courier New 等宽数字，700 字重；桌面 48px / 9px 字距，手机 42px / 7px 字距，以可读性优先 |
 | 英文辅助标注 | 沿官网相应用途使用 Gilroy Medium |
 | 品牌字标 | 官网页脚的 Geist 650 字形、等比例字距；保持单色，与邮件本身配色对应 |
 

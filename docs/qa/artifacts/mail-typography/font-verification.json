@@ -47,10 +47,9 @@
   "renderedFonts": {
     "body": "HarmonyOS_Sans_SC",
     "numbers": "Novecentosanswide-Medium",
-    "verificationCode": "Novecentosanswide-Bold",
+    "verificationCode": "Consolas-Bold",
     "wordmark": "Geist-Bold (CSS weight 650)"
   },
-  "allCustomFonts": true,
   "blockedFontFallback": "MicrosoftYaHei",
   "blockedFontBrandImagesLoaded": true,
   "testedWidths": [
@@ -86,5 +85,12 @@
       "sizeBytes": 3846,
       "sha256": "a58243bf1d93a25a5ddd33f59e023009cc25dbf09d3c21434b96e0513867187d"
     }
-  ]
+  ],
+  "customFonts": {
+    "body": true,
+    "numbers": true,
+    "verificationCode": false,
+    "wordmark": true
+  },
+  "verificationCodeException": "User retains original Consolas bold numerals: desktop 48px/9px spacing, mobile 42px/7px spacing."
 }
