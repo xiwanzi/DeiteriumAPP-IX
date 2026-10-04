@@ -35,7 +35,7 @@ type InboxSettings struct {
 
 func (s InboxSettings) Validate() error {
 	if strings.TrimSpace(s.Folder) != s.Folder || s.Folder == "" || len(s.Folder) > 100 || strings.ContainsAny(s.Folder, "\r\n\x00") || s.Username == "" {
-		return errors.New("请填写完整的客服收件箱设置。")
+		return errors.New("请填写完整的玩家支持收件箱设置。")
 	}
 	return (Settings{Host: s.Host, Port: s.Port, Security: "TLS", Username: s.Username, From: s.Address, Recipients: []string{s.Address}}).Validate()
 }
@@ -47,7 +47,7 @@ func PollInbox(ctx context.Context, s InboxSettings, password string, position f
 }
 func pollInboxWithRoots(ctx context.Context, s InboxSettings, password string, position func(uint32, uint32) (uint32, error), receive func(uint32, []byte, time.Time) error, roots *x509.CertPool) error {
 	if s.Validate() != nil {
-		return errors.New("客服收件箱设置不完整。")
+		return errors.New("玩家支持收件箱设置不完整。")
 	}
 	dialer := tls.Dialer{NetDialer: &net.Dialer{Timeout: 8 * time.Second}, Config: &tls.Config{ServerName: s.Host, MinVersion: tls.VersionTLS12, RootCAs: roots}}
 	conn, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
@@ -70,7 +70,7 @@ func pollInboxWithRoots(ctx context.Context, s InboxSettings, password string, p
 	}
 	box, err := c.Select(s.Folder, true)
 	if err != nil {
-		return errors.New("无法打开客服邮件文件夹。")
+		return errors.New("无法打开玩家支持邮件文件夹。")
 	}
 	after, err := position(box.UidValidity, box.UidNext)
 	if err != nil {
@@ -87,7 +87,7 @@ func pollInboxWithRoots(ctx context.Context, s InboxSettings, password string, p
 	criteria.Uid.AddRange(after+1, 0)
 	uids, err := c.UidSearch(criteria)
 	if err != nil {
-		return errors.New("无法读取客服邮件目录。")
+		return errors.New("无法读取玩家支持邮件目录。")
 	}
 	sort.Slice(uids, func(i, j int) bool { return uids[i] < uids[j] })
 	count := 0

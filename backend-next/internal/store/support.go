@@ -272,7 +272,7 @@ func (s *Store) ChangeSupport(ctx context.Context, actor, id string, in SupportC
 				}
 				var inbox notify.InboxSettings
 				if json.Unmarshal([]byte(inboxJSON), &inbox) != nil || inbox.Address == "" {
-					return nil, catalogError(409, "SUPPORT_INBOX_NOT_READY", "请先配置客服邮箱。")
+					return nil, catalogError(409, "SUPPORT_INBOX_NOT_READY", "请先配置玩家支持邮箱。")
 				}
 				var latest string
 				if err := tx.QueryRowContext(ctx, "SELECT mail_message_id FROM support_messages WHERE ticket_id=? AND direction='INBOUND' ORDER BY created_at DESC,message_id DESC LIMIT 1", id).Scan(&latest); err != nil {
