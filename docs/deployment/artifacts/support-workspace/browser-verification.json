@@ -1,0 +1,43 @@
+{
+  "webVersion": "2.0.22",
+  "unicodeSearchOK": true,
+  "chineseSearchOK": true,
+  "numberSearchOK": true,
+  "allNodesOnline": true,
+  "channelsEnabled": true,
+  "inboxEnabled": true,
+  "inboxError": "",
+  "viewport": [
+    1440,
+    900
+  ],
+  "work": {
+    "x": 64,
+    "y": 94,
+    "width": 1376,
+    "height": 806,
+    "bottom": 900
+  },
+  "messages": {
+    "x": 380.796875,
+    "y": 198.390625,
+    "width": 1059.203125,
+    "height": 492.609375,
+    "bottom": 691
+  },
+  "send": {
+    "x": 1297,
+    "y": 859,
+    "width": 131,
+    "height": 34,
+    "bottom": 893
+  },
+  "pageHeight": 900,
+  "collapsed": true,
+  "mobile": {
+    "pageWidth": 390,
+    "pageHeight": 844,
+    "sendBottom": 839
+  },
+  "scriptErrors": []
+}

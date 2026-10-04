@@ -1,5 +1,7 @@
 # 当前项目状态
 
+2026-10-04：**工单工作区 Web 2.0.22 与配套 Go 已于 13:46 上线**（PR #58，源码 `939d0b780f77`）。默认收起全站导航，铺满可用宽高，固定回复区，前置处理操作；草稿/重试与中文搜索修复。App 2.0.15、邮件样式和配置保持；8 账号、3 工单、27 订单、5 委托、0 注销记录保留，四节点在线。维护 `.worktrees/mail-identity-support` / `xiwanzi/support-workspace-efficiency`，见[上线记录](deployment/support-workspace-2.0.22-live.md)。下方为较早记录。
+
 2026-10-04：**邮件系统已接通，最终 Go 修正于 12:49 上线**（PR #55、#56，源码 `b0b6686cf1ad`）。DM、客服 SMTP/IMAP、内部邮箱已启用并完成真实联调；品牌图改用 HTTPS 外链，回执去掉问题摘要，按用户要求保留署名/页脚布局与 Gmail 折叠行为。App 2.0.15 / Web 2.0.21 保持；原 7 账号保留，启用后新增 1 个邮箱注册账号，当前 8 账号、27 订单、5 委托、0 注销记录。维护 `.worktrees/mail-identity-support` / `xiwanzi/mail-live`，见[上线记录](deployment/mail-system-live-20261004.md)。下方候选及未接通说明均为历史状态。
 
 2026-10-04：**App 2.0.15（21500）、社区 Web 2.0.21 与配套 Go 已于 09:30 上线**（PR #53，源码 `6d5a2fdde8f1`）。新增邮箱注册、独立游戏验证、中文昵称、邮件系统及邮件工单，旧账号保持已验证。7 账号、27 订单、5 委托和 0 注销记录保留，四个 Core 节点在线；游戏插件未更换。新 DM / 企业邮箱授权码尚待后台配置，邮箱注册及工单收发暂未启用；旧审核邮件沿用原 SMTP。维护 `.worktrees/mail-identity-support` / `xiwanzi/release-v215-live`，见[上线记录](deployment/deuterium-2.0.15-live.md)。下方未部署说明为早期候选记录。

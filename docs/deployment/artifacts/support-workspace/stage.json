@@ -1,0 +1,14 @@
+{
+  "backupDirectory": "/var/backups/deuterium/support-workspace-20261004-939d0b780f77",
+  "databaseBackupBytes": 20592247,
+  "databaseBackupSha256": "14afdfa55a5438830fd466264ed45b4c3262f3e40e6dd829ae2e6b5f5d2734e0",
+  "prepared": true,
+  "webConfigSha256": "33f0a7539808ebbdfba109876dcc832e5074dcac0eb20c0ebe47bb075603f073",
+  "paths": {
+    "backup": "/var/backups/deuterium/support-workspace-20261004-939d0b780f77",
+    "backend": "/opt/deuterium/releases/support-workspace-939d0b780f77",
+    "web": "/var/www/deuterium/releases/web-2.0.22-939d0b780f77",
+    "stage": "/opt/deuterium/releases/support-workspace-staged-939d0b780f77"
+  },
+  "liveServiceChanged": false
+}
