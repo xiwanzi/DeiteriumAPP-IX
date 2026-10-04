@@ -41,6 +41,6 @@ HTML 邮件不能强制所有客户端接受外部字体。Gmail 等客户端对
 
 依据：[Gmail CSS 支持文档](https://developers.google.com/workspace/gmail/design/css)、[Can I email 的字体加载实测](https://www.caniemail.com/features/css-at-font-face/)。浏览器预览不能当作 QQ、Gmail、Outlook 实际投递验收；必须如实区分正常加载和回退效果。
 
-当前为本机候选，未部署。实际验证见[字体与品牌 QA](../qa/mail-typography-20261004.md)。
+已完成上线，见[接通与发布记录](../deployment/mail-system-live-20261004.md)。实际验证见[字体与品牌 QA](../qa/mail-typography-20261004.md)。
 
 真实 Gmail 联调后，用户要求品牌图改为 HTTPS 外链、回执删除问题摘要，并明确保留原客服署名/页脚位置，不针对 Gmail 自动折叠作修改。新邮件采用纯文本与 HTML 两个 MIME 备选部分，不携带品牌图片附件。图片使用官网公开 OSS 前缀下的内容摘要文件名和长期缓存，不含收件人或工单跟踪参数；旧版本资源保留。

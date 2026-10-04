@@ -1,0 +1,34 @@
+{
+  "channels": {
+    "ENTERPRISE": {
+      "enabled": true,
+      "passwordConfigured": true,
+      "version": 1
+    },
+    "SYSTEM": {
+      "enabled": true,
+      "passwordConfigured": true,
+      "version": 1
+    },
+    "DM": {
+      "enabled": true,
+      "passwordConfigured": true,
+      "version": 1
+    }
+  },
+  "inbox": {
+    "enabled": true,
+    "passwordConfigured": true,
+    "importExisting": false,
+    "acceptAfter": "2026-10-04T04:22:49.890899339Z",
+    "version": 1
+  },
+  "legacyNotificationSettingsPreserved": true,
+  "testEvents": {
+    "verification": "mail_affa820023fdb1b7634959152b28e8f3",
+    "customerProbe": "mail_1ce18ead431308c8f2136511c0a4dba9"
+  },
+  "testRecipient": "x***@gmail.com",
+  "accountsCreatedByTest": 0,
+  "configuredAt": "2026-10-04 04:22:49.961199"
+}

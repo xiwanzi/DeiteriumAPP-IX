@@ -1,0 +1,20 @@
+[
+  {
+    "name": "deuterium-ix-emblem.png",
+    "sha256": "b34da374f70be05de2687feff239034d4d943cea6f00f87681e53eb6e80e425f",
+    "sizeBytes": 32512,
+    "url": "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/v1/deuterium-ix-emblem-b34da374f70be05d.png"
+  },
+  {
+    "name": "deuterium-ix-wordmark-dark.png",
+    "sha256": "4bef42e7d6e84f3532cb9fefbe46f5b3f23432193c09ee0776d14324d853cbb0",
+    "sizeBytes": 4249,
+    "url": "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/v1/deuterium-ix-wordmark-dark-4bef42e7d6e84f35.png"
+  },
+  {
+    "name": "deuterium-ix-wordmark-light.png",
+    "sha256": "a58243bf1d93a25a5ddd33f59e023009cc25dbf09d3c21434b96e0513867187d",
+    "sizeBytes": 3846,
+    "url": "https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/v1/deuterium-ix-wordmark-light-a58243bf1d93a25a.png"
+  }
+]
