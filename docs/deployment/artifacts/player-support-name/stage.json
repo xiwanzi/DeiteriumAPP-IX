@@ -1,0 +1,14 @@
+{
+  "backupDirectory": "/var/backups/deuterium/player-support-name-20261004-77af63a1b290",
+  "databaseBackupBytes": 20608213,
+  "databaseBackupSha256": "eb59c7465683e9f40caff6e7b5d8b362d5af0aae48bc0adb28b4a64c1ad6b0eb",
+  "prepared": true,
+  "webConfigSha256": "f719d1b5453beb9d626916db40e4517d3da536e2bebe588b668290ddcbec6c0b",
+  "paths": {
+    "backup": "/var/backups/deuterium/player-support-name-20261004-77af63a1b290",
+    "backend": "/opt/deuterium/releases/player-support-name-77af63a1b290",
+    "web": "/var/www/deuterium/releases/web-2.0.23-77af63a1b290",
+    "stage": "/opt/deuterium/releases/player-support-name-staged-77af63a1b290"
+  },
+  "liveServiceChanged": false
+}

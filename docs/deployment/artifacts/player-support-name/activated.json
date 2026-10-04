@@ -1,0 +1,21 @@
+{
+  "activatedAt": "2026-10-04T06:09:10Z",
+  "backendDirectory": "/opt/deuterium/releases/player-support-name-77af63a1b290",
+  "webDirectory": "/var/www/deuterium/releases/web-2.0.23-77af63a1b290/dist",
+  "backendSha256": "bf59690e8b5d3253a1101988c93515d510aaae930f4b2cb3b5074e1e5ec9392a",
+  "health": {
+    "status": "ready"
+  },
+  "schemaUnchanged": true,
+  "existingBusinessIDsPreserved": true,
+  "mailConfigurationUnchanged": true,
+  "appUnchanged": true,
+  "webVersion": "2.0.23",
+  "accounts": 8,
+  "tickets": 4,
+  "businessCounts": {
+    "COMMISSION": "5",
+    "ORDER": "27"
+  },
+  "deletionCount": 0
+}

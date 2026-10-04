@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "77af63a1b2907fe1567d0cef2f4c2cdd74b2fe1f",
+  "webVersion": "2.0.23",
+  "appVersionCode": 21500,
+  "sha256": "bf59690e8b5d3253a1101988c93515d510aaae930f4b2cb3b5074e1e5ec9392a",
+  "files": [
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 21549216,
+      "sha256": "bf59690e8b5d3253a1101988c93515d510aaae930f4b2cb3b5074e1e5ec9392a"
+    },
+    {
+      "name": "web-2.0.23-77af63a1b290.zip",
+      "sizeBytes": 33738596,
+      "sha256": "24030495432a889d4d89302581c820e3c297b8db511c6a8d173215c0fa6b9f01"
+    }
+  ],
+  "pr": 60
+}
