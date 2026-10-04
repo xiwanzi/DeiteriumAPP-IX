@@ -42,5 +42,5 @@ export default function GameVerification({ client, user, onVerified, onLogout, d
 export function SupportContact({client,user}){
  const [address,setAddress]=useState(""),[error,setError]=useState("");
  useEffect(()=>{let alive=true;client.request("/api/v1/support/contact",{sessionRequired:false}).then(r=>{if(alive)setAddress(r.data.email||"")}).catch(e=>{if(alive)setError(e.message)});return()=>{alive=false}},[client]);
- return <section className="panel support-contact"><Mail size={32}/><h1>邮件联系支持</h1><p>请通过邮件说明问题类型、游戏 ID 和详细情况。收到来信后，我们会回复你的工单编号，并通过邮件持续跟进。</p>{address?<><strong>{address}</strong><a className="button" href={`mailto:${address}?subject=${encodeURIComponent("Deuterium 支持请求")}&body=${encodeURIComponent(`游戏 ID：${user?.gameId||""}\n问题类型：\n详细情况：\n`)}`}>打开邮件应用<ArrowRight size={16}/></a></>:<p role="status">{error||"客服邮箱尚未配置。"}</p>}</section>
+ return <section className="panel support-contact"><Mail size={32}/><h1>邮件联系支持</h1><p>请通过邮件说明问题类型、游戏 ID 和详细情况。收到来信后，我们会回复你的工单编号，并通过邮件持续跟进。</p>{address?<><strong>{address}</strong><a className="button" href={`mailto:${address}?subject=${encodeURIComponent("Deuterium 支持请求")}&body=${encodeURIComponent(`游戏 ID：${user?.gameId||""}\n问题类型：\n详细情况：\n`)}`}>打开邮件应用<ArrowRight size={16}/></a></>:<p role="status">{error||"玩家支持邮箱尚未配置。"}</p>}</section>
 }

@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const SupportDisplayName = "Deuterium IX 玩家支持"
+
 type SupportReplyMail struct {
 	Subject, Body, AuthorName, TicketNumber, ReplyAddress string
 }
@@ -34,6 +36,6 @@ func RenderSupportReply(in SupportReplyMail) (Message, error) {
 		text += in.AuthorName + "\n"
 	}
 	text += "Deuterium IX 玩家支持\n\nDEUTERIUM IX\n"
-	text += "您可以直接回复本邮件继续沟通。\n帮助中心：" + HelpCenterURL + "\n客服邮箱：" + in.ReplyAddress + "\n© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED."
-	return Message{Subject: in.Subject, Text: text, HTML: mailHTML(html.String()), FromName: "Deuterium IX 玩家支持", ReplyTo: in.ReplyAddress}, nil
+	text += "您可以直接回复本邮件继续沟通。\n帮助中心：" + HelpCenterURL + "\n玩家支持邮箱：" + in.ReplyAddress + "\n© 2026 DEUTERIUM IX. ALL RIGHTS RESERVED."
+	return Message{Subject: in.Subject, Text: text, HTML: mailHTML(html.String()), FromName: SupportDisplayName, ReplyTo: in.ReplyAddress}, nil
 }

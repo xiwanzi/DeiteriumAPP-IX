@@ -96,10 +96,10 @@ export default function AppShell({
         >
           <img src={launcherIcon} alt="Deuterium App 图标" />
           <span>
-            Deuterium<small>{managing ? supportOnly ? "客户支持工作台" : "官方管理工作台" : "属于我们的世界"}</small>
+            Deuterium<small>{managing ? supportOnly ? "玩家支持工作台" : "官方管理工作台" : "属于我们的世界"}</small>
           </span>
         </a>
-        <div className="sidebar-caption">{managing ? supportOnly ? "客户支持" : "店铺与运营" : "探索与连接"}</div>
+        <div className="sidebar-caption">{managing ? supportOnly ? "玩家支持" : "店铺与运营" : "探索与连接"}</div>
         <nav aria-label={managing ? "管理导航" : "主要导航"}>
           {links.map(([to, label, Icon]) => (
             <a
@@ -183,7 +183,7 @@ export default function AppShell({
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.22
+              Deuterium · 2.0.23
             </button>
             {!managing && <button className="top-search" onClick={onSearch}>
               <Search size={17} />
@@ -232,7 +232,7 @@ export default function AppShell({
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.22 <b>·</b> Deuterium ID
+              Web 2.0.23 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}

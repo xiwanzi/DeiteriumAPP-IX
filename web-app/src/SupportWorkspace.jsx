@@ -181,7 +181,7 @@ export default function SupportWorkspace({ client, user }) {
           {label}<span>{value ? tools.counts?.[value] || 0 : Object.values(tools.counts || {}).reduce((a, b) => a + b, 0)}</span>
         </button>)}
       </div>
-      <span className={`support-mailbox-health ${mailboxHealthy ? "online" : ""}`} title={`${tools.mailbox?.email || "客服邮箱待配置"} · ${mailboxTitle}`}><i />{mailboxHealthy ? "收件正常" : "收件待检查"}</span>
+      <span className={`support-mailbox-health ${mailboxHealthy ? "online" : ""}`} title={`${tools.mailbox?.email || "玩家支持邮箱待配置"} · ${mailboxTitle}`}><i />{mailboxHealthy ? "收件正常" : "收件待检查"}</span>
       <button className="icon-button" aria-label="刷新工单" title="刷新工单" disabled={loading || busy} onClick={refresh}><RefreshCw size={17} /></button>
     </div>
     {error && <div className="support-feedback error" role="alert"><span>{error}</span><button onClick={refresh} disabled={busy}>重新读取</button><button aria-label="关闭错误提示" onClick={() => setError("")}><X size={15} /></button></div>}
@@ -214,7 +214,7 @@ export default function SupportWorkspace({ client, user }) {
           {detailError && <div className="support-feedback error" role="alert"><span>{detailError}</span><button onClick={() => loadDetail()}>重新读取</button></div>}
           <div ref={messagesRef} className="support-messages" onScroll={event => { const node = event.currentTarget; nearBottom.current = node.scrollHeight - node.scrollTop - node.clientHeight < 60; if (nearBottom.current) setNewMessages(false); }}>
             {detail.messages.map(message => <article key={message.messageId} className={`support-message ${message.visibility === "INTERNAL" ? "internal" : ""} ${message.actorId === user.userId ? "own" : ""}`}>
-              <Avatar user={message.actorName} /><div><header><strong>{message.direction === "INBOUND" ? ticket.requesterName || ticket.requesterEmail : message.actorName}</strong><span>{message.visibility === "INTERNAL" ? <><LockKeyhole size={12} />内部备注</> : message.direction === "INBOUND" ? "玩家来信" : "客服回复"}</span><time>{time(message.createdAt)}</time></header>
+              <Avatar user={message.actorName} /><div><header><strong>{message.direction === "INBOUND" ? ticket.requesterName || ticket.requesterEmail : message.actorName}</strong><span>{message.visibility === "INTERNAL" ? <><LockKeyhole size={12} />内部备注</> : message.direction === "INBOUND" ? "玩家来信" : "玩家支持回复"}</span><time>{time(message.createdAt)}</time></header>
                 {message.visibility !== "INTERNAL" && <details className="support-mail-addresses"><summary>{message.direction === "INBOUND" ? message.authorEmail : `发往 ${ticket.requesterEmail}`}</summary><p>发件人：{message.authorEmail || tools.mailbox?.email}<br />收件人：{message.direction === "INBOUND" ? tools.mailbox?.email : ticket.requesterEmail}{message.direction === "INBOUND" && ticket.source === "HELP" ? <><br />Help 转交，回复地址：{ticket.requesterEmail}</> : null}</p></details>}
                 <MailBody text={message.body} />
                 {message.attachments?.length > 0 && <div className="support-attachments">{message.attachments.map(attachment => <a key={attachment.attachmentId} href={`${base}/${ticket.ticketId}/attachments/${attachment.attachmentId}`} download>{attachment.filename}<small>{(attachment.size / 1024).toFixed(0)} KB</small></a>)}</div>}
