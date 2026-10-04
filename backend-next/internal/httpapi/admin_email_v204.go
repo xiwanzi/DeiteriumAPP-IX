@@ -106,7 +106,7 @@ func (s *Server) adminEmailTestV204(w http.ResponseWriter, r *http.Request) {
 		socialFailureV2(w, r, err)
 		return
 	}
-	settings, err := s.Store.MailChannel(r.Context(), "DM")
+	settings, err := s.Store.NotificationMailChannel(r.Context())
 	if err != nil {
 		failError(w, r, err)
 		return
@@ -179,7 +179,7 @@ func (s *Server) emailWorkerV204() {
 type emailSenderV204 func(context.Context, notify.Settings, string, string, notify.Message) error
 
 func (s *Server) processEmailV204(ctx context.Context, send emailSenderV204) error {
-	settings, err := s.Store.MailChannel(ctx, "DM")
+	settings, err := s.Store.NotificationMailChannel(ctx)
 	if err != nil {
 		return err
 	}

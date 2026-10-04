@@ -69,12 +69,12 @@ object AuthRegistrationCheck {
             show(1)
             click("创建账号")
             input("游戏内 ID","NewPlayer")
-            input("QQ 号","10009")
+            input("邮箱","newplayer@example.com")
             click("获取")
-            waitFor{sent.get()!=null&&named("验证码已发送至游戏内，请在服务器中查看")!=null}
-            check(sent.get()!!.keys().asSequence().toSet()==setOf("gameId","qq")){"Code request included password"}
+            waitFor{sent.get()!=null&&named("验证码邮件已排队，请查收邮箱")!=null}
+            check(sent.get()!!.keys().asSequence().toSet()==setOf("gameId","email")){"Code request included password"}
             capture("registration-no-password")
-            input("游戏内验证码","123456")
+            input("邮箱验证码","123456")
             click("创建账号并继续")
             waitFor{named("密码需要 8–64 位")!=null}
             result.putString("code_without_password_and_register_validation","PASS")
@@ -82,10 +82,10 @@ object AuthRegistrationCheck {
             for((label,theme,glass) in listOf(Triple("light",1,true),Triple("dark",2,true),Triple("glass-off",1,false))) {
                 show(theme,glass)
                 click("忘记密码？")
-                waitFor{named("重置密码")!=null&&named("确认修改")!=null}
+                waitFor{named("找回密码")!=null&&named("确认修改")!=null}
                 capture("reset-$label")
                 if(label=="light") {
-                    click("玩家 ID 或 QQ")
+                    click("邮箱、玩家 ID 或 QQ")
                     Thread.sleep(700)
                     capture("reset-keyboard")
                     test.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)

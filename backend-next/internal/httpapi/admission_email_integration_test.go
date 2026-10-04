@@ -107,6 +107,43 @@ func TestAdmissionEmailAtomicReplayRecipientAndDurableRetry(t *testing.T) {
 	}
 }
 
+func TestLegacyNotificationsSurviveUntilDMConfigured(t *testing.T) {
+	f := admissionEmailFixture(t, true)
+	ctx := context.Background()
+	if _, err := f.store.DB.Exec("DELETE FROM mail_channels WHERE channel_id='DM'"); err != nil {
+		t.Fatal(err)
+	}
+	a := emailApplication(t, f, 901, "123456789")
+	reviewEmailApplication(t, f, a, "APPROVE", "", "legacy-notify")
+	sends := 0
+	sender := func(_ context.Context, s notify.Settings, password, id string, message notify.Message) error {
+		sends++
+		if s.From != "sender@example.com" || s.Host != "smtp.example.com" {
+			t.Fatal("legacy sender changed")
+		}
+		return nil
+	}
+	if err := f.app.processEmailV204(ctx, sender); err != nil || sends != 1 {
+		t.Fatalf("legacy delivery: %v, sends=%d", err, sends)
+	}
+	dm, err := f.store.MailChannel(ctx, "DM")
+	if err != nil || dm.Enabled {
+		t.Fatal("new OTP channel must remain disabled")
+	}
+	if _, err := f.store.DB.Exec("INSERT INTO mail_channels SELECT 'DM',JSON_SET(settings_json,'$.enabled',FALSE),password_cipher,version,updated_at FROM admin_email_settings_v204 WHERE id=1"); err != nil {
+		t.Fatal(err)
+	}
+	paused, err := f.store.NotificationMailChannel(ctx)
+	if err != nil || paused.Enabled {
+		t.Fatal("explicitly disabled DM must not fall back")
+	}
+	b := emailApplication(t, f, 902, "123456788")
+	reviewEmailApplication(t, f, b, "APPROVE", "", "paused-notify")
+	if err := f.app.processEmailV204(ctx, sender); err == nil || sends != 1 {
+		t.Fatal("paused DM sent mail")
+	}
+}
+
 func TestAdmissionRejectedEmailReasonAndApplicantIsolation(t *testing.T) {
 	f := admissionEmailFixture(t, true)
 	a := emailApplication(t, f, 3, "111112222")

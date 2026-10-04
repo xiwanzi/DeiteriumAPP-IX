@@ -50,6 +50,16 @@ func (s *Store) MailChannel(ctx context.Context, channel string) (EmailSettingsV
 	return result, err
 }
 
+// Preserve existing review/operations notifications until DM is explicitly configured.
+// Once saved, disabling DM pauses delivery; it must not silently switch senders.
+func (s *Store) NotificationMailChannel(ctx context.Context) (EmailSettingsV204, error) {
+	settings, err := s.MailChannel(ctx, "DM")
+	if err == nil && settings.Version == 0 {
+		return s.EmailSettingsV204(ctx)
+	}
+	return settings, err
+}
+
 func (s *Store) SaveMailNotifications(ctx context.Context, actor, request string, expected int64, review bool, recipients []string) (json.RawMessage, error) {
 	if expected < 0 || len(recipients) > 10 {
 		return nil, ErrSocialInvalid
