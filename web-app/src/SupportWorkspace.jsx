@@ -1,69 +1,259 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Inbox, LockKeyhole, MessageSquare, Plus, RefreshCw, Search, Send, UserRound, Zap } from "lucide-react";
-import { Avatar, Badge, Button, Empty, Field, Modal, PageHead } from "./components.jsx";
+import { ArrowLeft, ArrowDown, Check, ChevronLeft, ChevronRight, Inbox, LockKeyhole, MessageSquare, PanelRightClose, PanelRightOpen, RefreshCw, Search, Send, UserRound, X, Zap } from "lucide-react";
+import { Avatar, Button, Field, Modal } from "./components.jsx";
 import { id } from "./format.js";
 import { useUnsavedChanges } from "./unsaved-changes.js";
 import "./mail-support.css";
+import "./support-workspace.css";
 
-const states={OPEN:"待审查",IN_PROGRESS:"处理中",WAITING_CUSTOMER:"等待回复",RESOLVED:"已解决",CLOSED:"已关闭"};
-const priorities={LOW:"低",NORMAL:"普通",HIGH:"高",URGENT:"紧急"};
-const categories={ACCOUNT:"账号与验证",GAME:"游戏问题",ORDER:"交易与订单",ACCESS:"通行与审核",OTHER:"其他问题"};
-const time=value=>new Date(value).toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+const states = { OPEN: "待处理", IN_PROGRESS: "处理中", WAITING_CUSTOMER: "等玩家回复", RESOLVED: "已解决", CLOSED: "已关闭" };
+const priorities = { LOW: "低", NORMAL: "普通", HIGH: "高", URGENT: "紧急" };
+const categories = { ACCOUNT: "账号与验证", GAME: "游戏问题", ORDER: "交易与订单", ACCESS: "通行与审核", OTHER: "其他问题" };
+const sendLabels = { WAITING_CUSTOMER: "发送并等待回复", IN_PROGRESS: "发送并继续处理", RESOLVED: "发送并解决" };
+const deliveryLabels = { PENDING: "等待发送", SENDING: "正在发送", SENT: "邮件服务器已接收", RETRY: "发送失败，将重试", FAILED: "发送失败" };
+const time = value => new Date(value).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+const base = "/api/v1/admin/support/tickets";
 
-export default function SupportWorkspace({client,user}){
-  const admin=true;
-  const [category,setCategory]=useState(""),[replyStatus,setReplyStatus]=useState("WAITING_CUSTOMER");
-  const [items,setItems]=useState([]),[selected,setSelected]=useState(()=>new URLSearchParams(location.search).get("ticket")||""),[detail,setDetail]=useState(null),[status,setStatus]=useState(""),[queue,setQueue]=useState(""),[query,setQuery]=useState(""),[search,setSearch]=useState(""),[offset,setOffset]=useState(0),[more,setMore]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(""),[busy,setBusy]=useState(false),[tools,setTools]=useState({agents:[],macros:[]}),[drafts,setDrafts]=useState({}),[visibility,setVisibility]=useState("PUBLIC"),[macro,setMacro]=useState(null);
-  const base=admin?"/api/v1/admin/support/tickets":"/api/v1/support/tickets",listGeneration=useRef(0),detailGeneration=useRef(0),pending=useRef(null),formRef=useRef(null),draftKey=`${selected}:${visibility}`,draft=drafts[draftKey]||"";
-  useUnsavedChanges(drafts,busy);
-  const load=async()=>{const n=++listGeneration.current;setLoading(true);try{const r=await client.request(`${base}?${new URLSearchParams({status,queue,q:search,category,offset})}`);if(n===listGeneration.current){setItems(r.data.items);setMore(r.data.hasMore);setError("");}}catch(e){if(n===listGeneration.current)setError(e.message)}finally{if(n===listGeneration.current)setLoading(false)}};
-  const loadDetail=async(ticket=selected)=>{if(!ticket)return;const n=++detailGeneration.current;try{const r=await client.request(`${base}/${encodeURIComponent(ticket)}`);if(n===detailGeneration.current){setDetail(r.data);setError("");}}catch(e){if(n===detailGeneration.current)setError(e.message)}};
-  const loadTools=async()=>{if(admin)try{const r=await client.request("/api/v1/admin/support/tools");setTools(r.data)}catch(e){setError(e.message)}};
-  useEffect(()=>{load();return()=>{listGeneration.current++}},[base,status,queue,search,category,offset]);
-  useEffect(()=>{setDetail(null);pending.current=null;setVisibility("PUBLIC");loadDetail();return()=>{detailGeneration.current++}},[selected,base]);
-  useEffect(()=>{loadTools()},[admin]);
-  useEffect(()=>{const timer=setInterval(()=>{if(!document.hidden&&!busy){load();loadDetail();loadTools()}},15000);return()=>clearInterval(timer)},[status,queue,search,category,selected,busy,offset]);
-  const change=async(patch,clearDraft=false)=>{
-    if(busy||!detail)return;setBusy(true);setError("");const ticket=selected,sentDraftKey=draftKey,body={expectedVersion:detail.ticket.version,...patch},fingerprint=JSON.stringify([ticket,body]);if(pending.current?.fingerprint!==fingerprint)pending.current={fingerprint,body:{...body,clientRequestId:id()}};
-    try{await client.request(`${base}/${encodeURIComponent(ticket)}`,{method:"POST",body:pending.current.body});pending.current=null;if(clearDraft)setDrafts(old=>{const next={...old};delete next[sentDraftKey];return next;});await loadDetail(ticket);await load();}
-    catch(e){setError(e.message);if(e.code==="VERSION_CONFLICT"||e.code==="STATE_VERSION_CONFLICT")await loadDetail(ticket)}finally{setBusy(false)}
+export default function SupportWorkspace({ client, user }) {
+  const [items, setItems] = useState([]);
+  const [selected, setSelected] = useState(() => new URLSearchParams(location.search).get("ticket") || "");
+  const [detail, setDetail] = useState(null);
+  const [status, setStatus] = useState("OPEN"), [queue, setQueue] = useState(""), [category, setCategory] = useState("");
+  const [query, setQuery] = useState(""), [search, setSearch] = useState("");
+  const [offset, setOffset] = useState(0), [more, setMore] = useState(false);
+  const [loading, setLoading] = useState(false), [detailLoading, setDetailLoading] = useState(false);
+  const [error, setError] = useState(""), [listError, setListError] = useState(""), [detailError, setDetailError] = useState(""), [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false), [tools, setTools] = useState({ agents: [], macros: [] });
+  const [drafts, setDrafts] = useState({}), [visibility, setVisibility] = useState("PUBLIC");
+  const [replyStatus, setReplyStatus] = useState("WAITING_CUSTOMER"), [advance, setAdvance] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false), [macro, setMacro] = useState(null), [newMessages, setNewMessages] = useState(false);
+  const listGeneration = useRef(0), detailGeneration = useRef(0), toolsGeneration = useRef(0);
+  const reloadList = useRef(null);
+  const selectedRef = useRef(selected), busyRef = useRef(false), pending = useRef(new Map());
+  const formRef = useRef(null), messagesRef = useRef(null), nearBottom = useRef(true), viewedMessages = useRef({ ticket: "", last: "" });
+  const contextRef = useRef(null), contextToggleRef = useRef(null);
+  const draftKey = `${selected}:${visibility}`, draft = drafts[draftKey] || "";
+  const position = items.findIndex(ticket => ticket.ticketId === selected);
+  const nextTicket = items[position + 1]?.ticketId;
+  const ticket = detail?.ticket;
+  useUnsavedChanges(drafts, busy);
+
+  const choose = value => {
+    if (busyRef.current || value === selectedRef.current) return;
+    selectedRef.current = value;
+    ++detailGeneration.current;
+    setSelected(value); setDetail(null); setDetailError(""); setError(""); setNotice(""); setVisibility("PUBLIC");
+    setReplyStatus("WAITING_CUSTOMER"); setContextOpen(false); setNewMessages(false);
+    nearBottom.current = true;
+    const next = new URL(location.href);
+    if (value) next.searchParams.set("ticket", value); else next.searchParams.delete("ticket");
+    history.replaceState({}, "", next.pathname + next.search);
   };
-  const retryMail=async event=>{if(busy)return;setBusy(true);setError("");try{await client.request(`${base}/${selected}/mail/${event.eventId}/retry`,{method:"POST",body:{clientRequestId:id()}});await loadDetail()}catch(e){setError(e.message)}finally{setBusy(false)}};
-  const choose=value=>{if(busy)return;setSelected(value);const next=new URL(location.href);next.searchParams.set("ticket",value);history.replaceState({},"",next.pathname+next.search);if(innerWidth<=760)window.scrollTo(0,0)};
-  return <div className="support-page"><PageHead eyebrow={admin?"SUPPORT WORKSPACE":"HERE TO HELP"} title={admin?"工单工作台":"我的工单"} subtitle="收件、分类、处理与邮件回复，一个清晰的工作台。"><Button secondary disabled={loading||busy} onClick={()=>{load();loadDetail()}}><RefreshCw size={16}/>刷新</Button></PageHead>
-    <div className="support-overview">{["OPEN","IN_PROGRESS","WAITING_CUSTOMER","RESOLVED"].map(key=><button key={key} className={`support-overview-item ${key.toLowerCase()} ${status===key?"active":""}`} onClick={()=>{setStatus(status===key?"":key);setOffset(0)}}><span>{states[key]}</span><strong>{tools.counts?.[key]||0}</strong></button>)}<div className="support-sync"><span className={tools.mailbox?.enabled&&tools.mailbox?.lastPollAt&&!tools.mailbox?.lastError?"online":""}/><div><strong>{tools.mailbox?.email||"客服邮箱待配置"}</strong><small>{tools.mailbox?.lastError|| (tools.mailbox?.lastPollAt?`最近同步 ${time(tools.mailbox.lastPollAt)}`:"等待收件同步")}</small></div></div></div>
-    {error&&<p className="auth-error" role="alert">{error}</p>}
-    <div className={`support-workspace ${selected?"has-selection":""} ${admin?"with-context":""}`}>
-      <aside className="support-queue"><div className="support-queue-head"><Inbox size={18}/><strong>{admin?"工单队列":"你的问题"}</strong><span>{items.length}{more?"+":""}</span></div>
-        {admin&&<div className="support-views" role="group" aria-label="工单范围">{[["","全部"],["mine","分配给我"],["unassigned","未分配"]].map(([v,label])=><button key={v} className={queue===v?"active":""} onClick={()=>{setQueue(v);setOffset(0)}}>{label}</button>)}</div>}
-        <form className="support-search" onSubmit={e=>{e.preventDefault();setSearch(query.trim());setOffset(0)}}><Search size={16}/><input aria-label="搜索工单" placeholder="搜索主题、编号或游戏 ID" value={query} onChange={e=>setQuery(e.target.value)} maxLength={120}/><button type="submit" aria-label="搜索">↵</button></form>
-        <select className="support-filter" aria-label="工单状态" value={status} onChange={e=>{setStatus(e.target.value);setOffset(0)}}><option value="">全部状态</option>{Object.entries(states).map(([v,label])=><option key={v} value={v}>{label}</option>)}</select>
-        <select className="support-filter" aria-label="问题类型" value={category} onChange={e=>{setCategory(e.target.value);setOffset(0)}}><option value="">全部问题类型</option>{Object.entries(categories).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-        <div className="support-ticket-list" aria-busy={loading}>{items.map(ticket=><button key={ticket.ticketId} disabled={busy} className={`support-ticket ${ticket.ticketId===selected?"selected":""}`} onClick={()=>choose(ticket.ticketId)}><div><span className={`support-state ${ticket.status.toLowerCase()}`}>{states[ticket.status]}</span><time>{time(ticket.updatedAt)}</time></div><strong>{ticket.subject}</strong><p className="support-sender">{ticket.requesterEmail}</p><div className="support-ticket-tags"><span className={`support-category ${ticket.category.toLowerCase()}`}>{categories[ticket.category]}</span><small>#{ticket.ticketId}</small></div>{["HIGH","URGENT"].includes(ticket.priority)&&<small className="support-priority">{priorities[ticket.priority]}优先级</small>}</button>)}{!items.length&&!loading&&<div className="support-queue-empty"><Inbox size={28}/><p>这里暂时没有工单</p></div>}</div>
-        <div className="support-pagination"><button disabled={!offset||loading} onClick={()=>setOffset(Math.max(0,offset-50))}>上一页</button><span>{offset/50+1}</span><button disabled={!more||loading} onClick={()=>setOffset(offset+50)}>下一页</button></div>
-      </aside>
-      <section className="support-conversation">{!selected?<div className="support-welcome"><span><MessageSquare size={32}/></span><h2>{admin?"开始处理下一件事":"我们在这里，听你说。"}</h2><p>{admin?"从左侧选择工单。对话、处理记录与用户信息会在这里展开。":"选择一条工单继续对话，或提交你遇到的新问题。"}</p></div>:!detail?<p className="support-loading" role="status">正在读取工单…</p>:<>
-        <header className="support-conversation-head"><button className="support-mobile-back icon-button" aria-label="返回工单列表" onClick={()=>{if(busy)return;setSelected("");const next=new URL(location.href);next.searchParams.delete("ticket");history.replaceState({},"",next.pathname+next.search);window.scrollTo(0,0)}}><ArrowLeft size={20}/></button><div><small className="support-number">#{detail.ticket.ticketId}</small><h2>{detail.ticket.subject}</h2><span>{categories[detail.ticket.category]} · 创建于 {time(detail.ticket.createdAt)}</span></div><Badge tone={detail.ticket.status==="RESOLVED"?"sage":"neutral"}>{states[detail.ticket.status]}</Badge></header>
-        <div className="support-messages">{detail.messages.map(message=><article key={message.messageId} className={`support-message ${message.visibility==="INTERNAL"?"internal":""} ${message.actorId===user.userId?"own":""}`}><Avatar user={message.actorName}/><div><header><strong>{message.direction==="INBOUND"?detail.ticket.requesterName||detail.ticket.requesterEmail:message.actorName}</strong>{message.visibility==="INTERNAL"&&<span><LockKeyhole size={12}/>内部备注</span>}<time>{time(message.createdAt)}</time></header>{message.visibility!=="INTERNAL"&&<small className="support-mail-origin">发件人：{message.authorEmail||tools.mailbox?.email} · 收件人：{message.direction==="INBOUND"?tools.mailbox?.email:detail.ticket.requesterEmail}{message.direction==="INBOUND"&&detail.ticket.source==="HELP"&&message.authorEmail!==detail.ticket.requesterEmail?` · Help 转交，回复地址：${detail.ticket.requesterEmail}`:""}</small>}<MailBody text={message.body}/>{message.attachments?.length>0&&<div className="support-attachments">{message.attachments.map(a=><a key={a.attachmentId} href={`${base}/${detail.ticket.ticketId}/attachments/${a.attachmentId}`} download>{a.filename}<small>{(a.size/1024).toFixed(0)} KB</small></a>)}</div>}{message.direction==="OUTBOUND"&&<small className="support-mail-receipt">{(()=>{const delivery=detail.delivery?.find(e=>message.mailMessageId?.startsWith(e.eventId+"@"));return {PENDING:"等待发送",SENDING:"正在发送",SENT:"邮件服务器已接收",RETRY:"发送失败，将重试",FAILED:"发送失败"}[delivery?.status]||"已记录"})()}</small>}</div></article>)}</div>
-        <form ref={formRef} className={`support-composer ${visibility==="INTERNAL"?"internal":""}`} onSubmit={e=>{e.preventDefault();if(draft.trim())change({body:draft.trim(),visibility,...(visibility==="PUBLIC"?{status:replyStatus}:{})},true)}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();formRef.current?.requestSubmit()}}}>
-          <div className="support-composer-toolbar">{admin?<><button type="button" className={visibility==="PUBLIC"?"active":""} onClick={()=>setVisibility("PUBLIC")}><MessageSquare size={15}/>邮件回复</button><button type="button" className={visibility==="INTERNAL"?"active":""} onClick={()=>setVisibility("INTERNAL")}><LockKeyhole size={15}/>内部备注</button><select aria-label="插入快捷回复" value="" onChange={e=>{const m=tools.macros.find(m=>m.macroId===e.target.value);if(m)setDrafts(old=>({...old,[draftKey]:[old[draftKey],m.body].filter(Boolean).join("\n\n")}));if(e.target.value==="new")setMacro({})}}><option value="">快捷回复…</option>{tools.macros.map(m=><option key={m.macroId} value={m.macroId}>{m.title}</option>)}<option value="new">＋管理快捷回复</option></select></>:<strong>补充信息</strong>}</div>
-          <textarea aria-label={visibility==="INTERNAL"?"内部备注内容":"回复内容"} placeholder={visibility==="INTERNAL"?"仅工作人员可见，不会发送给玩家。":"写下回复…"} value={draft} onChange={e=>setDrafts(old=>({...old,[draftKey]:e.target.value}))} maxLength={12000} rows={5} disabled={busy}/>
-          <footer>{visibility==="PUBLIC"&&<select className="support-send-status" aria-label="发送后的状态" value={replyStatus} onChange={e=>setReplyStatus(e.target.value)}><option value="WAITING_CUSTOMER">发送并等待回复</option><option value="IN_PROGRESS">发送并继续处理</option><option value="RESOLVED">发送并标记已解决</option></select>}<small>{visibility==="INTERNAL"?"仅后台可见":admin?`邮件将发送至 ${detail.ticket.requesterEmail}`:"提交后支持人员会收到你的补充"}</small><Button type="submit" disabled={busy||!draft.trim()}><Send size={15}/>{busy?"正在提交…":visibility==="INTERNAL"?"添加备注":"发送邮件"}</Button></footer>
-        </form>
-      </>}</section>
-      {admin&&detail&&<aside className="support-context"><h3><UserRound size={17}/>用户资料</h3><div className="support-person"><Avatar user={detail.ticket.requesterName}/><div><strong>{detail.ticket.requesterName}</strong><small>{detail.ticket.source==="HELP"?"已登录玩家 · Help 转交":"玩家来信 · 邮件联系"}</small></div></div><dl><div><dt>游戏 ID</dt><dd>{detail.requester.gameId||"未绑定"}</dd></div><div><dt>QQ</dt><dd>{detail.requester.qq||"未填写"}</dd></div><div><dt>邮箱</dt><dd>{detail.requester.email}</dd></div><div><dt>历史工单</dt><dd>{detail.requester.ticketCount} 件</dd></div></dl><h3>处理信息</h3><Field label="问题类型"><select disabled={busy} value={detail.ticket.category} onChange={e=>change({category:e.target.value})}>{Object.entries(categories).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></Field>
-        <Field label="负责人"><select disabled={busy} value={detail.ticket.assigneeId} onChange={e=>change({assigneeId:e.target.value})}><option value="">未分配</option>{tools.agents.map(a=><option key={a.userId} value={a.userId}>{a.name}</option>)}</select></Field>{detail.ticket.assigneeId!==user.userId&&<Button secondary disabled={busy} onClick={()=>change({assigneeId:user.userId,status:"IN_PROGRESS"})}>由我处理</Button>}
-        <Field label="状态"><select disabled={busy} value={detail.ticket.status} onChange={e=>change({status:e.target.value})}>{Object.entries(states).map(([v,label])=><option key={v} value={v}>{label}</option>)}</select></Field><Field label="优先级"><select disabled={busy} value={detail.ticket.priority} onChange={e=>change({priority:e.target.value})}>{Object.entries(priorities).map(([v,label])=><option key={v} value={v}>{label}</option>)}</select></Field>
-        {detail.delivery?.length>0&&<><h3>邮件投递</h3>{detail.delivery.slice(0,4).map(e=><p className="support-delivery" key={e.eventId}><i className={e.status==="SENT"?"sent":""}/><strong>{e.kind==="TICKET_CREATED"?"收件回执":"人工回复"}</strong> · {{SENT:"邮件服务器已接收",PENDING:"等待发送",SENDING:"正在发送",RETRY:"等待重试",FAILED:"发送失败"}[e.status]||e.status}{e.lastError&&<small>{e.lastError}</small>}{e.status==="FAILED"&&<Button secondary disabled={busy} onClick={()=>retryMail(e)}>重新发送</Button>}</p>)}</>}
-      </aside>}
+  const load = async () => {
+    const generation = ++listGeneration.current;
+    setLoading(true);
+    try {
+      const response = await client.request(`${base}?${new URLSearchParams({ status, queue, q: search, category, offset })}`);
+      if (generation !== listGeneration.current) return;
+      setItems(response.data.items); setMore(response.data.hasMore); setListError("");
+      if (!selectedRef.current && innerWidth > 760 && response.data.items.length) choose(response.data.items[0].ticketId);
+    } catch (e) { if (generation === listGeneration.current) setListError(e.message); }
+    finally { if (generation === listGeneration.current) setLoading(false); }
+  };
+  reloadList.current = load;
+  const loadDetail = async (ticketId = selectedRef.current) => {
+    if (!ticketId) return;
+    const generation = ++detailGeneration.current;
+    setDetailLoading(true);
+    try {
+      const response = await client.request(`${base}/${encodeURIComponent(ticketId)}`);
+      if (generation === detailGeneration.current && ticketId === selectedRef.current) {
+        setDetail(response.data); setDetailError("");
+      }
+    } catch (e) { if (generation === detailGeneration.current) setDetailError(e.message); }
+    finally { if (generation === detailGeneration.current) setDetailLoading(false); }
+  };
+  const loadTools = async () => {
+    const generation = ++toolsGeneration.current;
+    try {
+      const response = await client.request("/api/v1/admin/support/tools");
+      if (generation === toolsGeneration.current) setTools(response.data);
+    } catch (e) { if (generation === toolsGeneration.current) setError(e.message); }
+  };
+  const refresh = () => { load(); loadDetail(); loadTools(); };
+  useEffect(() => {
+    const timer = setTimeout(() => { setSearch(query.trim()); setOffset(0); }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+  useEffect(() => { load(); return () => { ++listGeneration.current; }; }, [status, queue, search, category, offset]);
+  useEffect(() => { loadDetail(); return () => { ++detailGeneration.current; }; }, [selected]);
+  useEffect(() => { loadTools(); return () => { ++toolsGeneration.current; }; }, []);
+  useEffect(() => {
+    const timer = setInterval(() => { if (!document.hidden && !busyRef.current) refresh(); }, 15000);
+    return () => clearInterval(timer);
+  }, [status, queue, search, category, offset]);
+  useEffect(() => {
+    if (!detail || !messagesRef.current) return;
+    const last = detail.messages.at(-1)?.messageId || "";
+    const previous = viewedMessages.current;
+    if (previous.ticket !== selected || previous.last !== last) {
+      if (previous.ticket !== selected || nearBottom.current) {
+        messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+        setNewMessages(false);
+      } else setNewMessages(true);
+    }
+    viewedMessages.current = { ticket: selected, last };
+  }, [detail, selected]);
+  useEffect(() => {
+    if (!contextOpen) return;
+    // At narrower widths the detail panel is a modal drawer, so keep keyboard focus inside it.
+    const drawer = window.matchMedia("(max-width: 1279px)").matches;
+    if (drawer) contextRef.current?.querySelector("button")?.focus();
+    const keyboard = event => {
+      if (event.key === "Escape") { setContextOpen(false); contextToggleRef.current?.focus(); }
+      if (drawer && event.key === "Tab") {
+        const elements = [...contextRef.current.querySelectorAll("button:not(:disabled), select:not(:disabled), a[href], summary")];
+        const first = elements[0], last = elements.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    window.addEventListener("keydown", keyboard);
+    return () => window.removeEventListener("keydown", keyboard);
+  }, [contextOpen]);
+
+  const change = async (patch, clearDraft = false) => {
+    if (busyRef.current || !detail || detail.ticket.ticketId !== selectedRef.current) return;
+    busyRef.current = true; setBusy(true); setError(""); setNotice("");
+    // Ignore any read started before this mutation, including background polls.
+    ++detailGeneration.current;
+    const ticketId = selected, sentDraftKey = draftKey;
+    const following = clearDraft && advance && position >= 0 ? nextTicket : "";
+    const fingerprint = JSON.stringify([ticketId, patch]);
+    if (!pending.current.has(fingerprint)) pending.current.set(fingerprint, {
+      expectedVersion: detail.ticket.version, ...patch, clientRequestId: id(),
+    });
+    let succeeded = false;
+    try {
+      await client.request(`${base}/${encodeURIComponent(ticketId)}`, { method: "POST", body: pending.current.get(fingerprint) });
+      pending.current.delete(fingerprint);
+      if (clearDraft) setDrafts(old => { const next = { ...old }; delete next[sentDraftKey]; return next; });
+      nearBottom.current = clearDraft || nearBottom.current;
+      setNotice(clearDraft ? patch.visibility === "INTERNAL" ? "内部备注已保存" : "回复已加入发送队列" : "处理信息已更新");
+      await Promise.all([loadDetail(ticketId), reloadList.current(), loadTools()]);
+      succeeded = true;
+    } catch (e) {
+      setError(e.message);
+      if (e.code === "VERSION_CONFLICT" || e.code === "STATE_VERSION_CONFLICT") {
+        pending.current.delete(fingerprint);
+        await loadDetail(ticketId);
+      }
+    } finally { busyRef.current = false; setBusy(false); }
+    if (succeeded && following) choose(following);
+  };
+  const retryMail = async event => {
+    if (busyRef.current) return;
+    busyRef.current = true; setBusy(true); setError("");
+    try {
+      await client.request(`${base}/${selected}/mail/${event.eventId}/retry`, { method: "POST", body: { clientRequestId: id() } });
+      await loadDetail(); setNotice("邮件已重新加入发送队列");
+    } catch (e) { setError(e.message); }
+    finally { busyRef.current = false; setBusy(false); }
+  };
+  const updateDraft = value => setDrafts(old => {
+    const next = { ...old };
+    if (value) next[draftKey] = value; else delete next[draftKey];
+    return next;
+  });
+  const clearFilters = () => { setStatus(""); setQueue(""); setCategory(""); setQuery(""); setSearch(""); setOffset(0); };
+  const goLatest = () => {
+    if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    nearBottom.current = true; setNewMessages(false);
+  };
+  const mailboxHealthy = tools.mailbox?.enabled && tools.mailbox?.lastPollAt && !tools.mailbox?.lastError;
+  const mailboxTitle = tools.mailbox?.lastError || (tools.mailbox?.lastPollAt ? `最近同步 ${time(tools.mailbox.lastPollAt)}` : "等待收件同步");
+
+  return <div className="support-page support-efficient">
+    <div className="support-toolbar">
+      <h1>工单</h1>
+      <div className="support-status-tabs" role="group" aria-label="全站工单状态">
+        {[["", "全部"], ...Object.entries(states)].map(([value, label]) => <button key={value} type="button" aria-pressed={status === value} className={status === value ? "active" : ""} onClick={() => { setStatus(value); setOffset(0); }}>
+          {label}<span>{value ? tools.counts?.[value] || 0 : Object.values(tools.counts || {}).reduce((a, b) => a + b, 0)}</span>
+        </button>)}
+      </div>
+      <span className={`support-mailbox-health ${mailboxHealthy ? "online" : ""}`} title={`${tools.mailbox?.email || "客服邮箱待配置"} · ${mailboxTitle}`}><i />{mailboxHealthy ? "收件正常" : "收件待检查"}</span>
+      <button className="icon-button" aria-label="刷新工单" title="刷新工单" disabled={loading || busy} onClick={refresh}><RefreshCw size={17} /></button>
     </div>
-    {macro&&<Modal title="快捷回复" close={()=>setMacro(null)} guardClose><MacroForm client={client} macros={tools.macros} onSaved={async()=>{await loadTools();setMacro(null)}}/></Modal>}
+    {error && <div className="support-feedback error" role="alert"><span>{error}</span><button onClick={refresh} disabled={busy}>重新读取</button><button aria-label="关闭错误提示" onClick={() => setError("")}><X size={15} /></button></div>}
+    {listError && <div className="support-feedback error" role="alert"><span>工单列表未更新：{listError}</span><button onClick={load} disabled={loading}>重试列表</button></div>}
+    {notice && <div className="support-feedback" role="status"><Check size={15} /><span>{notice}</span><button aria-label="关闭操作提示" onClick={() => setNotice("")}><X size={15} /></button></div>}
+    <div className={`support-workspace ${selected ? "has-selection" : ""} ${contextOpen && detail ? "context-open" : ""}`}>
+      <aside className="support-queue" aria-label="工单队列">
+        <div className="support-views" role="group" aria-label="工单范围">{[["", "全部人员"], ["mine", "分配给我"], ["unassigned", "未分配"]].map(([value, label]) => <button key={value} aria-pressed={queue === value} className={queue === value ? "active" : ""} onClick={() => { setQueue(value); setOffset(0); }}>{label}</button>)}</div>
+        <form className="support-search" onSubmit={event => { event.preventDefault(); setSearch(query.trim()); setOffset(0); }}><Search size={16} /><input aria-label="搜索工单" placeholder="主题、编号、邮箱、游戏 ID" value={query} onChange={event => setQuery(event.target.value)} maxLength={120} />{query && <button type="button" aria-label="清空搜索" onClick={() => { setQuery(""); setSearch(""); setOffset(0); }}><X size={15} /></button>}</form>
+        <div className="support-list-filters"><select aria-label="问题类型筛选" value={category} onChange={event => { setCategory(event.target.value); setOffset(0); }}><option value="">全部问题类型</option>{Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button onClick={clearFilters} disabled={!status && !queue && !category && !query}>清空筛选</button></div>
+        <div className="support-list-caption"><span>{states[status] || "全部状态"} · 本页 {items.length}{more ? "+" : ""} 件</span><span role="status">{loading ? "更新中…" : ""}</span></div>
+        <div className="support-ticket-list" aria-busy={loading}>
+          {items.map(item => <button key={item.ticketId} disabled={busy} aria-current={item.ticketId === selected ? "true" : undefined} className={`support-ticket ${item.ticketId === selected ? "selected" : ""}`} onClick={() => choose(item.ticketId)}>
+            <div><span className={`support-state ${item.status.toLowerCase()}`}>{states[item.status]}</span><time>{time(item.updatedAt)}</time></div>
+            <strong>{item.subject}</strong><p className="support-sender">{item.requesterName || item.requesterEmail}</p>
+            <div className="support-ticket-tags"><span className={`support-category ${item.category.toLowerCase()}`}>{categories[item.category]}</span><small>#{item.ticketId}</small></div>
+            <div className="support-ticket-flags"><span>{tools.agents.find(agent => agent.userId === item.assigneeId)?.name || (item.assigneeId ? "已分配" : "未分配")}</span>{["HIGH", "URGENT"].includes(item.priority) && <strong>{priorities[item.priority]}优先级</strong>}{Object.keys(drafts).some(key => key.startsWith(`${item.ticketId}:`)) && <span className="support-draft-marker">草稿</span>}</div>
+          </button>)}
+          {!items.length && !loading && <div className="support-queue-empty"><Inbox size={26} /><p>{search ? "没有匹配的工单" : "当前筛选下没有工单"}</p><button onClick={clearFilters}>查看全部工单</button></div>}
+        </div>
+        <div className="support-pagination"><button aria-label="上一页工单" disabled={!offset || loading || busy} onClick={() => setOffset(Math.max(0, offset - 50))}><ChevronLeft size={16} /></button><span>第 {offset / 50 + 1} 页</span><button aria-label="下一页工单" disabled={!more || loading || busy} onClick={() => setOffset(offset + 50)}><ChevronRight size={16} /></button></div>
+      </aside>
+      <section className="support-conversation" aria-label="工单对话">
+        {!selected ? <div className="support-welcome"><Inbox size={28} /><h2>选择工单开始处理</h2><p>邮件回复、内部备注和处理状态都在这里。</p></div> : !detail ? <div className="support-loading" role="status">{detailError ? <><p>{detailError}</p><Button secondary disabled={detailLoading} onClick={() => loadDetail()}>重新读取工单</Button></> : "正在读取工单…"}</div> : <>
+          <header className="support-conversation-head">
+            <div className="support-subject-row"><button className="support-mobile-back icon-button" aria-label="返回工单列表" disabled={busy} onClick={() => choose("")}><ArrowLeft size={20} /></button><div><span className="support-number">#{ticket.ticketId}</span><h2 title={ticket.subject}>{ticket.subject}</h2></div><div className="support-ticket-navigation"><button className="icon-button" aria-label="上一条工单" title="上一条工单" disabled={busy || position <= 0} onClick={() => choose(items[position - 1].ticketId)}><ChevronLeft size={17} /></button><button className="icon-button" aria-label="下一条工单" title="下一条工单" disabled={busy || position < 0 || !nextTicket} onClick={() => choose(nextTicket)}><ChevronRight size={17} /></button><button ref={contextToggleRef} className="icon-button" aria-label={contextOpen ? "收起工单资料" : "展开工单资料"} title="用户资料、分类、优先级与投递记录" aria-expanded={contextOpen} aria-controls="support-context" onClick={() => setContextOpen(!contextOpen)}>{contextOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button></div></div>
+            <div className="support-handling"><select aria-label="工单状态" value={ticket.status} disabled={busy} onChange={event => change({ status: event.target.value })}>{Object.entries(states).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><select aria-label="负责人" disabled={busy} value={ticket.assigneeId} onChange={event => change({ assigneeId: event.target.value })}><option value="">未分配</option>{tools.agents.map(agent => <option key={agent.userId} value={agent.userId}>{agent.name}</option>)}</select>{ticket.assigneeId !== user.userId && <button disabled={busy} onClick={() => change({ assigneeId: user.userId, status: "IN_PROGRESS" })}><UserRound size={14} />由我处理</button>}{!["RESOLVED", "CLOSED"].includes(ticket.status) && <button className="support-resolve" disabled={busy} onClick={() => change({ status: "RESOLVED" })}><Check size={15} />标记已解决</button>}</div>
+          </header>
+          {position < 0 && !loading && <div className="support-filter-note">此工单不在当前筛选中，仍可继续处理。<button onClick={clearFilters}>查看全部</button></div>}
+          {detailError && <div className="support-feedback error" role="alert"><span>{detailError}</span><button onClick={() => loadDetail()}>重新读取</button></div>}
+          <div ref={messagesRef} className="support-messages" onScroll={event => { const node = event.currentTarget; nearBottom.current = node.scrollHeight - node.scrollTop - node.clientHeight < 60; if (nearBottom.current) setNewMessages(false); }}>
+            {detail.messages.map(message => <article key={message.messageId} className={`support-message ${message.visibility === "INTERNAL" ? "internal" : ""} ${message.actorId === user.userId ? "own" : ""}`}>
+              <Avatar user={message.actorName} /><div><header><strong>{message.direction === "INBOUND" ? ticket.requesterName || ticket.requesterEmail : message.actorName}</strong><span>{message.visibility === "INTERNAL" ? <><LockKeyhole size={12} />内部备注</> : message.direction === "INBOUND" ? "玩家来信" : "客服回复"}</span><time>{time(message.createdAt)}</time></header>
+                {message.visibility !== "INTERNAL" && <details className="support-mail-addresses"><summary>{message.direction === "INBOUND" ? message.authorEmail : `发往 ${ticket.requesterEmail}`}</summary><p>发件人：{message.authorEmail || tools.mailbox?.email}<br />收件人：{message.direction === "INBOUND" ? tools.mailbox?.email : ticket.requesterEmail}{message.direction === "INBOUND" && ticket.source === "HELP" ? <><br />Help 转交，回复地址：{ticket.requesterEmail}</> : null}</p></details>}
+                <MailBody text={message.body} />
+                {message.attachments?.length > 0 && <div className="support-attachments">{message.attachments.map(attachment => <a key={attachment.attachmentId} href={`${base}/${ticket.ticketId}/attachments/${attachment.attachmentId}`} download>{attachment.filename}<small>{(attachment.size / 1024).toFixed(0)} KB</small></a>)}</div>}
+                {message.direction === "OUTBOUND" && <small className="support-mail-receipt">{deliveryLabels[detail.delivery?.find(event => message.mailMessageId?.startsWith(event.eventId + "@"))?.status] || "已记录"}</small>}
+              </div>
+            </article>)}
+          </div>
+          {newMessages && <button className="support-new-messages" onClick={goLatest}><ArrowDown size={14} />查看新消息</button>}
+          <form ref={formRef} className={`support-composer ${visibility === "INTERNAL" ? "internal" : ""}`} onSubmit={event => { event.preventDefault(); if (draft.trim()) change({ body: draft.trim(), visibility, ...(visibility === "PUBLIC" ? { status: replyStatus } : {}) }, true); }} onKeyDown={event => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); formRef.current?.requestSubmit(); } }}>
+            <div className="support-composer-toolbar"><div role="group" aria-label="回复方式"><button type="button" disabled={busy} aria-pressed={visibility === "PUBLIC"} className={visibility === "PUBLIC" ? "active" : ""} onClick={() => setVisibility("PUBLIC")}><MessageSquare size={15} />邮件回复</button><button type="button" disabled={busy} aria-pressed={visibility === "INTERNAL"} className={visibility === "INTERNAL" ? "active" : ""} onClick={() => setVisibility("INTERNAL")}><LockKeyhole size={15} />内部备注</button></div><select aria-label="插入快捷回复" value="" disabled={busy} onChange={event => { const value = tools.macros.find(item => item.macroId === event.target.value); if (value) updateDraft([draft, value.body].filter(Boolean).join("\n\n")); if (event.target.value === "new") setMacro({}); }}><option value="">快捷回复</option>{tools.macros.map(item => <option key={item.macroId} value={item.macroId}>{item.title}</option>)}<option value="new">管理快捷回复…</option></select></div>
+            <div className="support-recipient">{visibility === "INTERNAL" ? <><LockKeyhole size={12} />仅工作人员可见，不发送邮件</> : <>收件人：{ticket.requesterEmail}</>}<span>{draft ? "切换工单保留草稿" : "Ctrl / ⌘ + Enter 提交"}</span></div>
+            <textarea aria-label={visibility === "INTERNAL" ? "内部备注内容" : "回复内容"} placeholder={visibility === "INTERNAL" ? "记录处理进展，仅内部可见…" : "输入邮件回复…"} value={draft} onChange={event => updateDraft(event.target.value)} maxLength={12000} rows={3} disabled={busy} />
+            <footer><label className="support-advance"><input type="checkbox" checked={advance} onChange={event => setAdvance(event.target.checked)} disabled={busy} />提交后下一条</label><div className="support-send-actions">{visibility === "PUBLIC" && <select aria-label="发送后的状态" value={replyStatus} disabled={busy} onChange={event => setReplyStatus(event.target.value)}><option value="WAITING_CUSTOMER">等待玩家回复</option><option value="IN_PROGRESS">继续处理</option><option value="RESOLVED">已解决</option></select>}<Button type="submit" disabled={busy || !draft.trim()}><Send size={15} />{busy ? "正在提交…" : visibility === "INTERNAL" ? "保存内部备注" : sendLabels[replyStatus]}</Button></div></footer>
+          </form>
+        </>}
+      </section>
+      {contextOpen && detail && <><button className="support-context-backdrop" aria-label="关闭工单资料" onClick={() => { setContextOpen(false); contextToggleRef.current?.focus(); }} /><aside ref={contextRef} className="support-context" id="support-context" aria-label="工单资料"><div className="support-context-heading"><h2>工单资料</h2><button className="icon-button" aria-label="关闭工单资料面板" onClick={() => { setContextOpen(false); contextToggleRef.current?.focus(); }}><X size={18} /></button></div><h3>玩家信息</h3><div className="support-person"><Avatar user={ticket.requesterName} /><div><strong>{ticket.requesterName}</strong><small>{ticket.source === "HELP" ? "Help 转交" : "邮箱来信"}</small></div></div><dl><div><dt>游戏 ID</dt><dd>{detail.requester.gameId || "未绑定"}</dd></div><div><dt>QQ</dt><dd>{detail.requester.qq || "未填写"}</dd></div><div><dt>邮箱</dt><dd>{detail.requester.email || ticket.requesterEmail}</dd></div><div><dt>历史工单</dt><dd>{detail.requester.ticketCount} 件</dd></div><div><dt>创建时间</dt><dd>{time(ticket.createdAt)}</dd></div></dl><h3>分类与优先级</h3><Field label="问题类型"><select disabled={busy} value={ticket.category} onChange={event => change({ category: event.target.value })}>{Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="优先级"><select disabled={busy} value={ticket.priority} onChange={event => change({ priority: event.target.value })}>{Object.entries(priorities).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+        {detail.delivery?.length > 0 && <><h3>邮件投递</h3>{detail.delivery.map(event => <div className="support-delivery" key={event.eventId}><strong>{event.kind === "TICKET_CREATED" ? "收件回执" : "人工回复"}</strong><span>{deliveryLabels[event.status] || event.status}</span>{event.lastError && <small>{event.lastError}</small>}{event.status === "FAILED" && <Button secondary disabled={busy} onClick={() => retryMail(event)}>重新发送</Button>}</div>)}</>}
+      </aside></>}
+    </div>
+    {macro && <Modal title="快捷回复" close={() => setMacro(null)} guardClose><MacroForm client={client} macros={tools.macros} onSaved={async () => { await loadTools(); setMacro(null); }} /></Modal>}
   </div>;
 }
-function MacroForm({client,macros,onSaved}){
-  const [value,setValue]=useState({macroId:id(),title:"",body:"",version:0}),[busy,setBusy]=useState(false),[error,setError]=useState("");const pending=useRef(null);useUnsavedChanges(value,busy);
-  const save=async e=>{e.preventDefault();if(busy)return;setBusy(true);const fingerprint=JSON.stringify(value);if(pending.current?.fingerprint!==fingerprint)pending.current={fingerprint,body:{...value,clientRequestId:id()}};try{await client.request(`/api/v1/admin/support/macros/${value.macroId}`,{method:"PUT",body:pending.current.body});await onSaved()}catch(e){setError(e.message)}finally{setBusy(false)}};
-  return <form onSubmit={save}><Field label="选择快捷回复"><select value={value.version?value.macroId:""} onChange={e=>setValue(macros.find(m=>m.macroId===e.target.value)||{macroId:id(),title:"",body:"",version:0})}><option value="">新建</option>{macros.map(m=><option key={m.macroId} value={m.macroId}>{m.title}</option>)}</select></Field><Field label="名称" required maxLength={100} value={value.title} onChange={e=>setValue({...value,title:e.target.value})}/><Field label="回复内容"><textarea required rows={6} maxLength={6000} value={value.body} onChange={e=>setValue({...value,body:e.target.value})}/></Field>{error&&<p className="auth-error">{error}</p>}<Button type="submit" disabled={busy}><Zap size={16}/>保存快捷回复</Button></form>
+
+function MacroForm({ client, macros, onSaved }) {
+  const [value, setValue] = useState({ macroId: id(), title: "", body: "", version: 0 }), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const pending = useRef(null); useUnsavedChanges(value, busy);
+  const save = async event => {
+    event.preventDefault(); if (busy) return; setBusy(true);
+    const fingerprint = JSON.stringify(value);
+    if (pending.current?.fingerprint !== fingerprint) pending.current = { fingerprint, body: { ...value, clientRequestId: id() } };
+    try { await client.request(`/api/v1/admin/support/macros/${value.macroId}`, { method: "PUT", body: pending.current.body }); await onSaved(); }
+    catch (e) { setError(e.message); } finally { setBusy(false); }
+  };
+  return <form onSubmit={save}><Field label="选择快捷回复"><select value={value.version ? value.macroId : ""} onChange={event => setValue(macros.find(item => item.macroId === event.target.value) || { macroId: id(), title: "", body: "", version: 0 })}><option value="">新建</option>{macros.map(item => <option key={item.macroId} value={item.macroId}>{item.title}</option>)}</select></Field><Field label="名称" required maxLength={100} value={value.title} onChange={event => setValue({ ...value, title: event.target.value })} /><Field label="回复内容"><textarea required rows={6} maxLength={6000} value={value.body} onChange={event => setValue({ ...value, body: event.target.value })} /></Field>{error && <p className="auth-error">{error}</p>}<Button type="submit" disabled={busy}><Zap size={16} />保存快捷回复</Button></form>;
 }
 
-function MailBody({text}){const split=text.search(/\n(?:On .+wrote:|在.{0,100}写道[：:]|[-]{3,}.*(?:原始邮件|Original Message)|>)/i);const current=split<0?text:text.slice(0,split);return <><p>{current||text}</p>{split>=0&&current&&<details className="support-quoted"><summary>查看引用的邮件内容</summary><pre>{text.slice(split)}</pre></details>}</>}
+function MailBody({ text }) {
+  const split = text.search(/\n(?:On .+wrote:|在.{0,100}写道[：:]|[-]{3,}.*(?:原始邮件|Original Message)|>)/i);
+  const current = split < 0 ? text : text.slice(0, split);
+  return <><p>{current || text}</p>{split >= 0 && current && <details className="support-quoted"><summary>查看引用的邮件内容</summary><pre>{text.slice(split)}</pre></details>}</>;
+}

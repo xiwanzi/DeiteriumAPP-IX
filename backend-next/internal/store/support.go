@@ -92,7 +92,10 @@ func (s *Store) SupportTickets(ctx context.Context, actor string, status, queue,
 		where += " AND t.assignee_id IS NULL"
 	}
 	if search != "" {
-		where += " AND (LOCATE(LOWER(?),LOWER(t.subject))>0 OR LOCATE(?,t.ticket_id)>0 OR LOCATE(LOWER(?),LOWER(t.requester_email))>0 OR LOCATE(LOWER(?),LOWER(i.game_id))>0)"
+		// Queries may contain Chinese even when ticket IDs and email addresses
+		// are ASCII. Convert those columns before comparing, rather than asking
+		// MariaDB to coerce the search text to ascii_bin (error 1267).
+		where += " AND (LOCATE(LOWER(?),LOWER(t.subject))>0 OR LOCATE(?,CONVERT(t.ticket_id USING utf8mb4) COLLATE utf8mb4_bin)>0 OR LOCATE(LOWER(?),LOWER(CONVERT(t.requester_email USING utf8mb4)) COLLATE utf8mb4_bin)>0 OR LOCATE(LOWER(?),LOWER(i.game_id))>0)"
 		args = append(args, search, search, search, search)
 	}
 	rows, err := s.DB.QueryContext(ctx, supportSelect+where+" ORDER BY t.updated_at DESC,t.ticket_id DESC LIMIT 51 OFFSET ?", append(args, offset)...)
