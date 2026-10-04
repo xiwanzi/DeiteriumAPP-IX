@@ -1,0 +1,20 @@
+{
+  "accounts": 8,
+  "verifiedAccounts": 7,
+  "recentEmailRegistrations": 1,
+  "ticketCounts": [
+    "OPEN\tEMAIL\t1",
+    "RESOLVED\tEMAIL\t2"
+  ],
+  "mailStates": [
+    "CODE_REGISTER\tSENT\t2",
+    "MANUAL\tSENT\t2",
+    "TICKET_CREATED\tSENT\t3",
+    "TICKET_REPLY\tSENT\t3"
+  ],
+  "resources": [
+    "COMMISSION\t5",
+    "ORDER\t27"
+  ],
+  "deletions": 0
+}

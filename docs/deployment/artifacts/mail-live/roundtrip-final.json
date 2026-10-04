@@ -1,0 +1,17 @@
+{
+  "ticketId": "202610045235",
+  "status": "RESOLVED",
+  "attachmentCount": 0,
+  "events": [
+    {
+      "eventId": "mail_67b4740e467f7e1fda18adf5408fc1e2",
+      "kind": "TICKET_REPLY",
+      "status": "SENT"
+    },
+    {
+      "eventId": "mail_ead25eba53e530335c8f7416e242de6e",
+      "kind": "TICKET_CREATED",
+      "status": "SENT"
+    }
+  ]
+}
