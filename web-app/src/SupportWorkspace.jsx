@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowDown, Check, ChevronLeft, ChevronRight, Inbox, LockKeyhole, MessageSquare, PanelRightClose, PanelRightOpen, RefreshCw, Search, Send, UserRound, X, Zap } from "lucide-react";
+import { ArrowLeft, ArrowDown, Check, ChevronLeft, ChevronRight, Inbox, LockKeyhole, MessageSquare, PanelRightClose, PanelRightOpen, Plus, RefreshCw, Search, Send, UserRound, X, Zap } from "lucide-react";
 import { Avatar, Button, Field, Modal } from "./components.jsx";
 import { id } from "./format.js";
 import { useUnsavedChanges } from "./unsaved-changes.js";
@@ -27,6 +27,7 @@ export default function SupportWorkspace({ client, user }) {
   const [drafts, setDrafts] = useState({}), [visibility, setVisibility] = useState("PUBLIC");
   const [replyStatus, setReplyStatus] = useState("WAITING_CUSTOMER"), [advance, setAdvance] = useState(false);
   const [contextOpen, setContextOpen] = useState(false), [macro, setMacro] = useState(null), [newMessages, setNewMessages] = useState(false);
+  const [creating, setCreating] = useState(false);
   const listGeneration = useRef(0), detailGeneration = useRef(0), toolsGeneration = useRef(0);
   const reloadList = useRef(null);
   const selectedRef = useRef(selected), busyRef = useRef(false), pending = useRef(new Map());
@@ -183,6 +184,7 @@ export default function SupportWorkspace({ client, user }) {
       </div>
       <span className={`support-mailbox-health ${mailboxHealthy ? "online" : ""}`} title={`${tools.mailbox?.email || "玩家支持邮箱待配置"} · ${mailboxTitle}`}><i />{mailboxHealthy ? "收件正常" : "收件待检查"}</span>
       <button className="icon-button" aria-label="刷新工单" title="刷新工单" disabled={loading || busy} onClick={refresh}><RefreshCw size={17} /></button>
+      <Button className="support-create-button" disabled={busy} onClick={() => setCreating(true)}><Plus size={16} />新建工单</Button>
     </div>
     {error && <div className="support-feedback error" role="alert"><span>{error}</span><button onClick={refresh} disabled={busy}>重新读取</button><button aria-label="关闭错误提示" onClick={() => setError("")}><X size={15} /></button></div>}
     {listError && <div className="support-feedback error" role="alert"><span>工单列表未更新：{listError}</span><button onClick={load} disabled={loading}>重试列表</button></div>}
@@ -231,12 +233,46 @@ export default function SupportWorkspace({ client, user }) {
           </form>
         </>}
       </section>
-      {contextOpen && detail && <><button className="support-context-backdrop" aria-label="关闭工单资料" onClick={() => { setContextOpen(false); contextToggleRef.current?.focus(); }} /><aside ref={contextRef} className="support-context" id="support-context" aria-label="工单资料"><div className="support-context-heading"><h2>工单资料</h2><button className="icon-button" aria-label="关闭工单资料面板" onClick={() => { setContextOpen(false); contextToggleRef.current?.focus(); }}><X size={18} /></button></div><h3>玩家信息</h3><div className="support-person"><Avatar user={ticket.requesterName} /><div><strong>{ticket.requesterName}</strong><small>{ticket.source === "HELP" ? "Help 转交" : "邮箱来信"}</small></div></div><dl><div><dt>游戏 ID</dt><dd>{detail.requester.gameId || "未绑定"}</dd></div><div><dt>QQ</dt><dd>{detail.requester.qq || "未填写"}</dd></div><div><dt>邮箱</dt><dd>{detail.requester.email || ticket.requesterEmail}</dd></div><div><dt>历史工单</dt><dd>{detail.requester.ticketCount} 件</dd></div><div><dt>创建时间</dt><dd>{time(ticket.createdAt)}</dd></div></dl><h3>分类与优先级</h3><Field label="问题类型"><select disabled={busy} value={ticket.category} onChange={event => change({ category: event.target.value })}>{Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="优先级"><select disabled={busy} value={ticket.priority} onChange={event => change({ priority: event.target.value })}>{Object.entries(priorities).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+      {contextOpen && detail && <><button className="support-context-backdrop" aria-label="关闭工单资料" onClick={() => { setContextOpen(false); contextToggleRef.current?.focus(); }} /><aside ref={contextRef} className="support-context" id="support-context" aria-label="工单资料"><div className="support-context-heading"><h2>工单资料</h2><button className="icon-button" aria-label="关闭工单资料面板" onClick={() => { setContextOpen(false); contextToggleRef.current?.focus(); }}><X size={18} /></button></div><h3>玩家信息</h3><div className="support-person"><Avatar user={ticket.requesterName} /><div><strong>{ticket.requesterName}</strong><small>{ticket.source === "HELP" ? "Help 转交" : ticket.source === "ADMIN" ? "玩家支持主动建单" : "邮箱来信"}</small></div></div><dl><div><dt>游戏 ID</dt><dd>{detail.requester.gameId || "未绑定"}</dd></div><div><dt>QQ</dt><dd>{detail.requester.qq || "未填写"}</dd></div><div><dt>邮箱</dt><dd>{detail.requester.email || ticket.requesterEmail}</dd></div><div><dt>历史工单</dt><dd>{detail.requester.ticketCount} 件</dd></div><div><dt>创建时间</dt><dd>{time(ticket.createdAt)}</dd></div></dl><h3>分类与优先级</h3><Field label="问题类型"><select disabled={busy} value={ticket.category} onChange={event => change({ category: event.target.value })}>{Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="优先级"><select disabled={busy} value={ticket.priority} onChange={event => change({ priority: event.target.value })}>{Object.entries(priorities).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
         {detail.delivery?.length > 0 && <><h3>邮件投递</h3>{detail.delivery.map(event => <div className="support-delivery" key={event.eventId}><strong>{event.kind === "TICKET_CREATED" ? "收件回执" : "人工回复"}</strong><span>{deliveryLabels[event.status] || event.status}</span>{event.lastError && <small>{event.lastError}</small>}{event.status === "FAILED" && <Button secondary disabled={busy} onClick={() => retryMail(event)}>重新发送</Button>}</div>)}</>}
       </aside></>}
     </div>
     {macro && <Modal title="快捷回复" close={() => setMacro(null)} guardClose><MacroForm client={client} macros={tools.macros} onSaved={async () => { await loadTools(); setMacro(null); }} /></Modal>}
+    {creating && <Modal title="新建工单" className="support-create-modal" close={() => setCreating(false)} guardClose dismissOnBackdrop={false}><NewTicketForm client={client} onCreated={result => { setCreating(false); choose(result.ticketId); clearFilters(); load(); loadTools(); setNotice(`工单 #${result.ticketId} 已创建，首封邮件已加入发送队列。`); }} /></Modal>}
   </div>;
+}
+
+function NewTicketForm({ client, onCreated }) {
+  const [value, setValue] = useState({ email: "", subject: "", category: "OTHER", body: "" });
+  const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false), [error, setError] = useState("");
+  const pending = useRef(null), submitting = useRef(false);
+  useUnsavedChanges(value, busy);
+  const save = async event => {
+    event.preventDefault(); if (submitting.current) return;
+    const input = { ...value, email: value.email.trim(), subject: value.subject.trim(), body: value.body.trim() };
+    const fingerprint = JSON.stringify(input);
+    if (!pending.current || !uncertain && pending.current.fingerprint !== fingerprint) pending.current = { fingerprint, body: { ...input, clientRequestId: id() } };
+    submitting.current = true; setBusy(true); setError("");
+    try {
+      const response = await client.request(base, { method: "POST", body: pending.current.body });
+      onCreated(response.data);
+    } catch (e) {
+      setError(e.message);
+      setUncertain(["NETWORK_ERROR", "INVALID_RESPONSE"].includes(e.code) || e.status >= 500);
+    } finally { submitting.current = false; setBusy(false); }
+  };
+  return <form className="support-create-form" onSubmit={save}>
+    <p>主动联系玩家。邮件顶部会显示工单编号，玩家可直接回复；不会另发“工单已收到”自动回执。</p>
+    <fieldset disabled={busy || uncertain}>
+      <Field label="收件邮箱" type="email" required maxLength={254} autoComplete="off" placeholder="player@example.com" value={value.email} onChange={event => setValue({ ...value, email: event.target.value })} />
+      <Field label="主题" required minLength={2} maxLength={120} value={value.subject} onChange={event => setValue({ ...value, subject: event.target.value })} />
+      <Field label="问题类型"><select value={value.category} onChange={event => setValue({ ...value, category: event.target.value })}>{Object.entries(categories).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></Field>
+      <Field label="邮件正文"><textarea required minLength={2} maxLength={12000} rows={6} value={value.body} onChange={event => setValue({ ...value, body: event.target.value })} /></Field>
+    </fieldset>
+    {error && <p className="auth-error" role="alert">{error}</p>}
+    {uncertain && <p role="status">提交结果尚未确认。请用下方按钮重试确认，将沿用原请求，不会重复建单。</p>}
+    <footer><small>创建后由你负责，状态为“等玩家回复”。</small><Button type="submit" disabled={busy || !value.email.trim() || value.subject.trim().length < 2 || value.body.trim().length < 2}><Send size={15} />{busy ? "正在提交…" : uncertain ? "确认创建结果" : "创建并发送"}</Button></footer>
+  </form>;
 }
 
 function MacroForm({ client, macros, onSaved }) {

@@ -190,6 +190,24 @@ func (s *Server) registerMailSupport(mux *http.ServeMux) {
 	{
 		base := "/api/v1/admin/support/tickets"
 		actor := func(r *http.Request) (store.User, error) { return s.admin(r, "support.manage") }
+		mux.HandleFunc("POST "+base, func(w http.ResponseWriter, r *http.Request) {
+			u, err := actor(r)
+			if err != nil {
+				failError(w, r, err)
+				return
+			}
+			var in store.SupportCreate
+			if err = socialBodyV2(w, r, &in, 64<<10); err != nil {
+				failError(w, r, err)
+				return
+			}
+			result, err := s.Store.CreateSupport(r.Context(), u.ID, in, s.Config.SMTPKey)
+			if err != nil {
+				catalogFailV2(w, r, err)
+				return
+			}
+			v2Success(w, r, result)
+		})
 		mux.HandleFunc("GET "+base, func(w http.ResponseWriter, r *http.Request) {
 			u, err := actor(r)
 			if err != nil {

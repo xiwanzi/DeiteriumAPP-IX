@@ -1,0 +1,45 @@
+{
+  "environment": "isolated-loopback-synthetic",
+  "create": {
+    "passed": [
+      "new ticket modal desktop/mobile",
+      "lost create response and idempotent confirmation",
+      "one numbered human email without acknowledgement",
+      "automatic assignment and thread opening",
+      "follow-up before first inbound mail"
+    ],
+    "ticket": "202610041456"
+  },
+  "rename": {
+    "passed": [
+      "duplicate name error retains input",
+      "game ID editor desktop/mobile/dark",
+      "lost rename response safely replays original request",
+      "pending account remains unverified",
+      "support-only role can create tickets but cannot manage accounts"
+    ]
+  },
+  "finalModalSizes": [
+    {
+      "width": 1440,
+      "dialogWidth": 540,
+      "overflow": false,
+      "sendBottom": 746.09375,
+      "height": 900
+    },
+    {
+      "width": 390,
+      "dialogWidth": 360,
+      "overflow": false,
+      "sendBottom": 737.09375,
+      "height": 844
+    },
+    {
+      "width": 320,
+      "dialogWidth": 290,
+      "overflow": false,
+      "sendBottom": 617.96875,
+      "height": 667
+    }
+  ]
+}

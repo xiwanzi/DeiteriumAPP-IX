@@ -7,10 +7,12 @@ import (
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
 func (s *Server) registerAdminAccountsV206(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v1/admin/accounts/{userId}/game-id", s.renameAdminGameID)
 	mux.HandleFunc("POST /api/v1/admin/accounts/{userId}/delete", s.deleteAdminAccount)
 	mux.HandleFunc("GET /api/v1/account/deletions", s.accountDeletions)
 	mux.HandleFunc("GET /api/v1/admin/accounts", func(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +61,50 @@ func (s *Server) registerAdminAccountsV206(mux *http.ServeMux) {
 		}
 		v2Success(w, r, result)
 	})
+}
+
+func (s *Server) renameAdminGameID(w http.ResponseWriter, r *http.Request) {
+	actor, err := s.admin(r, "platform.admin")
+	if err != nil {
+		failError(w, r, err)
+		return
+	}
+	var input store.AdminGameIDChange
+	if err = body(w, r, &input); err != nil {
+		failError(w, r, err)
+		return
+	}
+	input.GameID = strings.TrimSpace(input.GameID)
+	if !identity.ValidGameID(input.GameID) || identity.SystemGameID(input.GameID) {
+		failure(w, r, 400, "GAME_ID_INVALID", "游戏 ID 需为 1–32 位英文字母、数字或下划线。")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+	target := r.PathValue("userId")
+	current, err := s.Store.AdminGameIdentity(ctx, target)
+	if err != nil {
+		catalogFailV2(w, r, err)
+		return
+	}
+	resolved := current.UUID
+	// A stale version proceeds to the transaction for replay/conflict handling,
+	// without making a successful retry depend on Core still being available.
+	if current.Verified && current.Version == input.ExpectedVersion && current.Status != "deleted" && target != actor.ID && !strings.EqualFold(current.GameID, input.GameID) {
+		player, err := s.resolveCorePlayer(ctx, input.GameID, false)
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+		resolved = player.PlayerUUID
+	}
+	result, err := s.Store.RenameAccountGameID(ctx, actor.ID, target, input, resolved)
+	if err != nil {
+		catalogFailV2(w, r, err)
+		return
+	}
+	s.Hub.Wake()
+	v2Success(w, r, result)
 }
 
 func (s *Server) deleteAdminAccount(w http.ResponseWriter, r *http.Request) {
