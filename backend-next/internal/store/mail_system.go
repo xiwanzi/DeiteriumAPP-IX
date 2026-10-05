@@ -246,6 +246,18 @@ func (s *Store) ClaimMail(ctx context.Context) (SystemMailEvent, error) {
 		return e, err
 	}
 	if strings.HasPrefix(e.Kind, "CODE_") {
+		if err = checkEmailAddress(ctx, tx, e.Recipient); errors.Is(err, ErrEmailAddressInvalid) {
+			_, err = tx.ExecContext(ctx, "UPDATE mail_outbox SET status='FAILED',last_error='邮箱地址无效',payload_cipher='',lease_until=NULL WHERE event_id=?", e.EventID)
+			if err == nil {
+				err = tx.Commit()
+			}
+			if err != nil {
+				return e, err
+			}
+			return e, ErrMailSkipped
+		} else if err != nil {
+			return e, err
+		}
 		var active bool
 		if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM email_verifications WHERE verification_id=? AND state='ACTIVE' AND expires_at>UTC_TIMESTAMP(6))", e.Reference).Scan(&active); err != nil {
 			return e, err

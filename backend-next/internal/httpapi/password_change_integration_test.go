@@ -41,8 +41,8 @@ func TestPasswordChangeProofPurposeOwnerAndSessionRevocation(t *testing.T) {
 	f.request(t, "", "POST", "/api/v1/account/login", map[string]string{"account": "password-user@example.com", "password": "new-password-123"}, 200)
 	for _, purpose := range []string{"register", "password_reset", "password_change"} {
 		r := socialDataV2(f.request(t, "Alice", "GET", "/api/v1/admin/mail/templates/verification/"+purpose, nil, 200))
-		if !strings.Contains(r["html"].(string), "data:image/png;base64,") || r["preview"] != true {
-			t.Fatal("preview missing embedded logo or preview flag")
+		if !strings.Contains(r["html"].(string), `<img src="https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/`) || r["preview"] != true {
+			t.Fatal("preview missing published HTTPS logo or preview flag")
 		}
 	}
 	f.request(t, "Bob", "GET", "/api/v1/admin/mail/templates/verification/register", nil, 403)

@@ -18,6 +18,7 @@ type EmailVerification struct {
 	ExpiresAt                                               time.Time
 	ProfileChecked                                          bool
 	ResendAt                                                time.Time
+	IssueIP                                                 string
 }
 
 func (s *Store) NewEmailVerification(ctx context.Context, v EmailVerification, code string, key []byte) error {
@@ -34,15 +35,31 @@ func (s *Store) NewEmailVerification(ctx context.Context, v EmailVerification, c
 	if err = tx.QueryRowContext(ctx, "SELECT expires_at FROM game_verification_cooldowns WHERE cooldown_key=? FOR UPDATE", cooldown).Scan(&next); err != nil {
 		return err
 	}
+	if err = checkEmailAddress(ctx, tx, v.Email); err != nil {
+		return err
+	}
 	if next.After(time.Now().UTC()) {
-		return ErrRateLimited
+		return rateLimitedUntil(next).withScope("RECIPIENT")
 	}
 	var count int
 	if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM email_verifications WHERE email=? AND created_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 DAY)", v.Email).Scan(&count); err != nil {
 		return err
 	}
 	if count >= 20 {
-		return ErrRateLimited
+		var earliest time.Time
+		if err = tx.QueryRowContext(ctx, "SELECT MIN(created_at) FROM email_verifications WHERE email=? AND created_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 DAY)", v.Email).Scan(&earliest); err != nil {
+			return err
+		}
+		return rateLimitedUntil(earliest.Add(24 * time.Hour)).withScope("RECIPIENT")
+	}
+	if v.IssueIP != "" {
+		if err = s.reserveBudgetsTx(ctx, tx, map[string]int{Digest([]byte("verification-ip:" + v.IssueIP)): 10}); err != nil {
+			var limited *RateLimitError
+			if errors.As(err, &limited) {
+				limited.Scope = "SOURCE"
+			}
+			return err
+		}
 	}
 	resendAt := v.ResendAt
 	if resendAt.IsZero() {

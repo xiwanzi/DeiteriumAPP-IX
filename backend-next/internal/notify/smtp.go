@@ -176,18 +176,18 @@ func sendMessageWithRoots(ctx context.Context, s Settings, password, messageID s
 	}
 	for _, recipient := range s.Recipients {
 		if err = client.Rcpt(recipient); err != nil {
-			return errors.New("SMTP 拒绝接收邮箱，请检查配置。")
+			return smtpRecipientError(s.Host, err, "SMTP 拒绝接收邮箱，请检查配置。")
 		}
 	}
 	writer, err := client.Data()
 	if err != nil {
-		return errors.New("SMTP 暂时无法接收邮件。")
+		return smtpRecipientError(s.Host, err, "SMTP 暂时无法接收邮件。")
 	}
 	if _, err = writer.Write(encoded); err != nil {
 		return errors.New("SMTP 发送中断，稍后使用同一邮件编号重试。")
 	}
 	if err = writer.Close(); err != nil {
-		return errors.New("SMTP 未确认接收邮件，稍后使用同一邮件编号重试。")
+		return smtpRecipientError(s.Host, err, "SMTP 未确认接收邮件，稍后使用同一邮件编号重试。")
 	}
 	// DATA's final success is the delivery acceptance. A lost QUIT must not cause a duplicate.
 	_ = client.Quit()

@@ -38,6 +38,7 @@ type Config struct {
 	AdmissionPublicOrigin       string      `json:"admissionPublicOrigin,omitempty"`
 	AdmissionGatewayTokenSHA256 string      `json:"admissionGatewayTokenSha256,omitempty"`
 	SMTPKey                     []byte      `json:"-"`
+	DMEventToken                string      `json:"-"`
 	Listen                      string      `json:"listen"`
 	PublicOrigin                string      `json:"publicOrigin"`
 	AdditionalPublicOrigins     []string    `json:"additionalPublicOrigins,omitempty"`
@@ -68,10 +69,14 @@ func Load(path string) (Config, error) {
 			return c, errors.New("DEUTERIUM_SMTP_KEY must be base64 encoding of 32 random bytes")
 		}
 	}
+	c.DMEventToken = os.Getenv("DEUTERIUM_DM_EVENT_TOKEN")
 	return c, c.Validate()
 }
 
 func (c Config) Validate() error {
+	if c.DMEventToken != "" && (len(c.DMEventToken) < 32 || len(c.DMEventToken) > 256 || strings.ContainsAny(c.DMEventToken, " \r\n\t")) {
+		return errors.New("DEUTERIUM_DM_EVENT_TOKEN must contain 32-256 non-whitespace bytes")
+	}
 	if err := c.ValidateYSM(); err != nil {
 		return err
 	}

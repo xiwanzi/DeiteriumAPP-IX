@@ -235,8 +235,8 @@ func TestAdmissionTemplatePreviewTestsStayWithAdminRecipients(t *testing.T) {
 	f := admissionEmailFixture(t, false)
 	f.request(t, "Bob", "GET", "/api/v1/admin/email-settings/templates/APPROVED", nil, 403)
 	preview := f.request(t, "Alice", "GET", "/api/v1/admin/email-settings/templates/REJECTED", nil, 200)
-	if !strings.Contains(socialDataV2(preview)["html"].(string), "data:image/png;base64,") {
-		t.Fatal("browser preview missing image")
+	if !strings.Contains(socialDataV2(preview)["html"].(string), `<img src="https://xiwanzi.cn-nb2.rains3.com/deuterium-official/mail-assets/`) {
+		t.Fatal("browser preview missing published HTTPS image")
 	}
 	for _, decision := range []string{"APPROVED", "REJECTED"} {
 		body := map[string]any{"clientRequestId": "preview-" + decision, "template": decision}

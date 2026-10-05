@@ -419,5 +419,9 @@ func (s *Server) processSystemMail(ctx context.Context, send emailSenderV204) er
 	}
 	finish, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	if event.Channel == "DM" && errors.Is(sendErr, notify.ErrInvalidRecipient) {
+		_, err := s.Store.RecordInvalidEmail(finish, event.EventID, event.Recipient, "SMTP", time.Now().UTC())
+		return err
+	}
 	return s.Store.FinishMail(finish, event, sendErr)
 }

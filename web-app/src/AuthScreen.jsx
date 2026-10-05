@@ -7,7 +7,6 @@ import {
   EyeOff,
   UserRound,
   LockKeyhole,
-  ShieldCheck,
   ChevronDown,
   Check,
   LoaderCircle,
@@ -39,15 +38,20 @@ export default function AuthScreen({
     [scene, setScene] = useState(0),
     [verification, setVerification] = useState(null),
     [success, setSuccess] = useState("");
+  const [email, setEmail] = useState("");
+  const cooldowns = useRef(new Map());
+  const recipient = `${screen}:${screen === 'register' ? email.trim().toLowerCase() : account.trim().toLowerCase()}`;
+  const recipientRef = useRef(recipient); recipientRef.current = recipient;
+  const noDelivery = new Set(['MINECRAFT_PLAYER_NOT_FOUND','MINECRAFT_LOOKUP_UNAVAILABLE','MAIL_NOT_READY','EMAIL_INVALID','GAME_ID_INVALID','ACCOUNT_ALREADY_EXISTS','FORBIDDEN','INVALID_REQUEST']);
   const [codeBusy, setCodeBusy] = useState(false), [resendAt, setResendAt] = useState(0), [remaining, setRemaining] = useState(0);
   const codeRequest = useRef(0);
   useEffect(() => {
-    const tick = () => setRemaining(Math.max(0, Math.ceil((resendAt - Date.now()) / 1000)));
+    const tick = () => { const until=Math.max(cooldowns.current.get(recipientRef.current)?.until || 0,recipientRef.current.startsWith('login:')?0:cooldowns.current.get('code:*')?.until||0); setResendAt(until); setRemaining(Math.max(0, Math.ceil((until - Date.now()) / 1000))); };
     tick(); const timer = setInterval(tick, 250);
     return () => clearInterval(timer);
-  }, [resendAt]);
+  }, [recipient]);
   useEffect(() => () => { codeRequest.current++; }, []);
-  const invalidateCode = () => { codeRequest.current++; setCodeBusy(false); setResendAt(0); setRemaining(0); setVerification(null); setSuccess(""); setError(""); };
+  const invalidateCode = (nextRecipient=recipient) => { codeRequest.current++; setCodeBusy(false); const until=Math.max(cooldowns.current.get(nextRecipient)?.until||0,cooldowns.current.get('code:*')?.until||0);setResendAt(until);setRemaining(Math.max(0,Math.ceil((until-Date.now())/1000)));setVerification(null); setSuccess(""); setError(""); };
   useEffect(() => {
     document.title =
       (screen === "login"
@@ -63,6 +67,7 @@ export default function AuthScreen({
   ];
   const change = (s) => {
     invalidateCode();
+    setResendAt(0);setRemaining(0);
     setScreen(s);
     setVerification(null);
     setSuccess("");
@@ -73,19 +78,27 @@ export default function AuthScreen({
     e.preventDefault();
     if (busy || codeBusy || (!verification && resendAt > Date.now())) return;
     if (screen !== "login" && !verification && onVerify) {
-      const requestId = ++codeRequest.current, requestedAt = Date.now();
       const fields = Object.fromEntries(new FormData(e.currentTarget));
+      if(screen==='register'&&!/^[A-Za-z0-9_]{3,16}$/.test(fields.gameId.trim())){setError('请填写 Minecraft Java 版玩家名：3–16 位字母、数字或下划线。');return;}
+      const requestId = ++codeRequest.current, requestedAt = Date.now();
+      const requestedRecipient=recipient;
+      cooldowns.current.set(requestedRecipient,{until:requestedAt+60000,requestId});
       setCodeBusy(true); setResendAt(requestedAt + 60000); setRemaining(60); setError("");
       try {
         const result = await onVerify(screen, fields);
+        if(cooldowns.current.get(requestedRecipient)?.requestId===requestId)cooldowns.current.set(requestedRecipient,{until:Date.now()+Math.max(1,Number(result.data?.resendAfterSeconds)||60)*1000,requestId});
         if (requestId !== codeRequest.current) return;
         if (!result.data?.verificationToken) throw new Error("未取得验证码凭证，请稍后重试。");
         setVerification(result.data);
         setResendAt(Math.max(requestedAt + 60000, Date.now() + Math.max(1, Number(result.data.resendAfterSeconds) || 60) * 1000));
-        setSuccess(result.data.delivery === "EMAIL" || screen === "register" ? "验证码邮件已排队，请查收邮箱。" : "验证码已发送，请在游戏内查看。");
+        setSuccess("");
       } catch (error) {
-        if (requestId === codeRequest.current) { setError(error.message || "连接暂时失败，请稍后重试"); setResendAt(0); setRemaining(0); }
-      } finally { if (requestId === codeRequest.current) setCodeBusy(false); }
+        if(cooldowns.current.get(requestedRecipient)?.requestId===requestId){
+          if(error.status===429){const entry={until:Date.now()+Math.max(1,Number(error.retryAfter)||60)*1000,requestId};cooldowns.current.set(requestedRecipient,entry);if(error.retryScope==='SOURCE')cooldowns.current.set('code:*',entry);}
+          else if(noDelivery.has(error.code)||[400,403,409].includes(error.status))cooldowns.current.delete(requestedRecipient);
+        }
+        if (requestId === codeRequest.current) { setError(noDelivery.has(error.code)||error.status>=400&&error.status<500 ? error.message : "本次发送结果暂未确认，请查看邮箱；倒计时结束后可重试。"); }
+      } finally { if (requestId === codeRequest.current) setCodeBusy(false);const until=Math.max(cooldowns.current.get(recipientRef.current)?.until||0,cooldowns.current.get('code:*')?.until||0);setResendAt(until);setRemaining(Math.max(0,Math.ceil((until-Date.now())/1000))); }
       return;
     }
     setBusy(true);
@@ -96,6 +109,7 @@ export default function AuthScreen({
       else {
         const f = Object.fromEntries(new FormData(e.currentTarget));
         if (verification && onComplete) {
+          if(Array.from(f.password).length<8||Array.from(f.password).length>64)throw new Error('密码需要 8–64 位。');
           await onComplete(screen, { ...f, verificationToken: verification.verificationToken });
           change("login");
           setSuccess(screen === "register" ? "账号已创建，请登录。" : "密码已重置，请使用新密码登录。");
@@ -106,7 +120,8 @@ export default function AuthScreen({
           );
       }
     } catch (e) {
-      setError(e.message || "连接暂时失败，请稍后重试");
+      if(screen==='login'&&e.status===429){const seconds=Math.max(1,Number(e.retryAfter)||900);const until=Date.now()+seconds*1000;cooldowns.current.set(recipient,{until});setResendAt(until);setRemaining(seconds);}
+      setError(screen==='register'&&['NETWORK_ERROR','INVALID_RESPONSE','SERVICE_UNAVAILABLE'].includes(e.code)?'注册结果暂未确认，请尝试使用刚才的邮箱和密码登录。':e.message || "连接暂时失败，请稍后重试");
     } finally {
       setBusy(false);
     }
@@ -206,19 +221,12 @@ export default function AuthScreen({
                   ? "开始你的新旅程。"
                   : "找回你的账号。"}
             </h1>
-            <p className="auth-intro">
-              {screen === "login"
-                ? "使用邮箱、游戏 ID 或 QQ 登录 Deuterium。"
-                : screen === "register"
-                  ? "使用邮箱验证码创建账号，再验证你的游戏身份。"
-                  : "通过绑定邮箱或原有游戏验证方式找回密码。"}
-            </p>
             {(statusMessage || success) && (
               <div className="auth-verification-note" role="status">
                 {success || statusMessage}
               </div>
             )}
-            <form className="auth-form" onSubmit={submit} onChange={(e) => { if (screen !== "login" && ["gameId", "email"].includes(e.target.name)) invalidateCode(); }}>
+            <form className="auth-form" onSubmit={submit} onChange={(e) => { if (screen !== "login" && ["gameId", "email"].includes(e.target.name)) invalidateCode(`${screen}:${(screen==='register'?e.currentTarget.elements.email.value:e.currentTarget.elements.gameId.value).trim().toLowerCase()}`); }}>
               <div className="auth-input-group">
                 <label htmlFor="auth-account">
                   {screen === "register" ? "游戏 ID" : "邮箱 / 游戏 ID / QQ"}
@@ -232,9 +240,9 @@ export default function AuthScreen({
                     value={account}
                     onChange={(e) => setAccount(e.target.value)}
                     placeholder={
-                      screen === "login"
-                        ? "输入邮箱、游戏 ID 或 QQ"
-                        : "你的完整游戏 ID"
+                      screen === "register"
+                        ? "输入正版游戏 ID"
+                        : "输入邮箱、游戏 ID 或 QQ"
                     }
                     required
                     maxLength={254}
@@ -246,8 +254,10 @@ export default function AuthScreen({
                 <Field
                   label="邮箱"
                   name="email"
+                  value={email}
+                  onChange={(e)=>setEmail(e.target.value)}
                   autoComplete="email"
-                  placeholder="用于验证码、通知及找回账号"
+                  placeholder="输入邮箱地址"
                   type="email"
                   maxLength={254}
                   readOnly={Boolean(verification)}
@@ -286,14 +296,7 @@ export default function AuthScreen({
                     </div>
                   </div>
                 </>
-              ) : (
-                <div className="auth-verification-note">
-                  <ShieldCheck size={20} />
-                  <span>
-                    {screen === "register" ? "邮箱验证完成后即可创建账号，随后继续验证游戏身份。" : "已绑定邮箱的账号通过邮件验证；旧账号仍使用游戏内验证码。"}
-                  </span>
-                </div>
-              )}
+              ) : null}
               {verification && screen === "register" && <Field label="密码" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={64} />}
               {verification && screen !== "login" && <>
                 <Field label="验证码" name="code" inputMode="numeric" autoComplete="one-time-code" required maxLength={12} />
@@ -309,7 +312,7 @@ export default function AuthScreen({
                 className="full auth-submit"
                 disabled={busy || codeBusy || (!verification && remaining > 0)}
               >
-                {!verification && remaining > 0 ? `${remaining} 秒后重发` : busy ? (
+                {!verification && remaining > 0 ? `${remaining} 秒后${screen==='login'?'重试':'重发'}` : busy ? (
                   <>
                     <LoaderCircle className="spin" size={17} />
                     正在连接…
@@ -318,12 +321,12 @@ export default function AuthScreen({
                   <>
                     {screen === "login"
                       ? "登录"
-                      : verification ? (screen === "register" ? "创建账号" : "保存新密码") : screen === "register" ? "获取注册验证码" : "获取重置验证码"}
+                      : verification ? (screen === "register" ? "创建账号" : "保存新密码") : "获取验证码"}
                     <ArrowRight size={18} />
                   </>
                 )}
               </Button>
-              {verification && <button type="button" className="text-button" disabled={busy} onClick={invalidateCode}>修改信息或重新获取验证码</button>}
+              {verification && <button type="button" className="text-button" disabled={busy} onClick={()=>invalidateCode()}>修改信息或重新获取验证码</button>}
             </form>
             {screen === "login" && (
               <p className="auth-register">
@@ -333,10 +336,6 @@ export default function AuthScreen({
                 </button>
               </p>
             )}
-            <div className="auth-trust">
-              <ShieldCheck size={15} />
-              <span>与 App 共用账号 · 密码不会保存在网页中</span>
-            </div>
           </div>
           <footer className="auth-form-footer">
             <span>DEUTERIUM ID</span>
