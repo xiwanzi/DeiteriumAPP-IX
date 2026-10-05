@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": true
+    }
+  ],
+  "temporarySessionRevoked": true,
+  "webVersion": "2.0.27",
+  "service": "active"
+}

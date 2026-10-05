@@ -1,0 +1,32 @@
+{
+  "release": {
+    "releaseId": "deuterium-2.0.18-21800-test",
+    "kind": "APK",
+    "versionName": "2.0.18",
+    "versionCode": 21800,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "提升找回密码等表单输入框的可读性，优化浅深色背景、边框和字段标签。",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.18-21800-test.apk",
+    "sizeBytes": 8908306,
+    "sha256": "ca6d55f43040110c935bb53806ce5813fbd3c28837d8cecbe41c25cc41ccda8b",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21799,
+    "channel": "stable",
+    "publishedAt": "2026-10-05T15:53:04.253597+00:00"
+  },
+  "backup": "/var/backups/deuterium/input-readability-21800-2e671cc98d32",
+  "publishedAt": "2026-10-05T15:53:07.367913+00:00",
+  "health": {
+    "data": {
+      "status": "ready"
+    },
+    "requestId": "req_12247f6f9e0f062ed31b771b08ed6715"
+  },
+  "oldReleaseEntriesPreserved": 18,
+  "programsAndConfigUnchanged": true,
+  "counts": {
+    "accounts": "55",
+    "commerce": "COMMISSION\t5\nORDER\t27"
+  }
+}

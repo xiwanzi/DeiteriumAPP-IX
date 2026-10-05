@@ -1,0 +1,40 @@
+{
+  "apkBytesAndSha256Verified": true,
+  "updateChecks": [
+    {
+      "versionCode": 20004,
+      "apkUpdate": 21800
+    },
+    {
+      "versionCode": 21300,
+      "apkUpdate": 21800
+    },
+    {
+      "versionCode": 21500,
+      "apkUpdate": 21800
+    },
+    {
+      "versionCode": 21600,
+      "apkUpdate": 21800
+    },
+    {
+      "versionCode": 21700,
+      "apkUpdate": 21800
+    },
+    {
+      "versionCode": 21799,
+      "apkUpdate": 21800
+    },
+    {
+      "versionCode": 21800,
+      "apkUpdate": null
+    },
+    {
+      "versionCode": 21801,
+      "apkUpdate": null
+    }
+  ],
+  "sourceCommit": "2e671cc98d3272d953650189edce5a246b5d9bbc",
+  "programsAndConfigUnchanged": true,
+  "oldReleaseEntriesPreserved": 18
+}

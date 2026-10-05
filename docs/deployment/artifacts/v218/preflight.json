@@ -1,0 +1,40 @@
+{
+  "manifestSha256": "1804f26b4c1c1c155c3e0a59fb16a02d81b99267863cf57cc4145d6df3765987",
+  "releaseCount": 18,
+  "latestAPK": {
+    "releaseId": "deuterium-2.0.17-21700-test",
+    "kind": "APK",
+    "versionName": "2.0.17",
+    "versionCode": 21700,
+    "resourceVersion": 0,
+    "packageName": "com.deuterium.app.uilab",
+    "releaseNotes": "\u4f18\u5316\u767b\u5f55\u3001\u6ce8\u518c\u53ca\u627e\u56de\u5bc6\u7801\u4f53\u9a8c\uff0c\u4fee\u6b63\u9a8c\u8bc1\u7801\u5012\u8ba1\u65f6\u4e0e\u91cd\u53d1\u9650\u5236\uff0c\u7edf\u4e00\u9875\u9762\u6587\u6848\u3002",
+    "downloadUrl": "https://47.103.99.34/downloads/Deuterium-2.0.17-21700-test.apk",
+    "sizeBytes": 8908306,
+    "sha256": "893a664ead271636140af6aff27823394f65c05a43272be26d15707b331a6751",
+    "minAppVersionCode": 1,
+    "maxAppVersionCode": 21699,
+    "publishedAt": "2026-10-05T05:31:18.466029+00:00",
+    "channel": "stable"
+  },
+  "backendSha256": "ba530943e817a2a8d2e564c7b99b61943f95cc77c3a48fc6d9ddf434a4559c23",
+  "configSha256": "9b2746e9f55cc047544cb449a52d3831f280578cd0a086b1a47d145498ffc989",
+  "environmentSha256": "6d8064e4971af4232606a376b511bc17535554bec740f64b20b6a67012a90a3f",
+  "links": {
+    "/opt/deuterium/current": "/opt/deuterium/releases/auth-flow-0248496b034a",
+    "/var/www/deuterium/current": "/var/www/deuterium/releases/web-2.0.27-0248496b034a/dist",
+    "/var/www/deuterium-official/current": "/var/www/deuterium-official/releases/official-auth-0248496b034a",
+    "/var/www/deuterium-help/current": "/var/www/deuterium-help/releases/help-auth-0248496b034a"
+  },
+  "activeOperations": "0",
+  "counts": {
+    "accounts": "55",
+    "commerce": "COMMISSION\t5\nORDER\t27"
+  },
+  "health": {
+    "data": {
+      "status": "ready"
+    },
+    "requestId": "req_9de0c3dc2ac4687556c63e75d2dde9bf"
+  }
+}
