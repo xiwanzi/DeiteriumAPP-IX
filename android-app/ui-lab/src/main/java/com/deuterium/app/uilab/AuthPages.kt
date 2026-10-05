@@ -31,6 +31,8 @@ fun AuthPage(onSignedIn:(String)->Unit) {
     var password by remember{mutableStateOf("")};var code by remember{mutableStateOf("")};var codeSent by remember{mutableStateOf(false)};var busy by remember{mutableStateOf(false)}
     var error by remember{mutableStateOf<String?>(null)};var reset by remember{mutableStateOf(false)};var privacy by remember{mutableStateOf(false)}
     var verificationToken by remember{mutableStateOf("")};var resendSeconds by remember{mutableIntStateOf(0)}
+    var codeBusy by remember{mutableStateOf(false)};var codeRequest by remember{mutableIntStateOf(0)}
+    fun invalidateCode(){codeRequest++;codeBusy=false;codeSent=false;verificationToken="";resendSeconds=0;error=null}
     LaunchedEffect(resendSeconds){if(resendSeconds>0){delay(1000);resendSeconds--}}
     val api=BackendApi.get(LocalContext.current)
     val scope=rememberCoroutineScope();val colors=MaterialTheme.colorScheme
@@ -43,15 +45,15 @@ fun AuthPage(onSignedIn:(String)->Unit) {
         Text("Deuterium",Modifier.fillMaxWidth(),fontSize=32.sp,fontWeight=androidx.compose.ui.text.font.FontWeight.Bold,letterSpacing=(-.7).sp,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
         Text(if(register)"创建账号，再连接你的游戏身份" else "钱包、消息与交易，随时相连",Modifier.fillMaxWidth().padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=colors.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
         Spacer(Modifier.height(27.dp))
-        SegmentedControl(listOf("登录","创建账号"),if(register)1 else 0,{register=it==1;error=null})
+        SegmentedControl(listOf("登录","创建账号"),if(register)1 else 0,{register=it==1;invalidateCode()})
         Spacer(Modifier.height(21.dp))
         Surface(shape=RoundedCornerShape(24.dp),color=colors.surface){Column {
-            AuthInput(account,{account=it.take(if(register)32 else 254);codeSent=false;verificationToken=""},if(register)"游戏内 ID" else "邮箱、玩家 ID 或 QQ",Icons.Outlined.PersonOutline)
+            AuthInput(account,{account=it.take(if(register)32 else 254);invalidateCode()},if(register)"游戏内 ID" else "邮箱、玩家 ID 或 QQ",Icons.Outlined.PersonOutline)
             AuthLine()
-            if(register){AuthInput(email,{email=it.take(254);codeSent=false;verificationToken=""},"邮箱",Icons.Outlined.AlternateEmail,keyboard=KeyboardType.Email);AuthLine();AuthInput(code,{code=it.filter(Char::isDigit).take(6)},"邮箱验证码",Icons.Outlined.VerifiedUser,keyboard=KeyboardType.Number,trailing={PlainButton({
-                if(!busy&&resendSeconds==0){
+            if(register){AuthInput(email,{email=it.take(254);invalidateCode()},"邮箱",Icons.Outlined.AlternateEmail,keyboard=KeyboardType.Email);AuthLine();AuthInput(code,{code=it.filter(Char::isDigit).take(6)},"邮箱验证码",Icons.Outlined.VerifiedUser,keyboard=KeyboardType.Number,trailing={PlainButton({
+                if(!busy&&!codeBusy&&resendSeconds==0){
                     error=when{!account.trim().matches(Regex("[A-Za-z0-9_]{1,32}"))->"请输入有效的游戏 ID（1–32 位字母、数字或下划线）";!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()->"请输入有效的邮箱";else->null}
-                    if(error==null)scope.launch{busy=true;runCatching{api.request("POST","/account/registration-code",JSONObject().put("gameId",account.trim()).put("email",email.trim()),authenticated=false)}.onSuccess{verificationToken=it.getString("verificationToken");codeSent=true;resendSeconds=it.optInt("resendAfterSeconds",60);error=null}.onFailure{error=it.message};busy=false}
+                    if(error==null){val requestedAccount=account.trim();val requestedEmail=email.trim();val requestId=++codeRequest;codeBusy=true;resendSeconds=60;scope.launch{runCatching{api.request("POST","/account/registration-code",JSONObject().put("gameId",requestedAccount).put("email",requestedEmail),authenticated=false)}.onSuccess{if(requestId==codeRequest){verificationToken=it.getString("verificationToken");codeSent=true;resendSeconds=maxOf(resendSeconds,it.optInt("resendAfterSeconds",60));error=null}}.onFailure{if(requestId==codeRequest){error=it.message;resendSeconds=0}};if(requestId==codeRequest)codeBusy=false}}
                 }
             }){Text(if(resendSeconds>0)"${resendSeconds}s" else if(codeSent)"重发" else "获取",style=MaterialTheme.typography.bodyMedium)}});AuthLine()}
             AuthInput(password,{password=it.take(72)},if(register)"设置密码（至少8位）" else "密码",Icons.Outlined.Lock,secret=true)
@@ -61,8 +63,8 @@ fun AuthPage(onSignedIn:(String)->Unit) {
         if(!register)PlainButton({reset=true},Modifier.align(Alignment.End).padding(top=4.dp)){Text("忘记密码？",style=MaterialTheme.typography.bodyMedium)} else Spacer(Modifier.height(18.dp))
         MotionButton({
             error=when{account.isBlank()->"请输入玩家 ID 或 QQ";register&&!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()->"请输入有效的邮箱";register&&(!codeSent||code.length!=6)->"请获取邮箱验证码";password.codePointCount(0,password.length) !in 8..64->"密码需要 8–64 位";else->null}
-            if(error==null&&!busy)scope.launch{busy=true;runCatching{if(register)api.register(account.trim(),email.trim(),password,verificationToken,code) else api.login(account.trim(),password)}.onSuccess{name->password="";onSignedIn(name)}.onFailure{error=it.message ?: "登录失败，请稍后重试"};busy=false}
-        },Modifier.fillMaxWidth().height(54.dp),enabled=!busy){Text(if(busy)"正在进入…" else if(register)"创建账号并继续" else "登录")}
+            if(error==null&&!busy&&!codeBusy)scope.launch{busy=true;runCatching{if(register)api.register(account.trim(),email.trim(),password,verificationToken,code) else api.login(account.trim(),password)}.onSuccess{name->password="";onSignedIn(name)}.onFailure{error=it.message ?: "登录失败，请稍后重试"};busy=false}
+        },Modifier.fillMaxWidth().height(54.dp),enabled=!busy&&!codeBusy){Text(if(busy)"正在进入…" else if(register)"创建账号并继续" else "登录")}
         Spacer(Modifier.height(22.dp))
         Text("Deuterium ${BuildConfig.VERSION_NAME} · 与游戏世界保持连接",Modifier.fillMaxWidth(),style=MaterialTheme.typography.bodySmall,color=colors.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
         PlainButton({privacy=true},Modifier.align(Alignment.CenterHorizontally).padding(bottom=12.dp)){Text("账号与隐私说明",style=MaterialTheme.typography.bodySmall)}

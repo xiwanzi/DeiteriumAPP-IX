@@ -16,6 +16,8 @@ var ErrGameVerificationRequired = errors.New("game verification required")
 type EmailVerification struct {
 	ID, TokenHash, CodeHash, Email, Purpose, UserID, GameID string
 	ExpiresAt                                               time.Time
+	ProfileChecked                                          bool
+	ResendAt                                                time.Time
 }
 
 func (s *Store) NewEmailVerification(ctx context.Context, v EmailVerification, code string, key []byte) error {
@@ -42,13 +44,17 @@ func (s *Store) NewEmailVerification(ctx context.Context, v EmailVerification, c
 	if count >= 20 {
 		return ErrRateLimited
 	}
-	if _, err = tx.ExecContext(ctx, "UPDATE game_verification_cooldowns SET expires_at=DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 60 SECOND) WHERE cooldown_key=?", cooldown); err != nil {
+	resendAt := v.ResendAt
+	if resendAt.IsZero() {
+		resendAt = time.Now().UTC().Add(60 * time.Second)
+	}
+	if _, err = tx.ExecContext(ctx, "UPDATE game_verification_cooldowns SET expires_at=? WHERE cooldown_key=?", resendAt, cooldown); err != nil {
 		return err
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE email_verifications SET state='EXPIRED' WHERE email=? AND purpose=? AND state='ACTIVE'", v.Email, v.Purpose); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO email_verifications(verification_id,token_hash,code_hash,email,purpose,user_id,game_id,state,expires_at,created_at) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,UTC_TIMESTAMP(6))`, v.ID, v.TokenHash, v.CodeHash, v.Email, v.Purpose, nullString(v.UserID), v.GameID, v.ExpiresAt); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO email_verifications(verification_id,token_hash,code_hash,email,purpose,user_id,game_id,state,expires_at,created_at,profile_checked) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,UTC_TIMESTAMP(6),?)`, v.ID, v.TokenHash, v.CodeHash, v.Email, v.Purpose, nullString(v.UserID), v.GameID, v.ExpiresAt, v.ProfileChecked); err != nil {
 		return err
 	}
 	payload := notify.VerificationMail{TemplateVersion: notify.VerificationTemplateVersion, Purpose: v.Purpose, GameID: v.GameID, Code: code}
@@ -80,7 +86,7 @@ func (s *Store) CheckEmailVerification(ctx context.Context, token, code, purpose
 	defer tx.Rollback()
 	var state string
 	var attempts int
-	err = tx.QueryRowContext(ctx, `SELECT verification_id,token_hash,code_hash,email,purpose,COALESCE(user_id,''),game_id,state,attempts,expires_at FROM email_verifications WHERE token_hash=? AND purpose=? FOR UPDATE`, token, purpose).Scan(&v.ID, &v.TokenHash, &v.CodeHash, &v.Email, &v.Purpose, &v.UserID, &v.GameID, &state, &attempts, &v.ExpiresAt)
+	err = tx.QueryRowContext(ctx, `SELECT verification_id,token_hash,code_hash,email,purpose,COALESCE(user_id,''),game_id,state,attempts,expires_at,profile_checked FROM email_verifications WHERE token_hash=? AND purpose=? FOR UPDATE`, token, purpose).Scan(&v.ID, &v.TokenHash, &v.CodeHash, &v.Email, &v.Purpose, &v.UserID, &v.GameID, &state, &attempts, &v.ExpiresAt, &v.ProfileChecked)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrVerification
 	}

@@ -18,6 +18,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.Buffer
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Isolated preferences and intercepted HTTP: no real account, OTP delivery or server writes. */
 object AuthRegistrationCheck {
@@ -29,17 +30,22 @@ object AuthRegistrationCheck {
             override fun getSharedPreferences(name:String,mode:Int)=super.getSharedPreferences("qa-auth-registration-$name",mode)
         }
         val sent=AtomicReference<JSONObject?>()
+        val attempts=AtomicInteger()
         try {
             val api=BackendApi(context)
             val client=api.http.newBuilder().addInterceptor{chain->
                 val request=chain.request()
+                var status=200
                 val data=if(request.url.encodedPath.endsWith("/account/registration-code")) {
                     val buffer=Buffer();request.body!!.writeTo(buffer)
                     sent.set(JSONObject(buffer.readUtf8()))
-                    JSONObject().put("verificationToken","fixture-verification").put("resendAfterSeconds",60)
+                    val attempt=attempts.incrementAndGet()
+                    Thread.sleep(2500)
+                    if(attempt==1){status=400;JSONObject().put("code","MINECRAFT_PLAYER_NOT_FOUND").put("message","未找到此正版账号 ID，请核对后重新获取验证码。")}
+                    else JSONObject().put("verificationToken","fixture-verification").put("resendAfterSeconds",58)
                 } else JSONObject()
-                Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).message("OK")
-                    .body(JSONObject().put("data",data).toString().toResponseBody("application/json".toMediaType())).build()
+                Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(status).message("fixture")
+                    .body(JSONObject().put(if(status==200)"data" else "error",data).toString().toResponseBody("application/json".toMediaType())).build()
             }.build()
             BackendApi::class.java.getDeclaredField("http").apply{isAccessible=true}.set(api,client)
             instance.set(null,api)
@@ -71,10 +77,19 @@ object AuthRegistrationCheck {
             input("游戏内 ID","NewPlayer")
             input("邮箱","newplayer@example.com")
             click("获取")
+            waitFor{named("60s")!=null||named("59s")!=null}
+            check(named("正在进入…")==null){"Code lookup blocked the form"}
+            input("设置密码（至少8位）","typing-while-querying")
+            waitFor{named("未找到此正版账号 ID，请核对后重新获取验证码。")!=null&&named("获取")!=null}
+            check(named("验证码邮件已排队，请查收邮箱")==null){"Failed ID reported mail delivery"}
+            click("获取")
             waitFor{sent.get()!=null&&named("验证码邮件已排队，请查收邮箱")!=null}
+            check(attempts.get()==2){"Retry or click guard failed"}
+            result.putString("immediate_countdown_failure_retry_and_editable_form","PASS")
             check(sent.get()!!.keys().asSequence().toSet()==setOf("gameId","email")){"Code request included password"}
             capture("registration-no-password")
             input("邮箱验证码","123456")
+            input("设置密码（至少8位）","")
             click("创建账号并继续")
             waitFor{named("密码需要 8–64 位")!=null}
             result.putString("code_without_password_and_register_validation","PASS")

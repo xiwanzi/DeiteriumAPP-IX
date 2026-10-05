@@ -1,5 +1,5 @@
 import launcherIcon from "./assets/launcher-icons/default.svg";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowRight,
   ArrowLeft,
@@ -39,6 +39,15 @@ export default function AuthScreen({
     [scene, setScene] = useState(0),
     [verification, setVerification] = useState(null),
     [success, setSuccess] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false), [resendAt, setResendAt] = useState(0), [remaining, setRemaining] = useState(0);
+  const codeRequest = useRef(0);
+  useEffect(() => {
+    const tick = () => setRemaining(Math.max(0, Math.ceil((resendAt - Date.now()) / 1000)));
+    tick(); const timer = setInterval(tick, 250);
+    return () => clearInterval(timer);
+  }, [resendAt]);
+  useEffect(() => () => { codeRequest.current++; }, []);
+  const invalidateCode = () => { codeRequest.current++; setCodeBusy(false); setResendAt(0); setRemaining(0); setVerification(null); setSuccess(""); setError(""); };
   useEffect(() => {
     document.title =
       (screen === "login"
@@ -53,6 +62,7 @@ export default function AuthScreen({
     ["plaza-sunset.png", "中心广场 · 每一次相遇"],
   ];
   const change = (s) => {
+    invalidateCode();
     setScreen(s);
     setVerification(null);
     setSuccess("");
@@ -61,7 +71,23 @@ export default function AuthScreen({
   };
   const submit = async (e) => {
     e.preventDefault();
-    if (busy) return;
+    if (busy || codeBusy || (!verification && resendAt > Date.now())) return;
+    if (screen !== "login" && !verification && onVerify) {
+      const requestId = ++codeRequest.current, requestedAt = Date.now();
+      const fields = Object.fromEntries(new FormData(e.currentTarget));
+      setCodeBusy(true); setResendAt(requestedAt + 60000); setRemaining(60); setError("");
+      try {
+        const result = await onVerify(screen, fields);
+        if (requestId !== codeRequest.current) return;
+        if (!result.data?.verificationToken) throw new Error("未取得验证码凭证，请稍后重试。");
+        setVerification(result.data);
+        setResendAt(Math.max(requestedAt + 60000, Date.now() + Math.max(1, Number(result.data.resendAfterSeconds) || 60) * 1000));
+        setSuccess(result.data.delivery === "EMAIL" || screen === "register" ? "验证码邮件已排队，请查收邮箱。" : "验证码已发送，请在游戏内查看。");
+      } catch (error) {
+        if (requestId === codeRequest.current) { setError(error.message || "连接暂时失败，请稍后重试"); setResendAt(0); setRemaining(0); }
+      } finally { if (requestId === codeRequest.current) setCodeBusy(false); }
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -73,11 +99,6 @@ export default function AuthScreen({
           await onComplete(screen, { ...f, verificationToken: verification.verificationToken });
           change("login");
           setSuccess(screen === "register" ? "账号已创建，请登录。" : "密码已重置，请使用新密码登录。");
-        } else if (onVerify) {
-          const result = await onVerify(screen, f);
-          if (!result.data?.verificationToken) throw new Error("未取得验证码凭证，请稍后重试。");
-          setVerification(result.data);
-          setSuccess(result.data.delivery === "EMAIL" || screen === "register" ? "验证码邮件已排队，请查收邮箱。" : "验证码已发送，请在游戏内查看。");
         }
         else
           throw new Error(
@@ -197,7 +218,7 @@ export default function AuthScreen({
                 {success || statusMessage}
               </div>
             )}
-            <form className="auth-form" onSubmit={submit}>
+            <form className="auth-form" onSubmit={submit} onChange={(e) => { if (screen !== "login" && ["gameId", "email"].includes(e.target.name)) invalidateCode(); }}>
               <div className="auth-input-group">
                 <label htmlFor="auth-account">
                   {screen === "register" ? "游戏 ID" : "邮箱 / 游戏 ID / QQ"}
@@ -286,9 +307,9 @@ export default function AuthScreen({
               <Button
                 type="submit"
                 className="full auth-submit"
-                disabled={busy}
+                disabled={busy || codeBusy || (!verification && remaining > 0)}
               >
-                {busy ? (
+                {!verification && remaining > 0 ? `${remaining} 秒后重发` : busy ? (
                   <>
                     <LoaderCircle className="spin" size={17} />
                     正在连接…
@@ -302,7 +323,7 @@ export default function AuthScreen({
                   </>
                 )}
               </Button>
-              {verification && <button type="button" className="text-button" disabled={busy} onClick={() => { setVerification(null); setSuccess(""); }}>修改信息或重新获取验证码</button>}
+              {verification && <button type="button" className="text-button" disabled={busy} onClick={invalidateCode}>修改信息或重新获取验证码</button>}
             </form>
             {screen === "login" && (
               <p className="auth-register">

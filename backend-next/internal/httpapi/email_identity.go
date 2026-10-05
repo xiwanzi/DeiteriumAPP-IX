@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"net/http"
 	"strings"
@@ -151,6 +152,7 @@ func (s *Server) emailRegistrationCode(w http.ResponseWriter, r *http.Request) {
 func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.EmailVerification) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
+	v.ResendAt = time.Now().UTC().Add(60 * time.Second)
 	if err := s.Store.ReserveVerificationIssue(ctx, s.remoteIP(r)); err != nil {
 		failError(w, r, err)
 		return
@@ -163,6 +165,13 @@ func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.
 	if !channel.Enabled || channel.Validate() != nil || len(s.Config.SMTPKey) != 32 {
 		failure(w, r, 503, "MAIL_NOT_READY", "验证码邮件服务暂不可用，请稍后重试。")
 		return
+	}
+	if v.Purpose == "register" {
+		if err = s.checkRegistrationProfile(ctx, v.GameID); err != nil {
+			registrationProfileFailure(w, r, err)
+			return
+		}
+		v.ProfileChecked = true
 	}
 	random, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
@@ -179,7 +188,7 @@ func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.
 		failError(w, r, err)
 		return
 	}
-	success(w, r, map[string]any{"verificationToken": token, "expiresAt": v.ExpiresAt, "resendAfterSeconds": 60, "delivery": "EMAIL"})
+	success(w, r, map[string]any{"verificationToken": token, "expiresAt": v.ExpiresAt, "resendAfterSeconds": max(1, int(math.Ceil(time.Until(v.ResendAt).Seconds()))), "delivery": "EMAIL"})
 }
 func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind string) {
 	if (kind == "web" && !s.origin(r)) || (kind == "app" && r.Header.Get("Origin") != "") {
@@ -208,13 +217,11 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 	}
 	// The verification record owns the requested ID. A public profile confirms
 	// existence only; game ownership remains a separate verification step.
-	if _, err = s.resolveAdmissionProfile(ctx, v.GameID); err != nil {
-		if errors.Is(err, errAdmissionPlayerMissing) || errors.Is(err, store.ErrSocialInvalid) {
-			failure(w, r, 400, "MINECRAFT_PLAYER_NOT_FOUND", "未找到此正版账号 ID，请核对 Minecraft Java 版玩家名后重新获取验证码。")
-		} else {
-			failure(w, r, 503, "MINECRAFT_LOOKUP_UNAVAILABLE", "正版账号 ID 查询服务暂不可用，请稍后重新点击注册。")
+	if !v.ProfileChecked {
+		if err = s.checkRegistrationProfile(ctx, v.GameID); err != nil {
+			registrationProfileFailure(w, r, err)
+			return
 		}
-		return
 	}
 	hash, err := s.Identity.HashPassword(ctx, in.Password)
 	if err != nil {
