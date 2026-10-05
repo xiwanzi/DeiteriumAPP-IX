@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,7 +23,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-class ApiFailure(val code: String, message: String, val status: Int = 0) : IOException(message)
+class ApiFailure(val code: String, message: String, val status: Int = 0, val retryAfterSeconds: Int = 0, val retryScope: String = "") : IOException(message)
 
 /** All asset and identity authority stays on the backend. No offline-success fallback. */
 class BackendApi internal constructor(context: Context, origin: String = BuildConfig.API_BASE_URL) {
@@ -40,6 +41,9 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     val displayName: String get() = user?.optString("displayName")?.takeIf{it.isNotBlank()} ?: userName
     val userName: String get() = user?.optString("gameId").orEmpty()
     val playerRef: String get() = user?.optString("playerRef").orEmpty()
+    // Keep only resend deadlines across password-sheet close/reopen, never codes or passwords.
+    internal val passwordCodeCooldowns = mutableStateMapOf<String, Pair<Long, Int>>()
+    internal var passwordCodeRequestId = 0
 
     private fun key(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -104,7 +108,8 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
                     if(response.code == 401 && authenticated) withContext(Dispatchers.Main) { if(token==requestToken)forgetSession() }
                     if(error?.optString("code")=="GAME_VERIFICATION_REQUIRED") withContext(Dispatchers.Main) { if(token==requestToken) { user=user?.let{JSONObject(it.toString()).put("gameVerified",false)};prefs.edit().putString("user",user.toString()).apply() } }
                     throw ApiFailure(error?.optString("code") ?: "HTTP_${response.code}",
-                        error?.optString("message")?.takeIf { it.isNotBlank() } ?: "服务暂不可用（${response.code}）", response.code)
+                        error?.optString("message")?.takeIf { it.isNotBlank() } ?: "服务暂不可用（${response.code}）", response.code,
+                        error?.optInt("retryAfterSeconds",0)?.takeIf{it>0} ?: response.header("Retry-After")?.toIntOrNull() ?: 0,error?.optString("retryScope").orEmpty())
                 }
                 val result=root?.optJSONObject("data") ?: root?.optJSONArray("data")?.let { JSONObject().put("items", it) }
                     ?: throw ApiFailure("INVALID_RESPONSE", "服务器响应格式不正确")

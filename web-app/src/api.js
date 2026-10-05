@@ -1,12 +1,13 @@
 import { readAiEvents } from "./ai-stream.js";
 import { redactErasedAccounts } from "./account-erasure.js";
 export class ApiError extends Error {
-  constructor(message, code = "REQUEST_FAILED", status = 0, retryAfter = 0) {
+  constructor(message, code = "REQUEST_FAILED", status = 0, retryAfter = 0, retryScope = "") {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.status = status;
     this.retryAfter = retryAfter;
+    this.retryScope = retryScope;
   }
 }
 export class DeuteriumClient {
@@ -111,6 +112,7 @@ export class DeuteriumClient {
         Number(
           err.retryAfterSeconds || response.headers.get("Retry-After") || 0,
         ),
+        err.retryScope || "",
       );
     }
     return redactErasedAccounts(value, this.erasedPlayerRefs);

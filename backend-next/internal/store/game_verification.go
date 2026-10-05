@@ -15,6 +15,15 @@ func (s *Store) ReserveVerificationIssue(ctx context.Context, ip string) error {
 	return s.reserveBudgets(ctx, map[string]int{Digest([]byte("verification-ip:" + ip)): 10})
 }
 
+func (s *Store) ReserveProfileLookup(ctx context.Context, ip string) error {
+	err := s.reserveBudgets(ctx, map[string]int{Digest([]byte("profile-lookup-ip:" + ip)): 30})
+	var limited *RateLimitError
+	if errors.As(err, &limited) {
+		limited.Scope = "SOURCE"
+	}
+	return err
+}
+
 type GameVerification struct {
 	ID, TokenHash, CodeHash, Purpose, PlayerUUID, GameID, QQ, UserID, NodeID, State string
 	ExpiresAt                                                                       time.Time

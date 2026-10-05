@@ -153,7 +153,8 @@ func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 	v.ResendAt = time.Now().UTC().Add(60 * time.Second)
-	if err := s.Store.ReserveVerificationIssue(ctx, s.remoteIP(r)); err != nil {
+	v.IssueIP = s.remoteIP(r)
+	if err := s.Store.CheckEmailAddress(ctx, v.Email); err != nil {
 		failError(w, r, err)
 		return
 	}
@@ -166,8 +167,12 @@ func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.
 		failure(w, r, 503, "MAIL_NOT_READY", "验证码邮件服务暂不可用，请稍后重试。")
 		return
 	}
+	if err = s.Store.CheckEmailIssueLimits(ctx, v.Email); err != nil {
+		failError(w, r, err)
+		return
+	}
 	if v.Purpose == "register" {
-		if err = s.checkRegistrationProfile(ctx, v.GameID); err != nil {
+		if err = s.checkRegistrationProfile(ctx, v.GameID, v.IssueIP); err != nil {
 			registrationProfileFailure(w, r, err)
 			return
 		}
@@ -218,7 +223,7 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 	// The verification record owns the requested ID. A public profile confirms
 	// existence only; game ownership remains a separate verification step.
 	if !v.ProfileChecked {
-		if err = s.checkRegistrationProfile(ctx, v.GameID); err != nil {
+		if err = s.checkRegistrationProfile(ctx, v.GameID, s.remoteIP(r)); err != nil {
 			registrationProfileFailure(w, r, err)
 			return
 		}
@@ -230,6 +235,10 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 	}
 	u, err := s.Store.RegisterEmailUser(ctx, v, hash)
 	if err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			failure(w, r, 409, "ACCOUNT_ALREADY_EXISTS", "该邮箱或正版账号 ID 已注册，请登录或找回密码。")
+			return
+		}
 		failError(w, r, err)
 		return
 	}
@@ -239,7 +248,7 @@ func (s *Server) newAccountSession(w http.ResponseWriter, r *http.Request, ctx c
 	token, csrf := identity.Secret(), identity.Secret()
 	expiry := time.Now().UTC().Add(7 * 24 * time.Hour)
 	if err := s.Store.CreateSession(ctx, u, store.Digest([]byte(token)), kind, csrf, expiry, ""); err != nil {
-		failError(w, r, err)
+		failure(w, r, 503, "ACCOUNT_CREATED_LOGIN_REQUIRED", "账号已创建，暂未完成登录。请使用刚才的邮箱和密码登录。")
 		return
 	}
 	if kind == "web" {

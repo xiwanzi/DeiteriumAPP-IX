@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -75,6 +76,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAdminAuditV2(mux)
 	s.registerAdminEmailV204(mux)
 	s.registerMailSupport(mux)
+	mux.HandleFunc("POST /api/v1/mail/aliyun/events", s.aliyunMailEvent)
 	s.registerAdminAccountsV206(mux)
 	s.registerAdminCommerceV204(mux)
 	s.registerLauncherIcons(mux)
@@ -144,6 +146,8 @@ func failError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	switch {
+	case errors.Is(err, store.ErrEmailAddressInvalid):
+		failure(w, r, 400, "EMAIL_ADDRESS_INVALID", "邮箱地址无效")
 	case errors.Is(err, store.ErrGameVerificationRequired):
 		failure(w, r, 403, "GAME_VERIFICATION_REQUIRED", "账号已创建，请先完成游戏身份验证。")
 	case errors.Is(err, store.ErrVerification):
@@ -153,8 +157,17 @@ func failError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, ErrForbidden):
 		failure(w, r, 403, "FORBIDDEN", "没有执行此操作的权限。")
 	case errors.Is(err, store.ErrRateLimited):
-		w.Header().Set("Retry-After", "60")
-		failure(w, r, 429, "RATE_LIMITED", "操作过于频繁，请稍后重试。")
+		retry := 60
+		var limited *store.RateLimitError
+		if errors.As(err, &limited) {
+			retry = limited.RetryAfterSeconds
+		}
+		w.Header().Set("Retry-After", strconv.Itoa(retry))
+		scope := ""
+		if limited != nil {
+			scope = limited.Scope
+		}
+		writeJSON(w, 429, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": "RATE_LIMITED", "message": fmt.Sprintf("操作过于频繁，请 %d 秒后再试。", retry), "retryAfterSeconds": retry, "retryScope": scope, "details": map[string]string{}}})
 	case errors.Is(err, identity.ErrBusy):
 		w.Header().Set("Retry-After", "1")
 		failure(w, r, 503, "SERVER_BUSY", "服务繁忙，请稍后重试。")
@@ -287,8 +300,13 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request, kind string) {
 			return
 		}
 		if errors.Is(err, store.ErrRateLimited) {
-			w.Header().Set("Retry-After", "900")
-			writeJSON(w, 429, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": "LOGIN_LOCKED", "message": "登录尝试过多，请稍后重试。", "details": map[string]string{}, "retryAfterSeconds": 900}})
+			retry := 900
+			var limited *store.RateLimitError
+			if errors.As(err, &limited) {
+				retry = limited.RetryAfterSeconds
+			}
+			w.Header().Set("Retry-After", strconv.Itoa(retry))
+			writeJSON(w, 429, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": "LOGIN_LOCKED", "message": fmt.Sprintf("登录尝试过多，请 %d 秒后再试。", retry), "details": map[string]string{}, "retryAfterSeconds": retry}})
 			return
 		}
 		failError(w, r, err)

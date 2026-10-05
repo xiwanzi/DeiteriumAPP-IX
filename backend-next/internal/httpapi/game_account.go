@@ -58,10 +58,6 @@ func (s *Server) passwordResetCode(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	if err := s.Store.ReserveVerificationIssue(ctx, s.remoteIP(r)); err != nil {
-		failError(w, r, err)
-		return
-	}
 	u, err := s.Store.UserByAlias(ctx, strings.ToLower(in.Account))
 	if err != nil || u.Status != "active" {
 		failure(w, r, 400, "ACCOUNT_NOT_AVAILABLE", "账号不存在或不可用。")
@@ -69,6 +65,10 @@ func (s *Server) passwordResetCode(w http.ResponseWriter, r *http.Request) {
 	}
 	if u.Email != "" {
 		s.issueEmailCode(w, r, store.EmailVerification{Email: u.Email, UserID: u.ID, Purpose: "password_reset"})
+		return
+	}
+	if err := s.Store.ReserveVerificationIssue(ctx, s.remoteIP(r)); err != nil {
+		failError(w, r, err)
 		return
 	}
 	p, err := s.Core.Player("", u.ServerUUID)

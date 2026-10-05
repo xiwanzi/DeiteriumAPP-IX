@@ -118,31 +118,39 @@ func (s *Store) ReserveIdentityLogin(ctx context.Context, key string) error {
 }
 
 func (s *Store) reserveBudgets(ctx context.Context, limits map[string]int) error {
-	keys := make([]string, 0, len(limits))
-	for key := range limits {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+	if err = s.reserveBudgetsTx(ctx, tx, limits); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *Store) reserveBudgetsTx(ctx context.Context, tx *sql.Tx, limits map[string]int) error {
+	keys := make([]string, 0, len(limits))
+	for key := range limits {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
 	for _, key := range keys {
-		_, err = tx.ExecContext(ctx, `INSERT INTO auth_budgets VALUES (?,1,DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 15 MINUTE))
+		_, err := tx.ExecContext(ctx, `INSERT INTO auth_budgets VALUES (?,1,DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 15 MINUTE))
 		 ON DUPLICATE KEY UPDATE attempts=IF(expires_at<=UTC_TIMESTAMP(6),1,attempts+1),expires_at=IF(expires_at<=UTC_TIMESTAMP(6),DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 15 MINUTE),expires_at)`, key)
 		if err != nil {
 			return err
 		}
 		var n int
-		if err = tx.QueryRowContext(ctx, "SELECT attempts FROM auth_budgets WHERE budget_key=?", key).Scan(&n); err != nil {
+		var expires time.Time
+		if err = tx.QueryRowContext(ctx, "SELECT attempts,expires_at FROM auth_budgets WHERE budget_key=?", key).Scan(&n, &expires); err != nil {
 			return err
 		}
 		if n > limits[key] {
-			return ErrRateLimited
+			return rateLimitedUntil(expires)
 		}
 	}
-	return tx.Commit()
+	return nil
 }
 
 func (s *Store) ClearAccountBudget(ctx context.Context, key string) error {
