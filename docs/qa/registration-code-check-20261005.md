@@ -1,6 +1,6 @@
 # 获取验证码时校验与倒计时验收
 
-2026-10-05，分支 `xiwanzi/registration-code-check`，工作区 `.worktrees/registration-profile-check`。本节为本机候选记录，发布状态以后续上线记录为准。
+2026-10-05，分支 `xiwanzi/registration-code-check`，工作区 `.worktrees/registration-profile-check`。本节保留本机候选验收证据；已按用户授权完成推送、合并、部署及线上验收，见[上线记录](../deployment/registration-code-check-live-20261005.md)。
 
 ## 行为
 

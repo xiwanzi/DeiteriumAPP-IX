@@ -1,0 +1,86 @@
+{
+  "registrationChecks": [
+    {
+      "entry": "official",
+      "status": 400,
+      "code": "MINECRAFT_PLAYER_NOT_FOUND",
+      "verificationCreated": false,
+      "mailQueued": false
+    },
+    {
+      "entry": "help",
+      "status": 400,
+      "code": "MINECRAFT_PLAYER_NOT_FOUND",
+      "verificationCreated": false,
+      "mailQueued": false
+    },
+    {
+      "entry": "community",
+      "status": 400,
+      "code": "MINECRAFT_PLAYER_NOT_FOUND",
+      "verificationCreated": false,
+      "mailQueued": false
+    },
+    {
+      "entry": "app",
+      "status": 400,
+      "code": "MINECRAFT_PLAYER_NOT_FOUND",
+      "verificationCreated": false,
+      "mailQueued": false
+    }
+  ],
+  "sameIDDifferentEmail": [
+    {
+      "seconds": 0.062,
+      "expiresAt": "2026-10-05 03:58:42.236220",
+      "mailQueued": false
+    },
+    {
+      "seconds": 0.061,
+      "expiresAt": "2026-10-05 03:58:42.236220",
+      "mailQueued": false
+    }
+  ],
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": true
+    }
+  ],
+  "temporarySessionRevoked": true,
+  "publicFiles": [
+    {
+      "url": "https://www.deuteriumix.com/account-auth.js",
+      "sha256": "5308e6868adbb66d938d488dd1f1beb9f5782a4c15eb0da674b77b927b9fe0d5"
+    },
+    {
+      "url": "https://help.deuteriumix.com/account-auth.js",
+      "sha256": "5308e6868adbb66d938d488dd1f1beb9f5782a4c15eb0da674b77b927b9fe0d5"
+    }
+  ],
+  "apkVerified": true,
+  "appVersion": "2.0.16",
+  "webVersion": "2.0.26",
+  "updateChecks": [
+    {
+      "versionCode": 21500,
+      "apkUpdate": 21600
+    },
+    {
+      "versionCode": 21600,
+      "apkUpdate": null
+    }
+  ]
+}

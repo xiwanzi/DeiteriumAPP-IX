@@ -1,0 +1,22 @@
+{
+  "appVersion": "2.0.16",
+  "versionCode": 21600,
+  "webVersion": "2.0.26",
+  "files": [
+    {
+      "name": "Deuterium-2.0.16-21600-test.apk",
+      "sizeBytes": 8891918,
+      "sha256": "9fc40a4c1bc9ab1ea8fe3535f2ce4b0f6578041f44396b192dafee7a0a319713"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 21590176,
+      "sha256": "845228c4a1dff325931616d2483d45db0b28d1c3773279c3c8433c92c56a9160"
+    },
+    {
+      "name": "web-2.0.26.zip",
+      "sizeBytes": 33740482,
+      "sha256": "12ba2fa12aac271dffda4a98b05c0800be6428ea204272db4d4707a70ac0e074"
+    }
+  ]
+}
