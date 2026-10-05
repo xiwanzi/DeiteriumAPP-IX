@@ -1,3 +1,5 @@
+2026-10-05：**注册正版 ID 校验配套 Go 已于 11:26 上线**（PR #68，源码 `6271f468b718`）。官网、Help、社区和 App 的最终注册提交统一查询正版玩家档案，不存在则拒绝注册，查询故障提示重试；验证码不消耗，独立游戏身份验证保留。App 2.0.15 / Web 2.0.25 保持；45 账号、27 订单、5 委托、12 工单、1 注销记录及四节点保留。维护 `.worktrees/registration-profile-check` / `xiwanzi/registration-profile-check`，见[上线记录](deployment/registration-profile-check-live-20261005.md)。下方为较早记录。
+
 2026-10-04：**工单归并修复 Web 2.0.25 与配套 Go 已于 20:52 上线**（PR #66，源码 `54c389cc9a43`）。无引用头回复通过正文编号与同邮箱接续原工单；3 组误拆记录已合并，完整历史保留，已关闭默认移出全部但可搜索，待处理优先。App 2.0.15 保持；41 账号、27 订单、5 委托、1 条已有注销记录保留，工单 15→12。维护 `.worktrees/mail-identity-support` / `xiwanzi/support-threading-fix`，见[上线记录](docs/deployment/support-threading-2.0.25-live.md)。下方为较早记录。
 
 # 当前项目状态
@@ -114,4 +116,3 @@
 已存在的用户订单、委托、转账与图片是真实业务，不清空恢复演示。新增迁移必须保留既有 SQL 摘要；版本号、Git 提交、APK/JAR 摘要和线上状态分别记录。外部组件以 [固定版本清单](../components.lock.json) 为准，不跟随默认分支自动升级。
 
 旧入口中的 VIII、Ktor、未实现网站/后端和“付款时序未改”等说明已归入历史语境；不再作为当前结论。
-2026-10-05：**注册正版 ID 校验配套 Go 已于 11:26 上线**（PR #68，源码 `6271f468b718`）。官网、Help、社区和 App 的最终注册提交统一查询正版玩家档案，不存在则拒绝注册，查询故障提示重试；验证码不消耗，独立游戏身份验证保留。App 2.0.15 / Web 2.0.25 保持；45 账号、27 订单、5 委托、12 工单、1 注销记录及四节点保留。维护 `.worktrees/registration-profile-check` / `xiwanzi/registration-profile-check`，见[上线记录](deployment/registration-profile-check-live-20261005.md)。下方为较早记录。
