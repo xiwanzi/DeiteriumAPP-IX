@@ -206,6 +206,16 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 		failError(w, r, err)
 		return
 	}
+	// The verification record owns the requested ID. A public profile confirms
+	// existence only; game ownership remains a separate verification step.
+	if _, err = s.resolveAdmissionProfile(ctx, v.GameID); err != nil {
+		if errors.Is(err, errAdmissionPlayerMissing) || errors.Is(err, store.ErrSocialInvalid) {
+			failure(w, r, 400, "MINECRAFT_PLAYER_NOT_FOUND", "未找到此正版账号 ID，请核对 Minecraft Java 版玩家名后重新获取验证码。")
+		} else {
+			failure(w, r, 503, "MINECRAFT_LOOKUP_UNAVAILABLE", "正版账号 ID 查询服务暂不可用，请稍后重新点击注册。")
+		}
+		return
+	}
 	hash, err := s.Identity.HashPassword(ctx, in.Password)
 	if err != nil {
 		failError(w, r, err)
