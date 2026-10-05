@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-05：**App 2.0.16 更新清单已修正**。最低适用版本从 0 改为 1，解决旧 App 的“更新版本无效”；APK、签名及其余 16 个发布条目保留。服务 active / ready，20004/21300/21500 可获取 21600，21600 无重复更新。发布时必须核对客户端解析约束，见[修复记录](docs/deployment/v216-update-manifest-fix-20261005.md)。下方为较早记录。
+
 2026-10-05：**App 2.0.16（21600）、Web 2.0.26 与配套 Go 已上线**（PR #71，源码 `4971fd7b61fd`）。正版 ID 校验移至获取验证码，点击立即倒计时，失败恢复按钮且不发邮件；成功结果缓存 10 分钟，换邮箱复用，最后注册不再查询。官网/Help 同步更新；46 账号、27 订单、5 委托、12 工单、1 注销记录及四节点保留。维护 `.worktrees/registration-profile-check` / `xiwanzi/registration-code-check`，见[上线记录](docs/deployment/registration-code-check-live-20261005.md)。下方为较早记录。
 
 2026-10-05：**注册正版 ID 校验配套 Go 已于 11:26 上线**（PR #68，源码 `6271f468b718`）。官网、Help、社区和 App 的最终注册提交统一查询正版玩家档案，不存在则拒绝注册，查询故障提示重试；验证码不消耗，独立游戏身份验证保留。App 2.0.15 / Web 2.0.25 保持；45 账号、27 订单、5 委托、12 工单、1 注销记录及四节点保留。维护 `.worktrees/registration-profile-check` / `xiwanzi/registration-profile-check`，见[上线记录](docs/deployment/registration-profile-check-live-20261005.md)。下方为较早记录。
