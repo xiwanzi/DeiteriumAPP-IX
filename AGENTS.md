@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-05：**App 2.0.17（21700）、Web 2.0.27、官网/客服中心账号脚本与配套 Go 已于 13:32 上线**（PR #74，源码 `0248496b034a`）。修复验证码额度/冷却、App 弹窗重开及晚到响应，统一四端文案；SMTP 明确无效地址冻结 24 小时，EventBridge 异步回执仍待配置。50 账号、27 订单、5 委托、12 工单、1 注销记录保留，四节点在线。维护 `.worktrees/registration-profile-check` / `xiwanzi/auth-flow-audit`，见[上线记录](docs/deployment/auth-flow-2.0.17-live.md)。下方为较早记录。
+
 2026-10-05：**App 2.0.16 更新清单已修正**。最低适用版本从 0 改为 1，解决旧 App 的“更新版本无效”；APK、签名及其余 16 个发布条目保留。服务 active / ready，20004/21300/21500 可获取 21600，21600 无重复更新。发布时必须核对客户端解析约束，见[修复记录](docs/deployment/v216-update-manifest-fix-20261005.md)。下方为较早记录。
 
 2026-10-05：**App 2.0.16（21600）、Web 2.0.26 与配套 Go 已上线**（PR #71，源码 `4971fd7b61fd`）。正版 ID 校验移至获取验证码，点击立即倒计时，失败恢复按钮且不发邮件；成功结果缓存 10 分钟，换邮箱复用，最后注册不再查询。官网/Help 同步更新；46 账号、27 订单、5 委托、12 工单、1 注销记录及四节点保留。维护 `.worktrees/registration-profile-check` / `xiwanzi/registration-code-check`，见[上线记录](docs/deployment/registration-code-check-live-20261005.md)。下方为较早记录。

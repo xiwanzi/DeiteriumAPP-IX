@@ -1,0 +1,97 @@
+{
+  "sourceCommit": "0248496b034aa7fdfd0977da5c57b514f30b8e5c",
+  "appVersion": "2.0.17",
+  "versionCode": 21700,
+  "webVersion": "2.0.27",
+  "smtpInvalidAddressFreeze": true,
+  "asyncDMEventsConfigured": false,
+  "blockedEmailChecks": [
+    {
+      "entry": "official",
+      "status": 400,
+      "code": "EMAIL_ADDRESS_INVALID",
+      "message": "邮箱地址无效"
+    },
+    {
+      "entry": "help",
+      "status": 400,
+      "code": "EMAIL_ADDRESS_INVALID",
+      "message": "邮箱地址无效"
+    },
+    {
+      "entry": "community",
+      "status": 400,
+      "code": "EMAIL_ADDRESS_INVALID",
+      "message": "邮箱地址无效"
+    },
+    {
+      "entry": "app",
+      "status": 400,
+      "code": "EMAIL_ADDRESS_INVALID",
+      "message": "邮箱地址无效"
+    }
+  ],
+  "temporaryProbeRemoved": true,
+  "noProbeMailOrAccountCreated": true,
+  "publicFiles": [
+    {
+      "url": "https://www.deuteriumix.com/account-auth.js",
+      "sha256": "7af8b1639e3f45ee1dd645a3bac1e98560a351f084b1ac1b3ad18c36ee368947"
+    },
+    {
+      "url": "https://www.deuteriumix.com/account-session.js",
+      "sha256": "4964688325ebb83115b5b027079f6c285fabb1954880b50d468933503b1bd96a"
+    },
+    {
+      "url": "https://help.deuteriumix.com/account-auth.js",
+      "sha256": "7af8b1639e3f45ee1dd645a3bac1e98560a351f084b1ac1b3ad18c36ee368947"
+    },
+    {
+      "url": "https://help.deuteriumix.com/account-session.js",
+      "sha256": "4964688325ebb83115b5b027079f6c285fabb1954880b50d468933503b1bd96a"
+    }
+  ],
+  "apkVerified": true,
+  "updateChecks": [
+    {
+      "versionCode": 20004,
+      "apkUpdate": 21700
+    },
+    {
+      "versionCode": 21300,
+      "apkUpdate": 21700
+    },
+    {
+      "versionCode": 21500,
+      "apkUpdate": 21700
+    },
+    {
+      "versionCode": 21600,
+      "apkUpdate": 21700
+    },
+    {
+      "versionCode": 21700,
+      "apkUpdate": null
+    }
+  ],
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": true
+    }
+  ],
+  "temporarySessionRevoked": true,
+  "oldReleaseEntriesPreserved": 17
+}
