@@ -13,7 +13,9 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun RefinedField(value:String,onValueChange:(String)->Unit,modifier:Modifier=Modifier,label:(@Composable ()->Unit)?=null,
@@ -38,11 +40,11 @@ fun RefinedField(value:TextFieldValue,onValueChange:(TextFieldValue)->Unit,modif
     val focused by source.collectIsFocusedAsState()
     val colors=MaterialTheme.colorScheme
     Column(modifier) {
-        if(label!=null) CompositionLocalProvider(LocalContentColor provides colors.onSurfaceVariant) {
-            ProvideTextStyle(MaterialTheme.typography.labelMedium) { Box(Modifier.clickable(indication=null,interactionSource=source){focus.requestFocus()}.padding(start=3.dp,bottom=8.dp)){label()} }
+        if(label!=null) CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
+            ProvideTextStyle(MaterialTheme.typography.labelMedium.copy(fontSize=14.sp,lineHeight=20.sp,fontWeight=FontWeight.Medium)) { Box(Modifier.clickable(indication=null,interactionSource=source){focus.requestFocus()}.padding(start=3.dp,bottom=8.dp)){label()} }
         }
-        BasicTextField(value,onValueChange,Modifier.fillMaxWidth().focusRequester(focus).background(colors.surfaceVariant.copy(alpha=.58f),shape)
-            .border(if(focused || isError) 1.dp else 0.dp,if(isError)colors.error else if(focused)colors.primary.copy(alpha=.45f) else Color.Transparent,shape),
+        BasicTextField(value,onValueChange,Modifier.fillMaxWidth().focusRequester(focus).background(colors.surfaceVariant,shape)
+            .border(if(focused || isError) 1.5.dp else 1.dp,if(isError)colors.error else if(focused)colors.primary else colors.onSurfaceVariant.copy(alpha=.45f),shape),
             textStyle=MaterialTheme.typography.bodyLarge.copy(color=colors.onSurface),singleLine=singleLine,minLines=minLines,maxLines=maxLines,
             visualTransformation=visualTransformation,keyboardOptions=keyboardOptions,keyboardActions=keyboardActions,
             interactionSource=source,cursorBrush=SolidColor(colors.primary),decorationBox={inner->
