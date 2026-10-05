@@ -1,0 +1,35 @@
+{
+  "releaseId": "deuterium-2.0.16-21600-test",
+  "versionCode": 21600,
+  "minAppVersionCode": 1,
+  "maxAppVersionCode": 21599,
+  "apkUnchanged": true,
+  "otherEntriesUnchanged": true,
+  "entryCount": 17,
+  "backup": "/var/backups/deuterium/v216-update-min-version-20261005",
+  "service": "active",
+  "updateChecks": [
+    {
+      "installedVersionCode": 20004,
+      "updateVersionCode": 21600,
+      "minAppVersionCode": 1
+    },
+    {
+      "installedVersionCode": 21300,
+      "updateVersionCode": 21600,
+      "minAppVersionCode": 1
+    },
+    {
+      "installedVersionCode": 21500,
+      "updateVersionCode": 21600,
+      "minAppVersionCode": 1
+    },
+    {
+      "installedVersionCode": 21600,
+      "updateVersionCode": null,
+      "minAppVersionCode": null
+    }
+  ],
+  "appConstraintsChecked": true,
+  "ready": true
+}
