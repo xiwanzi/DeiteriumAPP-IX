@@ -1,0 +1,39 @@
+{
+  "deployed_at": "2026-10-05T11:47:57.571148+08:00",
+  "sourceCommit": "4971fd7b61fdb404d216ec8b18c2ebeb96febd94",
+  "mergeCommit": "d2f6453c5cc0133ffbf715b9bec554c90a5075ff",
+  "previous": {
+    "go": "/opt/deuterium/releases/registration-profile-6271f468b718",
+    "web": "/var/www/deuterium/releases/web-2.0.25-54c389cc9a43/dist",
+    "official": "/var/www/deuterium-official/releases/official-support-email-6d89628feb79",
+    "help": "/var/www/deuterium-help/releases/help-email-c8590b10cfc6"
+  },
+  "current": {
+    "go": "/opt/deuterium/releases/registration-code-4971fd7b61fd",
+    "web": "/var/www/deuterium/releases/web-2.0.26-4971fd7b61fd/dist",
+    "official": "/var/www/deuterium-official/releases/official-code-4971fd7b61fd",
+    "help": "/var/www/deuterium-help/releases/help-code-4971fd7b61fd"
+  },
+  "before": {
+    "accounts": 46,
+    "orders": 27,
+    "commissions": 5,
+    "tickets": 12,
+    "deletions": 1
+  },
+  "after": {
+    "accounts": 46,
+    "orders": 27,
+    "commissions": 5,
+    "tickets": 12,
+    "deletions": 1
+  },
+  "backup": "/var/backups/deuterium/registration-code-20261005-4971fd7b61fd",
+  "appVersion": "2.0.16",
+  "versionCode": 21600,
+  "webVersion": "2.0.26",
+  "oldAppReleasesPreserved": 16,
+  "configuration_unchanged": true,
+  "addedMigration": "034_registration_profile_checks.sql",
+  "ready": true
+}
