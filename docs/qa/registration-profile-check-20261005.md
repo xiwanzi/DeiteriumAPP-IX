@@ -1,6 +1,6 @@
 # 注册正版 ID 校验本机验收
 
-日期：2026-10-05。工作区 `.worktrees/registration-profile-check`，分支 `xiwanzi/registration-profile-check`，基于 `origin/main` 的 `3a4eaad`。本记录是本机候选验收，尚未推送或部署。
+日期：2026-10-05。工作区 `.worktrees/registration-profile-check`，分支 `xiwanzi/registration-profile-check`，基于 `origin/main` 的 `3a4eaad`。本记录保留本机候选验收证据；后续已按用户授权推送、合并并于 11:26 上线，见[上线记录](../deployment/registration-profile-check-live-20261005.md)。
 
 ## 实现及覆盖入口
 
@@ -27,4 +27,4 @@ Go 1.27.1 / 本机 MariaDB 11.8.8，集成测试仅创建随机测试库并自�
 
 ## 发布范围与限制
 
-待获本轮推送/发布授权后，仅发布配套 Go；保留现有官网、Help、社区、App、邮件配置与游戏插件。无数据库结构或业务数据变更。发布时备份当前 Go 程序并检查服务就绪、Core 连接及配置保持；失败切回原程序，不恢复数据库。玩家名存在不等于账号持有证明，独立游戏验证及通行审批均保留。
+已获本轮推送/发布授权并仅发布配套 Go；保留现有官网、Help、社区、App、邮件配置与游戏插件。无数据库结构或业务数据变更。发布时已备份当前 Go 程序与数据库，服务就绪、四节点连接及配置保持检查通过；失败回退只切回原程序，不恢复数据库。玩家名存在不等于账号持有证明，独立游戏验证及通行审批均保留。
