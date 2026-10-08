@@ -35,11 +35,14 @@ val ShopCatalog=mutableStateListOf<ShopProduct>()
 
 @Composable
 internal fun ProductPoster(product:ShopProduct,modifier:Modifier,onClick:()->Unit) {
-    val displayPrice=product.offerPreview?.finalPrice ?: product.price
-    val ink=if(product.darkArt)Color.White else Color(0xFF1D1D1F)
+    val offer=rememberShopOffer(product)
+    val displayPrice=offer?.finalPrice ?: product.price
+    val night=MaterialTheme.colorScheme.background.red<.5f
+    val ink=if(product.darkArt||night)Color.White else Color(0xFF1D1D1F)
     Box(modifier.clip(RoundedCornerShape(28.dp)).background(if(product.darkArt)Color.Black else Color.White).clickable(onClick=onClick)){
         if(product.poster)ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxSize(),scale=ContentScale.Crop) else ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(220.dp),scale=ContentScale.Crop)
-        Column(Modifier.padding(25.dp)){Text(product.category.uppercase(),fontSize=11.sp,fontWeight=FontWeight.SemiBold,letterSpacing=1.sp,color=ink.copy(alpha=.65f));Text(product.name,Modifier.padding(top=9.dp),fontSize=25.sp,lineHeight=31.sp,fontWeight=FontWeight.Bold,color=ink);Text(product.subtitle,Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium,color=ink);Text(shopMoney(displayPrice)+(if(product.offerPreview!=null)" 券后"else""),Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodySmall,color=ink.copy(alpha=.75f));if(product.originalPrice>displayPrice)Text(shopMoney(product.originalPrice),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=ink.copy(alpha=.5f))}
+        if(night&&!product.darkArt)Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Black.copy(alpha=.78f),Color.Black.copy(alpha=.3f),Color.Transparent))))
+        Column(Modifier.padding(25.dp)){Text(product.category.uppercase(),fontSize=11.sp,fontWeight=FontWeight.SemiBold,letterSpacing=1.sp,color=ink.copy(alpha=.65f));Text(product.name,Modifier.padding(top=9.dp),fontSize=25.sp,lineHeight=31.sp,fontWeight=FontWeight.Bold,color=ink);Text(product.subtitle,Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium,color=ink);Text(shopMoney(displayPrice)+(if(offer!=null)" 券后"else""),Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodySmall,color=LocalShopPriceColor.current ?: if(product.originalPrice>displayPrice)ShopDiscountPink else ink);if(product.originalPrice>displayPrice)Text(shopMoney(product.originalPrice),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=ink.copy(alpha=.5f))}
     }
 }
 @Composable
@@ -61,7 +64,7 @@ fun ProductPage(product:ShopProduct,state:LabState,topInset:Dp,onBag:()->Unit,on
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface.copy(alpha=.97f)) {
             Row(Modifier.navigationBarsPadding().padding(18.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)) {
-                Column(Modifier.weight(1f)){Text(shopMoney(product.price*quantity),style=MaterialTheme.typography.titleLarge);Text(if(added&&product.id in state.cart)"已加入购物袋" else "商品金额",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                Column(Modifier.weight(1f)){Text(shopMoney(product.price*quantity),style=MaterialTheme.typography.titleLarge,color=shopPriceColor(product.originalPrice>product.price));Text(if(added&&product.id in state.cart)"已加入购物袋" else "商品金额",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                 MotionButton({if(added&&product.id in state.cart)onBag() else if(!adding)scope.launch{adding=true;if(state.commerce.network?.setCart(product.id,((state.cart[product.id] ?: 0)+quantity).coerceAtMost(product.limit))==true){added=true;onAdded(product,origin)};adding=false}},Modifier.height(50.dp).onGloballyPositioned{origin=it.positionInRoot()+Offset(it.size.width/2f,it.size.height/2f)},enabled=!adding&&product.stock>0){Text(if(product.stock<=0)"已售罄" else if(adding)"正在加入…" else if(added&&product.id in state.cart)"查看购物袋" else "加入购物袋")}
             }
         }

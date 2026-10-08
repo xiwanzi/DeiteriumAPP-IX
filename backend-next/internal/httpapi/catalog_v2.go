@@ -168,6 +168,17 @@ func (s *Server) catalogRenderV2(w http.ResponseWriter, r *http.Request, user st
 		catalogFailV2(w, r, e)
 		return
 	}
+	if d.Kind == "product" && !management {
+		offers, err := s.Store.CatalogOfferPreviewsV220(r.Context(), user, []store.CatalogRecordV2{d})
+		if err != nil {
+			catalogFailV2(w, r, err)
+			return
+		}
+		if offer, ok := offers[d.ID]; ok {
+			view["offerPreview"] = offer
+		}
+		w.Header().Set("Cache-Control", "private, no-store")
+	}
 	catalogSuccessV2(w, r, status, view)
 }
 
@@ -326,6 +337,20 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 		if e != nil {
 			catalogFailV2(w, r, e)
 			return
+		}
+		if kind == "product" && !management {
+			offers, err := s.Store.CatalogOfferPreviewsV220(r.Context(), u.User.ID, rows)
+			if err != nil {
+				catalogFailV2(w, r, err)
+				return
+			}
+			for _, raw := range views {
+				view := raw.(map[string]any)
+				if offer, ok := offers[view["productId"].(string)]; ok {
+					view["offerPreview"] = offer
+				}
+			}
+			w.Header().Set("Cache-Control", "private, no-store")
 		}
 		var cursor any
 		if more {

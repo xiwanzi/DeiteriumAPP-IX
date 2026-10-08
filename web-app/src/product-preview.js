@@ -1,6 +1,6 @@
 // Android Storefront.kt and ProductMedia.kt: logical dp, centered ContentScale.Crop.
 export function productImageFrame(mode, phoneWidth = 393) {
-  return { poster: [308, 405], grid: [(phoneWidth - 52) / 2, 170], detail: [phoneWidth - 40, 260], bag: [80, 100] }[mode];
+  return { poster: [308, 405], grid: [(phoneWidth - 19) / 2, (phoneWidth - 19) / 2], detail: [phoneWidth - 40, 260], bag: [80, 100] }[mode];
 }
 
 export function centeredCrop(imageWidth, imageHeight, frameWidth, frameHeight) {

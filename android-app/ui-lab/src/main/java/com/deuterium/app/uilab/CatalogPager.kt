@@ -38,6 +38,8 @@ internal class CatalogPager<T>(
         read(append=false)
     }
 
+    internal fun invalidate(){loadedAt=0}
+
     suspend fun more() {
         if(loading||!hasMore||cursor==null)return
         read(append=true)

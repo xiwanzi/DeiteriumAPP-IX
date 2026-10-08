@@ -195,7 +195,18 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             .put("delivery",JSONObject().put("method",methodCode(method)).put("location",location).put("projectName",project)),idempotencyKey=quoteKey).also{checkoutSummary(it)}
     }.getOrElse{report(it);null}
     private fun date(value:JSONObject,key:String):LocalDateTime?=value.optString(key).takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).atZone(ZoneId.systemDefault()).toLocalDateTime()}
+    private fun invalidateRedeemedCoupon(id:String) {
+        for(page in listOf(storePage,searchPage,recommendedPage)) {
+            if(page.items.any{it.offerPreview?.couponId==id}) {
+                page.items.indices.forEach{i->if(page.items[i].offerPreview?.couponId==id)page.items[i]=page.items[i].copy(offerPreview=null)}
+                page.invalidate()
+            }
+        }
+        ShopCatalog.indices.forEach{i->if(ShopCatalog[i].offerPreview?.couponId==id)ShopCatalog[i]=ShopCatalog[i].copy(offerPreview=null)}
+    }
     private fun putOrder(value:JSONObject):String {
+        if(value.optJSONObject("buyer")?.optString("playerRef")==api.playerRef&&value.optString("fundsStatus") in setOf("PAID","HELD","SETTLED"))value.optJSONObject("coupon")?.optString("couponId")?.takeIf{it.isNotBlank()}?.let(::invalidateRedeemedCoupon)
+
         val id=value.getString("orderId");if(value.optBoolean("hiddenFromHistory")){state.commerce.orders.removeAll{it.id==id};return id};val refund=value.optJSONObject("refund");val delivery=value.getJSONObject("delivery");val seller=value.getJSONObject("seller");val buyer=value.getJSONObject("buyer")
         val items=value.getJSONArray("items");val lines=(0 until items.length()).map{index->val item=items.getJSONObject(index);val photos=item.array("photoAssetIds").strings().map{"asset:$it"};OrderLine(item.getString("productId"),item.getString("title"),item.optString("subtitle"),apiCents(item.getString("unitPrice")),item.getInt("quantity"),image=if(value.optString("orderType")=="AI_SUBSCRIPTION")R.drawable.xiaoxiang_avatar else 0,imageUri=photos.firstOrNull(),imageUris=photos)}
         val amounts=checkoutAmounts(value,lines.fold(0L){sum,line->Math.addExact(sum,line.total)},"amount")

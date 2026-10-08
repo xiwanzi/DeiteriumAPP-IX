@@ -5,7 +5,7 @@ import { credit } from "./format.js";
 import { salePrice } from "./promotions.js";
 import { centeredCrop, productImageFrame, defaultMailBody } from "./product-preview.js";
 
-const modes = [["detail", "商品详情"], ["poster", "推荐海报"], ["grid", "双列卡片"], ["bag", "购物袋"]];
+const modes = [["detail", "商品详情"], ["poster", "首页大卡"], ["grid", "双列卡片"], ["bag", "购物袋"]];
 export default function ProductPreview({ value, images, included, brand, category, template }) {
   const [view, setView] = useState("phone"), [mode, setMode] = useState("detail"), [phoneWidth, setPhoneWidth] = useState(393), [dark, setDark] = useState(false), [imageIndex, setImageIndex] = useState(0), [dimensions, setDimensions] = useState({}), [failed, setFailed] = useState({});
   const selectedIndex = mode === "detail" ? Math.min(imageIndex, Math.max(0, images.length - 1)) : 0;
@@ -27,17 +27,17 @@ export default function ProductPreview({ value, images, included, brand, categor
           {photo("phone-detail-image", { width: frame[0], height: frame[1], margin: "0 20px", borderRadius: 24 })}
           <div className="phone-dots">{images.map((image, i) => <button type="button" aria-label={`预览第 ${i + 1} 张图片`} aria-pressed={i === selectedIndex} key={image.assetId} onClick={() => setImageIndex(i)} />)}</div>
           <div className="phone-copy"><h3>商品详情</h3><p>{value.description || "填写详细介绍，查看文字在手机上的排版。"}</p></div>
-          <div className="phone-package"><h3>包装内容</h3>{included.split("\n").filter(Boolean).map((line, i) => <p key={i}>{line}</p>)}<p>单价 <strong>{price} 信用点</strong></p></div>
+          <div className="phone-package"><h3>包装内容</h3>{included.split("\n").filter(Boolean).map((line, i) => <p key={i}>{line}</p>)}<p>单价 <strong>¥{price}</strong></p></div>
           <div className="phone-copy"><h3>{value.estimatedDelivery}</h3><p>{value.deliverySummary}</p></div>
-        </> : mode === "poster" ? <><div className="phone-copy"><h2>新品推荐</h2></div><div className={`phone-poster ${value.posterTone === "DARK" ? "dark-art" : ""}`} style={{ width: 308, height: 405 }}>{photo()}<div className="poster-copy"><small>{category || "分类"}</small><h2>{title}</h2><p>{value.subtitle || "一句话简介"}</p><small>{price} 信用点</small></div></div><p className="phone-caption">推荐海报的文字叠在封面上，请留出清晰的文字区域。</p></> : mode === "grid" ? <><div className="phone-copy"><h2>探索更多</h2></div><div className="phone-grid"><article>{photo("", { height: 170 })}<div><h3>{title}</h3><p>{price} 信用点</p></div></article><div className="phone-next-card">相邻商品</div></div></> : <><div className="phone-bag-item">{photo("", { width: 80, height: 100, borderRadius: 15 })}<div><h3>{title}</h3><p>{price} 信用点</p><span>−　1　＋</span></div></div><div className="phone-copy"><p><Check size={16} /> 通过游戏内邮箱交付</p></div></>}
+        </> : mode === "poster" ? <><div className="phone-copy"><h2>首页大卡</h2></div><div className={`phone-poster ${value.posterTone === "DARK" ? "dark-art" : ""}`} style={{ width: 308, height: 405 }}>{photo()}<div className="poster-copy"><small>{category || "分类"}</small><h2>{title}</h2><p>{value.subtitle || "一句话简介"}</p><small>¥{price}</small></div></div><p className="phone-caption">推荐海报的文字叠在封面上，请留出清晰的文字区域。</p></> : mode === "grid" ? <><div className="phone-grid" style={{"--shop-price": (value.discountRate || 10000) < 10000 ? "#ed6697" : "var(--phone-ink)"}}><article>{photo("", { height: frame[1] })}<div><h3>{title}</h3><p>¥{price}</p></div></article><div className="phone-next-card">相邻商品</div></div></> : <><div className="phone-bag-item">{photo("", { width: 80, height: 100, borderRadius: 15 })}<div><h3>{title}</h3><p>¥{price}</p><span>−　1　＋</span></div></div><div className="phone-copy"><p><Check size={16} /> 通过游戏内邮箱交付</p></div></>}
       </div></div>
-      <div className="phone-bottom"><div><strong>{price}</strong><small>信用点</small></div><span>{mode === "bag" ? "去结算" : "加入购物袋"}</span></div>
+      <div className="phone-bottom"><div><strong>¥{price}</strong></div><span>{mode === "bag" ? "去结算" : "加入购物袋"}</span></div>
     </div>
     </div><section hidden={view !== "crop"} className="crop-inspector" aria-label="图片裁切尺寸">
       <div className="preview-heading"><strong>实际裁切范围</strong><span>{frame[0]} × {frame[1]} dp</span></div>
       {mode === "detail" && images.length > 1 && <select aria-label="选择预览图片" value={selectedIndex} onChange={(e) => setImageIndex(Number(e.target.value))}>{images.map((image, i) => <option key={image.assetId} value={i}>第 {i + 1} 张{!i ? " · 封面" : ""}</option>)}</select>}
       {src && size && !failed[src] && crop ? <><div className="crop-original" style={{ aspectRatio: size[0] / size[1], width: Math.min(300, 300 * size[0] / size[1]) }}><img src={src} alt="原图与居中裁切区域" /><div className="crop-boundary" style={{ left: `${crop.x / size[0] * 100}%`, top: `${crop.y / size[1] * 100}%`, width: `${crop.width / size[0] * 100}%`, height: `${crop.height / size[1] * 100}%` }} /></div><dl className="crop-dimensions"><div><dt>原图</dt><dd>{size[0]} × {size[1]} px</dd></div><div><dt>保留区域（约）</dt><dd>{Math.round(crop.width)} × {Math.round(crop.height)} px</dd></div><div><dt>左 / 上裁去（约）</dt><dd>{Math.round(crop.x)} / {Math.round(crop.y)} px</dd></div><div><dt>画面保留</dt><dd>{Math.round(crop.retained * 100)}%</dd></div></dl></> : <p className="muted">{src ? "等待图片加载后计算像素尺寸。" : "上传封面后显示原图与裁切区域。"}</p>}
-      <p className="preview-note">框内是 App 居中裁切后可见的内容，暗色部分会被裁掉。原图保持完整。dp 是布局尺寸，px 是原图像素；实际设备字体及显示缩放可能不同。</p>
+      <p className="preview-note">详情与首页大卡采用居中裁切；商品流图片会在 App 内识别统一背景并适配主体，本页显示原图边界参考。原图保持完整。dp 是布局尺寸，px 是原图像素；实际设备字体及显示缩放可能不同。</p>
     </section>
     <section hidden={view !== "mail"} className="mail-preview"><div className="preview-heading"><div><Mail size={17} /><strong>游戏内邮件预览</strong></div></div><small>Deuterium 官方商城 → 购买玩家</small><h3>{value.mailTitle?.trim() || "官方商城订单"}</h3><p>{value.mailBody?.trim() || defaultMailBody}</p><div className="mail-attachments"><ShoppingBag size={17} /><span>{template?.summary || "选择交付模板后显示附件摘要"}</span></div><small>模拟单种商品购买。多商品订单统一使用“官方商城订单”标题，正文按商品分节合并。</small></section>
   </aside>;

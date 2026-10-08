@@ -39,6 +39,7 @@ class ShopDemoActivity:ComponentActivity() {
         }
         setContent {
             val prefs=remember{getSharedPreferences("demo-appearance",MODE_PRIVATE)}
+            var priceColor by rememberSaveable{mutableIntStateOf(prefs.getInt("priceColor",0).coerceIn(0,4))}
             var theme by rememberSaveable{mutableIntStateOf(prefs.getInt("theme",0))}
             var motion by rememberSaveable{mutableStateOf(prefs.getBoolean("motion",true))}
             var glass by rememberSaveable{mutableStateOf(prefs.getBoolean("glass",true))}
@@ -51,12 +52,15 @@ class ShopDemoActivity:ComponentActivity() {
                 SideEffect{window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(background.toArgb()));WindowCompat.getInsetsController(window,window.decorView).apply{isAppearanceLightStatusBars=!dark;isAppearanceLightNavigationBars=!dark}}
                 val current=state
                 if(current==null)Box(Modifier.fillMaxSize().background(background),contentAlignment=Alignment.Center){Text("正在准备离线商城…",color=MaterialTheme.colorScheme.onSurface)}
-                else CompositionLocalProvider(LocalHeaderGlassParameters provides materials.header,LocalOverlayGlassEnabled provides overlayGlass,LocalContentColor provides MaterialTheme.colorScheme.onSurface,LocalDeviceTilt provides rememberDeviceTilt(tilt&&motion&&(glass||overlayGlass))) {
+                else Box(Modifier.fillMaxSize()) {
+                  CompositionLocalProvider(LocalShopPriceColor provides demoPriceColors[priceColor].second,LocalHeaderGlassParameters provides materials.header,LocalOverlayGlassEnabled provides overlayGlass,LocalContentColor provides MaterialTheme.colorScheme.onSurface,LocalDeviceTilt provides rememberDeviceTilt(tilt&&motion&&(glass||overlayGlass))) {
                     LabApp(theme,motion,glass,materials,null,"DemoPlayer",
                         {theme=it;prefs.edit().putInt("theme",it).apply()},
                         {motion=it;prefs.edit().putBoolean("motion",it).apply()},
                         {glass=it;prefs.edit().putBoolean("glass",it).apply()},
                         {materials=it},{},{},emptySet(),{},tilt,{tilt=it},overlayGlass,{overlayGlass=it},null,{},session,providedState=current)
+                  }
+                  DemoPricePalette(priceColor,{priceColor=it;prefs.edit().putInt("priceColor",it).apply()},Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(bottom=96.dp,end=12.dp))
                 }
             }
         }

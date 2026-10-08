@@ -71,8 +71,8 @@
 .preview-tabs button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue); font-weight: 650; }
 .preview-tools { display: flex; gap: 10px; justify-content: space-between; align-items: center; margin: 12px 0 20px; }
 .preview-tools select { padding: 8px 10px; font-size: 12px; background: transparent; width: auto; border-radius: 8px; }
-.preview-phone { width: 336px; margin: 0 auto 24px; padding: 8px; border-radius: 38px; background: #20232a; box-shadow: 0 12px 28px #11182720, inset 0 0 0 2px #555b64; color: #24272d; --phone-bg: #f6f7f9; --phone-surface: #fff; --phone-muted: #68717f; }
-.preview-phone.preview-dark { color: #f0f2f5; --phone-bg: #171b22; --phone-surface: #262c35; --phone-muted: #b4bbc6; }
+.preview-phone { width: 336px; margin: 0 auto 24px; padding: 8px; border-radius: 38px; background: #20232a; box-shadow: 0 12px 28px #11182720, inset 0 0 0 2px #555b64; color: #24272d; --phone-ink: #151518; --phone-bg: #f6f7f9; --phone-surface: #fff; --phone-muted: #68717f; }
+.preview-phone.preview-dark { color: #f0f2f5; --phone-ink: #f5f5f7; --phone-bg: #171b22; --phone-surface: #262c35; --phone-muted: #b4bbc6; }
 .phone-status { height: 37px; background: var(--phone-bg); border-radius: 30px 30px 0 0; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 10px; font-weight: 650; }
 .phone-island { width: 70px; height: 19px; background: #101216; border-radius: 14px; }
 .phone-viewport { width: 320px; overflow: hidden; background: var(--phone-bg); }
@@ -102,9 +102,9 @@
 .poster-copy { position: relative; padding: 25px; overflow-wrap: anywhere; }.poster-copy small { font-size: 11px; }
 .poster-copy h2 { font-size: 25px; line-height: 31px; margin: 9px 0 7px; }.poster-copy p { font-size: 14px; line-height: 1.5; margin: 7px 0; }
 .phone-caption { padding: 20px; font-size: 13px; color: var(--phone-muted); }
-.phone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; align-items: start; }
-.phone-grid article { background: var(--phone-surface); border-radius: 24px; overflow: hidden; }.phone-grid article > div:last-child { padding: 16px; }
-.phone-grid h3 { font-size: 16px; line-height: 24px; min-height: 48px; overflow-wrap: anywhere; }.phone-grid p { font-size: 12px; margin: 6px 0 0; color: var(--phone-muted); }
+.phone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding: 0 6px; align-items: start; }
+.phone-grid article { background: var(--phone-surface); border-radius: 8px; overflow: hidden; }.phone-grid article > div:last-child { padding: 6px 8px; }
+.phone-grid h3 { font-size: 14px; line-height: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.phone-grid p { font-size: 20px; margin: 6px 0 0; color: var(--shop-price,var(--phone-ink)); }
 .phone-next-card { border: 1px dashed #a7aeb944; border-radius: 24px; height: 270px; display: grid; place-items: center; font-size: 12px; color: var(--phone-muted); }
 .phone-bag-item { display: flex; gap: 14px; align-items: center; padding: 20px; }.phone-bag-item > .preview-photo { flex-shrink: 0; }.phone-bag-item h3 { font-size: 16px; overflow-wrap: anywhere; }.phone-bag-item p { font-size: 12px; color: var(--phone-muted); }
 .crop-inspector, .mail-preview { padding: 18px; border: 1px solid var(--border); background: var(--surface); border-radius: 13px; margin-top: 18px; }

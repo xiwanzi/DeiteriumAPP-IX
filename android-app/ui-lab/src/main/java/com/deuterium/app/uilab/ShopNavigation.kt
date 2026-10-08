@@ -132,10 +132,10 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
     var adding by remember(product.id){mutableStateOf(false)}
     var added by remember(product.id){mutableStateOf(false)}
     val scope=rememberCoroutineScope()
-    val offer=product.offerPreview
+    val offer=rememberShopOffer(product)
     var couponDetails by remember(product.id){mutableStateOf(false)}
     val promotion=product.originalPrice>product.price
-    val promoColor=if(MaterialTheme.colorScheme.background.red<.5f)Color(0xFFFFAA83)else Color(0xFFBF492D)
+    val promoColor=ShopDiscountPink
     LaunchedEffect(added){if(added){delay(1000);added=false}}
     Surface(onClick=onClick,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.surface) {
         Column {
@@ -166,8 +166,8 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
     if(couponDetails&&offer!=null)IosDialog({couponDetails=false},{Text("已为你优选 ${offer.couponName}")},{Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
         Text(offer.condition)
         Text(if(offer.stack)"可与商品促销同享"else"与商品促销自动择优")
-        Text("单件券后 ${shopMoney(offer.finalPrice)}",fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.primary)
-        Text("按当前可用券比较后选择。多件商品以整单结算规则为准。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("单件券后 ${shopMoney(offer.finalPrice)}",fontWeight=FontWeight.SemiBold,color=shopPriceColor(true))
+        Text("按当前可用券比较后选择。单件金额为预估，优惠有效性与实付以结算为准。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }},{PlainButton({couponDetails=false}){Text("知道了")}})
 
 }
@@ -175,7 +175,7 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
 @Composable
 private fun CompactShopPrice(amount:Long,modifier:Modifier=Modifier,label:String="") {
     val measurer=rememberTextMeasurer();val density=LocalDensity.current
-    val primary=MaterialTheme.colorScheme.primary;val muted=MaterialTheme.colorScheme.onSurfaceVariant
+    val primary=shopPriceColor(label.isNotEmpty());val muted=primary
     val style=MaterialTheme.typography.bodyMedium.copy(lineHeight=24.sp,fontFeatureSettings="tnum")
     fun text(scale:Float)=buildAnnotatedString {
         withStyle(SpanStyle(fontSize=(20*scale).sp,fontWeight=FontWeight.SemiBold,color=primary)){append(shopMoney(amount))}
