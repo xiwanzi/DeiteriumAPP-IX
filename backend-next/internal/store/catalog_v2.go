@@ -221,6 +221,21 @@ func (s *Store) catalogBind(ctx context.Context, tx *sql.Tx, d CatalogRecordV2, 
 }
 func catalogReferences(ctx context.Context, tx *sql.Tx, kind, storeID string, body CatalogObjectV2) error {
 	refs := map[string][]string{}
+	if kind == "category" {
+		// Serialize hierarchy edits for a store so two concurrent moves cannot form a cycle.
+		if _, e := catalogRecordTx(ctx, tx, storeID, "store", true); e != nil {
+			return e
+		}
+		if parent := catalogString(body, "parentCategoryId"); parent != "" {
+			d, e := catalogRecordTx(ctx, tx, parent, "category", true)
+			if e != nil {
+				return e
+			}
+			if d.StoreID != storeID || d.State != "ACTIVE" || catalogString(d.Body, "parentCategoryId") != "" {
+				return catalogError(422, "INVALID_CATEGORY_PARENT", "请选择本店有效的一级分类。")
+			}
+		}
+	}
 	if kind == "product" {
 		refs["brand"] = []string{catalogString(body, "brandId")}
 		refs["category"] = []string{catalogString(body, "categoryId")}
@@ -376,6 +391,18 @@ func (s *Store) CatalogEditV2(ctx context.Context, user, id, kind, key string, e
 		}
 		if republish && d.State != "UNLISTED" {
 			return nil, catalogError(409, "INVALID_STATE_TRANSITION", "仅下架商品可以重新发布。")
+		}
+		if kind == "category" && catalogString(content, "parentCategoryId") != "" {
+			if _, e := catalogRecordTx(ctx, tx, d.StoreID, "store", true); e != nil {
+				return nil, e
+			}
+			var children int
+			if e := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM catalog_records_v2 WHERE kind='category' AND store_id=? AND state<>'DELETED' AND JSON_UNQUOTE(JSON_EXTRACT(body,'$.parentCategoryId'))=? FOR UPDATE", d.StoreID, d.ID).Scan(&children); e != nil {
+				return nil, e
+			}
+			if catalogString(content, "parentCategoryId") == d.ID || children > 0 {
+				return nil, catalogError(422, "INVALID_CATEGORY_PARENT", "包含子分类的一级分类不能移入其他分类。")
+			}
 		}
 		if e = catalogReferences(ctx, tx, kind, d.StoreID, content); e != nil {
 			return nil, e
@@ -554,10 +581,10 @@ func (s *Store) CatalogGetRecordV2(ctx context.Context, user, id, kind string, m
 }
 
 type CatalogFilterV2 struct {
-	Kind, StoreID, BrandID, CategoryID, SellerRef, Query, State string
-	Management                                                  bool
-	Limit                                                       int
-	Before                                                      int64
+	Kind, StoreID, BrandID, CategoryID, SellerRef, Query, State, Badge, CategoryGroup string
+	Management                                                                        bool
+	Limit                                                                             int
+	Before                                                                            int64
 }
 
 func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV2) ([]CatalogRecordV2, error) {
@@ -604,20 +631,39 @@ func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV
 		args = append(args, f.BrandID)
 	}
 	if f.CategoryID != "" {
-		q += " AND category_ref=?"
-		args = append(args, f.CategoryID)
+		if f.Kind == "product" {
+			q += " AND (category_ref=? OR category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c WHERE c.kind='category' AND c.state='ACTIVE' AND JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId'))=?))"
+			args = append(args, f.CategoryID, f.CategoryID)
+		} else {
+			q += " AND category_ref=?"
+			args = append(args, f.CategoryID)
+		}
+	}
+	if f.CategoryGroup != "" && f.Kind == "product" {
+		q += " AND category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c LEFT JOIN catalog_records_v2 p ON p.resource_id=JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId')) AND p.kind='category' AND p.state='ACTIVE' WHERE c.kind='category' AND c.state='ACTIVE' AND ((c.title=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId')),'') IN ('','null')) OR p.title=?))"
+		args = append(args, f.CategoryGroup, f.CategoryGroup)
 	}
 	if f.SellerRef != "" {
 		q += " AND owner_id IN (SELECT id FROM identities WHERE player_ref=?)"
 		args = append(args, f.SellerRef)
+	}
+	if f.Badge != "" && f.Kind == "product" {
+		column := "published_body"
+		if f.Management {
+			column = "body"
+		}
+		q += " AND JSON_CONTAINS(JSON_EXTRACT(" + column + ",'$.badges'),JSON_QUOTE(?))"
+		args = append(args, f.Badge)
 	}
 	if f.Query != "" {
 		contentColumn := "body"
 		if f.Kind == "product" && !f.Management {
 			contentColumn = "published_body"
 		}
-		q += " AND (LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.title')),title)))>0 OR LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.subtitle')),'')))>0 OR (kind='product' AND brand_ref IN (SELECT b.resource_id FROM catalog_records_v2 b WHERE b.kind='brand' AND LOCATE(?,LOWER(b.title))>0)) OR (kind='listing' AND owner_id IN (SELECT id FROM identities WHERE LOCATE(?,LOWER(game_id))>0)) OR (kind='product' AND category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c WHERE c.kind='category' AND LOCATE(?,LOWER(c.title))>0)))"
-		args = append(args, strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query))
+		q += " AND (LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.title')),title)))>0 OR LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.subtitle')),'')))>0 OR (kind='product' AND brand_ref IN (SELECT b.resource_id FROM catalog_records_v2 b WHERE b.kind='brand' AND LOCATE(?,LOWER(b.title))>0)) OR (kind='listing' AND owner_id IN (SELECT id FROM identities WHERE LOCATE(?,LOWER(game_id))>0)) OR (kind='product' AND category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c WHERE c.kind='category' AND LOCATE(?,LOWER(CONCAT(c.title,' ',COALESCE((SELECT p.title FROM catalog_records_v2 p WHERE p.kind='category' AND p.state='ACTIVE' AND p.resource_id=JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId'))),''))))>0)))"
+		// Badges are searchable too; explicit badge filters below remain exact matches.
+		q = strings.TrimSuffix(q, ")") + " OR (kind='product' AND JSON_CONTAINS(JSON_EXTRACT(" + contentColumn + ",'$.badges'),JSON_QUOTE(?))))"
+		args = append(args, strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), f.Query)
 	}
 	q += " ORDER BY sequence_id DESC LIMIT ?"
 	args = append(args, f.Limit)
@@ -692,6 +738,20 @@ func (s *Store) CatalogViewV2(ctx context.Context, viewer string, d CatalogRecor
 		out["categoryId"] = d.ID
 	case "homepage":
 		out["storeId"] = d.StoreID
+		banners := []any{}
+		sections, _ := d.Body["sections"].([]any)
+		for _, raw := range sections {
+			section, ok := catalogObject(raw)
+			if !ok || section["layout"] != "BANNER" {
+				continue
+			}
+			asset, e := s.catalogAsset(ctx, "STORE_HOMEPAGE", d.ID, catalogString(section, "bannerAssetId"))
+			if e != nil {
+				return nil, e
+			}
+			banners = append(banners, map[string]any{"sectionId": section["sectionId"], "title": section["title"], "image": asset, "sortOrder": section["sortOrder"]})
+		}
+		out["banners"] = banners
 	case "product":
 		var published any
 		if d.Published != nil {

@@ -34,54 +34,7 @@ import androidx.compose.ui.unit.*
 val ShopCatalog=mutableStateListOf<ShopProduct>()
 
 @Composable
-fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String) {
-    var category by rememberSaveable { mutableStateOf("") }
-    val network=state.commerce.network
-    val page=network?.storePage
-    val scope=rememberCoroutineScope()
-    val listState=rememberLazyListState();val posterState=rememberLazyListState()
-    val images=AppImages.get(LocalContext.current)
-    LaunchedEffect(category,query){network?.refreshStore(query,category)}
-    val products=page?.items?.toList().orEmpty()
-    val categories=network?.shopCategories.orEmpty()
-    val rows=remember(products){products.chunked(2)}
-    val rowEnds=remember(rows){rows.mapIndexed{index,row->"shop-row:${row.first().id}" to (index*2+row.size-1)}.toMap()}
-    val lastVisible by remember(rowEnds){derivedStateOf{
-        maxOf(listState.layoutInfo.visibleItemsInfo.mapNotNull{rowEnds[it.key]}.maxOrNull() ?: -1,
-            if(listState.layoutInfo.visibleItemsInfo.any{it.key=="shop-posters"})posterState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 else -1)
-    }}
-    val loadMore=products.isNotEmpty()&&lastVisible>=products.size-12&&page?.hasMore==true&&!page.loading&&page.error==null
-    LaunchedEffect(loadMore){if(loadMore)scope.launch{page?.more()}}
-    LaunchedEffect(products,images.epoch){
-        snapshotFlow{lastVisible}.distinctUntilChanged().collectLatest{last->
-            images.prefetch(products.drop((last+1).coerceAtLeast(0)).take(24).mapNotNull{it.photos.firstOrNull()})
-        }
-    }
-    LazyColumn(state=listState,contentPadding=PaddingValues(top=topInset,bottom=115.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {
-        item { Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            ChoiceChip(category.isBlank(),{category=""},{Text("全部")})
-            categories.forEach{(id,label)->ChoiceChip(category==id,{category=if(category==id)"" else id},{Text(label)})}
-        } }
-        if(products.isEmpty()&&page?.loading!=true&&page?.error==null)item{Text(if(query.isBlank())"暂无上架商品" else "未找到相关商品",Modifier.padding(28.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        if(products.isNotEmpty()) {
-            item { Text(if(query.isBlank())"新品推荐" else "搜索结果",Modifier.padding(horizontal=24.dp),style=MaterialTheme.typography.titleLarge) }
-            item(key="shop-posters") { LazyRow(state=posterState,contentPadding=PaddingValues(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)){items(products,key={it.id}){ProductPoster(it,Modifier.width(308.dp).height(405.dp)){onProduct(it.id)}}} }
-            item { Text("探索更多",Modifier.padding(horizontal=24.dp,vertical=6.dp),style=MaterialTheme.typography.titleLarge) }
-            items(rows,key={"shop-row:${it.first().id}"}){row->Row(Modifier.padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                row.forEach{product->Surface(onClick={onProduct(product.id)},modifier=Modifier.weight(1f),shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface){Column{
-                    ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().height(170.dp),scale=ContentScale.Crop)
-                    Column(Modifier.padding(16.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium,minLines=2);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))}
-                }}}
-                if(row.size==1)Spacer(Modifier.weight(1f))
-            }}
-        }
-        page?.error?.let{error->item{Column(Modifier.padding(horizontal=24.dp)){Text(error,color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{page.retry()}}){Text("重试")}}}}
-        if(page?.loading==true)item{Text("正在加载商品…",Modifier.padding(24.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
-        else if(page?.hasMore==true&&page.error==null)item{PlainButton({scope.launch{page.more()}}){Text("加载更多")}}
-    }
-}
-@Composable
-private fun ProductPoster(product:ShopProduct,modifier:Modifier,onClick:()->Unit) {
+internal fun ProductPoster(product:ShopProduct,modifier:Modifier,onClick:()->Unit) {
     val ink=if(product.darkArt)Color.White else Color(0xFF1D1D1F)
     Box(modifier.clip(RoundedCornerShape(28.dp)).background(if(product.darkArt)Color.Black else Color.White).clickable(onClick=onClick)){
         if(product.poster)ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxSize(),scale=ContentScale.Crop) else ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(220.dp),scale=ContentScale.Crop)

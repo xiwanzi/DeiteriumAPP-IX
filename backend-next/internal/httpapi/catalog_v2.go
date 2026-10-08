@@ -271,7 +271,7 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 		if storeID == "" {
 			storeID = q.Get("storeId")
 		}
-		f := store.CatalogFilterV2{Kind: kind, StoreID: storeID, BrandID: q.Get("brandId"), CategoryID: q.Get("categoryId"), SellerRef: q.Get("sellerPlayerRef"), Query: q.Get("q"), Management: management, Limit: limit + 1}
+		f := store.CatalogFilterV2{Kind: kind, StoreID: storeID, BrandID: q.Get("brandId"), CategoryID: q.Get("categoryId"), SellerRef: q.Get("sellerPlayerRef"), Query: q.Get("q"), Badge: q.Get("badge"), CategoryGroup: q.Get("categoryGroup"), Management: management, Limit: limit + 1}
 		if kind == "listing" {
 			f.CategoryID = q.Get("categoryCode")
 			if f.CategoryID != "" && !catalogAllowedCategoryV2(f.CategoryID) {
@@ -303,11 +303,11 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 				return
 			}
 		}
-		if utf8.RuneCountInString(f.Query) > 80 {
+		if utf8.RuneCountInString(f.Query) > 80 || utf8.RuneCountInString(f.Badge) > 20 || utf8.RuneCountInString(f.CategoryGroup) > 40 || (f.Badge != "" && kind != "product") {
 			catalogFailV2(w, r, bridge.ErrProtocol)
 			return
 		}
-		scope := r.URL.Path + "|" + f.StoreID + "|" + f.BrandID + "|" + f.CategoryID + "|" + f.SellerRef + "|" + f.Query + "|" + f.State + "|" + u.User.ID
+		scope := r.URL.Path + "|" + f.StoreID + "|" + f.BrandID + "|" + f.CategoryID + "|" + f.SellerRef + "|" + f.Query + "|" + f.Badge + "|" + f.CategoryGroup + "|" + f.State + "|" + u.User.ID
 		f.Before, e = store.CatalogParseCursorV2(scope, q.Get("cursor"))
 		if e != nil {
 			catalogFailV2(w, r, e)

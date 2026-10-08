@@ -36,7 +36,7 @@ func validateProductMail(content CatalogObjectV2) error {
 // Read only published content. The result is persisted in the order's existing
 // mailboxPlan before any funds operation, so retries never re-read new drafts.
 func productMailText(products map[string]CatalogRecordV2, quantities map[string]int64, orderNo string) (string, string, error) {
-	title, body := "官方商城订单 "+orderNo, defaultProductMailBody
+	title, body := "官方商城订单", defaultProductMailBody
 	keys := commerceSortedKeysV2(quantities)
 	custom := false
 	for _, id := range keys {

@@ -12,7 +12,7 @@ import { ProductDiscountFields, ProductLimitFields } from "./ProductPromotionFie
 const onlyChoice = (values, key) => values.filter((v) => v.active).length === 1 ? values.find((v) => v.active)[key] : "";
 export default function ProductEditor({ client, storeId, initial, brands, categories, templates, onSaved }) {
   const d = initial.draft || {}, templateRef = d.deliveryTemplateRef || onlyChoice(templates, "templateRef"), template = templates.find((t) => t.templateRef === templateRef);
-  const [value, setValue] = useState({ title: d.title || "", subtitle: d.subtitle || "", description: d.description || "", brandId: d.brandId || onlyChoice(brands, "brandId"), categoryId: d.categoryId || onlyChoice(categories, "categoryId"), price: d.price || "", discountRate: d.discountRate || 10000, purchaseLimits: d.purchaseLimits || {}, deliveryCredits: d.deliveryCredits || 0, deliveryTemplateRef: templateRef, deliverySummary: d.deliverySummary || "通过游戏内邮箱领取", estimatedDelivery: d.estimatedDelivery || "付款后自动发放，以游戏内邮箱为准", inventoryPolicy: d.inventoryPolicy || "FINITE", stock: d.stock ?? 1, limitPerOrder: d.limitPerOrder || 1, posterTone: d.posterTone || "LIGHT", accentColor: d.accentColor || "#4C78BD", sortOrder: d.sortOrder || 0, mailTitle: d.mailTitle || "", mailBody: d.mailBody || "" }),
+  const [value, setValue] = useState({ title: d.title || "", subtitle: d.subtitle || "", description: d.description || "", brandId: d.brandId || onlyChoice(brands, "brandId"), categoryId: d.categoryId || onlyChoice(categories, "categoryId"), price: d.price || "", discountRate: d.discountRate || 10000, purchaseLimits: d.purchaseLimits || {}, deliveryCredits: d.deliveryCredits || 0, deliveryTemplateRef: templateRef, deliverySummary: d.deliverySummary || "通过游戏内邮箱领取", estimatedDelivery: d.estimatedDelivery || "付款后自动发放，以游戏内邮箱为准", inventoryPolicy: d.inventoryPolicy || "FINITE", stock: d.stock ?? 1, limitPerOrder: d.limitPerOrder || 1, posterTone: d.posterTone || "LIGHT", accentColor: d.accentColor || "#4C78BD", sortOrder: d.sortOrder || 0, mailTitle: d.mailTitle || "", mailBody: d.mailBody || "", badges: d.badges || [] }),
     [included, setIncluded] = useState(d.includedItems?.join("\n") || template?.summary || ""), [images, setImages] = useState(() => (initial.draftImages || (d.galleryAssetIds || []).map((assetId) => initial.published?.images?.find((a) => a.assetId === assetId) || { assetId })).map((asset, index) => ({ ...asset, altText: d.galleryAltTexts?.[index] ?? asset.altText ?? "" }))), [busy, setBusy] = useState(false), [error, setError] = useState(""), [saved, setSaved] = useState(false);
   const requests = useRef(new Map()), savedDraft = useRef(null), lastProduct = useRef(initial);
   const editorValue = { value, included, images: images.map((image) => [image.assetId, image.altText]) };
@@ -26,7 +26,7 @@ export default function ProductEditor({ client, storeId, initial, brands, catego
       if (!value.deliveryTemplateRef) throw new Error("请选择游戏内邮箱交付模板。");
       const mailError = mailContentError(value.mailTitle, value.mailBody); if (mailError) throw new Error(mailError);
       const price = String(value.price).trim(); if (!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(price) || /^0(?:\.0{1,2})?$/.test(price) || price.length > 20) throw new Error("请输入大于 0 的售价，最多两位小数。");
-      const content = { ...value, price, coverAssetId: images[0].assetId, galleryAssetIds: images.map((a) => a.assetId), galleryAltTexts: images.map((a) => a.altText || value.title), contentBlocks: d.contentBlocks || [], includedItems: included.split("\n").map((s) => s.trim()).filter(Boolean), badges: d.badges || [] };
+      const content = { ...value, price, coverAssetId: images[0].assetId, galleryAssetIds: images.map((a) => a.assetId), galleryAltTexts: images.map((a) => a.altText || value.title), contentBlocks: d.contentBlocks || [], includedItems: included.split("\n").map((s) => s.trim()).filter(Boolean), badges: value.badges };
       const fingerprint = JSON.stringify(content);
       let product = savedDraft.current?.fingerprint === fingerprint ? savedDraft.current.product : null;
       if (!product) {
@@ -60,13 +60,14 @@ export default function ProductEditor({ client, storeId, initial, brands, catego
       </section>
       <section className="editor-section"><div className="editor-section-title"><span><Mail size={17} /></span><h3>游戏内邮件</h3></div>
         <p className="muted">设置玩家购买后在游戏邮箱看到的内容。留空使用默认文案，保存并发布后对新订单生效。</p>
-        {field("mailTitle", "邮件标题", { maxLength: 80, placeholder: "官方商城订单 D…", hint: `${Array.from(value.mailTitle).length} / 80 字；最多 240 字节` })}
+        {field("mailTitle", "邮件标题", { maxLength: 80, placeholder: "官方商城订单", hint: `${Array.from(value.mailTitle).length} / 80 字；最多 240 字节` })}
         <Field label="邮件正文" hint={`${Array.from(value.mailBody).length} / 1000 字；最多 3000 字节。按纯文本发送，可换行。`}><textarea rows={5} maxLength={1000} value={value.mailBody} onChange={(e) => setValue({ ...value, mailBody: e.target.value })} placeholder="感谢支持！你的物资已经送达，请在允许领取的服务器打开邮箱。" /></Field>
         <p className="preview-note">右侧可查看单商品邮件效果。多商品合并购买时，正文按商品分节保留；内容过长会在结算前提示分开购买。</p>
       </section>
       <section className="editor-section"><div className="editor-section-title"><span>3</span><h3>购买限制</h3></div><ProductLimitFields value={value} setValue={setValue} /></section>
       <details className="editor-section"><summary>更多设置 · 库存方式与展示</summary><div className="form-grid">
         <Field label="库存方式"><select value={value.inventoryPolicy} onChange={(e) => setValue({ ...value, inventoryPolicy: e.target.value })}><option value="FINITE">有限库存</option><option value="UNLIMITED">不限库存</option></select></Field>
+        <div className="field"><label><input type="checkbox" checked={value.badges.includes("新品推荐")} disabled={!value.badges.includes("新品推荐") && value.badges.length >= 4} onChange={e => setValue({ ...value, badges: e.target.checked ? [...value.badges, "新品推荐"] : value.badges.filter(b => b !== "新品推荐") })} /> 新品推荐</label><p className="muted">勾选后发布商品，即可进入首页新品推荐。最多保留 4 个标签。</p>{value.badges.filter(b => b !== "新品推荐").map(b => <small key={b}>{b} </small>)}</div>
         {field("sortOrder", "展示排序", { type: "number", required: true, min: 0, max: 99999 })}
         <Field label="商品展示底色"><select value={value.posterTone} onChange={(e) => setValue({ ...value, posterTone: e.target.value })}><option value="LIGHT">浅色</option><option value="DARK">深色</option></select></Field>{field("accentColor", "强调色", { type: "color" })}
       </div></details>

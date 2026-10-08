@@ -76,7 +76,7 @@ object CatalogScaleCheck {
             fun screenshot(name:String){test.waitForIdleSync();val bitmap=test.uiAutomation.takeScreenshot();test.targetContext.filesDir.resolve("catalog-$name.png").outputStream().use{bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle()}
             waitFor("first products"){find("家居道具 0000")!=null}
             Thread.sleep(400)
-            check(requests.count{it.startsWith("/api/v1/store/products?") }==1){"First screen fetched the whole catalog"}
+            check(requests.count{it.startsWith("/api/v1/store/products?")&&!it.contains("badge=") }==1){"First screen fetched the whole catalog"}
             result.putString("first_page_only","PASS");screenshot("first-page-light")
             test.runOnMainSync{theme=2};Thread.sleep(250);screenshot("first-page-dark")
             failNext.set(true)
@@ -103,6 +103,7 @@ object CatalogScaleCheck {
             click("搜索");waitFor("search field"){nodes(test.uiAutomation.rootInActiveWindow).any{it.isEditable}}
             val field=nodes(test.uiAutomation.rootInActiveWindow).first{it.isEditable}
             check(field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,Bundle().apply{putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,"3084")}))
+            click("搜索")
             waitFor("full catalog search"){find("家居道具 3084")!=null}
             result.putString("search_beyond_loaded_pages","PASS");screenshot("search-last-product")
             runBlocking{withContext(Dispatchers.Main){state.commerce.network!!.refreshCart()}}
