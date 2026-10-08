@@ -1,5 +1,11 @@
 # Deuterium Core
 
+Core **1.0.3** 修正家具等无独立网络通道模组的领取误判。兼容性判断依据当前已进入 PLAY 的 NeoForge 连接，以及其在 CONFIGURATION 阶段协商的完整冻结注册表同步通道；不再把 Youer `PlayerAPI.hasMod()` 的通道命名空间当作完整模组清单。客户端只有在注册表条目校验成功并确认同步完成后才能结束该配置任务。
+
+每批物品仅检查一次连接状态，只缓存反射方法元数据，不缓存玩家结果；断线、切服和重新配置会重新判断。原版物品不额外要求 NeoForge，未知连接或接口失配时拒绝模组物品发放。NBT 边界、外部存储拒绝、库存保存屏障与邮件幂等逻辑保持原路径。
+
+验证和协议依据见 [注册表兼容修复](../docs/qa/core-registry-sync-20261008.md)。
+
 2.0.4 配套版本为 **Core 1.0.1**：新增经济权威节点的只读 `wallet.records` 命令，配套 XConomy `2.26.3-deuterium.2`。原资金执行协议不变，已换包四服并恢复三个常驻节点；见[部署记录](../docs/deployment/deuterium-2.0.4-live.md)与[统一流水契约](../docs/contracts/admin-ledger-v204.md)。
 
 Java 21 / Youer 1.21.1 插件。主命令 `/dc`。物品库内置，邮箱仍为独立 DeuteriumMail；Core 只调用其公开 API。此目录不包含邮箱实现、经济数据库凭据或任意服务器命令执行接口。
