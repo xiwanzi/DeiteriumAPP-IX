@@ -126,6 +126,10 @@ func (s *Store) AssetV2(ctx context.Context, viewerID, assetID string) (map[stri
 	if err != nil {
 		return nil, err
 	}
+	return assetViewV2(ctx, u)
+}
+
+func assetViewV2(ctx context.Context, u AssetUploadV2) (map[string]any, error) {
 	if u.Status != "READY" {
 		return nil, ErrAssetUnavailable
 	}

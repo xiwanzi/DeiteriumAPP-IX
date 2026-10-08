@@ -322,14 +322,10 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 		if more {
 			rows = rows[:limit]
 		}
-		views := []any{}
-		for _, d := range rows {
-			v, e := s.Store.CatalogViewV2(r.Context(), u.User.ID, d, management)
-			if e != nil {
-				catalogFailV2(w, r, e)
-				return
-			}
-			views = append(views, v)
+		views, e := s.Store.CatalogPageViewsV2(r.Context(), u.User.ID, rows, management)
+		if e != nil {
+			catalogFailV2(w, r, e)
+			return
 		}
 		var cursor any
 		if more {

@@ -24,6 +24,10 @@ import coil3.toBitmap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import java.io.File
@@ -76,6 +80,24 @@ class AppImages private constructor(private val context:Context) {
 
     private fun validRequest(data:RemoteImageData)=data.generation==store.generation.get()&&BackendApi.get(context).financialScope()==data.scope
     private fun checkRequest(data:RemoteImageData){if(!validRequest(data))throw CancellationException("Image account changed")}
+
+    // One background slot leaves two download slots for currently visible images.
+    private val prefetches=Semaphore(1)
+    suspend fun prefetch(sources:List<String>)=coroutineScope {
+        val scope=BackendApi.get(context).financialScope()
+        val generation=store.generation.get()
+        sources.distinct().take(24).forEach { source->launch {
+            prefetches.withPermit {
+                val data=RemoteImageData(scope,source,RemoteImageUrls.key(scope,source),generation)
+                try {
+                    checkRequest(data)
+                    store.open(ImageCacheStore.key(scope,source),RemoteImageUrls.access(scope,source),
+                        {validRequest(data)},{renew->resolve(data,renew)}).use { }
+                }catch(cancelled:CancellationException){throw cancelled}
+                catch(_:Exception){ /* Prefetch is optional; visible images retain normal retry/error handling. */ }
+            }
+        }}
+    }
 
     fun request(source:String):ImageRequest {
         val api=BackendApi.get(context)

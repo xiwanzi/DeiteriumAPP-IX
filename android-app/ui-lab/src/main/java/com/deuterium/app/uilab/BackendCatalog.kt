@@ -4,6 +4,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -22,7 +25,7 @@ fun deliveryMethod(code:String)=when(code){"DOOR"->DeliveryMethod.Door;"PICKUP"-
 
 class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     val couponAttention=CouponAttention(api)
-    var shopError by mutableStateOf<String?>(null);private set
+    val shopError:String? get()=storePage.error
     var marketError by mutableStateOf<String?>(null);private set
     var error by mutableStateOf<String?>(null);private set
     var cartVersion by mutableLongStateOf(0);private set
@@ -54,25 +57,35 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     }
     private val cartLock=Mutex()
     private val orderSubmission=Mutex()
-    private val storeRefresh=ConcurrentRefresh()
-    private val categories=mutableMapOf<String,String>()
+    private val metadataRefresh=ConcurrentRefresh()
+    private val categories=mutableStateMapOf<String,String>()
     private val brands=mutableMapOf<String,String>()
+    private var metadataLoadedAt=0L
+    val shopCategories:Map<String,String> get()=categories.toMap()
+    internal val storePage=CatalogPager({catalogRequest(it)},::product,{it.id},::cacheProducts)
+    internal val searchPage=CatalogPager({catalogRequest(it)},::product,{it.id},::cacheProducts)
     private var visibilityRevision=0L
     private val serverOrders=mutableMapOf<String,JSONObject>()
     private fun report(failure:Throwable){error=failure.message ?: "服务暂不可用";state.storageMessage=error}
-    suspend fun refreshStore(){
+    suspend fun refreshStore(query:String="",categoryId:String="",force:Boolean=false)=storePage.refresh(query,categoryId,force)
+    private suspend fun catalogRequest(path:String):JSONObject=coroutineScope {
         val requestScope=api.financialScope()
-        runCatching{
-            storeRefresh.run {
-                runCatching{api.listAll("/store/categories").forEach{categories[it.getString("categoryId")]=it.getString("name")}}
-                runCatching{api.listAll("/store/brands").forEach{brands[it.getString("brandId")]=it.getString("name")}}
-                val products=api.listAll("/store/products").map(::product)
+        val metadata=async{metadataRefresh.run {
+            if(metadataLoadedAt==0L||System.nanoTime()-metadataLoadedAt>=60_000_000_000L){
+                val categoryRead=async{api.listAll("/store/categories")}
+                val brandRead=async{api.listAll("/store/brands")}
+                val nextCategories=categoryRead.await().associate{it.getString("categoryId") to it.getString("name")}
+                val nextBrands=brandRead.await().associate{it.getString("brandId") to it.getString("name")}
                 requestScope.verifyCurrent(api.financialScope())
-                ShopCatalog.clear();ShopCatalog.addAll(products);shopError=null
+                categories.clear();categories.putAll(nextCategories);brands.clear();brands.putAll(nextBrands);metadataLoadedAt=System.nanoTime()
             }
-        }.onFailure{shopError=it.message}
-        // Cart refresh remains per caller; a concurrent cart edit must still be observed.
-        refreshCart()
+        }}
+        val response=api.request("GET",path)
+        metadata.await();requestScope.verifyCurrent(api.financialScope());response
+    }
+    private fun cacheProducts(products:List<ShopProduct>){
+        val indices=ShopCatalog.mapIndexed{index,p->p.id to index}.toMap()
+        products.forEach{p->val index=indices[p.id];if(index!=null)ShopCatalog[index]=p else ShopCatalog.add(p)}
     }
     private fun product(value:JSONObject):ShopProduct {
         val c=value.getJSONObject("content")
@@ -82,7 +95,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             deliverySummary=c.getString("deliverySummary"),estimatedDelivery=c.getString("estimatedDelivery"),version=value.getLong("version"),stock=if(value.isNull("availableStock"))999 else value.getInt("availableStock"),limit=c.optInt("limitPerOrder",9),
             originalPrice=apiCents(c.getString("price")),deliveryCredits=c.optLong("deliveryCredits"),purchaseLimits=productLimitDescriptions(c.optJSONObject("purchaseLimits")),storeId=value.optString("storeId"))
     }
-    suspend fun refreshProduct(id:String){runCatching{api.request("GET","/store/products/$id")}.onSuccess{value->val p=product(value);val index=ShopCatalog.indexOfFirst{it.id==id};if(index>=0)ShopCatalog[index]=p else ShopCatalog.add(p)}.onFailure{report(it)}}
+    suspend fun refreshProduct(id:String){val requestScope=api.financialScope();try{val value=api.request("GET","/store/products/$id");requestScope.verifyCurrent(api.financialScope());cacheProducts(listOf(product(value)))}catch(cancelled:CancellationException){throw cancelled}catch(failure:Exception){report(failure)}}
     suspend fun refreshMarket(){
         val revision=visibilityRevision
         runCatching{val visible=api.listAll("/market/listings");val own=api.listAll("/market/me/listings");(visible+own).associateBy{it.getString("listingId")}.values.filterNot{it.optBoolean("hiddenFromHistory")}.map(::listing)}
@@ -117,7 +130,28 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
         require(response.getBoolean("hidden")){"删除未完成"};visibilityRevision++;remove();error=null;true
     }.getOrElse{report(it);false}
     private fun applyCart(value:JSONObject){cartVersion=value.getLong("version");state.cart.clear();val items=value.getJSONArray("items");for(index in 0 until items.length()){val item=items.getJSONObject(index);state.cart[item.getString("productId")]=item.getInt("quantity")}}
-    suspend fun refreshCart(){runCatching{api.request("GET","/store/cart")}.onSuccess(::applyCart).onFailure{error=it.message}}
+    var cartLoading by mutableStateOf(false);private set
+    var cartLoadError by mutableStateOf<String?>(null);private set
+    val unavailableCartProducts=mutableStateListOf<String>()
+    suspend fun refreshCart(hydrate:Boolean=true)=cartLock.withLock {
+        val requestScope=api.financialScope()
+        cartLoading=true;cartLoadError=null
+        try {
+            val cart=api.request("GET","/store/cart")
+            requestScope.verifyCurrent(api.financialScope());applyCart(cart)
+            // A paged storefront is not an availability index for the shopping bag.
+            val products=mutableListOf<ShopProduct>();val missing=mutableListOf<String>()
+            for(id in if(hydrate)state.cart.keys.toList() else emptyList()) {
+                try{products.add(product(api.request("GET","/store/products/$id")))}
+                catch(failure:ApiFailure){if(failure.status==404)missing.add(id) else throw failure}
+            }
+            requestScope.verifyCurrent(api.financialScope())
+            cacheProducts(products);ShopCatalog.removeAll{it.id in missing}
+            if(hydrate){unavailableCartProducts.clear();unavailableCartProducts.addAll(missing)}
+            error=null
+        }catch(cancelled:CancellationException){throw cancelled}catch(failure:Exception){cartLoadError=failure.message;error=failure.message}
+        finally{cartLoading=false}
+    }
     suspend fun setCart(productId:String,quantity:Int):Boolean=cartLock.withLock{
         cartBusy=true
         try{runCatching{

@@ -14,8 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun SearchPage(area:String,state:LabState,onClose:()->Unit,onOpen:(String)->Unit,active:Boolean=true) {
@@ -23,6 +27,24 @@ fun SearchPage(area:String,state:LabState,onClose:()->Unit,onOpen:(String)->Unit
     var directoryMatches by remember(area,query){mutableStateOf(emptyList<PlayerProfile>())}
     var directorySearching by remember(area,query){mutableStateOf(area=="Info"&&query.isNotBlank())}
     var directoryError by remember(area,query){mutableStateOf<String?>(null)}
+    val shopPage=state.commerce.network?.searchPage
+    val shopProducts=if(shopPage?.query==query.trim())shopPage.items.toList() else emptyList()
+    var shopSearching by remember(area,query){mutableStateOf(area=="Shop"&&query.isNotBlank())}
+    val listState=rememberLazyListState();val scope=rememberCoroutineScope()
+    val images=AppImages.get(LocalContext.current)
+    LaunchedEffect(area,query,active){
+        if(area!="Shop"||query.isBlank()||!active)return@LaunchedEffect
+        try{delay(250);listState.scrollToItem(0);shopPage?.refresh(query.trim())}
+        finally{shopSearching=false}
+    }
+    val shopLast by remember{derivedStateOf{listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1}}
+    val moreShop=active&&area=="Shop"&&query.isNotBlank()&&shopProducts.isNotEmpty()&&!shopSearching&&shopPage?.loading==false&&shopPage.error==null&&shopPage.hasMore&&shopLast>=shopProducts.size-8
+    LaunchedEffect(moreShop){if(moreShop)scope.launch{shopPage?.more()}}
+    LaunchedEffect(area,active,shopProducts,images.epoch){
+        if(area=="Shop"&&active)snapshotFlow{shopLast}.distinctUntilChanged().collectLatest{last->
+            images.prefetch(shopProducts.drop((last+1).coerceAtLeast(0)).take(16).mapNotNull{it.photos.firstOrNull()})
+        }
+    }
     LaunchedEffect(area,query,active){
         if(area!="Info"||query.isBlank()||!active)return@LaunchedEffect
         directorySearching=true
@@ -35,19 +57,22 @@ fun SearchPage(area:String,state:LabState,onClose:()->Unit,onOpen:(String)->Unit
     fun open(route:String){keyboard?.hide();onOpen(route)}
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().imePadding().navigationBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(start=16.dp,end=6.dp,top=10.dp,bottom=12.dp),verticalAlignment=Alignment.CenterVertically){
-            RefinedField(query,{query=if(area=="Info")it.take(80) else it},Modifier.weight(1f).focusRequester(focus),placeholder={Text(when(area){"Shop"->"搜索商品或品牌";"Market"->"搜索物品、服务或玩家";"Info"->"搜索联系人";else->"搜索设置"},style=MaterialTheme.typography.bodyMedium)},singleLine=true,leadingIcon={Icon(Icons.Outlined.Search,null,Modifier.size(21.dp))},trailingIcon=if(query.isNotBlank()){{IconButton({query=""},Modifier.size(30.dp)){Icon(Icons.Outlined.Cancel,"清除搜索",Modifier.size(18.dp))}}}else null)
+            RefinedField(query,{query=if(area in listOf("Info","Shop"))it.take(80) else it},Modifier.weight(1f).focusRequester(focus),placeholder={Text(when(area){"Shop"->"搜索商品或品牌";"Market"->"搜索物品、服务或玩家";"Info"->"搜索联系人";else->"搜索设置"},style=MaterialTheme.typography.bodyMedium)},singleLine=true,leadingIcon={Icon(Icons.Outlined.Search,null,Modifier.size(21.dp))},trailingIcon=if(query.isNotBlank()){{IconButton({query=""},Modifier.size(30.dp)){Icon(Icons.Outlined.Cancel,"清除搜索",Modifier.size(18.dp))}}}else null)
             PlainButton({keyboard?.hide();onClose()}){Text("取消")}
         }
-        LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=16.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.fillMaxSize(),state=listState,contentPadding=PaddingValues(horizontal=16.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             if(query.isBlank()) {
                 item{Text("搜索${when(area){"Shop"->"商城";"Market"->"市场";"Info"->"联系人";else->"设置"}}",style=MaterialTheme.typography.headlineSmall)}
                 item{Text(if(area=="Info")"输入玩家 ID 或 QQ，搜索全部玩家" else if(area=="Shop"&&ShopCatalog.isEmpty())"输入商品名称或分类" else "试试这些关键词",Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                 val suggestions=when(area){"Shop"->shopSearchSuggestions(ShopCatalog);"Market"->listOf("建筑服务","石材","工具","附魔");"Info"->recentContacts(Players,state.followed.toSet(),state.directChats).take(3).map{it.person.name};else->listOf("外观","个人简介","订单","通知")}
                 item{FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){suggestions.forEach{ChoiceChip(false,{query=it},{Text(it)})}}}
             } else when(area) {
-                "Shop"->{val products=ShopCatalog.filter{it.name.contains(query,true)||it.category.contains(query,true)||it.brand.contains(query,true)}
-                    if(products.isEmpty())item{SearchEmpty()}
-                    items(products,key={it.id}){product->SearchResult(product.name,"${product.brand} · ${credit(product.price)} 信用点",{OrderThumbnail(OrderLine(product.id,product.name,product.subtitle,product.price,1,product.image,imageUri=product.photos.firstOrNull(),imageUris=product.photos),Modifier.size(63.dp,73.dp))}){open("product:${product.id}")}}
+                "Shop"->{
+                    items(shopProducts,key={it.id}){product->SearchResult(product.name,"${product.brand} · ${credit(product.price)} 信用点",{OrderThumbnail(OrderLine(product.id,product.name,product.subtitle,product.price,1,product.image,imageUri=product.photos.firstOrNull(),imageUris=product.photos),Modifier.size(63.dp,73.dp))}){open("product:${product.id}")}}
+                    if(shopSearching||shopPage?.loading==true)item{Text("正在搜索商品…",Modifier.padding(20.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                    else if(shopPage?.error!=null)item{Column{Text(shopPage.error!!,color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{shopPage.retry()}}){Text("重试")}}}
+                    else if(shopProducts.isEmpty())item{SearchEmpty()}
+                    else if(shopPage?.hasMore==true)item{PlainButton({scope.launch{shopPage.more()}}){Text("加载更多")}}
                 }
                 "Market"->{val listings=state.commerce.listings.filter{it.active&&(it.title.contains(query,true)||it.category.contains(query,true)||it.seller.contains(query,true))}
                     if(listings.isEmpty())item{SearchEmpty()}

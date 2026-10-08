@@ -20,6 +20,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import androidx.compose.ui.platform.LocalContext
 import org.json.JSONObject
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -32,22 +35,39 @@ val ShopCatalog=mutableStateListOf<ShopProduct>()
 
 @Composable
 fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String) {
-    var category by rememberSaveable { mutableStateOf("全部") }
-    LaunchedEffect(Unit){state.commerce.network?.refreshStore()}
-    val products by remember(category,query){derivedStateOf{ShopCatalog.filter{(category=="全部"||it.brand==category||it.category==category)&&(query.isBlank()||it.name.contains(query,true)||it.category.contains(query,true)||it.brand.contains(query,true))}}}
-    val categories by remember{derivedStateOf{listOf("全部")+ShopCatalog.map{it.category}.distinct()}}
+    var category by rememberSaveable { mutableStateOf("") }
+    val network=state.commerce.network
+    val page=network?.storePage
+    val scope=rememberCoroutineScope()
+    val listState=rememberLazyListState();val posterState=rememberLazyListState()
+    val images=AppImages.get(LocalContext.current)
+    LaunchedEffect(category,query){network?.refreshStore(query,category)}
+    val products=page?.items?.toList().orEmpty()
+    val categories=network?.shopCategories.orEmpty()
     val rows=remember(products){products.chunked(2)}
-    LazyColumn(contentPadding=PaddingValues(top=topInset,bottom=115.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {
+    val rowEnds=remember(rows){rows.mapIndexed{index,row->"shop-row:${row.first().id}" to (index*2+row.size-1)}.toMap()}
+    val lastVisible by remember(rowEnds){derivedStateOf{
+        maxOf(listState.layoutInfo.visibleItemsInfo.mapNotNull{rowEnds[it.key]}.maxOrNull() ?: -1,
+            if(listState.layoutInfo.visibleItemsInfo.any{it.key=="shop-posters"})posterState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 else -1)
+    }}
+    val loadMore=products.isNotEmpty()&&lastVisible>=products.size-12&&page?.hasMore==true&&!page.loading&&page.error==null
+    LaunchedEffect(loadMore){if(loadMore)scope.launch{page?.more()}}
+    LaunchedEffect(products,images.epoch){
+        snapshotFlow{lastVisible}.distinctUntilChanged().collectLatest{last->
+            images.prefetch(products.drop((last+1).coerceAtLeast(0)).take(24).mapNotNull{it.photos.firstOrNull()})
+        }
+    }
+    LazyColumn(state=listState,contentPadding=PaddingValues(top=topInset,bottom=115.dp),verticalArrangement=Arrangement.spacedBy(22.dp)) {
         item { Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            categories.forEach{label->ChoiceChip(category==label,{category=label},{Text(label)})}
+            ChoiceChip(category.isBlank(),{category=""},{Text("全部")})
+            categories.forEach{(id,label)->ChoiceChip(category==id,{category=if(category==id)"" else id},{Text(label)})}
         } }
-        state.commerce.network?.shopError?.let{error->item{Text(error,Modifier.padding(horizontal=24.dp),color=MaterialTheme.colorScheme.error)}}
-        if(products.isEmpty())item{Text(if(query.isBlank())"暂无上架商品" else "未找到相关商品",Modifier.padding(28.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        if(products.isEmpty()&&page?.loading!=true&&page?.error==null)item{Text(if(query.isBlank())"暂无上架商品" else "未找到相关商品",Modifier.padding(28.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(products.isNotEmpty()) {
             item { Text(if(query.isBlank())"新品推荐" else "搜索结果",Modifier.padding(horizontal=24.dp),style=MaterialTheme.typography.titleLarge) }
-            item { LazyRow(contentPadding=PaddingValues(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)){items(products,key={it.id}){ProductPoster(it,Modifier.width(308.dp).height(405.dp)){onProduct(it.id)}}} }
+            item(key="shop-posters") { LazyRow(state=posterState,contentPadding=PaddingValues(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)){items(products,key={it.id}){ProductPoster(it,Modifier.width(308.dp).height(405.dp)){onProduct(it.id)}}} }
             item { Text("探索更多",Modifier.padding(horizontal=24.dp,vertical=6.dp),style=MaterialTheme.typography.titleLarge) }
-            items(rows){row->Row(Modifier.padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){
+            items(rows,key={"shop-row:${it.first().id}"}){row->Row(Modifier.padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)){
                 row.forEach{product->Surface(onClick={onProduct(product.id)},modifier=Modifier.weight(1f),shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface){Column{
                     ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().height(170.dp),scale=ContentScale.Crop)
                     Column(Modifier.padding(16.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium,minLines=2);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))}
@@ -55,6 +75,9 @@ fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String) {
                 if(row.size==1)Spacer(Modifier.weight(1f))
             }}
         }
+        page?.error?.let{error->item{Column(Modifier.padding(horizontal=24.dp)){Text(error,color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{page.retry()}}){Text("重试")}}}}
+        if(page?.loading==true)item{Text("正在加载商品…",Modifier.padding(24.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        else if(page?.hasMore==true&&page.error==null)item{PlainButton({scope.launch{page.more()}}){Text("加载更多")}}
     }
 }
 @Composable
@@ -101,17 +124,19 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
     val scope=rememberCoroutineScope()
     LaunchedEffect(Unit){state.commerce.network?.refreshCart()}
     val items=ShopCatalog.mapNotNull{p->state.cart[p.id]?.takeIf{it>0}?.let{p to it}}
-    val unavailable=state.cart.keys.filter{id->ShopCatalog.none{it.id==id}}
+    val cartNetwork=state.commerce.network
+    val unavailable=state.cart.keys.filter{it in cartNetwork?.unavailableCartProducts.orEmpty()}
+    val cartReady=cartNetwork?.cartLoading!=true&&cartNetwork?.cartLoadError==null&&items.size+unavailable.size==state.cart.size
     var quoteKey by rememberSaveable{mutableStateOf(UUID.randomUUID().toString())}
     LaunchedEffect(state.cart.toMap()){quoteKey=UUID.randomUUID().toString()}
     var quoteText by rememberSaveable{mutableStateOf<String?>(null)};var quoting by remember{mutableStateOf(false)};var confirmQuote by rememberSaveable{mutableStateOf(false)}
     var pending by rememberSaveable{mutableStateOf(hashMapOf<String,Int>())};var orderId by rememberSaveable{mutableStateOf<String?>(null)};var paymentKey by rememberSaveable{mutableStateOf("")};var error by remember{mutableStateOf<String?>(null)}
     val cartFingerprint=items.map{Triple(it.first.id,it.second,it.first.version)}
     var quotedFingerprint by remember{mutableStateOf<List<Triple<String,Int,Long>>>(emptyList())}
-    LaunchedEffect(quoteKey,cartFingerprint){
+    LaunchedEffect(quoteKey,cartFingerprint,cartReady){
         if(pending.isNotEmpty()||confirmQuote)return@LaunchedEffect
-        quoteText=null;error=null
-        if(items.isEmpty())return@LaunchedEffect
+        quoteText=null;error=null;quoting=false
+        if(items.isEmpty()||!cartReady)return@LaunchedEffect
         quoting=true;delay(200)
         val quote=state.commerce.network?.quoteStore(items,quoteKey)
         if(!currentCoroutineContext().isActive)return@LaunchedEffect
@@ -120,8 +145,10 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
     val summary=quoteText?.takeIf{quotedFingerprint==cartFingerprint}?.let{runCatching{checkoutSummary(JSONObject(it))}.getOrNull()}
     Box(Modifier.fillMaxSize()){
         LazyColumn(contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset,bottom=150.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){
-            item{Text(if(items.isEmpty()&&unavailable.isEmpty())"购物袋还是空的" else "你的购物袋",style=MaterialTheme.typography.headlineLarge,modifier=Modifier.padding(vertical=8.dp))}
-            if(items.isEmpty()&&unavailable.isEmpty())item{Text("添加喜欢的商品后，在这里完成付款。",color=MaterialTheme.colorScheme.onSurfaceVariant);PlainButton(onClose){Text("继续选购")}}
+            item{Text(if(state.cart.isEmpty()&&cartReady)"购物袋还是空的" else "你的购物袋",style=MaterialTheme.typography.headlineLarge,modifier=Modifier.padding(vertical=8.dp))}
+            if(cartNetwork?.cartLoading==true)item{Text("正在读取购物袋…",color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            cartNetwork?.cartLoadError?.let{message->item{Column{Text(message,color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{cartNetwork.refreshCart()}}){Text("重试读取购物袋")}}}}
+            if(state.cart.isEmpty()&&cartReady)item{Text("添加喜欢的商品后，在这里完成付款。",color=MaterialTheme.colorScheme.onSurfaceVariant);PlainButton(onClose){Text("继续选购")}}
             items(unavailable,key={"unavailable-$it"}){id->LabCard{Text("该商品暂时无法购买",style=MaterialTheme.typography.titleMedium);Text("商品可能已下架或暂不可用。",Modifier.padding(top=8.dp),color=MaterialTheme.colorScheme.onSurfaceVariant);PlainButton({scope.launch{state.commerce.network?.setCart(id,0)}}){Text("移出购物袋")}}}
             items(items,key={it.first.id}){(product,count)->LabCard{
                 Row(verticalAlignment=Alignment.CenterVertically){ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(80.dp,100.dp).clip(RoundedCornerShape(15.dp)),scale=ContentScale.Crop);Column(Modifier.weight(1f).padding(start=14.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))};IconButton({scope.launch{state.commerce.network?.setCart(product.id,0);error=state.commerce.network?.error}}){Icon(Icons.Outlined.Close,"移除${product.name}",Modifier.size(18.dp))}}
@@ -130,7 +157,7 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
             if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("付款方式","钱包余额");DetailRow("可用余额",if(state.balanceKnown)credit(state.balance) else "正在同步");
                 if(summary!=null){if(summary.originalTotal>summary.total)DetailRow("商品原价","${credit(summary.originalTotal)}");if(summary.productDiscount>0)DetailRow("商品优惠","−${credit(summary.productDiscount)}");if(summary.couponDiscount>0){DetailRow("优惠券","−${credit(summary.couponDiscount)}");Text("${summary.couponName ?: "已为你选择优惠"} · 已自动择优",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)};DetailRow("实付合计","${credit(summary.total)} 信用点")}
                 else Text(if(quoting)"正在计算优惠…" else "重新确认价格后即可结算",Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
-                error?.let{Text(it,Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{state.commerce.network?.refreshStore();quoteKey=UUID.randomUUID().toString()}}){Text("刷新商品与优惠")}}
+                error?.let{Text(it,Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{state.commerce.network?.refreshCart();quoteKey=UUID.randomUUID().toString()}}){Text("刷新商品与优惠")}}
             }}
         }
         if(items.isNotEmpty())Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface){MotionButton({if(!quoting)scope.launch{
@@ -144,7 +171,7 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
                 else if(prices.total>state.balance)error="余额不足，请调整商品数量"
                 else{error=null;paymentKey=UUID.randomUUID().toString();confirmQuote=true}}
             quoting=false
-        }},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=!quoting&&summary!=null&&state.commerce.network?.cartBusy!=true){Text(if(quoting)"正在计算优惠…" else if(summary!=null)"去结算 ${credit(summary.total)}" else "等待确认价格")}}
+        }},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=cartReady&&!quoting&&summary!=null&&state.commerce.network?.cartBusy!=true){Text(if(quoting)"正在计算优惠…" else if(summary!=null)"去结算 ${credit(summary.total)}" else "等待确认价格")}}
     }
     if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false;quoteKey=UUID.randomUUID().toString()}){confirmQuote=false;val lines=JSONObject(quoteText!!).getJSONArray("items");pending=HashMap((0 until lines.length()).associate{val item=lines.getJSONObject(it);item.getString("productId") to item.getInt("quantity")})}
     if(pending.isNotEmpty()&&quoteText!=null) {

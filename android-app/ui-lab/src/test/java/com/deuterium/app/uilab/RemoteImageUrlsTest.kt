@@ -12,6 +12,28 @@ import java.util.concurrent.TimeUnit
 class RemoteImageUrlsTest {
     private val scope=FinancialScope("image-viewer","https://server.example")
     private fun view(id:String,url:String,expiry:String="2099-01-01T00:00:00Z")=JSONObject().put("assetId",id).put("status","READY").put("url",url).put("urlExpiresAt",expiry)
+    @Test fun largeCatalogKeepsFirstImageAndRefreshesItsProductInsteadOfEntirePage() {
+        RemoteImageUrls.clear()
+        for(start in 0 until 3100 step 100){
+            val items=JSONArray()
+            for(i in start until start+100)items.put(JSONObject().put("productId","product_$i")
+                .put("images",JSONArray().put(view("photo_$i","https://s3.example/$i"))))
+            RemoteImageUrls.remember(items,scope,refreshPath="/store/products?limit=100&cursor=$start")
+        }
+        assertEquals("https://s3.example/0",RemoteImageUrls.resolve(scope,"asset:photo_0"))
+        assertEquals("/store/products/product_0",RemoteImageUrls.refreshPath(scope,"asset:photo_0"))
+        assertEquals("https://s3.example/3099",RemoteImageUrls.resolve(scope,"asset:photo_3099"))
+        assertNull(RemoteImageUrls.resolve(FinancialScope("other",scope.origin),"asset:photo_0"))
+    }
+
+    @Test fun boundedImageAuthorizationCacheEvictsLeastRecentlyUsed() {
+        RemoteImageUrls.clear()
+        for(i in 0 until RemoteImageUrls.MAX_ENTRIES)RemoteImageUrls.remember(view("lru_$i","https://s3.example/$i"),scope)
+        assertNotNull(RemoteImageUrls.resolve(scope,"asset:lru_0"))
+        RemoteImageUrls.remember(view("extra","https://s3.example/extra"),scope)
+        assertNotNull(RemoteImageUrls.resolve(scope,"asset:lru_0"))
+        assertNull(RemoteImageUrls.resolve(scope,"asset:lru_1"))
+    }
     @Test fun embeddedPhotosAndAvatarKeepAuthorizedUrlsForAssetIds() {
         RemoteImageUrls.remember(JSONObject().put("photos",JSONArray().put(view("photo","https://s3.example/photo?signature=one")))
             .put("seller",JSONObject().put("avatar",view("avatar","https://s3.example/avatar?signature=two"))),scope)

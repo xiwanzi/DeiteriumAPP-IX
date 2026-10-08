@@ -33,29 +33,42 @@ export function ContentBlocks({ blocks = [], media = [] }) {
 export default function RemoteCollection({ client, path, user, onNotificationTarget, navigate }) {
   const config = collections[path] || collections["/"],
     [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(true),
-    [error, setError] = useState(""), [query, setQuery] = useState(""), [selected, setSelected] = useState(null), [mine, setMine] = useState(false), [editor, setEditor] = useState(null), [unlist, setUnlist] = useState(null), [purchase, setPurchase] = useState(null), [quantity, setQuantity] = useState(1), [bagMessage, setBagMessage] = useState("");
+    [error, setError] = useState(""), [query, setQuery] = useState(""), [serverQuery, setServerQuery] = useState(""), [selected, setSelected] = useState(null), [mine, setMine] = useState(false), [editor, setEditor] = useState(null), [unlist, setUnlist] = useState(null), [purchase, setPurchase] = useState(null), [quantity, setQuantity] = useState(1), [bagMessage, setBagMessage] = useState("");
   const actionKeys = useRef({});
   const generation = useRef(0);
+  const loading = useRef(false), sentinel = useRef(null);
+  const catalog = path === "/" || path === "/market";
   const load = async (more = false) => {
+    if (more && (loading.current || !cursor)) return;
     const current = ++generation.current;
+    loading.current = true;
     setBusy(true); setError("");
     try {
       const endpoint = path === "/market" && mine ? "/market/me/listings" : config.endpoint;
-      const r = await client.request(`/api/v1${endpoint}?limit=30${more && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
+      const r = await client.request(`/api/v1${endpoint}?limit=40${catalog && serverQuery ? `&q=${encodeURIComponent(serverQuery)}` : ""}${more && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
       if (current !== generation.current) return;
       if (!Array.isArray(r.data)) throw new Error("服务返回的列表格式不正确，请稍后重试。");
+      if (r.page?.hasMore && (!r.page.nextCursor || (more && r.page.nextCursor === cursor))) throw new Error("分页结果异常，请刷新重试。");
       setItems((old) => more ? [...new Map([...old, ...r.data].map((item) => [item[config.key], item])).values()] : r.data);
       setCursor(r.page?.nextCursor);
     } catch (e) { if (current === generation.current) setError(serviceError(e)); }
-    finally { if (current === generation.current) setBusy(false); }
+    finally { if (current === generation.current) { loading.current = false; setBusy(false); } }
   };
-  useEffect(() => { setItems([]); setQuery(""); setSelected(null); load(); return () => { generation.current++; }; }, [path, mine]);
+  useEffect(() => { setQuery(""); setServerQuery(""); }, [path, mine]);
+  useEffect(() => { if (!catalog) return; const timer = setTimeout(() => setServerQuery(query.trim()), 250); return () => clearTimeout(timer); }, [query, catalog]);
+  useEffect(() => { setItems([]); setCursor(null); setSelected(null); load(); return () => { generation.current++; }; }, [path, mine, serverQuery]);
+  useEffect(() => {
+    if (!catalog || !cursor || busy || error || !sentinel.current || !globalThis.IntersectionObserver) return;
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) load(true); }, { rootMargin: "1000px" });
+    observer.observe(sentinel.current);
+    return () => observer.disconnect();
+  }, [catalog, cursor, busy, error, serverQuery, path]);
   useEffect(() => client.onAccountDeletions((refs) => {
     setItems((old) => old.filter((item) => !refs.has(item.seller?.playerRef)));
     setSelected((old) => refs.has(old?.seller?.playerRef) ? null : old);
     setPurchase((old) => refs.has(old?.item?.seller?.playerRef) ? null : old);
     load();
-  }), [client, path, mine]);
+  }), [client, path, mine, serverQuery]);
   const markNotification = async (item) => {
     if (item.readAt) return; const scope = `notification:${item.notificationId}`; actionKeys.current[scope] ||= id();
     try { const r = await client.request("/api/v1/notifications/read", {method:"POST",body:{clientRequestId:actionKeys.current[scope],notificationIds:[item.notificationId]}}); if (typeof r.data.readCount !== "number") throw new Error("通知状态尚未确认。"); const changed={...item,readAt:r.serverTime || new Date().toISOString()};setItems((old)=>old.map((x)=>x.notificationId===item.notificationId?changed:x));setSelected(changed); }
@@ -65,22 +78,22 @@ export default function RemoteCollection({ client, path, user, onNotificationTar
   const addToBag = async () => { setBusy(true);setError("");setBagMessage("");try{const r=await client.request("/api/v1/store/cart");const old=r.data.items.find((item)=>item.productId===selected.productId);await client.request(`/api/v1/store/cart/items/${encodeURIComponent(selected.productId)}`,{method:"PUT",body:{clientRequestId:id(),expectedVersion:r.data.version,quantity:(old?.quantity||0)+quantity}});setBagMessage("已加入购物袋");}catch(e){setError(e.message);}finally{setBusy(false);} };
   const unlistItem = async () => { setBusy(true);setError("");const scope=`unlist:${unlist.listingId}:${unlist.version}`;actionKeys.current[scope] ||= id();try{await client.request(`/api/v1/market/listings/${encodeURIComponent(unlist.listingId)}/unlist`,{method:"POST",body:{clientRequestId:actionKeys.current[scope],expectedVersion:unlist.version}});setUnlist(null);setSelected(null);await load();}catch(e){setError(e.message);}finally{setBusy(false);} };
   const content = selected?.content || selected;
-  const visible = items.filter((item) => `${item.title || item.content?.title || ""} ${item.summary || item.subtitle || item.content?.description || ""}`.toLowerCase().includes(query.toLowerCase()));
+  const visible = catalog ? items : items.filter((item) => `${item.title || item.content?.title || ""} ${item.summary || item.subtitle || item.content?.description || ""}`.toLowerCase().includes(query.toLowerCase()));
   return <>
     <PageHead eyebrow="DEUTERIUM COMMUNITY" title={config.title} subtitle={config.subtitle}><Button secondary disabled={busy} onClick={() => load()}><RefreshCw size={16} />刷新</Button>{path==="/market"&&<><Button secondary onClick={()=>setMine(!mine)}>{mine?"发现好物":"我的发布"}</Button><Button onClick={()=>setEditor({})}><Plus size={16}/>发布商品</Button></>}</PageHead>
-    <label className="search-input" style={{ maxWidth: 480, marginBottom: 24 }}><Search size={17} /><input aria-label={`搜索${config.title}`} placeholder={`搜索已加载的${config.title}`} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+    <label className="search-input" style={{ maxWidth: 480, marginBottom: 24 }}><Search size={17} /><input aria-label={`搜索${config.title}`} placeholder={`搜索${catalog ? "全部商品" : `已加载的${config.title}`}`} maxLength={catalog ? 80 : undefined} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
     {error && <div className="notice-box" role="alert">{error}</div>}
     <div className={`foundation-grid ${path === "/" || path === "/market" ? "shop-catalog-grid" : ""}`}>{visible.map((item) => {
       const c = item.content || item, image = item.images?.[0] || item.photos?.[0] || item.cover;
       return <button className="foundation-card" style={{ textAlign: "left", color: "inherit", cursor: "pointer" }} key={item[config.key]} onClick={() => select(item)}>
-        {image?.url ? <img src={image.url} alt={image.altText || c.title} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /> : <Package size={24} />}
+        {image?.url ? <img src={image.url} loading="lazy" decoding="async" alt={image.altText || c.title} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /> : <Package size={24} />}
         {item.pinned && <Badge>置顶</Badge>}{path==="/market"&&mine&&<Badge tone={item.active?"sage":"neutral"}>{item.active?"在售":"已下架"}</Badge>}{path==="/notifications"&&!item.readAt&&<Badge>未读</Badge>}<h3 style={{ marginTop: 16 }}>{c.title}</h3><p>{c.subtitle || c.description || item.summary || item.body}</p>
         {(c.price !== undefined || c.reward !== undefined) && <strong className="price">{credit(item.effectivePrice ?? c.price ?? c.reward)}{c.discountRate < 10000 && <del className="sale-original">{credit(c.price)}</del>}<small>信用点</small></strong>}
       </button>;
     })}</div>
     {!busy && !error && !visible.length && <Empty title={query ? "没有匹配的结果" : config.empty} text={query ? "试试其他关键词。" : "新的内容发布后会出现在这里。"} />}
     {busy && <p className="muted" role="status">正在读取…</p>}
-    {cursor && <Button secondary disabled={busy} onClick={() => load(true)}>加载更多</Button>}
+    {cursor && <div ref={sentinel}><Button secondary disabled={busy} onClick={() => load(true)}>{error ? "重试加载" : "加载更多"}</Button></div>}
     {selected && <Modal title={path === "/" || path === "/market" ? "商品详情" : content.title} close={() => setSelected(null)} wide={path === "/" || path === "/market"} className={path === "/" || path === "/market" ? "product-detail-modal" : ""}>
       {path === "/" || path === "/market" ? <ProductDetails key={selected.productId || selected.listingId} product={selected} official={path === "/"} quantity={quantity} setQuantity={setQuantity} busy={busy} error={error} bagMessage={bagMessage} onAdd={addToBag} onBuy={() => {setPurchase({item:selected,quantity});setSelected(null);}} owned={path === "/market" && selected.seller?.playerRef === user?.playerRef} onEdit={() => {setEditor(selected);setSelected(null);}} onUnlist={() => {setUnlist(selected);setSelected(null);}} /> : <>
         {(selected.images || selected.photos || (selected.cover ? [selected.cover] : [])).map((asset) => <img key={asset.assetId} src={asset.url} alt={asset.altText || content.title} style={{width:"100%",borderRadius:12,marginBottom:12}} />)}

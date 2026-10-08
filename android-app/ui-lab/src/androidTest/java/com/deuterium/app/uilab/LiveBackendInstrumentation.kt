@@ -16,6 +16,7 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        if(options.getString("catalogScale")=="true"){CatalogScaleCheck.run(this);return}
         if(options.getString("chatNavigation")=="true"){ChatNavigationCheck.run(this);return}
         if(options.getString("accountErasure")=="true"){AccountErasureCheck.run(this);return}
         if(options.getString("authRegistration")=="true"){AuthRegistrationCheck.run(this);return}
@@ -35,7 +36,7 @@ class LiveBackendInstrumentation : Instrumentation() {
         if(options.getString("releaseV203")=="true"){ReleaseV203Check.run(this);return}
         if(options.getString("paymentTiming")=="true"){PaymentTimingCheck.run(this);return}
         if(options.getString("contactsLayout")=="true"){ContactsLayoutCheck.run(this);return}
-        if(options.getString("imageCache")=="true"){ImageCacheInstrumentation.run(this);return}
+        if(options.getString("imageCache")=="true"){ImageCacheInstrumentation.run(this,options.getString("prefetchUrl"));return}
         if(options.getString("storageLayout")=="true"){StorageLayoutCheck.run(this,options.getString("theme")?.toIntOrNull() ?: 1,options.getString("clear")=="true");return}
         if(options.getString("avatarLayout")=="true"){AvatarLayoutCheck.run(this);return}
         val result=Bundle()
