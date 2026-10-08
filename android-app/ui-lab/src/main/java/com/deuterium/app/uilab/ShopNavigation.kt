@@ -132,6 +132,10 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
     var adding by remember(product.id){mutableStateOf(false)}
     var added by remember(product.id){mutableStateOf(false)}
     val scope=rememberCoroutineScope()
+    val offer=product.offerPreview
+    var couponDetails by remember(product.id){mutableStateOf(false)}
+    val promotion=product.originalPrice>product.price
+    val promoColor=if(MaterialTheme.colorScheme.background.red<.5f)Color(0xFFFFAA83)else Color(0xFFBF492D)
     LaunchedEffect(added){if(added){delay(1000);added=false}}
     Surface(onClick=onClick,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.surface) {
         Column {
@@ -140,27 +144,42 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
             }
             Column(Modifier.padding(start=8.dp,end=5.dp,top=6.dp,bottom=3.dp),verticalArrangement=Arrangement.spacedBy(2.dp)) {
                 Text(product.name,fontSize=14.sp,lineHeight=19.sp,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis)
-                Text(product.category,fontSize=11.sp,lineHeight=15.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+                if(promotion)Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                    Text("促销",Modifier.clip(RoundedCornerShape(3.dp)).background(promoColor.copy(alpha=.10f)).padding(horizontal=4.dp,vertical=1.dp),fontSize=10.sp,lineHeight=14.sp,color=promoColor)
+                    Text("直降 ${shopMoney(product.originalPrice-product.price)}",fontSize=11.sp,lineHeight=15.sp,color=promoColor)
+                }
+                if(offer!=null)Row(Modifier.fillMaxWidth().clickable{couponDetails=true}.padding(vertical=2.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                    Text("券",Modifier.border(1.dp,promoColor.copy(alpha=.5f),RoundedCornerShape(3.dp)).padding(horizontal=3.dp),fontSize=10.sp,lineHeight=14.sp,color=promoColor)
+                    Text("${offer.couponName} · ${offer.condition}",Modifier.weight(1f),fontSize=11.sp,lineHeight=15.sp,color=promoColor,maxLines=2,overflow=TextOverflow.Ellipsis)
+                }
+                if(!promotion&&offer==null)Text(product.category,fontSize=11.sp,lineHeight=15.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
                 Row(verticalAlignment=Alignment.CenterVertically) {
-                    CompactShopPrice(product.price,Modifier.weight(1f))
+                    CompactShopPrice(offer?.finalPrice ?: product.price,Modifier.weight(1f),if(offer!=null)"券后"else if(promotion)"促销价"else"")
                     IconButton({if(!adding)scope.launch{adding=true;try{added=onAdd()}finally{adding=false}}},Modifier.size(36.dp),enabled=!adding&&product.stock>0){
                         Box(Modifier.size(23.dp).background(MaterialTheme.colorScheme.primaryContainer,CircleShape),contentAlignment=Alignment.Center){Icon(if(added)Icons.Outlined.Check else Icons.Outlined.Add,"加入购物袋：${product.name}",Modifier.size(17.dp),tint=MaterialTheme.colorScheme.primary)}
                     }
                 }
-                if(product.originalPrice>product.price)Text(credit(product.originalPrice),fontSize=11.sp,textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                if(product.originalPrice>(offer?.finalPrice ?: product.price))Text(shopMoney(product.originalPrice),lineHeight=14.sp,fontSize=11.sp,textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
+    if(couponDetails&&offer!=null)IosDialog({couponDetails=false},{Text("已为你优选 ${offer.couponName}")},{Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
+        Text(offer.condition)
+        Text(if(offer.stack)"可与商品促销同享"else"与商品促销自动择优")
+        Text("单件券后 ${shopMoney(offer.finalPrice)}",fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.primary)
+        Text("按当前可用券比较后选择。多件商品以整单结算规则为准。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }},{PlainButton({couponDetails=false}){Text("知道了")}})
+
 }
 
 @Composable
-private fun CompactShopPrice(amount:Long,modifier:Modifier=Modifier) {
+private fun CompactShopPrice(amount:Long,modifier:Modifier=Modifier,label:String="") {
     val measurer=rememberTextMeasurer();val density=LocalDensity.current
     val primary=MaterialTheme.colorScheme.primary;val muted=MaterialTheme.colorScheme.onSurfaceVariant
     val style=MaterialTheme.typography.bodyMedium.copy(lineHeight=24.sp,fontFeatureSettings="tnum")
     fun text(scale:Float)=buildAnnotatedString {
-        withStyle(SpanStyle(fontSize=(20*scale).sp,fontWeight=FontWeight.SemiBold,color=primary)){append(credit(amount))}
-        withStyle(SpanStyle(fontSize=(9*scale).sp,color=muted)){append(" 信用点")}
+        withStyle(SpanStyle(fontSize=(20*scale).sp,fontWeight=FontWeight.SemiBold,color=primary)){append(shopMoney(amount))}
+        if(label.isNotEmpty())withStyle(SpanStyle(fontSize=(10*scale).sp,color=muted)){append(" $label")}
     }
     BoxWithConstraints(modifier){
         val width=with(density){maxWidth.toPx()};val measured=measurer.measure(text(1f),style,maxLines=1,softWrap=false).size.width

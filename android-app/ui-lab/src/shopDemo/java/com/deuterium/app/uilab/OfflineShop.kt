@@ -20,11 +20,31 @@ internal class OfflineShop(private val context:Context):Interceptor {
     private val groups=(0 until categories.length()).associate{categories.getJSONObject(it).let{c->c.getString("categoryId") to c.optString("parentCategoryId")}}
     val media:List<Pair<String,String>> = (0 until data.getJSONArray("media").length()).map{data.getJSONArray("media").getJSONObject(it).let{m->m.getString("assetId") to m.getString("file")}}
     fun image(id:String)=JSONObject().put("assetId",id).put("status","READY").put("url","https://offline.invalid/media/$id").put("contentType",if(id=="demo_banner")"image/png"else"image/webp").put("urlExpiresAt","2099-01-01T00:00:00Z")
-    private fun product(value:JSONObject):JSONObject=JSONObject(value.toString()).put("images",JSONArray().put(image(value.getJSONObject("content").getString("coverAssetId"))))
+    private val couponProducts=(0 until products.length()).filter{it%4>=2}.map{products.getJSONObject(it).getString("productId")}.toSet()
+    private val demoCoupons=listOf(
+        DemoCoupon("demo_home20","家居券",minimum=10000,amountOff=2000,productIds=couponProducts),
+        DemoCoupon("demo_home40","满减券",minimum=20000,amountOff=4000,productIds=couponProducts),
+        DemoCoupon("demo_percent","折扣券",rate=9000,cap=3000,productIds=couponProducts),
+        DemoCoupon("demo_any5","通用券",amountOff=500,productIds=couponProducts),
+    )
+    private fun amount(cents:Long)=java.math.BigDecimal.valueOf(cents,2).toPlainString()
+    private fun product(value:JSONObject):JSONObject {
+        val result=JSONObject(value.toString());val c=result.getJSONObject("content")
+        val index=result.getString("productId").substringAfterLast('_').toInt()
+        val original=listOf(12900L,15900L,8900L,4900L,19900L,7900L,29900L,6900L)[index%8]
+        val sale=if(index%4==1||index%4==3)demoRate(original,8000)else original
+        c.put("price",amount(original)).put("discountRate",if(sale<original)8000 else 10000)
+        result.put("version",2).put("effectivePrice",amount(sale)).put("images",JSONArray().put(image(c.getString("coverAssetId"))))
+        bestDemoCoupon(original,sale,result.getString("productId"),"demo_store",demoCoupons,java.time.Instant.now())?.let{offer->
+            result.put("offerPreview",JSONObject().put("couponId",offer.couponId).put("couponName",offer.couponName).put("condition",offer.condition).put("finalPrice",amount(offer.finalPrice)).put("saving",amount(offer.saving)).put("stack",offer.stack))
+        }
+        return result
+    }
+    private fun couponsView()=JSONArray(demoCoupons.map{coupon->JSONObject().put("couponId",coupon.id).put("name",coupon.name).put("type","ITEM").put("benefit",if(coupon.amountOff>0)"FIXED"else"PERCENT").put("amountOff",amount(coupon.amountOff)).put("discountRate",coupon.rate).put("minimumSpend",amount(coupon.minimum)).put("maxDiscount",amount(coupon.cap)).put("stackWithProductDiscount",coupon.stack).put("startsAt",coupon.starts.toString()).put("endsAt",coupon.ends.toString()).put("productIds",JSONArray(coupon.productIds.toList())).put("storeIds",JSONArray()).put("scopeDescription","指定演示商品 · 单件使用")})
     private fun cartView():JSONObject=JSONObject().put("version",version).put("items",JSONArray(cart.keys().asSequence().map{JSONObject().put("productId",it).put("quantity",cart.getInt(it))}.toList()))
     @Synchronized override fun intercept(chain:Interceptor.Chain):Response {
         val request=chain.request();val path=request.url.encodedPath.removePrefix("/api/v1")
-        val root=JSONObject();var code=200
+        val root=JSONObject().put("serverTime",java.time.Instant.now().toString());var code=200
         val body=request.body?.let{b->val buffer=Buffer();b.writeTo(buffer);JSONObject(buffer.readUtf8())} ?: JSONObject()
         val value:Any=when {
             path=="/account/login"->JSONObject().put("token","offline-demo-only").put("user",JSONObject().put("playerRef","offline_demo").put("gameId","DemoPlayer").put("displayName","演示玩家").put("gameVerified",true))
@@ -48,6 +68,8 @@ internal class OfflineShop(private val context:Context):Interceptor {
                 version++;preferences.edit().putString("cart",cart.toString()).apply();cartView()
             }
             path=="/store/cart"->cartView()
+            path=="/store/coupons/attention"&&request.method=="POST"->JSONObject().put("acknowledged",true)
+            path=="/store/coupons"->couponsView()
             path.startsWith("/store/coupons")||path=="/orders"||path.startsWith("/market/")->JSONArray()
             else->{code=422;root.put("error",JSONObject().put("code","OFFLINE_DEMO").put("message","这是离线商城演示，不创建订单或执行真实交易。"));JSONObject()}
         }

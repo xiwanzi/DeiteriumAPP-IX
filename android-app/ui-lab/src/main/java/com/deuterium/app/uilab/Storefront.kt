@@ -35,10 +35,11 @@ val ShopCatalog=mutableStateListOf<ShopProduct>()
 
 @Composable
 internal fun ProductPoster(product:ShopProduct,modifier:Modifier,onClick:()->Unit) {
+    val displayPrice=product.offerPreview?.finalPrice ?: product.price
     val ink=if(product.darkArt)Color.White else Color(0xFF1D1D1F)
     Box(modifier.clip(RoundedCornerShape(28.dp)).background(if(product.darkArt)Color.Black else Color.White).clickable(onClick=onClick)){
         if(product.poster)ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxSize(),scale=ContentScale.Crop) else ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(220.dp),scale=ContentScale.Crop)
-        Column(Modifier.padding(25.dp)){Text(product.category.uppercase(),fontSize=11.sp,fontWeight=FontWeight.SemiBold,letterSpacing=1.sp,color=ink.copy(alpha=.65f));Text(product.name,Modifier.padding(top=9.dp),fontSize=25.sp,lineHeight=31.sp,fontWeight=FontWeight.Bold,color=ink);Text(product.subtitle,Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium,color=ink);Text("${credit(product.price)} 信用点",Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodySmall,color=ink.copy(alpha=.75f));if(product.originalPrice>product.price)Text(credit(product.originalPrice),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=ink.copy(alpha=.5f))}
+        Column(Modifier.padding(25.dp)){Text(product.category.uppercase(),fontSize=11.sp,fontWeight=FontWeight.SemiBold,letterSpacing=1.sp,color=ink.copy(alpha=.65f));Text(product.name,Modifier.padding(top=9.dp),fontSize=25.sp,lineHeight=31.sp,fontWeight=FontWeight.Bold,color=ink);Text(product.subtitle,Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodyMedium,color=ink);Text(shopMoney(displayPrice)+(if(product.offerPreview!=null)" 券后"else""),Modifier.padding(top=7.dp),style=MaterialTheme.typography.bodySmall,color=ink.copy(alpha=.75f));if(product.originalPrice>displayPrice)Text(shopMoney(product.originalPrice),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=ink.copy(alpha=.5f))}
     }
 }
 @Composable
@@ -60,7 +61,7 @@ fun ProductPage(product:ShopProduct,state:LabState,topInset:Dp,onBag:()->Unit,on
         }
         Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(),color=MaterialTheme.colorScheme.surface.copy(alpha=.97f)) {
             Row(Modifier.navigationBarsPadding().padding(18.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)) {
-                Column(Modifier.weight(1f)){Text(credit(product.price*quantity),style=MaterialTheme.typography.titleLarge);Text(if(added&&product.id in state.cart)"已加入购物袋" else "信用点",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                Column(Modifier.weight(1f)){Text(shopMoney(product.price*quantity),style=MaterialTheme.typography.titleLarge);Text(if(added&&product.id in state.cart)"已加入购物袋" else "商品金额",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                 MotionButton({if(added&&product.id in state.cart)onBag() else if(!adding)scope.launch{adding=true;if(state.commerce.network?.setCart(product.id,((state.cart[product.id] ?: 0)+quantity).coerceAtMost(product.limit))==true){added=true;onAdded(product,origin)};adding=false}},Modifier.height(50.dp).onGloballyPositioned{origin=it.positionInRoot()+Offset(it.size.width/2f,it.size.height/2f)},enabled=!adding&&product.stock>0){Text(if(product.stock<=0)"已售罄" else if(adding)"正在加入…" else if(added&&product.id in state.cart)"查看购物袋" else "加入购物袋")}
             }
         }
@@ -105,10 +106,10 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
             items(unavailable,key={"unavailable-$it"}){id->LabCard{Text("该商品暂时无法购买",style=MaterialTheme.typography.titleMedium);Text("商品可能已下架或暂不可用。",Modifier.padding(top=8.dp),color=MaterialTheme.colorScheme.onSurfaceVariant);PlainButton({scope.launch{state.commerce.network?.setCart(id,0)}}){Text("移出购物袋")}}}
             items(items,key={it.first.id}){(product,count)->LabCard{
                 Row(verticalAlignment=Alignment.CenterVertically){ServerAssetImage(product.photos.firstOrNull(),product.name,Modifier.size(80.dp,100.dp).clip(RoundedCornerShape(15.dp)),scale=ContentScale.Crop);Column(Modifier.weight(1f).padding(start=14.dp)){Text(product.name,style=MaterialTheme.typography.titleMedium);ShopPriceLabel(product,modifier=Modifier.padding(top=6.dp))};IconButton({scope.launch{state.commerce.network?.setCart(product.id,0);error=state.commerce.network?.error}}){Icon(Icons.Outlined.Close,"移除${product.name}",Modifier.size(18.dp))}}
-                Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){Text(credit(product.price*count),style=MaterialTheme.typography.titleMedium);QuantityControl(count,{number->scope.launch{state.commerce.network?.setCart(product.id,number);error=state.commerce.network?.error}},max=product.limit)}
+                Row(Modifier.fillMaxWidth().padding(top=16.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){Text(shopMoney(product.price*count),style=MaterialTheme.typography.titleMedium);QuantityControl(count,{number->scope.launch{state.commerce.network?.setCart(product.id,number);error=state.commerce.network?.error}},max=product.limit)}
             }}
-            if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("付款方式","钱包余额");DetailRow("可用余额",if(state.balanceKnown)credit(state.balance) else "正在同步");
-                if(summary!=null){if(summary.originalTotal>summary.total)DetailRow("商品原价","${credit(summary.originalTotal)}");if(summary.productDiscount>0)DetailRow("商品优惠","−${credit(summary.productDiscount)}");if(summary.couponDiscount>0){DetailRow("优惠券","−${credit(summary.couponDiscount)}");Text("${summary.couponName ?: "已为你选择优惠"} · 已自动择优",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)};DetailRow("实付合计","${credit(summary.total)} 信用点")}
+            if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("付款方式","钱包余额");DetailRow("可用余额",if(state.balanceKnown)shopMoney(state.balance) else "正在同步");
+                if(summary!=null){if(summary.originalTotal>summary.total)DetailRow("商品原价",shopMoney(summary.originalTotal));if(summary.productDiscount>0)DetailRow("商品优惠","−${shopMoney(summary.productDiscount)}");if(summary.couponDiscount>0){DetailRow("优惠券","−${shopMoney(summary.couponDiscount)}");Text("${summary.couponName ?: "已为你选择优惠"} · 已自动择优",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)};DetailRow("实付合计",shopMoney(summary.total))}
                 else Text(if(quoting)"正在计算优惠…" else "重新确认价格后即可结算",Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
                 error?.let{Text(it,Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{state.commerce.network?.refreshCart();quoteKey=UUID.randomUUID().toString()}}){Text("刷新商品与优惠")}}
             }}
@@ -124,7 +125,7 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
                 else if(prices.total>state.balance)error="余额不足，请调整商品数量"
                 else{error=null;paymentKey=UUID.randomUUID().toString();confirmQuote=true}}
             quoting=false
-        }},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=cartReady&&!quoting&&summary!=null&&state.commerce.network?.cartBusy!=true){Text(if(quoting)"正在计算优惠…" else if(summary!=null)"去结算 ${credit(summary.total)}" else "等待确认价格")}}
+        }},Modifier.navigationBarsPadding().padding(18.dp).fillMaxWidth().height(52.dp),enabled=cartReady&&!quoting&&summary!=null&&state.commerce.network?.cartBusy!=true){Text(if(quoting)"正在计算优惠…" else if(summary!=null)"去结算 ${shopMoney(summary.total)}" else "等待确认价格")}}
     }
     if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false;quoteKey=UUID.randomUUID().toString()}){confirmQuote=false;val lines=JSONObject(quoteText!!).getJSONArray("items");pending=HashMap((0 until lines.length()).associate{val item=lines.getJSONObject(it);item.getString("productId") to item.getInt("quantity")})}
     if(pending.isNotEmpty()&&quoteText!=null) {
@@ -135,6 +136,6 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
 @Composable
 fun CheckoutQuoteConfirmation(quote:JSONObject,onClose:()->Unit,onConfirm:()->Unit) {
     val summary=remember(quote.toString()){checkoutSummary(quote)}
-    IosDialog(onClose,{Text("确认付款")},{Column{Text("是否支付 ${credit(summary.total)} 信用点？");if(summary.originalTotal>summary.total)Text("原价 ${credit(summary.originalTotal)}",Modifier.padding(top=8.dp),textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.5f),style=MaterialTheme.typography.bodySmall);summary.couponName?.let{Text("已使用：$it",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}},
+    IosDialog(onClose,{Text("确认付款")},{Column{Text("是否支付 ${shopMoney(summary.total)}？");if(summary.originalTotal>summary.total)Text("原价 ${shopMoney(summary.originalTotal)}",Modifier.padding(top=8.dp),textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.5f),style=MaterialTheme.typography.bodySmall);summary.couponName?.let{Text("已使用：$it",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}},
         {PlainButton(onConfirm){Text("确认付款")}}, {PlainButton(onClose){Text("取消")}})
 }
