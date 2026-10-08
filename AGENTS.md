@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-08：**App 2.0.20（22000）、Web 2.0.29 与配套 Go 已于 22:32 上线**（PR #81，源码 `cda164865864`）。商城双列卡片、图片主体适配与六大分类已发布；普通价格浅色黑/深色白，优惠价及信息低饱和粉色，按账号真实优惠预估接入。57 条账号、38 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留；三常驻节点在线，MEK 16:45 已停止并保持。维护 `.worktrees/catalog-scale` / `xiwanzi/release-v220-live`，见[上线记录](docs/deployment/deuterium-2.0.20-live.md)。下方为较早记录。
+
 2026-10-08：**App 2.0.19（21900）、Web 2.0.28 与配套 Go 已于 14:31 上线**（PR #79，源码 `42ea3dcd05a1`）。修复不限库存误判售罄、商城全量加载与离页红错，增加分页及图片预取；56 条账号、38 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，四节点在线。维护 `.worktrees/catalog-scale` / `xiwanzi/catalog-scale`，见[上线记录](docs/deployment/deuterium-2.0.19-live.md)。下方为较早记录。
 
 2026-10-05：**App 2.0.18（21800）已于 23:53 上线**（PR #76，源码 `2e671cc98d32`）。找回密码等输入框采用实色底、常驻边框和清晰标签，浮层玻璃保留。Web 2.0.27、Go 程序及游戏插件保持；55 账号、27 订单、5 委托保留，四节点在线。维护 `.worktrees/registration-profile-check`，见[上线记录](docs/deployment/deuterium-2.0.18-live.md)。下方为较早记录。
