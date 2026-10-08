@@ -13,6 +13,9 @@ func (s *Store) CatalogPageViewsV2(ctx context.Context, viewer string, records [
 	if len(records) == 0 {
 		return views, nil
 	}
+	if !management && records[0].Kind == "category" {
+		return s.catalogCategoryPageViews(ctx, viewer, records)
+	}
 	if management || records[0].Kind != "product" {
 		for _, d := range records {
 			view, err := s.CatalogViewV2(ctx, viewer, d, management)
@@ -104,6 +107,56 @@ func (s *Store) CatalogPageViewsV2(ctx context.Context, viewer string, records [
 		if err != nil {
 			return nil, err
 		}
+		views = append(views, view)
+	}
+	return views, nil
+}
+
+// Category tiles use one published cover per category. Never load the full
+// product catalog or expose draft media just to illustrate the directory.
+func (s *Store) catalogCategoryPageViews(ctx context.Context, viewer string, categories []CatalogRecordV2) ([]any, error) {
+	args := make([]any, 0, len(categories))
+	for _, category := range categories {
+		args = append(args, category.ID)
+	}
+	marks := strings.TrimSuffix(strings.Repeat("?,", len(args)), ",")
+	rows, err := s.DB.QueryContext(ctx, catalogSelect+` WHERE sequence_id IN (SELECT MAX(sequence_id) FROM catalog_records_v2 WHERE kind='product' AND state='ACTIVE' AND published_body IS NOT NULL AND category_ref IN (`+marks+`) GROUP BY category_ref)`, args...)
+	if err != nil {
+		return nil, err
+	}
+	products := []CatalogRecordV2{}
+	for rows.Next() {
+		product, e := catalogScan(rows)
+		if e != nil {
+			rows.Close()
+			return nil, e
+		}
+		product.Published["galleryAssetIds"] = []any{catalogString(product.Published, "coverAssetId")}
+		products = append(products, product)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	previews, err := s.CatalogPageViewsV2(ctx, viewer, products, false)
+	if err != nil {
+		return nil, err
+	}
+	images := map[string]any{}
+	for i, raw := range previews {
+		view := raw.(map[string]any)
+		if photos, ok := view["images"].([]any); ok && len(photos) > 0 {
+			images[catalogString(products[i].Published, "categoryId")] = photos[0]
+		}
+	}
+	views := make([]any, 0, len(categories))
+	for _, category := range categories {
+		view, e := s.CatalogViewV2(ctx, viewer, category, false)
+		if e != nil {
+			return nil, e
+		}
+		view["image"] = images[category.ID]
 		views = append(views, view)
 	}
 	return views, nil

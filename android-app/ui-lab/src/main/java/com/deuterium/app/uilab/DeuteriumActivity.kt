@@ -185,11 +185,11 @@ private enum class Destination(val title:String,val icon:ImageVector) {
 }
 
 @Composable
-private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMaterials,avatar:String?,userName:String,
+internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMaterials,avatar:String?,userName:String,
     onTheme:(Int)->Unit,onMotion:(Boolean)->Unit,onGlass:(Boolean)->Unit,onParameters:(GlassMaterials)->Unit,onAvatar:()->Unit,onLogout:()->Unit,
-    initialFollowed:Set<String>,saveFollowed:(Set<String>)->Unit,tilt:Boolean,onTilt:(Boolean)->Unit,overlayGlass:Boolean,onOverlayGlass:(Boolean)->Unit,incomingRoute:String?,consumeRoute:()->Unit,session:LabSession) {
+    initialFollowed:Set<String>,saveFollowed:(Set<String>)->Unit,tilt:Boolean,onTilt:(Boolean)->Unit,overlayGlass:Boolean,onOverlayGlass:(Boolean)->Unit,incomingRoute:String?,consumeRoute:()->Unit,session:LabSession,providedState:LabState?=null) {
     val context=LocalContext.current;val scope=rememberCoroutineScope();val notifications=remember{LabNotifications(context.applicationContext)}
-    val state=remember(userName){session.get(userName,initialFollowed,saveFollowed,notifications::post,context.applicationContext)}
+    val state=providedState ?: remember(userName){session.get(userName,initialFollowed,saveFollowed,notifications::post,context.applicationContext)}
     LaunchedEffect(state.storageMessage){state.storageMessage?.let{Toast.makeText(context,it,Toast.LENGTH_LONG).show()}}
     if(state.restoring){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background));return}
     var destination by rememberSaveable{mutableStateOf(Destination.Shop)};var stack by rememberSaveable{mutableStateOf(listOf<String>())}
@@ -241,13 +241,15 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
         route?.startsWith("market-product:")==true->"商品详情";else->destination.title
     }
     CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalIosOverlayRegistry provides overlays) {
-        Box(Modifier.fillMaxSize().then(if(route==null)Modifier.nestedScroll(connection) else Modifier)) {
+        Box(Modifier.fillMaxSize().then(if(route==null&&destination!=Destination.Shop)Modifier.nestedScroll(connection) else Modifier)) {
             GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()) {
                 AnimatedContent(page,modifier=Modifier.fillMaxSize(),transitionSpec={if(motion)(fadeIn(tween(180,25))+slideInHorizontally(tween(260,easing=FastOutSlowInEasing)){it/14}) togetherWith fadeOut(tween(130)) else EnterTransition.None togetherWith ExitTransition.None},label="pages"){current->
                     saved.SaveableStateProvider(current) {
                         val inset=if(current in Destination.entries.map{it.name})statusTop+184.dp-chromeFor(current).offset.dp else secondaryContentTop
                         when {
-                            current=="Shop"->ShopPage(state,{open("product:$it")},inset,"")
+                            current=="Shop"->ShopPage(state,{open("product:$it")},statusTop,"",::open)
+                            current.startsWith("shop-categories:")->ShopCategoriesPage(state,current.substringAfter(":"),{back()},::open)
+                            current.startsWith("search:Shop:")->ShopSearchPage(state,android.net.Uri.decode(current.removePrefix("search:Shop:")),{back()},::open,current==page)
                             current=="Market"->MarketPage(state.commerce,"",inset,{open("market-product:$it")})
                             current=="Info"->InfoPage(state,inset,"",::open)
                             current=="Profile"->ProfilePage(state,avatar,userName,inset,"",::open,onAvatar)
@@ -285,11 +287,10 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
                     }
                 }
             }
-            if(route==null)CollapsingChrome(title,when(destination){Destination.Shop->"搜索商品";Destination.Market->"搜索物品或玩家";Destination.Info->"搜索联系人";Destination.Profile->"搜索设置"},chrome,statusTop,backdrop,{open("search:${destination.name}")}) {
+            if(route==null&&destination!=Destination.Shop)CollapsingChrome(title,when(destination){Destination.Shop->"搜索商品";Destination.Market->"搜索物品或玩家";Destination.Info->"搜索联系人";Destination.Profile->"搜索设置"},chrome,statusTop,backdrop,{open("search:${destination.name}")}) {
                 if(chrome.searchProgress>.75f)IconButton({open("search:${destination.name}")}){Icon(Icons.Outlined.Search,"搜索",tint=MaterialTheme.colorScheme.primary)}
-                if(destination==Destination.Shop)Box(Modifier.onGloballyPositioned{bagCenter=it.positionInRoot()+Offset(it.size.width/2f,it.size.height/2f)}){ShoppingBagButton(state.cart.values.sum()){open("bag")}}
                 if(destination==Destination.Market)IconButton({open("publish")}){Icon(Icons.Outlined.Add,"发布商品",tint=MaterialTheme.colorScheme.primary)}
-            } else if(!route.startsWith("search:")) {
+            } else if(route!=null&&!route.startsWith("search:")&&!route.startsWith("shop-categories:")) {
                 GradientGlassHeader(backdrop,Modifier.fillMaxWidth().height(compactFadeBottom))
                 Row(Modifier.fillMaxWidth().padding(top=statusTop).height(48.dp).padding(horizontal=10.dp),verticalAlignment=Alignment.CenterVertically){
                     IconButton({back()}){Icon(Icons.Outlined.ChevronLeft,"返回",Modifier.size(29.dp),tint=MaterialTheme.colorScheme.primary)}
@@ -324,7 +325,7 @@ private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMateri
 }
 
 @Composable
-private fun ShoppingBagButton(count:Int,onClick:()->Unit){
+internal fun ShoppingBagButton(count:Int,onClick:()->Unit){
     Box(Modifier.size(48.dp)){
         IconButton(onClick,Modifier.matchParentSize()) { Icon(Icons.Outlined.ShoppingBag,"购物袋",Modifier.size(23.dp)) }
         if(count>0)Box(Modifier.align(Alignment.TopEnd).padding(top=1.dp,end=1.dp).defaultMinSize(minWidth=19.dp,minHeight=19.dp).background(MaterialTheme.colorScheme.error,CircleShape).padding(horizontal=4.dp,vertical=3.dp),contentAlignment=Alignment.Center){

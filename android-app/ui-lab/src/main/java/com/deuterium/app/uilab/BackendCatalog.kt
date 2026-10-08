@@ -62,22 +62,47 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
     private val brands=mutableMapOf<String,String>()
     private var metadataLoadedAt=0L
     val shopCategories:Map<String,String> get()=categories.toMap()
+    val categoryTree=mutableStateListOf<ShopCategory>()
+    val banners=mutableStateListOf<ShopBanner>()
+    var homeError by mutableStateOf<String?>(null);private set
+    private var homeLoadedAt=0L
+    suspend fun refreshHome(force:Boolean=false) {
+        if(!force && homeLoadedAt!=0L && System.nanoTime()-homeLoadedAt<60_000_000_000L)return
+        val requestScope=api.financialScope()
+        try {
+            val next=mutableListOf<ShopBanner>()
+            for(store in api.listAll("/store/stores")) {
+                val home=try { api.request("GET","/store/stores/${store.getString("storeId")}/homepage") }
+                    catch(f:ApiFailure){if(f.status==404)continue else throw f}
+                val rows=home.array("banners")
+                for(i in 0 until rows.length()) {
+                    val b=rows.getJSONObject(i);val asset=b.optJSONObject("image")?.optString("assetId").orEmpty()
+                    if(asset.isNotBlank())next.add(ShopBanner(b.getString("sectionId"),b.getString("title"),"asset:$asset",b.optInt("sortOrder")))
+                }
+            }
+            requestScope.verifyCurrent(api.financialScope());banners.clear();banners.addAll(next.sortedBy{it.order});homeError=null;homeLoadedAt=System.nanoTime()
+        }catch(c:CancellationException){throw c}catch(f:Exception){homeError=f.message ?: "活动暂时无法加载"}
+    }
     internal val storePage=CatalogPager({catalogRequest(it)},::product,{it.id},::cacheProducts)
+    internal val recommendedPage=CatalogPager({catalogRequest(it)},::product,{it.id},::cacheProducts)
     internal val searchPage=CatalogPager({catalogRequest(it)},::product,{it.id},::cacheProducts)
     private var visibilityRevision=0L
     private val serverOrders=mutableMapOf<String,JSONObject>()
     private fun report(failure:Throwable){error=failure.message ?: "服务暂不可用";state.storageMessage=error}
-    suspend fun refreshStore(query:String="",categoryId:String="",force:Boolean=false)=storePage.refresh(query,categoryId,force)
+    suspend fun refreshStore(query:String="",categoryId:String="",force:Boolean=false,categoryGroup:String="")=storePage.refresh(query,categoryId,force,categoryGroup=categoryGroup)
+    suspend fun ensureMetadata(){ if(categoryTree.isEmpty())storePage.refresh() }
     private suspend fun catalogRequest(path:String):JSONObject=coroutineScope {
         val requestScope=api.financialScope()
         val metadata=async{metadataRefresh.run {
             if(metadataLoadedAt==0L||System.nanoTime()-metadataLoadedAt>=60_000_000_000L){
                 val categoryRead=async{api.listAll("/store/categories")}
                 val brandRead=async{api.listAll("/store/brands")}
-                val nextCategories=categoryRead.await().associate{it.getString("categoryId") to it.getString("name")}
+                val categoryRows=categoryRead.await()
+                val nextTree=categoryRows.map{ShopCategory(it.getString("categoryId"),it.getString("name"),it.optString("parentCategoryId").takeUnless{v->v=="null"}.orEmpty(),it.optInt("sortOrder"),it.optJSONObject("image")?.optString("assetId")?.takeIf{v->v.isNotBlank()}?.let{v->"asset:$v"})}.sortedWith(compareBy<ShopCategory>{it.order}.thenBy{it.name}.thenBy{it.id})
+                val nextCategories=nextTree.associate{it.id to it.name}
                 val nextBrands=brandRead.await().associate{it.getString("brandId") to it.getString("name")}
                 requestScope.verifyCurrent(api.financialScope())
-                categories.clear();categories.putAll(nextCategories);brands.clear();brands.putAll(nextBrands);metadataLoadedAt=System.nanoTime()
+                categoryTree.clear();categoryTree.addAll(nextTree);categories.clear();categories.putAll(nextCategories);brands.clear();brands.putAll(nextBrands);metadataLoadedAt=System.nanoTime()
             }
         }}
         val response=api.request("GET",path)
@@ -93,7 +118,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             runCatching{Color(android.graphics.Color.parseColor(c.optString("accentColor")))}.getOrDefault(Color(0xFFEDF1F4)),darkArt=c.optString("posterTone")=="DARK",
             contents=c.array("includedItems").strings(),brand=brands[c.optString("brandId")] ?: "Deuterium",photos=c.array("galleryAssetIds").strings().map{"asset:$it"},description=c.getString("description"),
             deliverySummary=c.getString("deliverySummary"),estimatedDelivery=c.getString("estimatedDelivery"),version=value.getLong("version"),stock=if(value.isNull("availableStock"))999 else value.getInt("availableStock"),limit=c.optInt("limitPerOrder",9),
-            originalPrice=apiCents(c.getString("price")),deliveryCredits=c.optLong("deliveryCredits"),purchaseLimits=productLimitDescriptions(c.optJSONObject("purchaseLimits")),storeId=value.optString("storeId"))
+            originalPrice=apiCents(c.getString("price")),deliveryCredits=c.optLong("deliveryCredits"),purchaseLimits=productLimitDescriptions(c.optJSONObject("purchaseLimits")),storeId=value.optString("storeId"),categoryId=c.optString("categoryId"),badges=c.array("badges").strings(),offerPreview=shopOfferPreview(value.optJSONObject("offerPreview"),apiCents(value.optString("effectivePrice",c.getString("price")))))
     }
     suspend fun refreshProduct(id:String){val requestScope=api.financialScope();try{val value=api.request("GET","/store/products/$id");requestScope.verifyCurrent(api.financialScope());cacheProducts(listOf(product(value)))}catch(cancelled:CancellationException){throw cancelled}catch(failure:Exception){report(failure)}}
     suspend fun refreshMarket(){
@@ -170,7 +195,18 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             .put("delivery",JSONObject().put("method",methodCode(method)).put("location",location).put("projectName",project)),idempotencyKey=quoteKey).also{checkoutSummary(it)}
     }.getOrElse{report(it);null}
     private fun date(value:JSONObject,key:String):LocalDateTime?=value.optString(key).takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).atZone(ZoneId.systemDefault()).toLocalDateTime()}
+    private fun invalidateRedeemedCoupon(id:String) {
+        for(page in listOf(storePage,searchPage,recommendedPage)) {
+            if(page.items.any{it.offerPreview?.couponId==id}) {
+                page.items.indices.forEach{i->if(page.items[i].offerPreview?.couponId==id)page.items[i]=page.items[i].copy(offerPreview=null)}
+                page.invalidate()
+            }
+        }
+        ShopCatalog.indices.forEach{i->if(ShopCatalog[i].offerPreview?.couponId==id)ShopCatalog[i]=ShopCatalog[i].copy(offerPreview=null)}
+    }
     private fun putOrder(value:JSONObject):String {
+        if(value.optJSONObject("buyer")?.optString("playerRef")==api.playerRef&&value.optString("fundsStatus") in setOf("PAID","HELD","SETTLED"))value.optJSONObject("coupon")?.optString("couponId")?.takeIf{it.isNotBlank()}?.let(::invalidateRedeemedCoupon)
+
         val id=value.getString("orderId");if(value.optBoolean("hiddenFromHistory")){state.commerce.orders.removeAll{it.id==id};return id};val refund=value.optJSONObject("refund");val delivery=value.getJSONObject("delivery");val seller=value.getJSONObject("seller");val buyer=value.getJSONObject("buyer")
         val items=value.getJSONArray("items");val lines=(0 until items.length()).map{index->val item=items.getJSONObject(index);val photos=item.array("photoAssetIds").strings().map{"asset:$it"};OrderLine(item.getString("productId"),item.getString("title"),item.optString("subtitle"),apiCents(item.getString("unitPrice")),item.getInt("quantity"),image=if(value.optString("orderType")=="AI_SUBSCRIPTION")R.drawable.xiaoxiang_avatar else 0,imageUri=photos.firstOrNull(),imageUris=photos)}
         val amounts=checkoutAmounts(value,lines.fold(0L){sum,line->Math.addExact(sum,line.total)},"amount")

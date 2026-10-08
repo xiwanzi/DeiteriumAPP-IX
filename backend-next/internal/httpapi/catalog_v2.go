@@ -168,6 +168,17 @@ func (s *Server) catalogRenderV2(w http.ResponseWriter, r *http.Request, user st
 		catalogFailV2(w, r, e)
 		return
 	}
+	if d.Kind == "product" && !management {
+		offers, err := s.Store.CatalogOfferPreviewsV220(r.Context(), user, []store.CatalogRecordV2{d})
+		if err != nil {
+			catalogFailV2(w, r, err)
+			return
+		}
+		if offer, ok := offers[d.ID]; ok {
+			view["offerPreview"] = offer
+		}
+		w.Header().Set("Cache-Control", "private, no-store")
+	}
 	catalogSuccessV2(w, r, status, view)
 }
 
@@ -271,7 +282,7 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 		if storeID == "" {
 			storeID = q.Get("storeId")
 		}
-		f := store.CatalogFilterV2{Kind: kind, StoreID: storeID, BrandID: q.Get("brandId"), CategoryID: q.Get("categoryId"), SellerRef: q.Get("sellerPlayerRef"), Query: q.Get("q"), Management: management, Limit: limit + 1}
+		f := store.CatalogFilterV2{Kind: kind, StoreID: storeID, BrandID: q.Get("brandId"), CategoryID: q.Get("categoryId"), SellerRef: q.Get("sellerPlayerRef"), Query: q.Get("q"), Badge: q.Get("badge"), CategoryGroup: q.Get("categoryGroup"), Management: management, Limit: limit + 1}
 		if kind == "listing" {
 			f.CategoryID = q.Get("categoryCode")
 			if f.CategoryID != "" && !catalogAllowedCategoryV2(f.CategoryID) {
@@ -303,11 +314,11 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 				return
 			}
 		}
-		if utf8.RuneCountInString(f.Query) > 80 {
+		if utf8.RuneCountInString(f.Query) > 80 || utf8.RuneCountInString(f.Badge) > 20 || utf8.RuneCountInString(f.CategoryGroup) > 40 || (f.Badge != "" && kind != "product") {
 			catalogFailV2(w, r, bridge.ErrProtocol)
 			return
 		}
-		scope := r.URL.Path + "|" + f.StoreID + "|" + f.BrandID + "|" + f.CategoryID + "|" + f.SellerRef + "|" + f.Query + "|" + f.State + "|" + u.User.ID
+		scope := r.URL.Path + "|" + f.StoreID + "|" + f.BrandID + "|" + f.CategoryID + "|" + f.SellerRef + "|" + f.Query + "|" + f.Badge + "|" + f.CategoryGroup + "|" + f.State + "|" + u.User.ID
 		f.Before, e = store.CatalogParseCursorV2(scope, q.Get("cursor"))
 		if e != nil {
 			catalogFailV2(w, r, e)
@@ -326,6 +337,20 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 		if e != nil {
 			catalogFailV2(w, r, e)
 			return
+		}
+		if kind == "product" && !management {
+			offers, err := s.Store.CatalogOfferPreviewsV220(r.Context(), u.User.ID, rows)
+			if err != nil {
+				catalogFailV2(w, r, err)
+				return
+			}
+			for _, raw := range views {
+				view := raw.(map[string]any)
+				if offer, ok := offers[view["productId"].(string)]; ok {
+					view["offerPreview"] = offer
+				}
+			}
+			w.Header().Set("Cache-Control", "private, no-store")
 		}
 		var cursor any
 		if more {

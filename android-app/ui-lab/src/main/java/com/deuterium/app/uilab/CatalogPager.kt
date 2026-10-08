@@ -24,10 +24,12 @@ internal class CatalogPager<T>(
     private var failedAppend=false
     private val seen=mutableSetOf<String>()
 
-    suspend fun refresh(query:String="",categoryId:String="",force:Boolean=false) {
+    suspend fun refresh(query:String="",categoryId:String="",force:Boolean=false,badge:String="",categoryGroup:String="") {
         val next="/store/products?limit=40"+
             (if(query.isBlank())"" else "&q=${encode(query.trim())}")+
-            (if(categoryId.isBlank())"" else "&categoryId=${encode(categoryId)}")
+            (if(categoryId.isBlank())"" else "&categoryId=${encode(categoryId)}")+
+            (if(badge.isBlank())"" else "&badge=${encode(badge)}")+
+            (if(categoryGroup.isBlank())"" else "&categoryGroup=${encode(categoryGroup)}")
         if(next==path&&!force&&(loading||(error==null&&loadedAt!=0L&&System.nanoTime()-loadedAt<30_000_000_000L)))return
         val changed=next!=path
         this.query=query.trim()
@@ -35,6 +37,8 @@ internal class CatalogPager<T>(
         if(changed){items.clear();cursor=null;hasMore=false;seen.clear();loadedAt=0}
         read(append=false)
     }
+
+    internal fun invalidate(){loadedAt=0}
 
     suspend fun more() {
         if(loading||!hasMore||cursor==null)return

@@ -5,8 +5,8 @@ import { normalizeMessage } from "./api.js";
 
 test("App previews reflect fixed Android dp frames at multiple phone widths", () => {
   assert.deepEqual(productImageFrame("detail", 393), [353, 260]);
-  assert.deepEqual(productImageFrame("grid", 360), [154, 170]);
-  assert.deepEqual(productImageFrame("grid", 430), [189, 170]);
+  assert.deepEqual(productImageFrame("grid", 360), [170.5, 170.5]);
+  assert.deepEqual(productImageFrame("grid", 430), [205.5, 205.5]);
   assert.deepEqual(productImageFrame("poster", 430), [308, 405]);
   assert.deepEqual(productImageFrame("bag"), [80, 100]);
 });

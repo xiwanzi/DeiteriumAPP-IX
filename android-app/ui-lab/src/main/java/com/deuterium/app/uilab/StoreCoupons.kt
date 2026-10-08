@@ -24,8 +24,8 @@ import java.time.format.DateTimeFormatter
 data class StoreCoupon(val id:String,val name:String,val type:String,val benefit:String,val amountOff:Long,val rate:Int,
     val minimumSpend:Long,val maxDiscount:Long,val stack:Boolean,val scope:String,val startsAt:Instant,val endsAt:Instant,val restricted:Boolean=false,val releaseBatchId:String?=null) {
     fun visible(now:Instant)=!now.isBefore(startsAt)&&now.isBefore(endsAt)
-    val benefitText:String get()=if(benefit=="FIXED")"减 ${credit(amountOff)}" else "${java.math.BigDecimal(rate).divide(java.math.BigDecimal(1000)).stripTrailingZeros().toPlainString()} 折"
-    val conditions:String get()=(if(minimumSpend>0)"满 ${credit(minimumSpend)} 信用点可用" else "无门槛")+(if(benefit=="PERCENT"&&maxDiscount>0)" · 最多减 ${credit(maxDiscount)}" else "")
+    val benefitText:String get()=if(benefit=="FIXED")"减 ${shopMoney(amountOff)}" else "${java.math.BigDecimal(rate).divide(java.math.BigDecimal(1000)).stripTrailingZeros().toPlainString()} 折"
+    val conditions:String get()=(if(minimumSpend>0)"满 ${shopMoney(minimumSpend)} 可用" else "无门槛")+(if(benefit=="PERCENT"&&maxDiscount>0)" · 最多减 ${shopMoney(maxDiscount)}" else "")
 }
 
 fun storeCoupon(value:JSONObject):StoreCoupon {
@@ -84,8 +84,8 @@ private fun StoreCouponCard(coupon:StoreCoupon) {
         Column(Modifier.padding(24.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){Icon(Icons.Outlined.ConfirmationNumber,null,Modifier.size(25.dp),tint=MaterialTheme.colorScheme.primary);Text(if(coupon.type=="ITEM")"单品优惠" else "整单优惠",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)}
             Text(coupon.name,Modifier.padding(top=24.dp),style=MaterialTheme.typography.titleLarge)
-            Text(coupon.benefitText,Modifier.padding(top=14.dp),fontSize=38.sp,letterSpacing=(-1.2).sp,fontWeight=FontWeight.SemiBold)
-            Text(coupon.conditions,Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium)
+            Text(coupon.benefitText,Modifier.padding(top=14.dp),fontSize=38.sp,letterSpacing=(-1.2).sp,fontWeight=FontWeight.SemiBold,color=ShopDiscountPink)
+            Text(coupon.conditions,Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=ShopDiscountPink)
             Text(coupon.scope,Modifier.padding(top=14.dp,bottom=22.dp),color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
             HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.4f))
             Text((if(coupon.stack)"可与商品折扣同享" else "与商品折扣自动择优")+(if(coupon.type=="ITEM")" · 仅限一件" else ""),Modifier.padding(top=16.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -97,5 +97,10 @@ private fun StoreCouponCard(coupon:StoreCoupon) {
 
 @Composable
 fun ShopPriceLabel(product:ShopProduct,quantity:Int=1,modifier:Modifier=Modifier) {
-    Column(modifier){Text("${credit(product.price*quantity)} 信用点",style=MaterialTheme.typography.bodyMedium);if(product.originalPrice>product.price)Text(credit(product.originalPrice*quantity),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.55f))}
+    val offer=rememberShopOffer(product)
+    Column(modifier){
+        Text(shopMoney(product.price*quantity),style=MaterialTheme.typography.bodyMedium,color=shopPriceColor(product.originalPrice>product.price))
+        if(product.originalPrice>product.price)Text(shopMoney(product.originalPrice*quantity),style=MaterialTheme.typography.bodySmall,textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.55f))
+        if(quantity==1)offer?.let{offer->Text("${offer.couponName} · 单件券后 ${shopMoney(offer.finalPrice)}",style=MaterialTheme.typography.bodySmall,color=ShopDiscountPink)}
+    }
 }

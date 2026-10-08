@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-func TestProductMailUsesPublishedTextAndKeepsLegacyDefault(t *testing.T) {
+func TestProductMailUsesPublishedTextAndOmitsOrderNumber(t *testing.T) {
 	products := map[string]CatalogRecordV2{"one": {Published: CatalogObjectV2{"title": "石材"}, Body: CatalogObjectV2{"mailTitle": "未发布"}}}
 	quantities := map[string]int64{"one": 2}
 	title, body, err := productMailText(products, quantities, "D123")
-	if err != nil || title != "官方商城订单 D123" || body != defaultProductMailBody {
+	if err != nil || title != "官方商城订单" || body != defaultProductMailBody {
 		t.Fatal(title, body, err)
 	}
 	products["one"].Published["mailTitle"] = "你的建造物资已送达"
@@ -21,7 +21,7 @@ func TestProductMailUsesPublishedTextAndKeepsLegacyDefault(t *testing.T) {
 	products["one"].Published["mailTitle"] = "  "
 	products["one"].Published["mailBody"] = "\n "
 	title, body, err = productMailText(products, quantities, "D123")
-	if err != nil || title != "官方商城订单 D123" || body != defaultProductMailBody {
+	if err != nil || title != "官方商城订单" || body != defaultProductMailBody {
 		t.Fatal(title, body, err)
 	}
 }
@@ -34,7 +34,7 @@ func TestProductMailCombinesInStableOrderAndRejectsOversizeBeforePayment(t *test
 	quantities := map[string]int64{"b": 3, "a": 2}
 	for i := 0; i < 20; i++ {
 		title, body, err := productMailText(products, quantities, "D456")
-		if err != nil || title != "官方商城订单 D456" || body != "石材 × 2\n石材送达\n石材领取说明\n\n照明 × 3\n照明领取说明" {
+		if err != nil || title != "官方商城订单" || body != "石材 × 2\n石材送达\n石材领取说明\n\n照明 × 3\n照明领取说明" {
 			t.Fatal(title, body, err)
 		}
 	}

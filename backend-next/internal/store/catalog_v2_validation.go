@@ -186,7 +186,14 @@ func ValidateCatalogContentV2(kind string, o CatalogObjectV2) error {
 			max = 60
 			sortMax = 9999
 		}
-		if !catalogFields(o, required, "") || !catalogText(o["name"], 1, max) || !catalogRange(o["sortOrder"], 0, sortMax) {
+		optional := ""
+		if kind == "category" {
+			optional = "parentCategoryId"
+			if v, ok := o["parentCategoryId"]; ok && !catalogNullableRef(v) {
+				return catalogInvalid()
+			}
+		}
+		if !catalogFields(o, required, optional) || !catalogText(o["name"], 1, max) || !catalogRange(o["sortOrder"], 0, sortMax) {
 			return catalogInvalid()
 		}
 		if _, ok := o["active"].(bool); !ok {

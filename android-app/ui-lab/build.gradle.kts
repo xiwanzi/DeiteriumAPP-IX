@@ -12,8 +12,8 @@ android {
         applicationId = "com.deuterium.app.uilab"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21900
-        versionName = "2.0.19"
+        versionCode = 22000
+        versionName = "2.0.20"
         testInstrumentationRunner = providers.gradleProperty("deuteriumTestRunner").orElse("com.deuterium.app.uilab.LiveBackendInstrumentation").get()
         val apiBase = providers.gradleProperty("deuteriumApiBase").orElse("https://47.103.99.34").get()
         require(apiBase.matches(Regex("https?://[A-Za-z0-9.:-]+"))) { "deuteriumApiBase must be an HTTP(S) origin" }
@@ -21,6 +21,16 @@ android {
     }
     buildFeatures { compose = true; buildConfig = true }
     buildTypes {
+        create("shopDemo") {
+            initWith(getByName("debug"))
+            isDebuggable = false
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("String", "API_BASE_URL", "\"https://offline.invalid\"")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            matchingFallbacks += listOf("debug")
+        }
         create("performance") {
             initWith(getByName("release"))
             // Keep the installed application's existing certificate for local comparisons.
@@ -44,6 +54,16 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("shopDemo")) { variant ->
+        variant.applicationId.set("com.deuterium.app.shopdemo")
+        variant.outputs.forEach { output ->
+            output.versionCode.set(5)
+            output.versionName.set("1.4-demo")
+        }
+    }
 }
 
 dependencies {
