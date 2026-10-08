@@ -21,6 +21,16 @@ android {
     }
     buildFeatures { compose = true; buildConfig = true }
     buildTypes {
+        create("shopDemo") {
+            initWith(getByName("debug"))
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("String", "API_BASE_URL", "\"https://offline.invalid\"")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            matchingFallbacks += listOf("debug")
+        }
         create("performance") {
             initWith(getByName("release"))
             // Keep the installed application's existing certificate for local comparisons.
@@ -44,6 +54,16 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("shopDemo")) { variant ->
+        variant.applicationId.set("com.deuterium.app.shopdemo")
+        variant.outputs.forEach { output ->
+            output.versionCode.set(1)
+            output.versionName.set("1.0-demo")
+        }
+    }
 }
 
 dependencies {

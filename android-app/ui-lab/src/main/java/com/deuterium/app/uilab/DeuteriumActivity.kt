@@ -185,11 +185,11 @@ private enum class Destination(val title:String,val icon:ImageVector) {
 }
 
 @Composable
-private fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMaterials,avatar:String?,userName:String,
+internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMaterials,avatar:String?,userName:String,
     onTheme:(Int)->Unit,onMotion:(Boolean)->Unit,onGlass:(Boolean)->Unit,onParameters:(GlassMaterials)->Unit,onAvatar:()->Unit,onLogout:()->Unit,
-    initialFollowed:Set<String>,saveFollowed:(Set<String>)->Unit,tilt:Boolean,onTilt:(Boolean)->Unit,overlayGlass:Boolean,onOverlayGlass:(Boolean)->Unit,incomingRoute:String?,consumeRoute:()->Unit,session:LabSession) {
+    initialFollowed:Set<String>,saveFollowed:(Set<String>)->Unit,tilt:Boolean,onTilt:(Boolean)->Unit,overlayGlass:Boolean,onOverlayGlass:(Boolean)->Unit,incomingRoute:String?,consumeRoute:()->Unit,session:LabSession,providedState:LabState?=null) {
     val context=LocalContext.current;val scope=rememberCoroutineScope();val notifications=remember{LabNotifications(context.applicationContext)}
-    val state=remember(userName){session.get(userName,initialFollowed,saveFollowed,notifications::post,context.applicationContext)}
+    val state=providedState ?: remember(userName){session.get(userName,initialFollowed,saveFollowed,notifications::post,context.applicationContext)}
     LaunchedEffect(state.storageMessage){state.storageMessage?.let{Toast.makeText(context,it,Toast.LENGTH_LONG).show()}}
     if(state.restoring){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background));return}
     var destination by rememberSaveable{mutableStateOf(Destination.Shop)};var stack by rememberSaveable{mutableStateOf(listOf<String>())}
