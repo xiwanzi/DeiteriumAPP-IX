@@ -15,12 +15,21 @@ import java.io.ByteArrayOutputStream
 import java.time.Instant
 
 object ImageCacheInstrumentation {
-    fun run(test:Instrumentation){
+    fun run(test:Instrumentation,prefetchUrl:String?=null){
         val result=Bundle()
         try{runBlocking{
             val context=test.targetContext
             val images=AppImages.get(context)
             val scope=BackendApi.get(context).financialScope()
+            if(prefetchUrl!=null){
+                require(RemoteImageUrls.safe(prefetchUrl))
+                val memoryBefore=images.memoryBytes
+                images.prefetch(listOf(prefetchUrl))
+                check(images.memoryBytes==memoryBefore){"Prefetch decoded offscreen images into memory"}
+                val warmed=images.loader.execute(images.request(prefetchUrl).newBuilder().size(96,96).allowHardware(false).build())
+                check(warmed is SuccessResult&&warmed.dataSource==DataSource.DISK){"Prefetched network image was not ready on disk: $warmed"}
+                result.putString("https_prefetch_before_render","PASS")
+            }
             val id="instrumented_"+java.util.UUID.randomUUID().toString()
             val source="asset:$id"
             val bitmap=Bitmap.createBitmap(512,512,Bitmap.Config.ARGB_8888).apply{eraseColor(0xff357ed3.toInt())}
@@ -29,6 +38,8 @@ object ImageCacheInstrumentation {
                 .put("sha256",ImageCacheStore.hash(bytes)).put("urlExpiresAt",Instant.now().plusSeconds(600).toString()).put("retainUntil",JSONObject.NULL)
             RemoteImageUrls.remember(view("one"),scope)
             images.seed(source,bytes)
+            images.prefetch(listOf(source,source))
+            result.putString("prefetch_reuses_verified_disk_bytes","PASS")
             fun request()=images.request(source).newBuilder().size(96,96).allowHardware(false).build()
             val first=images.loader.execute(request())
             check(first is SuccessResult&&first.dataSource==DataSource.DISK){"First read did not use seeded disk bytes: $first"}

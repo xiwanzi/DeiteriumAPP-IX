@@ -3,11 +3,12 @@ import { Package, ShoppingBag, Mail, ShieldCheck, Minus, Plus, ChevronLeft, Chev
 import { Avatar, Badge, Button } from "./components.jsx";
 import { ContentBlocks } from "./RemoteCollection.jsx";
 import { credit } from "./format.js";
+import { productInventory } from "./productInventory.js";
 
 export default function ProductDetails({ product, official, quantity, setQuantity, busy, error, bagMessage, onAdd, onBuy, owned, onEdit, onUnlist }) {
   const [imageIndex, setImageIndex] = useState(0), [failed, setFailed] = useState({});
   const c = product.content || product, images = product.images || product.photos || [], selected = images[imageIndex] || images[0];
-  const stock = product.availableStock ?? product.stock ?? c.stock ?? 999, max = Math.min(stock, c.limitPerOrder ?? 999), valid = Number.isInteger(quantity) && quantity >= 1 && quantity <= max;
+  const { stock, max } = productInventory(product, official), valid = Number.isInteger(quantity) && quantity >= 1 && quantity <= max;
   return <div className="product-detail-layout">
     <div className="product-gallery"><div className="product-main-image">{selected?.url && !failed[selected.url] ? <img src={selected.url} alt={selected.altText || c.title} onError={() => setFailed((old) => ({ ...old, [selected.url]: true }))} /> : <div className="product-image-empty"><Package size={46} /><span>{selected?.url ? "图片暂时无法加载" : "暂无商品图片"}</span></div>}{images.length > 1 && <><button className="gallery-prev" aria-label="上一张商品图" onClick={() => setImageIndex((imageIndex + images.length - 1) % images.length)}><ChevronLeft size={20} /></button><button className="gallery-next" aria-label="下一张商品图" onClick={() => setImageIndex((imageIndex + 1) % images.length)}><ChevronRight size={20} /></button><span className="gallery-count">{imageIndex + 1} / {images.length}</span></>}</div>
       {images.length > 1 && <div className="product-thumbnails">{images.map((image, i) => <button key={image.assetId} aria-label={`查看第 ${i + 1} 张商品图`} aria-pressed={i === imageIndex} onClick={() => setImageIndex(i)}><img src={image.url} alt="" /></button>)}</div>}

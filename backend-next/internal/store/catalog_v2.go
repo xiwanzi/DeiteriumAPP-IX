@@ -616,8 +616,8 @@ func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV
 		if f.Kind == "product" && !f.Management {
 			contentColumn = "published_body"
 		}
-		q += " AND (LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.title')),title)))>0 OR LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.subtitle')),'')))>0 OR (kind='product' AND brand_ref IN (SELECT b.resource_id FROM catalog_records_v2 b WHERE b.kind='brand' AND LOCATE(?,LOWER(b.title))>0)) OR (kind='listing' AND owner_id IN (SELECT id FROM identities WHERE LOCATE(?,LOWER(game_id))>0)))"
-		args = append(args, strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query))
+		q += " AND (LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.title')),title)))>0 OR LOCATE(?,LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(" + contentColumn + ",'$.subtitle')),'')))>0 OR (kind='product' AND brand_ref IN (SELECT b.resource_id FROM catalog_records_v2 b WHERE b.kind='brand' AND LOCATE(?,LOWER(b.title))>0)) OR (kind='listing' AND owner_id IN (SELECT id FROM identities WHERE LOCATE(?,LOWER(game_id))>0)) OR (kind='product' AND category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c WHERE c.kind='category' AND LOCATE(?,LOWER(c.title))>0)))"
+		args = append(args, strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query), strings.ToLower(f.Query))
 	}
 	q += " ORDER BY sequence_id DESC LIMIT ?"
 	args = append(args, f.Limit)
@@ -703,15 +703,11 @@ func (s *Store) CatalogViewV2(ctx context.Context, viewer string, d CatalogRecor
 				}
 				images = append(images, a)
 			}
-			state := d.State
-			if state == "DRAFT" {
-				state = "UNLISTED"
-			}
-			effective, e := promotionPriceV209(d.Published)
+			view, e := catalogPublishedViewV2(d, images)
 			if e != nil {
 				return nil, e
 			}
-			published = map[string]any{"productId": d.ID, "storeId": d.StoreID, "version": d.PublishedVersion, "content": d.Published, "effectivePrice": catalogMoneyString(effective), "images": images, "visibility": state, "availableStock": d.Stock, "publishedAt": d.PublishedAt, "updatedAt": d.UpdatedAt}
+			published = view
 		}
 		if !management {
 			if published == nil {

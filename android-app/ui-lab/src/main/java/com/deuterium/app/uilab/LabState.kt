@@ -124,7 +124,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             scope.launch{loadAnnouncements()}
             scope.launch { while(!closed){if(foreground)loadConversations();delay(4000)} }
             scope.launch { loadDirectory();refreshPresence() }
-            scope.launch { commerce.network?.refreshStore() }
+            scope.launch { commerce.network?.refreshCart(hydrate=false) }
             scope.launch { commerce.network?.refreshMarket() }
             scope.launch { commissions.network?.refresh();commissions.network?.recover() }
             scope.launch { commerce.network?.refreshOrders();commerce.network?.recoverOrder("STORE_PURCHASE");commerce.network?.recoverOrder("MARKET_PURCHASE");ai?.recoverPurchase() }
