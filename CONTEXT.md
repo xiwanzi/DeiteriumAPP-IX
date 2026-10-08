@@ -1,5 +1,7 @@
 # Deuterium IX 项目上下文
 
+2026-10-08：**App 2.0.19（21900）、Web 2.0.28 与配套 Go 已于 14:31 上线**（PR #79，源码 `42ea3dcd05a1`）。修复不限库存误判售罄、商城全量加载与离页红错，增加分页及图片预取；56 条账号、38 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，四节点在线。维护 `.worktrees/catalog-scale` / `xiwanzi/catalog-scale`，见[上线记录](docs/deployment/deuterium-2.0.19-live.md)。下方为较早记录。
+
 2026-10-05：**App 2.0.18（21800）已于 23:53 上线**（PR #76，源码 `2e671cc98d32`）。找回密码等输入框采用实色底、常驻边框和清晰标签，浮层玻璃保留。Web 2.0.27、Go 程序及游戏插件保持；55 账号、27 订单、5 委托保留，四节点在线。维护 `.worktrees/registration-profile-check`，见[上线记录](docs/deployment/deuterium-2.0.18-live.md)。下方为较早记录。
 
 2026-10-05：**App 2.0.17（21700）、Web 2.0.27、官网/客服中心账号脚本与配套 Go 已于 13:32 上线**（PR #74，源码 `0248496b034a`）。修复验证码额度/冷却、App 弹窗重开及晚到响应，统一四端文案；SMTP 明确无效地址冻结 24 小时，EventBridge 异步回执仍待配置。50 账号、27 订单、5 委托、12 工单、1 注销记录保留，四节点在线。维护 `.worktrees/registration-profile-check` / `xiwanzi/auth-flow-audit`，见[上线记录](docs/deployment/auth-flow-2.0.17-live.md)。下方为较早记录。

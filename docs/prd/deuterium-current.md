@@ -1,5 +1,7 @@
 # Deuterium IX 当前产品基线
 
+2026-10-08：**App 2.0.19（21900）、Web 2.0.28 与配套 Go 已于 14:31 上线**（PR #79，源码 `42ea3dcd05a1`）。修复不限库存误判售罄、商城全量加载与离页红错，增加分页及图片预取；56 条账号、38 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，四节点在线。维护 `.worktrees/catalog-scale` / `xiwanzi/catalog-scale`，见[上线记录](../deployment/deuterium-2.0.19-live.md)。下方为较早记录。
+
 2026-10-05：**App 2.0.17（21700）、Web 2.0.27、官网/客服中心账号脚本与配套 Go 已于 13:32 上线**（PR #74，源码 `0248496b034a`）。修复验证码额度/冷却、App 弹窗重开及晚到响应，统一四端文案；SMTP 明确无效地址冻结 24 小时，EventBridge 异步回执仍待配置。50 账号、27 订单、5 委托、12 工单、1 注销记录保留，四节点在线。维护 `.worktrees/registration-profile-check` / `xiwanzi/auth-flow-audit`，见[上线记录](../deployment/auth-flow-2.0.17-live.md)。下方为较早记录。
 
 2026-10-03 已确认：采用游戏 ID＋任意邮箱验证码注册，创建真实未验证账号；登录后补 QQ 并通过游戏验证码验证。旧账号默认已验证，昵称独立支持中文修改，资料展示游戏 ID 和 QQ。原管理员成为超级管理员，新增管理员仅管理工单；自动邮件走 DM、人工邮件走企业邮箱。见[ADR 0010](../adr/0010-email-account-game-verification.md)，本机候选尚未发布。

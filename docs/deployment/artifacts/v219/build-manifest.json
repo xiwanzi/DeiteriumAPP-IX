@@ -1,0 +1,35 @@
+{
+  "sourceCommit": "42ea3dcd05a140c06086339ba04a1fc5f7a12c9a",
+  "mergeCommit": "50c452b8b845f54c0fbdb4142a234963238a5ac3",
+  "pr": 79,
+  "appVersion": "2.0.19",
+  "versionCode": 21900,
+  "webVersion": "2.0.28",
+  "files": [
+    {
+      "name": "Deuterium-2.0.19-21900-test.apk",
+      "sizeBytes": 8908306,
+      "sha256": "eabda7c59073e0d495ea0a94080bc55d6db478f5231ad704cc25737d11a86802"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 21622944,
+      "sha256": "9ecf22a2140fb631dc00450dcec41aa6d25bb5293e2ede06bdc0a50b54f5ed8b"
+    },
+    {
+      "name": "web-2.0.28.zip",
+      "sizeBytes": 33741404,
+      "sha256": "d27bf16876fd4d1b83ed31015057195f5856db299e8efd48f9a1e55eb3946d91"
+    }
+  ],
+  "signingCertificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "validation": {
+    "androidJvmTests": 160,
+    "webTests": 74,
+    "catalogIntegrationTests": 14,
+    "goAllPackages": "PASS",
+    "android35NativeCatalogAndHttpsPrefetch": "PASS (same implementation candidate)",
+    "artifactSecretScan": "PASS",
+    "knownSecretValuesChecked": 8
+  }
+}
