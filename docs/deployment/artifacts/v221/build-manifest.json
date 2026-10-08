@@ -1,0 +1,35 @@
+{
+  "sourceCommit": "b5e7cd6ef589985c8c033c7f1c1686f191e42c39",
+  "mergeCommit": "93e7346bd9f5652b69bd0a2edf4401657c98c9da",
+  "pr": 83,
+  "appVersion": "2.0.21",
+  "versionCode": 22100,
+  "webVersion": "2.0.30",
+  "files": [
+    {
+      "name": "Deuterium-2.0.21-22100-test.apk",
+      "sizeBytes": 8957458,
+      "sha256": "077bdc1b241da8919fdaebac858c6274676f3d871ec2abafb3fe37cf3af4897d"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 30011228,
+      "sha256": "7c5812b004b4d05bb23922ee618c95a4a492f7e9faa7931a1a435fc51951b3e5"
+    },
+    {
+      "name": "web-2.0.30.zip",
+      "sizeBytes": 33742765,
+      "sha256": "10d8c16455d899afd6fa384e6978dbb9205ac3963b8d720fde078474230a8263"
+    }
+  ],
+  "signingCertificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "validation": {
+    "androidJvmTests": 169,
+    "webTests": 75,
+    "commercePromotionTests": 43,
+    "goAllPackages": "PASS",
+    "nativeCouponColorsAndGroupedCheckoutRecovery": "PASS (debug same source)",
+    "artifactSecretScan": "PASS",
+    "demoAssetsExcluded": true
+  }
+}

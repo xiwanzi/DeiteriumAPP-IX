@@ -1,6 +1,6 @@
 # 跨店结算与优惠券页验收
 
-2026-10-08，工作区 `.worktrees/catalog-scale`，分支 `xiwanzi/multi-store-checkout`。本记录为本机候选验证；上线状态另见部署记录。
+2026-10-08，工作区 `.worktrees/catalog-scale`，分支 `xiwanzi/multi-store-checkout`。本记录保留本机验证证据；已于 23:27 上线，见[上线记录](../deployment/deuterium-2.0.21-live.md)。
 
 ## 实现
 
