@@ -4,7 +4,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.lazy.staggeredgrid.*
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -22,6 +21,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
@@ -59,10 +63,9 @@ fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String,on
     val selectedGroup=roots.firstOrNull{it.id==category}?.name.orEmpty()
     val children=remember(selectedGroup,categories){shopGroupChildren(categories,selectedGroup)}
     LaunchedEffect(selectedGroup,query){network?.refreshStore(query,categoryGroup=selectedGroup)}
-    LaunchedEffect(Unit){launch{network?.refreshHome()};launch{network?.recommendedPage?.refresh(badge=NEW_PRODUCT_BADGE)}}
     val allProducts=page?.items?.toList().orEmpty()
-    val recommendations=network?.recommendedPage?.items?.filter{NEW_PRODUCT_BADGE in it.badges}.orEmpty()
-    val featuredIds=remember(recommendations){recommendations.take(12).map{it.id}.toSet()}
+    val showcase=remember(allProducts,category){if(category.isBlank())allProducts.take(6)else emptyList()}
+    val featuredIds=remember(showcase){showcase.map{it.id}.toSet()}
     val products=if(category.isBlank())allProducts.filterNot{it.id in featuredIds}else allProducts
     CatalogAutoLoad(page,list,products)
     Column(Modifier.fillMaxSize()) {
@@ -84,36 +87,20 @@ fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String,on
                 IconButton({onOpen("shop-categories:$category")}){Icon(Icons.Outlined.Menu,"更多分类")}
             }
         }
-        LazyVerticalStaggeredGrid(columns=StaggeredGridCells.Fixed(2),modifier=Modifier.weight(1f),state=list,contentPadding=PaddingValues(start=8.dp,end=8.dp,top=4.dp,bottom=115.dp),verticalItemSpacing=8.dp,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            if(category.isBlank()) {
-                val banners=network?.banners?.toList().orEmpty()
-                if(banners.isNotEmpty())item(key="banners",span=StaggeredGridItemSpan.FullLine) {
-                    LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        items(banners,key={it.id}){banner->
-                            Box(Modifier.fillParentMaxWidth().height(108.dp).clip(RoundedCornerShape(14.dp))) {
-                                ServerAssetImage(banner.image,banner.title,Modifier.fillMaxSize(),scale=ContentScale.Crop)
-                                Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color.Black.copy(alpha=.5f),Color.Transparent))))
-                                Text(banner.title,Modifier.align(Alignment.CenterStart).padding(18.dp).fillMaxWidth(.68f),color=Color.White,fontSize=21.sp,lineHeight=27.sp,fontWeight=FontWeight.Bold,maxLines=2)
-                            }
-                        }
+        LazyVerticalStaggeredGrid(columns=StaggeredGridCells.Fixed(2),modifier=Modifier.weight(1f),state=list,contentPadding=PaddingValues(start=6.dp,end=6.dp,top=4.dp,bottom=115.dp),verticalItemSpacing=7.dp,horizontalArrangement=Arrangement.spacedBy(7.dp)) {
+            if(category.isBlank()&&showcase.isNotEmpty()) {
+                item(key="shop-showcase",span=StaggeredGridItemSpan.FullLine){
+                    LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                        items(showcase,key={it.id}){product->ProductPoster(product,Modifier.width(308.dp).height(405.dp)){onProduct(product.id)}}
                     }
                 }
-                if(network?.homeError!=null)item(span=StaggeredGridItemSpan.FullLine){CatalogMessage("活动暂时无法加载"){scope.launch{network.refreshHome(true)}}}
-                if(recommendations.isNotEmpty()) {
-                    item(span=StaggeredGridItemSpan.FullLine){ShopSectionTitle(NEW_PRODUCT_BADGE,"查看更多"){onOpen(shopSearchRoute(NEW_PRODUCT_BADGE))}}
-                    item(key="recommendations",span=StaggeredGridItemSpan.FullLine){LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        items(recommendations.take(12),key={it.id}){ShopRecommendation(it){onProduct(it.id)}}
-                    }}
-                }
-                if(network?.recommendedPage?.error!=null)item(span=StaggeredGridItemSpan.FullLine){CatalogMessage("新品推荐暂时无法加载"){scope.launch{network.recommendedPage.retry()}}}
             } else if(children.isNotEmpty()) {
                 item(span=StaggeredGridItemSpan.FullLine){ShopCategoryTiles(children.take(if(children.size>15)14 else 15),columns=5,onSelect={onOpen(shopSearchRoute(it.name))},more=if(children.size>15){{onOpen("shop-categories:$category")}}else null)}
             }
-            if(products.isNotEmpty())item(span=StaggeredGridItemSpan.FullLine){ShopSectionTitle(if(category.isBlank())"逛逛好物"else selectedGroup)}
             shopProducts(products,onProduct){product->
                 if(network==null||network.cartBusy)false else network.setCart(product.id,((state.cart[product.id] ?: 0)+1).coerceAtMost(product.limit))
             }
-            catalogStatus(page,products.isEmpty()&&(category.isNotBlank()||recommendations.isEmpty()),"暂无上架商品",scope)
+            catalogStatus(page,products.isEmpty()&&(category.isNotBlank()||showcase.isEmpty()),"暂无上架商品",scope)
         }
     }
 }
@@ -136,27 +123,6 @@ private fun ShopChannel(label:String,selected:Boolean,onClick:()->Unit) {
     }
 }
 
-@Composable
-private fun ShopSectionTitle(title:String,action:String?=null,onAction:()->Unit={}) {
-    Row(Modifier.fillMaxWidth().heightIn(min=36.dp).padding(start=4.dp,end=2.dp),verticalAlignment=Alignment.CenterVertically) {
-        Text(title,Modifier.weight(1f),fontSize=19.sp,fontWeight=FontWeight.Bold)
-        if(action!=null)Row(Modifier.clickable(onClick=onAction).padding(vertical=10.dp,horizontal=6.dp),verticalAlignment=Alignment.CenterVertically){Text(action,fontSize=12.sp,color=MaterialTheme.colorScheme.onSurfaceVariant);Icon(Icons.Outlined.ChevronRight,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)}
-    }
-}
-
-@Composable
-private fun ShopRecommendation(product:ShopProduct,onClick:()->Unit) {
-    Surface(onClick=onClick,modifier=Modifier.width(164.dp),shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface) {
-        Column {
-            ShopSubjectImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().height(112.dp))
-            Column(Modifier.padding(horizontal=10.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                Text(product.name,fontSize=14.sp,fontWeight=FontWeight.Medium,maxLines=1,overflow=TextOverflow.Ellipsis)
-                Row(verticalAlignment=Alignment.Bottom){AdaptiveMoney(credit(product.price),Modifier.weight(1f),color=MaterialTheme.colorScheme.primary,size=19.sp);Text("信用点",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-            }
-        }
-    }
-}
-
 internal fun LazyStaggeredGridScope.shopProducts(products:List<ShopProduct>,onProduct:(String)->Unit,onAdd:suspend(ShopProduct)->Boolean) {
     items(products,key={it.id}){product->ShopProductCard(product,{onProduct(product.id)}){onAdd(product)}}
 }
@@ -167,27 +133,39 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
     var added by remember(product.id){mutableStateOf(false)}
     val scope=rememberCoroutineScope()
     LaunchedEffect(added){if(added){delay(1000);added=false}}
-    Surface(onClick=onClick,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),color=MaterialTheme.colorScheme.surface) {
+    Surface(onClick=onClick,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(8.dp),color=MaterialTheme.colorScheme.surface) {
         Column {
             Box {
-                ShopSubjectImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().aspectRatio(.88f))
-                if(NEW_PRODUCT_BADGE in product.badges)Text("新品",Modifier.padding(8.dp).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal=6.dp,vertical=3.dp),fontSize=10.sp,fontWeight=FontWeight.SemiBold,color=MaterialTheme.colorScheme.primary)
+                ShopSubjectImage(product.photos.firstOrNull(),product.name,Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp)))
             }
-            Column(Modifier.padding(start=10.dp,end=8.dp,top=9.dp,bottom=8.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
-                Text(product.name,fontSize=15.sp,lineHeight=21.sp,fontWeight=FontWeight.Medium,maxLines=2,overflow=TextOverflow.Ellipsis)
-                Text(product.category,fontSize=11.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+            Column(Modifier.padding(start=8.dp,end=5.dp,top=6.dp,bottom=3.dp),verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                Text(product.name,fontSize=14.sp,lineHeight=19.sp,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis)
+                Text(product.category,fontSize=11.sp,lineHeight=15.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
                 Row(verticalAlignment=Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        AdaptiveMoney(credit(product.price),Modifier.fillMaxWidth(),color=MaterialTheme.colorScheme.primary,size=22.sp)
-                        Text("信用点",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton({if(!adding)scope.launch{adding=true;try{added=onAdd()}finally{adding=false}}},Modifier.size(44.dp),enabled=!adding&&product.stock>0){
-                        Box(Modifier.size(30.dp).background(MaterialTheme.colorScheme.primaryContainer,CircleShape),contentAlignment=Alignment.Center){Icon(if(added)Icons.Outlined.Check else Icons.Outlined.Add,"加入购物袋：${product.name}",Modifier.size(21.dp),tint=MaterialTheme.colorScheme.primary)}
+                    CompactShopPrice(product.price,Modifier.weight(1f))
+                    IconButton({if(!adding)scope.launch{adding=true;try{added=onAdd()}finally{adding=false}}},Modifier.size(36.dp),enabled=!adding&&product.stock>0){
+                        Box(Modifier.size(23.dp).background(MaterialTheme.colorScheme.primaryContainer,CircleShape),contentAlignment=Alignment.Center){Icon(if(added)Icons.Outlined.Check else Icons.Outlined.Add,"加入购物袋：${product.name}",Modifier.size(17.dp),tint=MaterialTheme.colorScheme.primary)}
                     }
                 }
                 if(product.originalPrice>product.price)Text(credit(product.originalPrice),fontSize=11.sp,textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+    }
+}
+
+@Composable
+private fun CompactShopPrice(amount:Long,modifier:Modifier=Modifier) {
+    val measurer=rememberTextMeasurer();val density=LocalDensity.current
+    val primary=MaterialTheme.colorScheme.primary;val muted=MaterialTheme.colorScheme.onSurfaceVariant
+    val style=MaterialTheme.typography.bodyMedium.copy(lineHeight=24.sp,fontFeatureSettings="tnum")
+    fun text(scale:Float)=buildAnnotatedString {
+        withStyle(SpanStyle(fontSize=(20*scale).sp,fontWeight=FontWeight.SemiBold,color=primary)){append(credit(amount))}
+        withStyle(SpanStyle(fontSize=(9*scale).sp,color=muted)){append(" 信用点")}
+    }
+    BoxWithConstraints(modifier){
+        val width=with(density){maxWidth.toPx()};val measured=measurer.measure(text(1f),style,maxLines=1,softWrap=false).size.width
+        val scale=if(measured>width&&measured>0)width/measured else 1f
+        Text(text(scale),style=style,maxLines=1,softWrap=false)
     }
 }
 
@@ -202,19 +180,43 @@ internal fun LazyStaggeredGridScope.catalogStatus(page:CatalogPager<ShopProduct>
 private fun CatalogMessage(text:String,retry:()->Unit) {Row(Modifier.padding(horizontal=24.dp),verticalAlignment=Alignment.CenterVertically){Text(text,Modifier.weight(1f),color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodyMedium);PlainButton(retry){Text("重试")}}}
 
 @Composable
-private fun ShopCategoryTiles(categories:List<ShopCategory>,columns:Int,onSelect:(ShopCategory)->Unit,more:(()->Unit)?=null) {
+private fun ShopCategoryTiles(categories:List<ShopCategory>,columns:Int,onSelect:(ShopCategory)->Unit,more:(()->Unit)?=null,directory:Boolean=false) {
     val cells:List<ShopCategory?> = categories+if(more!=null)listOf(null)else emptyList()
-    Column(Modifier.padding(horizontal=10.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.padding(horizontal=10.dp,vertical=4.dp),verticalArrangement=Arrangement.spacedBy(if(directory)14.dp else 10.dp)) {
         cells.chunked(columns).forEach{row->Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            row.forEach{c->Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable{if(c==null)more?.invoke()else onSelect(c)}.padding(vertical=6.dp),horizontalAlignment=Alignment.CenterHorizontally) {
+            row.forEach{c->Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable{if(c==null)more?.invoke()else onSelect(c)}.padding(vertical=4.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                 val image=if(c==null)null else c.image ?: ShopCatalog.firstOrNull{it.categoryId==c.id}?.photos?.firstOrNull()
-                if(image!=null)ShopSubjectImage(image,c?.name.orEmpty(),Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)))
-                else Box(Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surface,CircleShape),contentAlignment=Alignment.Center){Icon(if(c==null)Icons.Outlined.MoreHoriz else Icons.Outlined.Widgets,null,Modifier.size(25.dp),tint=MaterialTheme.colorScheme.primary)}
-                Text(c?.name ?: "更多",Modifier.padding(top=7.dp),fontSize=12.sp,lineHeight=17.sp,maxLines=2,minLines=2,overflow=TextOverflow.Ellipsis,textAlign=TextAlign.Center)
+                if(image!=null)ShopSubjectImage(image,c?.name.orEmpty(),Modifier.widthIn(max=72.dp).fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(10.dp)))
+                else Box(Modifier.widthIn(max=72.dp).fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surface,CircleShape),contentAlignment=Alignment.Center){Icon(if(c==null)Icons.Outlined.MoreHoriz else Icons.Outlined.Widgets,null,Modifier.size(25.dp),tint=MaterialTheme.colorScheme.primary)}
+                Text(c?.name ?: "更多",Modifier.padding(top=6.dp),fontSize=12.sp,lineHeight=16.sp,maxLines=2,minLines=if(directory)1 else 2,overflow=TextOverflow.Ellipsis,textAlign=TextAlign.Center)
             }}
             repeat(columns-row.size){Spacer(Modifier.weight(1f))}
         }}
     }
+}
+
+internal data class ShopDirectorySection(val name:String,val categories:List<ShopCategory>)
+
+internal fun shopDirectorySections(root:String,categories:List<ShopCategory>):List<ShopDirectorySection> {
+    if(categories.isEmpty())return emptyList()
+    val grouped=categories.groupBy { c->
+        when(root) {
+            "家具家居"->when {
+                listOf("床","座椅","沙发","桌台").any{c.name.contains(it)}->"起居家具"
+                listOf("厨房","卫浴").any{c.name.contains(it)}->"厨房卫浴"
+                else->"收纳陈设"
+            }
+            "灯具照明"->if(c.name.contains("庭院"))"庭院照明"else"室内照明"
+            else->root
+        }
+    }
+    return grouped.map{ShopDirectorySection(it.key,it.value)}
+}
+
+@Composable
+private fun DirectoryTab(label:String,selected:Boolean,onClick:()->Unit) {
+    val primary=MaterialTheme.colorScheme.primary
+    Box(Modifier.heightIn(min=32.dp).clip(RoundedCornerShape(7.dp)).background(if(selected)primary.copy(alpha=.07f)else MaterialTheme.colorScheme.surface).border(1.dp,if(selected)primary.copy(alpha=.65f)else Color.Transparent,RoundedCornerShape(7.dp)).clickable(onClick=onClick).padding(horizontal=12.dp,vertical=7.dp),contentAlignment=Alignment.Center){Text(label,fontSize=12.sp,fontWeight=if(selected)FontWeight.SemiBold else FontWeight.Normal,color=if(selected)primary else MaterialTheme.colorScheme.onSurface,maxLines=1)}
 }
 
 @Composable
@@ -225,17 +227,36 @@ fun ShopCategoriesPage(state:LabState,initial:String,onClose:()->Unit,onOpen:(St
     var selected by rememberSaveable {mutableStateOf(initial)}
     val current=roots.firstOrNull{it.id==selected} ?: roots.firstOrNull()
     val children=shopGroupChildren(categories,current?.name.orEmpty())
+    val sections=remember(current,children){shopDirectorySections(current?.name.orEmpty(),if(children.isEmpty())listOfNotNull(current)else children)}
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding()) {
-        Row(Modifier.fillMaxWidth().height(56.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClose){Icon(Icons.Outlined.ChevronLeft,"返回")};Text("分类",Modifier.weight(1f),textAlign=TextAlign.Center,style=MaterialTheme.typography.titleLarge);IconButton({onOpen("search:Shop")}){Icon(Icons.Outlined.Search,"搜索商品")}}
-        if(roots.isEmpty()){val scope=rememberCoroutineScope();CatalogMessage(network?.shopError ?: "暂无商品分类"){scope.launch{network?.refreshStore(force=true)}}}
+        Row(Modifier.fillMaxWidth().height(48.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClose){Icon(Icons.Outlined.ChevronLeft,"返回")};Text("分类",Modifier.weight(1f),textAlign=TextAlign.Center,fontSize=20.sp,fontWeight=FontWeight.SemiBold);IconButton({onOpen("search:Shop")}){Icon(Icons.Outlined.Search,"搜索商品")}}
+        if(roots.isEmpty()){val scope=rememberCoroutineScope();CatalogMessage(network?.shopError ?: "暂无商品分类"){scope.launch{network?.ensureMetadata()}}}
         Row(Modifier.weight(1f)) {
-            LazyColumn(Modifier.width(88.dp).fillMaxHeight(),contentPadding=PaddingValues(vertical=8.dp)) {
-                items(roots,key={it.id}){c->Surface(onClick={selected=c.id},color=if(current?.id==c.id)MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.background){Text(c.name,Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=22.dp),color=if(current?.id==c.id)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.titleSmall,textAlign=TextAlign.Center)}}
+            LazyColumn(Modifier.width(104.dp).fillMaxHeight(),contentPadding=PaddingValues(top=6.dp,bottom=12.dp)) {
+                items(roots,key={it.id}){c->Surface(onClick={selected=c.id},color=MaterialTheme.colorScheme.background){Text(c.name,Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=19.dp),color=if(current?.id==c.id)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,fontSize=14.sp,fontWeight=if(current?.id==c.id)FontWeight.Bold else FontWeight.Normal,textAlign=TextAlign.Center)}}
             }
-            key(current?.id){LazyColumn(Modifier.weight(1f).fillMaxHeight().background(MaterialTheme.colorScheme.surface),contentPadding=PaddingValues(top=8.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                current?.let{c->item{Row(Modifier.fillMaxWidth().clickable{onOpen(shopSearchRoute(c.name))}.padding(horizontal=14.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){Text(c.name,Modifier.weight(1f),style=MaterialTheme.typography.titleLarge);Icon(Icons.Outlined.ChevronRight,"查看全部商品")}}}
-                items((if(children.isEmpty())listOfNotNull(current)else children).chunked(12)){group->ShopCategoryTiles(group,3,{onOpen(shopSearchRoute(it.name))})}
-            }}
+            key(current?.id){
+                val list=rememberLazyListState();val scope=rememberCoroutineScope();val motion=LocalMotion.current
+                var expanded by remember{mutableStateOf(false)}
+                var active by remember{mutableIntStateOf(0)}
+                LaunchedEffect(list){snapshotFlow{list.firstVisibleItemIndex}.distinctUntilChanged().collect{if(list.isScrollInProgress)active=it.coerceAtMost((sections.size-1).coerceAtLeast(0))}}
+                fun selectSection(index:Int){active=index;expanded=false;scope.launch{if(motion)list.animateScrollToItem(index)else list.scrollToItem(index);active=index}}
+                Column(Modifier.weight(1f).fillMaxHeight().padding(end=8.dp)) {
+                    if(sections.size>1) {
+                        Row(Modifier.fillMaxWidth().height(48.dp),verticalAlignment=Alignment.CenterVertically){
+                            LazyRow(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(6.dp)){items(sections.size){index->DirectoryTab(sections[index].name,index==active){selectSection(index)}}}
+                            IconButton({expanded=!expanded},Modifier.size(32.dp)){Icon(if(expanded)Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,"展开全部分组",Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)}
+                        }
+                        if(expanded)FlowRow(Modifier.padding(bottom=8.dp),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){sections.forEachIndexed{index,section->DirectoryTab(section.name,index==active){selectSection(index)}}}
+                    } else Spacer(Modifier.height(8.dp))
+                    LazyColumn(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(topStart=16.dp,topEnd=16.dp)).background(MaterialTheme.colorScheme.surface),state=list,contentPadding=PaddingValues(top=6.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                        items(sections,key={it.name}){section->Column {
+                            Text(section.name,Modifier.padding(start=14.dp,end=12.dp,top=10.dp,bottom=4.dp),fontSize=17.sp,lineHeight=23.sp,fontWeight=FontWeight.Bold)
+                            ShopCategoryTiles(section.categories,3,{onOpen(shopSearchRoute(it.name))},directory=true)
+                        }}
+                    }
+                }
+            }
         }
     }
 }
@@ -257,9 +278,9 @@ fun ShopSearchPage(state:LabState,initial:String,onClose:()->Unit,onOpen:(String
             RefinedField(query,{query=it.take(80)},Modifier.weight(1f).focusRequester(focus),placeholder={Text("搜索商品、品牌或分类",style=MaterialTheme.typography.bodyMedium)},singleLine=true,keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={search(query)}),trailingIcon=if(query.isNotBlank()){{IconButton({query="";submitted="";focus.requestFocus();keyboard?.show()}){Icon(Icons.Outlined.Cancel,"清除搜索",Modifier.size(18.dp))}}}else null)
             PlainButton({search(query)}){Text("搜索")}
         }
-        LazyVerticalStaggeredGrid(columns=StaggeredGridCells.Fixed(2),modifier=Modifier.weight(1f),state=list,contentPadding=PaddingValues(start=8.dp,end=8.dp,top=4.dp,bottom=24.dp),verticalItemSpacing=8.dp,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+        LazyVerticalStaggeredGrid(columns=StaggeredGridCells.Fixed(2),modifier=Modifier.weight(1f),state=list,contentPadding=PaddingValues(start=6.dp,end=6.dp,top=4.dp,bottom=24.dp),verticalItemSpacing=7.dp,horizontalArrangement=Arrangement.spacedBy(7.dp)) {
             if(submitted.isBlank()) {
-                item(span=StaggeredGridItemSpan.FullLine){Column(Modifier.padding(horizontal=12.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){Text("搜索商品",style=MaterialTheme.typography.titleLarge);FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){(listOf(NEW_PRODUCT_BADGE)+state.commerce.network?.categoryTree.orEmpty().take(8).map{it.name}).distinct().forEach{word->ChoiceChip(false,{search(word)},{Text(word)})}}}}
+                item(span=StaggeredGridItemSpan.FullLine){Column(Modifier.padding(horizontal=12.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){Text("搜索商品",style=MaterialTheme.typography.titleLarge);FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){(state.commerce.network?.categoryTree.orEmpty().take(8).map{it.name}).distinct().forEach{word->ChoiceChip(false,{search(word)},{Text(word)})}}}}
             } else {
                 item(span=StaggeredGridItemSpan.FullLine){Text(submitted,Modifier.padding(horizontal=4.dp),style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                 shopProducts(products,{keyboard?.hide();onOpen("product:$it")}){product->val network=state.commerce.network;if(network==null||network.cartBusy)false else network.setCart(product.id,((state.cart[product.id] ?: 0)+1).coerceAtMost(product.limit))}

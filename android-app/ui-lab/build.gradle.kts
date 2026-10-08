@@ -60,8 +60,8 @@ androidComponents {
     onVariants(selector().withBuildType("shopDemo")) { variant ->
         variant.applicationId.set("com.deuterium.app.shopdemo")
         variant.outputs.forEach { output ->
-            output.versionCode.set(2)
-            output.versionName.set("1.1-demo")
+            output.versionCode.set(3)
+            output.versionName.set("1.2-demo")
         }
     }
 }
