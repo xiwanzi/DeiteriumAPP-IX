@@ -1,0 +1,95 @@
+{
+  "sourceCommit": "42ea3dcd05a140c06086339ba04a1fc5f7a12c9a",
+  "appVersion": "2.0.19",
+  "versionCode": 21900,
+  "webVersion": "2.0.28",
+  "apkHashAndBytesVerified": true,
+  "updateChecks": [
+    {
+      "versionCode": 20004,
+      "offered": 21900
+    },
+    {
+      "versionCode": 21300,
+      "offered": 21900
+    },
+    {
+      "versionCode": 21500,
+      "offered": 21900
+    },
+    {
+      "versionCode": 21700,
+      "offered": 21900
+    },
+    {
+      "versionCode": 21800,
+      "offered": 21900
+    },
+    {
+      "versionCode": 21899,
+      "offered": 21900
+    },
+    {
+      "versionCode": 21900,
+      "offered": null
+    },
+    {
+      "versionCode": 21901,
+      "offered": null
+    }
+  ],
+  "webFiles": [
+    {
+      "origin": "https://47.103.99.34",
+      "asset": "/assets/index-BdZ8wSss.js",
+      "sha256": "4725c1ba84b72adb3496099ac971f9cca2d0f111b562fb217878a8a7645ecfa1"
+    },
+    {
+      "origin": "https://47.103.99.34",
+      "asset": "/assets/index-D7T9xU6B.css",
+      "sha256": "9537cf03f954273592314911926588d9344f810b659df2b848b06a2234dc30a2"
+    },
+    {
+      "origin": "https://chat.deuteriumix.com",
+      "asset": "/assets/index-BdZ8wSss.js",
+      "sha256": "4725c1ba84b72adb3496099ac971f9cca2d0f111b562fb217878a8a7645ecfa1"
+    },
+    {
+      "origin": "https://chat.deuteriumix.com",
+      "asset": "/assets/index-D7T9xU6B.css",
+      "sha256": "9537cf03f954273592314911926588d9344f810b659df2b848b06a2234dc30a2"
+    }
+  ],
+  "catalog": {
+    "firstPage": 40,
+    "secondPage": 40,
+    "duplicates": 0,
+    "unlimitedInventoryCorrect": true,
+    "searchMatched": true,
+    "firstPageMs": 305.7,
+    "secondPageMs": 228.3,
+    "searchMs": 396.0,
+    "timingOrigin": "maintainer PC to public HTTPS API, not a user handset",
+    "coverHashVerified": true
+  },
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": true
+    }
+  ],
+  "temporarySessionRevoked": true,
+  "configurationAndUnrelatedSitesPreserved": true
+}
