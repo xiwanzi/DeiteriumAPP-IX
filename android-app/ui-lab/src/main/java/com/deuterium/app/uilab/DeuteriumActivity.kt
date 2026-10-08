@@ -272,7 +272,7 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
                             current.startsWith("commission:")->CommissionDetailPage(state,current.removePrefix("commission:"),inset,{open("dm:$it")},{back()})
                             current.startsWith("event:")->EventDetailPage(state,current.removePrefix("event:"),inset)
                             current.startsWith("product:")->ShopCatalog.find{it.id==current.removePrefix("product:")}?.let{ProductPage(it,state,inset,{open("bag")}){product,origin->flight=product to origin}}
-                            current=="bag"->ShoppingBag(state,inset,{back()},::showOrder)
+                            current=="bag"->ShoppingBag(state,inset,{back()},::showOrder,{stack=stack.filterNot{it=="bag"||it=="orders"||it.startsWith("order:")}+"orders"})
                             current=="coupons"->StoreCouponsPage(state,inset)
                             current.startsWith("market-product:")->MarketProductPage(state.commerce,current.removePrefix("market-product:"),inset,{open("dm:$it")},::showOrder){open("edit-listing:$it")}
                             current=="publish"||current.startsWith("edit-listing:")->PublishListingPage(state.commerce,inset,{id->saved.removeState(current);val parent=stack.dropLast(1);val target="market-product:$id";stack=if(parent.lastOrNull()==target)parent else parent+target},if(current.startsWith("edit-listing:"))state.commerce.listings.find{it.id==current.removePrefix("edit-listing:")} else null)

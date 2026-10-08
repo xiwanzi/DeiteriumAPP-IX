@@ -391,7 +391,11 @@ func (s *Store) CommerceRefundViewV2(ctx context.Context, viewer, resource, id s
 	return commerceRefundViewV2(r), nil
 }
 func CommerceOperationViewV2(o CommerceOperationV2, kind string) map[string]any {
-	return map[string]any{"operationId": o.ID, "clientRequestId": o.ClientRequestID, "kind": o.Kind, "status": o.State, "resourceType": kind, "resourceId": o.ResourceID, "amount": o.Amount, "createdAt": o.CreatedAt, "updatedAt": o.UpdatedAt, "errorCode": commerceOptionalString(o.ErrorCode), "retryAfterSeconds": 3}
+	out := map[string]any{"operationId": o.ID, "clientRequestId": o.ClientRequestID, "kind": o.Kind, "status": o.State, "resourceType": kind, "resourceId": o.ResourceID, "amount": o.Amount, "createdAt": o.CreatedAt, "updatedAt": o.UpdatedAt, "errorCode": commerceOptionalString(o.ErrorCode), "retryAfterSeconds": 3}
+	if o.Action == "checkout" {
+		out["resourceIds"] = CheckoutOrderIDsV221(o)
+	}
+	return out
 }
 func (s *Store) CommerceVisibleOperationV2(ctx context.Context, viewer, id, key, kind string) (CommerceOperationV2, CommerceRecordV2, error) {
 	var o CommerceOperationV2

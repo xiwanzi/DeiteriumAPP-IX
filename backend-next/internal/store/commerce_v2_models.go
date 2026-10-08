@@ -38,6 +38,7 @@ type CommerceRefundV2 struct {
 	ResolvedAt                                      *time.Time
 }
 type CommerceStepV2 struct {
+	ResourceID      string         `json:"resourceId,omitempty"`
 	Command         string         `json:"command"`
 	Payload         map[string]any `json:"payload"`
 	ClientKey       string         `json:"clientKey"`

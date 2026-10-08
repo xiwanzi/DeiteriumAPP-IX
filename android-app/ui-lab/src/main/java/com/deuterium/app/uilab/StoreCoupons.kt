@@ -84,8 +84,8 @@ private fun StoreCouponCard(coupon:StoreCoupon) {
         Column(Modifier.padding(24.dp)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){Icon(Icons.Outlined.ConfirmationNumber,null,Modifier.size(25.dp),tint=MaterialTheme.colorScheme.primary);Text(if(coupon.type=="ITEM")"单品优惠" else "整单优惠",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)}
             Text(coupon.name,Modifier.padding(top=24.dp),style=MaterialTheme.typography.titleLarge)
-            Text(coupon.benefitText,Modifier.padding(top=14.dp),fontSize=38.sp,letterSpacing=(-1.2).sp,fontWeight=FontWeight.SemiBold,color=ShopDiscountPink)
-            Text(coupon.conditions,Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=ShopDiscountPink)
+            Text(coupon.benefitText,Modifier.padding(top=14.dp),fontSize=38.sp,letterSpacing=(-1.2).sp,fontWeight=FontWeight.SemiBold)
+            Text(coupon.conditions,Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium)
             Text(coupon.scope,Modifier.padding(top=14.dp,bottom=22.dp),color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.bodySmall)
             HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.4f))
             Text((if(coupon.stack)"可与商品折扣同享" else "与商品折扣自动择优")+(if(coupon.type=="ITEM")" · 仅限一件" else ""),Modifier.padding(top=16.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)

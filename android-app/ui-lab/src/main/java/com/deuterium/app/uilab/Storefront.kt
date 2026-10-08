@@ -77,7 +77,7 @@ fun QuantityControl(count:Int,onChange:(Int)->Unit,max:Int=9) {
     if(editing)IosDialog({editing=false},{Text("购买数量")},{Column{RefinedField(value,{value=it.filter(Char::isDigit).take(3)},Modifier.fillMaxWidth(),singleLine=true,keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(keyboardType=androidx.compose.ui.text.input.KeyboardType.Number));Text("可填写 1–$max",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}},{PlainButton({onChange(value.toInt());editing=false},enabled=value.toIntOrNull() in 1..max){Text("确定")}}, {PlainButton({editing=false}){Text("取消")}})
 }
 @Composable
-fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Unit) {
+fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Unit,onOrders:(()->Unit)?=null) {
     val scope=rememberCoroutineScope()
     LaunchedEffect(Unit){state.commerce.network?.refreshCart()}
     val items=ShopCatalog.mapNotNull{p->state.cart[p.id]?.takeIf{it>0}?.let{p to it}}
@@ -114,6 +114,7 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
             if(items.isNotEmpty())item{LabCard{DetailRow("交付方式","游戏内邮箱");DetailRow("领取账户",state.userName);DetailRow("付款方式","钱包余额");DetailRow("可用余额",if(state.balanceKnown)shopMoney(state.balance) else "正在同步");
                 if(summary!=null){if(summary.originalTotal>summary.total)DetailRow("商品原价",shopMoney(summary.originalTotal));if(summary.productDiscount>0)DetailRow("商品优惠","−${shopMoney(summary.productDiscount)}");if(summary.couponDiscount>0){DetailRow("优惠券","−${shopMoney(summary.couponDiscount)}");Text("${summary.couponName ?: "已为你选择优惠"} · 已自动择优",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)};DetailRow("实付合计",shopMoney(summary.total))}
                 else Text(if(quoting)"正在计算优惠…" else "重新确认价格后即可结算",Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
+                if(summary!=null&&summary.stores.isNotEmpty()) {summary.stores.forEach{store->DetailRow(store.name,shopMoney(store.total));store.couponName?.let{Text("$it · −${shopMoney(store.couponDiscount)}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}};Text("合并付款后按店铺分单，分别发送游戏邮件。",Modifier.padding(top=12.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
                 error?.let{Text(it,Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{state.commerce.network?.refreshCart();quoteKey=UUID.randomUUID().toString()}}){Text("刷新商品与优惠")}}
             }}
         }
@@ -133,12 +134,12 @@ fun ShoppingBag(state:LabState,topInset:Dp,onClose:()->Unit,onOrder:(String)->Un
     if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false;quoteKey=UUID.randomUUID().toString()}){confirmQuote=false;val lines=JSONObject(quoteText!!).getJSONArray("items");pending=HashMap((0 until lines.length()).associate{val item=lines.getJSONObject(it);item.getString("productId") to item.getInt("quantity")})}
     if(pending.isNotEmpty()&&quoteText!=null) {
         val quote=JSONObject(quoteText!!)
-        PaymentExperience(apiCents(quote.getString("totalAmount")),orderId?.let{state.commerce.order(it)?.seller} ?: quote.optString("storeName","官方商城"),"支付成功",onCommit={orderId=state.commerce.network?.createOrder(quote,paymentKey);orderId!=null},autoCloseOnSuccess=true,errorMessage=state.storageMessage){pending=hashMapOf();quoteKey=UUID.randomUUID().toString();orderId?.let(onOrder)}
+        PaymentExperience(apiCents(quote.getString("totalAmount")),quote.optString("storeName","官方商城"),"支付成功",onCommit={orderId=state.commerce.network?.createOrder(quote,paymentKey);orderId!=null},autoCloseOnSuccess=true,errorMessage=state.storageMessage){pending=hashMapOf();quoteKey=UUID.randomUUID().toString();if(orderId!=null&&quote.optJSONArray("storeOrders")!=null&&onOrders!=null)onOrders() else orderId?.let(onOrder)}
     }
 }
 @Composable
 fun CheckoutQuoteConfirmation(quote:JSONObject,onClose:()->Unit,onConfirm:()->Unit) {
     val summary=remember(quote.toString()){checkoutSummary(quote)}
-    IosDialog(onClose,{Text("确认付款")},{Column{Text("是否支付 ${shopMoney(summary.total)}？");if(summary.originalTotal>summary.total)Text("原价 ${shopMoney(summary.originalTotal)}",Modifier.padding(top=8.dp),textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.5f),style=MaterialTheme.typography.bodySmall);summary.couponName?.let{Text("已使用：$it",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}}},
+    IosDialog(onClose,{Text("确认付款")},{Column{Text("是否支付 ${shopMoney(summary.total)}？");if(summary.originalTotal>summary.total)Text("原价 ${shopMoney(summary.originalTotal)}",Modifier.padding(top=8.dp),textDecoration=TextDecoration.LineThrough,color=MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.5f),style=MaterialTheme.typography.bodySmall);summary.couponName?.let{Text("已使用：$it",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)};if(summary.stores.isNotEmpty())Text("将生成 ${summary.stores.size} 笔店铺订单，分别发送游戏邮件。",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}},
         {PlainButton(onConfirm){Text("确认付款")}}, {PlainButton(onClose){Text("取消")}})
 }

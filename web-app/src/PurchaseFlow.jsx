@@ -11,7 +11,7 @@ export function CreationProgress({ client, user, entry, initialResult, onResourc
     if (!alive.current) return; setOperation(op); setResource(result); setError(""); setNotFound(false);
     const next = { ...entryRef.current, operationId: result?.value?.pendingOperationId || op?.operationId || entryRef.current.operationId, resourceType: result?.type || op?.resourceType || entryRef.current.resourceType, resourceId: resourceId(result?.value) || op?.resourceId || entryRef.current.resourceId };
     entryRef.current = next;
-    finished.current = op?.status === "FAILED" || op?.status === "COMPLETED" && Boolean(result?.value) && !fundsPending(result.value);
+    finished.current = op?.status === "FAILED" || op?.status === "COMPLETED" && Boolean(result?.value) && (result.orders || [result.value]).every((value) => !fundsPending(value));
     if (finished.current) clearBusiness(user.userId, next.body.clientRequestId);
     else saveBusiness(user.userId, next);
   };
@@ -32,14 +32,17 @@ export function CreationProgress({ client, user, entry, initialResult, onResourc
     catch (e) { if (e.knownOperation) apply(e.knownOperation, resource); setError(e.message); setNotFound(false); if (e.code === "QUOTE_EXPIRED") { setExpired(true); finished.current = true; clearBusiness(user.userId, entryRef.current.body.clientRequestId); } }
     finally { resolving.current = false; setBusy(false); }
   };
-  const value = resource?.value, failed = operation?.status === "FAILED" || value?.fundsStatus === "UNPAID", confirmed = paymentConfirmed(value);
+  const value = resource?.value, failed = operation?.status === "FAILED" || value?.fundsStatus === "UNPAID", grouped = resource?.orders?.length > 1, confirmed = !failed && paymentConfirmed(value) && (!grouped || operation?.status === "COMPLETED" && resource.orders.every(paymentConfirmed));
   return <div className="purchase-result">
     <div className={`purchase-result-icon ${confirmed ? "success" : failed || expired ? "failure" : "pending"}`}>{confirmed ? <Check size={32} /> : failed || expired ? <CircleAlert size={32} /> : <LoaderCircle size={32} />}</div>
     <h2>{expired ? "报价已过期" : failed ? "这笔付款未完成" : confirmed ? "付款已确认" : "正在核对处理结果"}</h2>
-    {value && <><Badge tone={confirmed ? "sage" : "neutral"}>{fundsLabels[value.fundsStatus] || value.fundsStatus}</Badge><p className="price">{credit(value.amount ?? value.content?.reward)}<small>信用点</small></p><p>{value.orderNo || value.content?.title}</p></>}
+    {value && <><Badge tone={confirmed ? "sage" : "neutral"}>{grouped ? `已拆分为 ${resource.orders.length} 笔店铺订单` : fundsLabels[value.fundsStatus] || value.fundsStatus}</Badge><p className="price">{credit(grouped ? operation.amount : value.amount ?? value.content?.reward)}<small>信用点</small></p>{!grouped && <p>{value.orderNo || value.content?.title}</p>}</>}
+    {grouped && <div className="checkout-lines">{resource.orders.map((order) => <div className="checkout-line" key={order.orderId}><div><strong>{order.seller?.displayName}</strong><small>{order.orderNo} · {fundsLabels[order.fundsStatus] || order.fundsStatus}</small></div><span>{credit(order.amount)} 信用点</span>{onResource && <Button secondary onClick={() => onResource({ type: "ORDER", value: order })}>查看订单</Button>}</div>)}</div>}
+    {operation?.errorCode === "CHECKOUT_PAYMENT_REVERSED" && <p className="notice-box">合并付款未完成，已预留款项已退回。商品仍保留在购物袋中。</p>}
+    {operation?.errorCode === "CHECKOUT_REFUND_REQUIRES_ATTENTION" && <p className="notice-box">合并付款未完成，部分预留款项仍待退款核对，请查看各店订单。</p>}
     {expired ? <p className="notice-box">原报价未能创建订单。请重新查看最新价格，并再次确认后付款。</p> : !confirmed && !failed && <p className="notice-box">请保留当前请求。系统会继续查询同一笔业务，结果未确认前不要重新付款。</p>}
     {error && <p className="auth-error" role="alert">{error}</p>}
-    <div className="button-row">{!expired && <Button secondary disabled={busy} onClick={lookup}>刷新处理结果</Button>}{notFound && <Button disabled={busy} onClick={retryOriginal}>继续处理</Button>}{expired && onRestart && <Button onClick={onRestart}>重新获取报价</Button>}{resource && onResource && <Button onClick={() => onResource(resource)}>查看{resource.type === "ORDER" ? "订单" : "委托"}</Button>}</div>
+    <div className="button-row">{!expired && <Button secondary disabled={busy} onClick={lookup}>刷新处理结果</Button>}{notFound && <Button disabled={busy} onClick={retryOriginal}>继续处理</Button>}{expired && onRestart && <Button onClick={onRestart}>重新获取报价</Button>}{resource && onResource && !grouped && <Button onClick={() => onResource(resource)}>查看{resource.type === "ORDER" ? "订单" : "委托"}</Button>}</div>
   </div>;
 }
 
@@ -80,6 +83,7 @@ export default function PurchaseFlow({ client, user, items, channel, listing, so
   if (quote) return <div className="checkout-flow">{steps}
     <div className="checkout-amount"><WalletCards size={25} /><span>本次应付</span><strong>{credit(quote.totalAmount)}</strong><small>信用点</small>{Number(quote.discountTotal) > 0 && <del className="sale-original">{credit(quote.originalTotal)}</del>}</div>
     {Number(quote.discountTotal) > 0 && <div className="checkout-promotion">{Number(quote.productDiscount) > 0 && <div><span>商品优惠</span><strong>−{credit(quote.productDiscount)}</strong></div>}{quote.coupon && <><div><span>{quote.coupon.name}</span><strong>−{credit(quote.couponDiscount)}</strong></div><span className="coupon-auto"><Check size={14} />已自动选用最优惠的券{quote.coupon.type === "ITEM" ? " · 作用于一件商品" : ""}</span></>}</div>}
+    {quote.storeOrders?.length > 1 && <dl className="checkout-facts">{quote.storeOrders.map((store) => <div key={store.storeId}><dt>{store.storeName}{store.coupon && <small> · {store.coupon.name} −{credit(store.couponDiscount)}</small>}</dt><dd>{credit(store.totalAmount)} 信用点</dd></div>)}</dl>}
     <div className="checkout-lines">{orderLines}</div>{deliveryCard}
     <dl className="checkout-facts">{quote.storeName && <div><dt>店铺</dt><dd>{quote.storeName}</dd></div>}<div><dt>领取账号</dt><dd>{user.gameId || "当前登录账号"}</dd></div>{method !== "MAILBOX" && <div><dt>交付地点</dt><dd>{deliveryLocation}</dd></div>}{expiresAt !== null && <div><dt>报价有效期</dt><dd>{expired ? "已过期，请重新获取" : `剩余 ${Math.max(0, Math.ceil((expiresAt - now) / 1000))} 秒`}</dd></div>}</dl>
     {quote.warnings?.length > 0 && <div className="notice-box">{quote.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}

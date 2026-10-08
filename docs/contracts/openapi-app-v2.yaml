@@ -14245,6 +14245,16 @@ components:
       type: object
       additionalProperties: false
       properties:
+        resourceIds:
+          type: array
+          minItems: 2
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          description: 合并付款关联的独立订单；恢复必须读取整组，不能重新创建成功的子订单。
         operationId:
           type: string
           minLength: 1
@@ -15973,10 +15983,92 @@ components:
       - subtotal
       - productVersion
       description: ''
+    StoreCheckoutQuoteV221:
+      type: object
+      additionalProperties: false
+      properties:
+        originalTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        productDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        couponDiscount:
+          $ref: '#/components/schemas/CreditAmount'
+        discountTotal:
+          $ref: '#/components/schemas/CreditAmount'
+        coupon:
+          $ref: '#/components/schemas/AppliedCouponV209'
+        storeName:
+          type: string
+        storeId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        cartItems:
+          type: array
+          readOnly: true
+          description: 服务端记录的购物袋数量快照；提交仅引用报价 ID。
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              productId:
+                type: string
+                minLength: 1
+                maxLength: 128
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 999
+            required:
+            - productId
+            - quantity
+        channel:
+          type: string
+          enum:
+          - OFFICIAL_STORE
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteLine'
+          minItems: 1
+          maxItems: 100
+          description: ''
+        totalAmount:
+          $ref: '#/components/schemas/CreditAmount'
+        currency:
+          type: string
+          enum:
+          - CREDIT
+        delivery:
+          $ref: '#/components/schemas/DeliveryAddress'
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 2147483647
+          description: 乐观锁版本。修改必须提交最近读取的版本
+          example: 1
+      required:
+      - storeId
+      - storeName
+      - channel
+      - items
+      - totalAmount
+      - currency
+      - delivery
+      - version
+      description: 合并报价中的单店订单；门槛、优惠与退款金额均按此店计算。
     CheckoutQuote:
       type: object
       additionalProperties: false
       properties:
+        storeOrders:
+          type: array
+          minItems: 2
+          maxItems: 100
+          description: 跨店购物袋按店拆分；同一优惠券只分配给一个订单，总额等于各店实付之和。
+          items:
+            $ref: '#/components/schemas/StoreCheckoutQuoteV221'
         originalTotal:
           $ref: '#/components/schemas/CreditAmount'
         productDiscount:
@@ -16650,6 +16742,13 @@ components:
       type: object
       additionalProperties: false
       properties:
+        orders:
+          type: array
+          minItems: 2
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/OrderView'
+          description: 跨店付款各店独立订单；order 字段保留主订单以兼容原调用方。
         operation:
           $ref: '#/components/schemas/OperationLookup'
         order:
