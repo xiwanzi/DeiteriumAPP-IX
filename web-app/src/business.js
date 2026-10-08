@@ -1,6 +1,6 @@
 export const fundsLabels = { UNPAID: "尚未付款", PROCESSING: "资金处理中", PAID: "付款已确认", HELD: "报酬或货款已托管", SETTLING: "结算中", SETTLED: "已结算", REFUNDING: "退款中", REFUNDED: "已退款", INTERVENTION_HOLD: "等待平台处理", UNKNOWN: "资金结果待核对" };
 export function businessResource(data) {
-  if (data?.order?.orderId) return { type: "ORDER", value: data.order };
+  if (data?.order?.orderId) return { type: "ORDER", value: data.order, ...(data.orders?.length > 1 ? { orders: data.orders } : {}) };
   if (data?.commission?.commissionId) return { type: "COMMISSION", value: data.commission };
   if (data?.orderId) return { type: "ORDER", value: data };
   if (data?.commissionId) return { type: "COMMISSION", value: data };
@@ -31,7 +31,13 @@ export async function findBusiness(client, entry) {
   if (!operation) throw new Error("服务尚未返回这笔业务的处理结果。");
   const type = entry.resourceType || operation.resourceType, reference = entry.resourceId || operation.resourceId;
   let resource = null;
-  if (reference && ["ORDER", "COMMISSION"].includes(type)) { try { const r = await client.request(resourcePath(type, reference)); resource = businessResource(r.data); } catch (error) { error.knownOperation = operation; throw error; } }
+  if (reference && ["ORDER", "COMMISSION"].includes(type)) { try {
+    const references = type === "ORDER" && operation.resourceIds?.length > 1 ? operation.resourceIds : [reference];
+    if (references.length > 100 || new Set(references).size !== references.length || !references.includes(reference)) throw new Error("付款订单信息不完整，请保留原请求核对。");
+    const rows = await Promise.all(references.map(async (id) => (await client.request(resourcePath(type, id))).data));
+    resource = businessResource(rows.find((row) => resourceId(row) === reference));
+    if (resource && rows.length > 1) resource.orders = rows;
+  } catch (error) { error.knownOperation = operation; throw error; } }
   return { operation, resource };
 }
 export function canReplayBusiness(entry, userId, origin) {

@@ -15,6 +15,14 @@ internal data class FinancialScope(val owner: String, val origin: String) {
     }
 }
 
+internal fun operationOrderIds(operation:JSONObject):List<String> {
+    val primary=operation.getString("resourceId")
+    val values=operation.optJSONArray("resourceIds") ?: return listOf(primary)
+    val ids=(0 until values.length()).map{values.getString(it)}
+    require(ids.size in 1..100&&ids.all{it.matches(Regex("[A-Za-z0-9_:-]{1,128}"))}&&ids.distinct().size==ids.size&&primary in ids){"付款订单信息不完整，请保留原请求核对"}
+    return ids
+}
+
 /** Only an authoritative absent lookup permits the original command to be repeated. Never invent a new intent. */
 internal suspend fun recoverPendingOperation(
     kind: String,

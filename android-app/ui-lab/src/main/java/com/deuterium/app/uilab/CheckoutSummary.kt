@@ -3,7 +3,8 @@ package com.deuterium.app.uilab
 import org.json.JSONObject
 
 data class CheckoutItem(val title: String, val unitPrice: Long, val quantity: Int, val subtotal: Long)
-data class CheckoutSummary(val items: List<CheckoutItem>, val total: Long, val originalTotal:Long=total, val productDiscount:Long=0, val couponDiscount:Long=0, val couponName:String?=null)
+data class CheckoutStoreSummary(val storeId:String,val name:String,val total:Long,val couponName:String?,val couponDiscount:Long)
+data class CheckoutSummary(val items: List<CheckoutItem>, val total: Long, val originalTotal:Long=total, val productDiscount:Long=0, val couponDiscount:Long=0, val couponName:String?=null,val stores:List<CheckoutStoreSummary> = emptyList())
 data class CheckoutAmounts(val total:Long,val originalTotal:Long,val productDiscount:Long,val couponDiscount:Long)
 
 fun checkoutAmounts(value:JSONObject, subtotal:Long, amountField:String="totalAmount"):CheckoutAmounts {
@@ -30,7 +31,23 @@ fun checkoutSummary(quote: JSONObject): CheckoutSummary {
         CheckoutItem(item.getString("title"), price, count, subtotal)
     }
     val amounts=checkoutAmounts(quote,items.fold(0L) { sum, item -> Math.addExact(sum, item.subtotal) })
-    return CheckoutSummary(items,amounts.total,amounts.originalTotal,amounts.productDiscount,amounts.couponDiscount,quote.optJSONObject("coupon")?.optString("name"))
+    val groups=quote.optJSONArray("storeOrders")
+    val stores=if(groups==null)emptyList() else {
+        require(groups.length() in 2..100){"店铺订单信息不完整，请重新确认"}
+        val parts=(0 until groups.length()).map{index->val group=groups.getJSONObject(index);require(group.isNull("storeOrders"));group to checkoutSummary(group)}
+        val ids=parts.map{it.first.getString("storeId")}
+        require(ids.all{it.isNotBlank()}&&ids.distinct().size==ids.size){"店铺订单重复，请重新确认"}
+        fun sum(value:(CheckoutSummary)->Long)=parts.fold(0L){total,part->Math.addExact(total,value(part.second))}
+        require(sum{it.total}==amounts.total&&sum{it.originalTotal}==amounts.originalTotal&&sum{it.productDiscount}==amounts.productDiscount&&sum{it.couponDiscount}==amounts.couponDiscount){"店铺合计与付款金额不一致，请重新确认"}
+        fun lines(value:JSONObject):List<Triple<String,Int,String>> {val rows=value.getJSONArray("items");return (0 until rows.length()).map{val row=rows.getJSONObject(it);Triple(row.getString("productId"),row.getInt("quantity"),row.getString("subtotal"))}}
+        val expected=lines(quote);val actual=parts.flatMap{lines(it.first)}
+        require(expected.map{it.first}.distinct().size==expected.size&&actual.size==expected.size&&actual.toSet()==expected.toSet()){"店铺商品与购物袋不一致，请重新确认"}
+        val coupons=parts.mapNotNull{it.first.optJSONObject("coupon")?.getString("couponId")}
+        require(coupons.distinct().size==coupons.size){"同一张优惠券不能重复使用"}
+        parts.map{(group,part)->CheckoutStoreSummary(group.getString("storeId"),group.getString("storeName"),part.total,part.couponName,part.couponDiscount)}
+    }
+    val couponName=if(stores.isEmpty())quote.optJSONObject("coupon")?.optString("name") else stores.mapNotNull{it.couponName}.joinToString("、").takeIf{it.isNotBlank()}
+    return CheckoutSummary(items,amounts.total,amounts.originalTotal,amounts.productDiscount,amounts.couponDiscount,couponName,stores)
 }
 
 fun shopSearchSuggestions(products: List<ShopProduct>): List<String> =

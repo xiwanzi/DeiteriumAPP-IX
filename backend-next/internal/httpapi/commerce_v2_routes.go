@@ -98,7 +98,7 @@ func (s *Server) commerceCreateOrderV2(channel string) http.HandlerFunc {
 		}
 		available := s.commerceAvailableHTTPV2(CommerceReserveV2)
 		if channel == "OFFICIAL_STORE" {
-			available = available && s.commerceAvailableHTTPV2("mailbox.create") && s.commerceAvailableHTTPV2("mailbox.revoke")
+			available = available && s.commerceAvailableHTTPV2("mailbox.create") && s.commerceAvailableHTTPV2("mailbox.revoke") && s.commerceAvailableHTTPV2(CommerceRefundV2)
 		}
 		mutation, err := s.Store.PrepareOrderV2(r.Context(), u.User.ID, key, quote, version, channel, available, nodes)
 		if err != nil {
@@ -245,7 +245,20 @@ func (s *Server) commerceMutationHTTPV2(w http.ResponseWriter, r *http.Request, 
 	if err != nil {
 		resourceView = nil
 	}
-	catalogSuccessV2(w, r, status, map[string]any{"operation": operationView, resourceKey: resourceView})
+	response := map[string]any{"operation": operationView, resourceKey: resourceView}
+	if operation != nil && operation.Action == "checkout" {
+		orders := []any{}
+		for _, id := range store.CheckoutOrderIDsV221(*operation) {
+			order, e := s.Store.CommerceViewV2(r.Context(), user, id, false)
+			if e != nil {
+				catalogFailV2(w, r, e)
+				return
+			}
+			orders = append(orders, order)
+		}
+		response["orders"] = orders
+	}
+	catalogSuccessV2(w, r, status, response)
 }
 
 func (s *Server) commerceOperationHTTPV2(w http.ResponseWriter, r *http.Request) {

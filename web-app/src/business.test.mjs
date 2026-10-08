@@ -45,6 +45,13 @@ test("separate quote intentions can use separate HTTP idempotency keys without c
 });
 
 const scopedEntry = { userId: "alice", origin: "https://example.test", path: "/api/v1/store/orders", kind: "STORE_PURCHASE", body: { clientRequestId: "original-key", quoteId: "original-quote", expectedQuoteVersion: 3 } };
+test("group recovery retrieves every independent order without submitting another payment", async () => {
+  const paths = [], operation = { operationId: "group", status: "COMPLETED", resourceType: "ORDER", resourceId: "a", resourceIds: ["a", "b"], amount: "30.00" };
+  const client = { request: async (path, options) => { assert.equal(options, undefined); paths.push(path); return { data: path.includes("operations") ? operation : { orderId: path.endsWith("/a") ? "a" : "b", fundsStatus: "HELD", amount: path.endsWith("/a") ? "10.00" : "20.00" } }; } };
+  const result = await findBusiness(client, scopedEntry);
+  assert.deepEqual(result.resource.orders.map((order) => order.orderId), ["a", "b"]);assert.equal(paths.length, 3);
+  assert.equal(businessResource({ operation, order: result.resource.value, orders: result.resource.orders }).orders.length, 2);
+});
 test("only explicit original-key 404 can replay the exact original payment", async () => {
   const calls = [], client = { request: async (path, options) => {
     calls.push({ path, options }); if (!options) throw Object.assign(new Error("missing original operation"), { status: 404 });

@@ -7,6 +7,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -236,12 +237,20 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
         api.saveOperation(kind,JSONObject().put("request",body),requestScope)
         return runCatching {
             val response=api.request("POST",if(official)"/store/orders" else "/market/orders",body)
-            val op=response.getJSONObject("operation");api.saveOperation(kind,JSONObject().put("request",body).put("operationId",op.getString("operationId")),requestScope)
+            var op=response.getJSONObject("operation");api.saveOperation(kind,JSONObject().put("request",body).put("operationId",op.getString("operationId")),requestScope)
+            if(quote.optJSONArray("storeOrders")!=null) {
+                var attempts=0
+                while(op.getString("status") !in setOf("COMPLETED","FAILED")&&attempts++<20){delay(1000);requestScope.verifyCurrent(api.financialScope());op=api.request("GET","/operations/${op.getString("operationId")}")}
+            }
             requestScope.verifyCurrent(api.financialScope())
             if(op.getString("status")=="COMPLETED"){
-                val order=response.getJSONObject("order");require(order.getString("fundsStatus") in setOf("PAID","HELD","SETTLED","INTERVENTION_HOLD")){"付款结果仍待核对"}
-                val id=putOrder(order);api.saveOperation(kind,null,requestScope);state.refresh();refreshCart();error=null;id
-            }else if(op.getString("status")=="FAILED"){api.saveOperation(kind,null,requestScope);error("付款未完成，请检查余额与服务器状态")}
+                val ids=operationOrderIds(op)
+                val orders=if(ids.size==1)listOf(response.getJSONObject("order")) else ids.map{api.request("GET","/orders/$it")}
+                require(orders.all{it.getString("fundsStatus") in setOf("PAID","HELD","SETTLED","INTERVENTION_HOLD")}){"付款结果仍待核对"}
+                require(orders.fold(0L){sum,order->Math.addExact(sum,apiCents(order.getString("amount")))}==apiCents(quote.getString("totalAmount"))){"付款合计仍待核对"}
+                requestScope.verifyCurrent(api.financialScope());orders.forEach{putOrder(it)}
+                api.saveOperation(kind,null,requestScope);state.refresh();refreshCart();error=null;op.getString("resourceId")
+            }else if(op.getString("status")=="FAILED"){operationOrderIds(op).forEach{val order=api.request("GET","/orders/$it");requestScope.verifyCurrent(api.financialScope());putOrder(order)};api.saveOperation(kind,null,requestScope);state.refresh();error(if(op.optString("errorCode")=="CHECKOUT_PAYMENT_REVERSED")"合并付款未完成，已预留款项已退回，请查看各店订单" else "付款未完成，请查看订单核对资金状态")}
             else error("交易结果待确认，请勿重复付款；重新打开应用会继续核对")
         }.getOrElse{failure->if(failure is ApiFailure&&(failure.status in listOf(400,401,403,404,409,422,501)||failure.code=="CAPABILITY_UNAVAILABLE"))api.saveOperation(kind,null,requestScope);report(failure);null}
     }
@@ -251,7 +260,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
         runCatching{
             val op=recoverPendingOperation(kind,pending,requestScope,{api.financialScope()},
                 {method,path,body->api.request(method,path,body)},{value->api.saveOperation(kind,value,requestScope)})
-            when(op.getString("status")){"COMPLETED"->{val order=api.request("GET","/orders/${op.getString("resourceId")}");requestScope.verifyCurrent(api.financialScope());putOrder(order);api.saveOperation(kind,null,requestScope);state.refresh();refreshCart()};"FAILED"->api.saveOperation(kind,null,requestScope);else->report(ApiFailure("RESULT_UNKNOWN","仍有交易结果待确认，请勿重复付款"))}
+            when(op.getString("status")){"COMPLETED","FAILED"->{val orders=operationOrderIds(op).map{api.request("GET","/orders/$it")};requestScope.verifyCurrent(api.financialScope());orders.forEach{putOrder(it)};api.saveOperation(kind,null,requestScope);state.refresh();refreshCart()};else->report(ApiFailure("RESULT_UNKNOWN","仍有交易结果待确认，请勿重复付款"))}
         }.onFailure{report(it)}
     }
     suspend fun orderAction(id:String,action:String,description:String="",approve:Boolean?=null):Boolean {

@@ -254,280 +254,293 @@ func (s *Store) PrepareOrderV2(ctx context.Context, actor, key, quoteID string, 
 		if expected != catalogNumber(quote, "version") {
 			return result, catalogVersion()
 		}
-		amount := catalogString(quote, "totalAmount")
-		if amount != "0.00" || channel != "OFFICIAL_STORE" {
-			if e = commerceWithinExecutionLimitV2(amount); e != nil {
-				return result, e
-			}
+		if groups, ok := quote["storeOrders"].([]any); channel == "OFFICIAL_STORE" && ok && len(groups) > 1 {
+			return s.prepareStoreCheckoutV221(ctx, tx, owner, key, quoteID, quote, groups, nodes, now)
 		}
-		lines, ok := quote["items"].([]any)
-		if !ok || len(lines) < 1 || len(lines) > 100 {
-			return result, catalogInvalid()
+		return s.prepareOrderQuoteTxV2(ctx, tx, owner, key, quoteID, quote, channel, nodes, now, false)
+	})
+}
+
+func (s *Store) prepareOrderQuoteTxV2(ctx context.Context, tx *sql.Tx, owner User, key, quoteID string, quote CatalogObjectV2, channel string, nodes map[string]CatalogNodePolicyV2, now time.Time, grouped bool) (CommerceMutationV2, error) {
+	result := CommerceMutationV2{}
+	actor := owner.ID
+	var e error
+	amount := catalogString(quote, "totalAmount")
+	if amount != "0.00" || channel != "OFFICIAL_STORE" {
+		if e = commerceWithinExecutionLimitV2(amount); e != nil {
+			return result, e
 		}
-		quantities := map[string]int64{}
-		lineByID := map[string]CatalogObjectV2{}
-		for _, v := range lines {
-			line, ok := catalogObject(v)
-			if !ok {
-				return result, catalogInvalid()
-			}
-			id := catalogString(line, "productId")
-			if !CatalogReferenceV2(id) || quantities[id] != 0 || !catalogRange(line["quantity"], 1, 999) {
-				return result, catalogInvalid()
-			}
-			quantities[id] = catalogNumber(line, "quantity")
-			lineByID[id] = line
-		}
-		if channel == "PLAYER_MARKET" && len(quantities) != 1 {
-			return result, catalogInvalid()
-		}
-		kind := "product"
-		if channel == "PLAYER_MARKET" {
-			kind = "listing"
-		}
-		products := map[string]CatalogRecordV2{}
-		total := new(big.Int)
-		shop := ""
-		var seller User
-		confirmationHours := int64(72)
-		construction := false
-		for _, id := range commerceSortedKeysV2(quantities) {
-			p, e := catalogRecordTx(ctx, tx, id, kind, true)
-			if e != nil {
-				return result, e
-			}
-			if p.State != "ACTIVE" {
-				return result, catalogNotFound()
-			}
-			content, version := p.Body, p.Version
-			if kind == "product" {
-				content = p.Published
-				version = p.PublishedVersion
-				if content == nil {
-					return result, catalogNotFound()
-				}
-				if shop != "" && shop != p.StoreID {
-					return result, catalogError(422, "MIXED_STORES", "一个订单只能包含同一家官方店铺的商品。")
-				}
-				shop = p.StoreID
-			} else {
-				if p.OwnerID == actor {
-					return result, catalogError(422, "SELF_PURCHASE", "不能购买自己发布的商品。")
-				}
-				seller, e = commerceUserTxV2(ctx, tx, p.OwnerID, true)
-				if e != nil {
-					return result, e
-				}
-				construction = content["categoryCode"] == "CONSTRUCTION"
-				if construction {
-					confirmationHours = catalogNumber(content, "workHours")
-				}
-			}
-			line := lineByID[id]
-			quantity := quantities[id]
-			if version != catalogNumber(line, "productVersion") {
-				return result, catalogVersion()
-			}
-			if p.Stock != nil && *p.Stock < quantity {
-				return result, catalogError(422, "INSUFFICIENT_STOCK", "商品库存不足。")
-			}
-			if kind == "product" && quantity > catalogNumber(content, "limitPerOrder") {
-				return result, catalogError(422, "PURCHASE_LIMIT", "数量超过单笔限购。")
-			}
-			if kind == "product" {
-				if e := promotionCheckLimitsV209(ctx, tx, owner.ServerUUID, p, quantity, now); e != nil {
-					return result, e
-				}
-			}
-			price, ok := catalogMoney(content["price"])
-			if !ok {
-				return result, catalogInvalid()
-			}
-			if kind == "product" {
-				price, e = promotionPriceV209(content)
-				if e != nil {
-					return result, e
-				}
-			}
-			if catalogMoneyString(price) != catalogString(line, "unitPrice") {
-				return result, catalogVersion()
-			}
-			subtotal := new(big.Int).Mul(price, big.NewInt(quantity))
-			if catalogMoneyString(subtotal) != catalogString(line, "subtotal") {
-				return result, catalogVersion()
-			}
-			total.Add(total, subtotal)
-			products[id] = p
-		}
-		if kind == "product" {
-			// Recompute exactly the quoted coupon, never silently substitute a new
-			// promotion after the buyer has confirmed the amount.
-			coupons := []CatalogRecordV2{}
-			if applied, ok := catalogObject(quote["coupon"]); ok {
-				coupon, e := catalogRecordTx(ctx, tx, catalogString(applied, "couponId"), "coupon", true)
-				if e != nil {
-					return result, e
-				}
-				if coupon.Version != catalogNumber(applied, "version") {
-					return result, catalogVersion()
-				}
-				coupons = append(coupons, coupon)
-			}
-			pricing, e := promotionTotalsV209(products, quantities, coupons)
-			if e != nil {
-				return result, e
-			}
-			total, e = commerceAmountV2(catalogString(pricing, "totalAmount"))
-			if e != nil {
-				return result, e
-			}
-			if quote["couponDiscount"] != nil && pricing["couponDiscount"] != quote["couponDiscount"] {
-				return result, catalogVersion()
-			}
-		}
-		if catalogMoneyString(total) != amount {
-			return result, catalogVersion()
-		}
-		delivery, ok := catalogObject(quote["delivery"])
+	}
+	lines, ok := quote["items"].([]any)
+	if !ok || len(lines) < 1 || len(lines) > 100 {
+		return result, catalogInvalid()
+	}
+	quantities := map[string]int64{}
+	lineByID := map[string]CatalogObjectV2{}
+	for _, v := range lines {
+		line, ok := catalogObject(v)
 		if !ok {
 			return result, catalogInvalid()
 		}
-		if kind == "listing" {
-			for _, p := range products {
-				methods, _ := catalogStrings(p.Body["deliveryMethods"], 1, 2, 1, 16, true)
-				allowed := false
-				for _, m := range methods {
-					if m == delivery["method"] {
-						allowed = true
-					}
-				}
-				if !allowed {
-					return result, catalogError(422, "DELIVERY_UNAVAILABLE", "商品交付方式已改变，请重新获取报价。")
-				}
-			}
-		} else if delivery["method"] != "MAILBOX" {
+		id := catalogString(line, "productId")
+		if !CatalogReferenceV2(id) || quantities[id] != 0 || !catalogRange(line["quantity"], 1, 999) {
 			return result, catalogInvalid()
 		}
-		d := commerceNewResourceV2("ORDER", channel, owner, amount, now)
-		d.StoreID = shop
-		d.QuoteID = quoteID
-		buyerParty := commercePartyV2(owner)
-		var sellerParty CatalogObjectV2
-		if kind == "listing" {
-			d.PayeeID = seller.ID
-			d.PayeeUUID = seller.ServerUUID
-			sellerParty = commercePartyV2(seller)
-			for _, p := range products {
-				sellerParty["contactQq"] = p.Body["contactQq"]
-			}
-		} else {
-			storeDoc, e := catalogRecordTx(ctx, tx, shop, "store", false)
-			if e != nil {
-				return result, e
-			}
-			sellerParty = CatalogObjectV2{"kind": "OFFICIAL_STORE", "playerRef": nil, "storeId": shop, "displayName": storeDoc.Body["name"], "contactQq": storeDoc.Body["contactQq"]}
-		}
-		snapshots := []any{}
-		for _, v := range lines {
-			line, _ := catalogObject(v)
-			id := catalogString(line, "productId")
-			snap, e := commerceItemSnapshotV2(ctx, tx, products[id], quantities[id])
-			if e != nil {
-				return result, e
-			}
-			snapshots = append(snapshots, snap)
-		}
-		d.Body = CatalogObjectV2{"orderNo": "D" + now.Format("20060102") + d.ID[len("order_"):], "construction": construction, "buyer": buyerParty, "seller": sellerParty, "items": snapshots, "delivery": delivery, "confirmationHours": confirmationHours, "shippedAt": nil, "workCompletedAt": nil, "confirmedAt": nil}
-		if channel == "OFFICIAL_STORE" {
-			for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon", "cartItems"} {
-				if v, ok := quote[k]; ok {
-					d.Body[k] = v
-				}
-			}
-		}
-		if channel == "OFFICIAL_STORE" {
-			plan, e := commerceMailPlanV2(ctx, tx, d, products, quantities, nodes)
-			if e != nil {
-				return result, e
-			}
-			d.Body["mailboxPlan"] = plan
-			d.Body["mailboxState"] = "NOT_CREATED"
-		}
-		snapshot := CatalogObjectV2{"snapshotId": d.SnapshotID, "orderId": d.ID, "buyer": buyerParty, "seller": sellerParty, "items": snapshots, "totalAmount": amount, "delivery": delivery, "confirmationHours": confirmationHours, "capturedAt": now}
-		for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon"} {
-			if v, ok := d.Body[k]; ok {
-				snapshot[k] = v
-			}
-		}
-		if len(catalogJSON(snapshot)) > 1<<20 {
-			return result, catalogError(422, "SNAPSHOT_SIZE_LIMIT", "订单详情过多，请分开购买。")
-		}
-		d.SnapshotSHA256 = commerceSnapshotHashV2(snapshot)
-		snapshot["sha256"] = d.SnapshotSHA256
-		if e = commerceSaveV2(ctx, tx, &d, true); e != nil {
-			return result, e
-		}
-		if channel == "OFFICIAL_STORE" {
-			if e = promotionReserveV209(ctx, tx, owner, d, quote, now); e != nil {
-				return result, e
-			}
-		}
-		if e = commerceInsertSnapshotV2(ctx, tx, d, snapshot, now); e != nil {
-			return result, e
-		}
-		for _, id := range commerceSortedKeysV2(quantities) {
-			p := products[id]
-			quantity := quantities[id]
-			if p.Stock != nil {
-				n := *p.Stock - quantity
-				p.Stock = &n
-				p.Version++
-				p.UpdatedAt = now
-				if e = catalogSave(ctx, tx, &p, false); e != nil {
-					return result, e
-				}
-			}
-			holdState := "RESERVED"
-			if p.Stock == nil {
-				holdState = "UNLIMITED"
-			}
-			if _, e = tx.ExecContext(ctx, "INSERT INTO commerce_stock_holds_v2 VALUES(?,?,?,?)", d.ID, p.ID, quantity, holdState); e != nil {
-				return result, e
-			}
-			sourceType := "PRODUCT_PUBLISHED"
-			content := p.Published
-			if kind == "listing" {
-				sourceType = "MARKET_LISTING"
-				content = p.Body
-			}
-			if e = s.AppendAssetBindingsV2(ctx, tx, sourceType, p.ID, "ORDER_SNAPSHOT", d.SnapshotID, CatalogAssetsV2(p.Kind, content)); e != nil {
-				return result, e
-			}
-		}
-		steps := []CommerceStepV2{commerceReserveStepV2(d)}
-		if channel == "OFFICIAL_STORE" && amount == "0.00" {
-			steps = []CommerceStepV2{}
-		}
-		if channel == "OFFICIAL_STORE" {
-			plan, _ := catalogObject(d.Body["mailboxPlan"])
-			steps = append(steps, CommerceStepV2{Command: "mailbox.create", Payload: map[string]any(plan)})
-		}
-		operationKind := "STORE_PURCHASE"
-		if channel == "PLAYER_MARKET" {
-			operationKind = "MARKET_PURCHASE"
-		}
-		op, e := commerceNewOperationV2(ctx, tx, &d, actor, key, operationKind, "reserve", amount, steps, false, now)
+		quantities[id] = catalogNumber(line, "quantity")
+		lineByID[id] = line
+	}
+	if channel == "PLAYER_MARKET" && len(quantities) != 1 {
+		return result, catalogInvalid()
+	}
+	kind := "product"
+	if channel == "PLAYER_MARKET" {
+		kind = "listing"
+	}
+	products := map[string]CatalogRecordV2{}
+	total := new(big.Int)
+	shop := ""
+	var seller User
+	confirmationHours := int64(72)
+	construction := false
+	for _, id := range commerceSortedKeysV2(quantities) {
+		p, e := catalogRecordTx(ctx, tx, id, kind, true)
 		if e != nil {
 			return result, e
 		}
-		if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
+		if p.State != "ACTIVE" {
+			return result, catalogNotFound()
+		}
+		content, version := p.Body, p.Version
+		if kind == "product" {
+			content = p.Published
+			version = p.PublishedVersion
+			if content == nil {
+				return result, catalogNotFound()
+			}
+			if shop != "" && shop != p.StoreID {
+				return result, catalogError(422, "MIXED_STORES", "一个订单只能包含同一家官方店铺的商品。")
+			}
+			shop = p.StoreID
+		} else {
+			if p.OwnerID == actor {
+				return result, catalogError(422, "SELF_PURCHASE", "不能购买自己发布的商品。")
+			}
+			seller, e = commerceUserTxV2(ctx, tx, p.OwnerID, true)
+			if e != nil {
+				return result, e
+			}
+			construction = content["categoryCode"] == "CONSTRUCTION"
+			if construction {
+				confirmationHours = catalogNumber(content, "workHours")
+			}
+		}
+		line := lineByID[id]
+		quantity := quantities[id]
+		if version != catalogNumber(line, "productVersion") {
+			return result, catalogVersion()
+		}
+		if p.Stock != nil && *p.Stock < quantity {
+			return result, catalogError(422, "INSUFFICIENT_STOCK", "商品库存不足。")
+		}
+		if kind == "product" && quantity > catalogNumber(content, "limitPerOrder") {
+			return result, catalogError(422, "PURCHASE_LIMIT", "数量超过单笔限购。")
+		}
+		if kind == "product" {
+			if e := promotionCheckLimitsV209(ctx, tx, owner.ServerUUID, p, quantity, now); e != nil {
+				return result, e
+			}
+		}
+		price, ok := catalogMoney(content["price"])
+		if !ok {
+			return result, catalogInvalid()
+		}
+		if kind == "product" {
+			price, e = promotionPriceV209(content)
+			if e != nil {
+				return result, e
+			}
+		}
+		if catalogMoneyString(price) != catalogString(line, "unitPrice") {
+			return result, catalogVersion()
+		}
+		subtotal := new(big.Int).Mul(price, big.NewInt(quantity))
+		if catalogMoneyString(subtotal) != catalogString(line, "subtotal") {
+			return result, catalogVersion()
+		}
+		total.Add(total, subtotal)
+		products[id] = p
+	}
+	if kind == "product" {
+		// Recompute exactly the quoted coupon, never silently substitute a new
+		// promotion after the buyer has confirmed the amount.
+		coupons := []CatalogRecordV2{}
+		if applied, ok := catalogObject(quote["coupon"]); ok {
+			coupon, e := catalogRecordTx(ctx, tx, catalogString(applied, "couponId"), "coupon", true)
+			if e != nil {
+				return result, e
+			}
+			if coupon.Version != catalogNumber(applied, "version") {
+				return result, catalogVersion()
+			}
+			coupons = append(coupons, coupon)
+		}
+		pricing, e := promotionTotalsV209(products, quantities, coupons)
+		if e != nil {
 			return result, e
 		}
-		if e = commerceEventV2(ctx, tx, d, actor, "order.payment.started", "订单已记录，正在核实预付结果。", map[string]string{"operationId": op.ID}); e != nil {
+		total, e = commerceAmountV2(catalogString(pricing, "totalAmount"))
+		if e != nil {
 			return result, e
 		}
-		return CommerceMutationV2{ResourceID: d.ID, Kind: d.Kind, OperationID: op.ID}, nil
-	})
+		if quote["couponDiscount"] != nil && pricing["couponDiscount"] != quote["couponDiscount"] {
+			return result, catalogVersion()
+		}
+	}
+	if catalogMoneyString(total) != amount {
+		return result, catalogVersion()
+	}
+	delivery, ok := catalogObject(quote["delivery"])
+	if !ok {
+		return result, catalogInvalid()
+	}
+	if kind == "listing" {
+		for _, p := range products {
+			methods, _ := catalogStrings(p.Body["deliveryMethods"], 1, 2, 1, 16, true)
+			allowed := false
+			for _, m := range methods {
+				if m == delivery["method"] {
+					allowed = true
+				}
+			}
+			if !allowed {
+				return result, catalogError(422, "DELIVERY_UNAVAILABLE", "商品交付方式已改变，请重新获取报价。")
+			}
+		}
+	} else if delivery["method"] != "MAILBOX" {
+		return result, catalogInvalid()
+	}
+	d := commerceNewResourceV2("ORDER", channel, owner, amount, now)
+	d.StoreID = shop
+	d.QuoteID = quoteID
+	buyerParty := commercePartyV2(owner)
+	var sellerParty CatalogObjectV2
+	if kind == "listing" {
+		d.PayeeID = seller.ID
+		d.PayeeUUID = seller.ServerUUID
+		sellerParty = commercePartyV2(seller)
+		for _, p := range products {
+			sellerParty["contactQq"] = p.Body["contactQq"]
+		}
+	} else {
+		storeDoc, e := catalogRecordTx(ctx, tx, shop, "store", false)
+		if e != nil {
+			return result, e
+		}
+		sellerParty = CatalogObjectV2{"kind": "OFFICIAL_STORE", "playerRef": nil, "storeId": shop, "displayName": storeDoc.Body["name"], "contactQq": storeDoc.Body["contactQq"]}
+	}
+	snapshots := []any{}
+	for _, v := range lines {
+		line, _ := catalogObject(v)
+		id := catalogString(line, "productId")
+		snap, e := commerceItemSnapshotV2(ctx, tx, products[id], quantities[id])
+		if e != nil {
+			return result, e
+		}
+		snapshots = append(snapshots, snap)
+	}
+	d.Body = CatalogObjectV2{"orderNo": "D" + now.Format("20060102") + d.ID[len("order_"):], "construction": construction, "buyer": buyerParty, "seller": sellerParty, "items": snapshots, "delivery": delivery, "confirmationHours": confirmationHours, "shippedAt": nil, "workCompletedAt": nil, "confirmedAt": nil}
+	if channel == "OFFICIAL_STORE" {
+		for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon", "cartItems"} {
+			if v, ok := quote[k]; ok {
+				d.Body[k] = v
+			}
+		}
+	}
+	if channel == "OFFICIAL_STORE" {
+		plan, e := commerceMailPlanV2(ctx, tx, d, products, quantities, nodes)
+		if e != nil {
+			return result, e
+		}
+		d.Body["mailboxPlan"] = plan
+		d.Body["mailboxState"] = "NOT_CREATED"
+	}
+	snapshot := CatalogObjectV2{"snapshotId": d.SnapshotID, "orderId": d.ID, "buyer": buyerParty, "seller": sellerParty, "items": snapshots, "totalAmount": amount, "delivery": delivery, "confirmationHours": confirmationHours, "capturedAt": now}
+	for _, k := range []string{"originalTotal", "productDiscount", "couponDiscount", "discountTotal", "coupon"} {
+		if v, ok := d.Body[k]; ok {
+			snapshot[k] = v
+		}
+	}
+	if len(catalogJSON(snapshot)) > 1<<20 {
+		return result, catalogError(422, "SNAPSHOT_SIZE_LIMIT", "订单详情过多，请分开购买。")
+	}
+	d.SnapshotSHA256 = commerceSnapshotHashV2(snapshot)
+	snapshot["sha256"] = d.SnapshotSHA256
+	if e = commerceSaveV2(ctx, tx, &d, true); e != nil {
+		return result, e
+	}
+	if channel == "OFFICIAL_STORE" {
+		if e = promotionReserveV209(ctx, tx, owner, d, quote, now); e != nil {
+			return result, e
+		}
+	}
+	if e = commerceInsertSnapshotV2(ctx, tx, d, snapshot, now); e != nil {
+		return result, e
+	}
+	for _, id := range commerceSortedKeysV2(quantities) {
+		p := products[id]
+		quantity := quantities[id]
+		if p.Stock != nil {
+			n := *p.Stock - quantity
+			p.Stock = &n
+			p.Version++
+			p.UpdatedAt = now
+			if e = catalogSave(ctx, tx, &p, false); e != nil {
+				return result, e
+			}
+		}
+		holdState := "RESERVED"
+		if p.Stock == nil {
+			holdState = "UNLIMITED"
+		}
+		if _, e = tx.ExecContext(ctx, "INSERT INTO commerce_stock_holds_v2 VALUES(?,?,?,?)", d.ID, p.ID, quantity, holdState); e != nil {
+			return result, e
+		}
+		sourceType := "PRODUCT_PUBLISHED"
+		content := p.Published
+		if kind == "listing" {
+			sourceType = "MARKET_LISTING"
+			content = p.Body
+		}
+		if e = s.AppendAssetBindingsV2(ctx, tx, sourceType, p.ID, "ORDER_SNAPSHOT", d.SnapshotID, CatalogAssetsV2(p.Kind, content)); e != nil {
+			return result, e
+		}
+	}
+	if grouped {
+		return CommerceMutationV2{ResourceID: d.ID, Kind: d.Kind}, nil
+	}
+	steps := []CommerceStepV2{commerceReserveStepV2(d)}
+	if channel == "OFFICIAL_STORE" && amount == "0.00" {
+		steps = []CommerceStepV2{}
+	}
+	if channel == "OFFICIAL_STORE" {
+		plan, _ := catalogObject(d.Body["mailboxPlan"])
+		steps = append(steps, CommerceStepV2{Command: "mailbox.create", Payload: map[string]any(plan)})
+	}
+	operationKind := "STORE_PURCHASE"
+	if channel == "PLAYER_MARKET" {
+		operationKind = "MARKET_PURCHASE"
+	}
+	op, e := commerceNewOperationV2(ctx, tx, &d, actor, key, operationKind, "reserve", amount, steps, false, now)
+	if e != nil {
+		return result, e
+	}
+	if e = commerceSaveV2(ctx, tx, &d, false); e != nil {
+		return result, e
+	}
+	if e = commerceEventV2(ctx, tx, d, actor, "order.payment.started", "订单已记录，正在核实预付结果。", map[string]string{"operationId": op.ID}); e != nil {
+		return result, e
+	}
+	return CommerceMutationV2{ResourceID: d.ID, Kind: d.Kind, OperationID: op.ID}, nil
 }
 
 func (s *Store) PrepareCommissionV2(ctx context.Context, actor, key string, content CatalogObjectV2, available bool) (CommerceMutationV2, error) {

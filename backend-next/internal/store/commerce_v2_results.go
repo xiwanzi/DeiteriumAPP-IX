@@ -333,6 +333,28 @@ func (s *Store) ApplyCommerceStepV2(ctx context.Context, id string, index int, t
 	if op.State == "COMPLETED" || op.State == "FAILED" || op.StepIndex != index || index < 0 || index >= len(op.Steps) || d.PendingOperationID != id {
 		return op, nil
 	}
+	root := d
+	if op.Action == "checkout" {
+		target := op.Steps[index].ResourceID
+		found := false
+		for _, child := range catalogIDs(root.Body, "checkoutOrderIds") {
+			if child == target {
+				found = true
+			}
+		}
+		if !found {
+			return op, catalogInvalid()
+		}
+		if target != root.ID {
+			d, e = commerceRecordTxV2(ctx, tx, target, "ORDER", true)
+			if e != nil {
+				return op, e
+			}
+		}
+		if d.OwnerID != root.OwnerID || d.PendingOperationID != id {
+			return op, catalogInvalid()
+		}
+	}
 	step := &op.Steps[index]
 	if !result.FromMailboxEvent && op.DispatchToken != token {
 		return op, nil
@@ -392,6 +414,13 @@ func (s *Store) ApplyCommerceStepV2(ctx context.Context, id string, index int, t
 	op.DispatchToken = ""
 	op.DispatchUntil = nil
 	op.UpdatedAt = now
+	if op.Action == "checkout" {
+		if status == "COMPLETED" {
+			step.Proof = result.Data
+		}
+		changed := status == "COMPLETED" || status == "FAILED" || changedMail || priorFunds != d.FundsState || priorState != d.State || priorStepState != status || priorError != code
+		return s.applyCheckoutStepV221(ctx, tx, root, d, op, status, money, changed, now)
+	}
 	switch status {
 	case "COMPLETED":
 		step.Proof = result.Data

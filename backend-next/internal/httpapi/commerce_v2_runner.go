@@ -18,13 +18,24 @@ func (s *Server) RunCommerceOperationV2(ctx context.Context, id string, execute 
 	if e != nil {
 		return op, e
 	}
-	for n := 0; n < 4; n++ {
+	limit := 4
+	if op.Action == "checkout" {
+		limit = 200
+	}
+	for n := 0; n < limit; n++ {
+		if ctx.Err() != nil {
+			return op, ctx.Err()
+		}
 		if op.State == "COMPLETED" || op.State == "FAILED" || op.StepIndex >= len(op.Steps) {
 			return op, nil
 		}
 		step := op.Steps[op.StepIndex]
 		if step.Command == "mailbox.create" || step.Command == "mailbox.revoke" {
-			if e = s.RefreshCommerceMailboxV2(ctx, op.ResourceID); e != nil {
+			resource := op.ResourceID
+			if step.ResourceID != "" {
+				resource = step.ResourceID
+			}
+			if e = s.RefreshCommerceMailboxV2(ctx, resource); e != nil {
 				return op, e
 			}
 			op, e = s.Store.CommerceOperationV2(ctx, id)
@@ -119,6 +130,9 @@ func (s *Server) RefreshCommerceMailboxV2(ctx context.Context, id string) error 
 		return nil
 	}
 	step := op.Steps[op.StepIndex]
+	if step.ResourceID != "" && step.ResourceID != id {
+		return nil
+	}
 	if step.Command != "mailbox.create" && step.Command != "mailbox.revoke" {
 		return nil
 	}

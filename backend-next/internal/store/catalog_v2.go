@@ -1027,6 +1027,9 @@ func (s *Store) CatalogQuoteV2(ctx context.Context, user, key string, input Cata
 			}
 			lines = append(lines, map[string]any{"productId": d.ID, "title": content["title"], "unitPrice": catalogMoneyString(price), "quantity": quantity, "subtotal": catalogMoneyString(subtotal), "productVersion": version})
 		}
+		if kind == "product" && len(checkoutStoresV221(docs)) > 1 {
+			return s.catalogCheckoutQuoteV221(ctx, tx, owner, input, docs, quantities, lines, delivery, now)
+		}
 		var promotion CatalogObjectV2
 		if kind == "product" {
 			if _, e := commerceDeliveryContentsV2(ctx, tx, docs, quantities, nil); e != nil {
