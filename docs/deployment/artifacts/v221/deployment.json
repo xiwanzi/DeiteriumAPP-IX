@@ -1,0 +1,35 @@
+{
+  "deployedAt": "2026-10-08T23:27:19.339349+08:00",
+  "sourceCommit": "b5e7cd6ef589985c8c033c7f1c1686f191e42c39",
+  "mergeCommit": "93e7346bd9f5652b69bd0a2edf4401657c98c9da",
+  "pr": 83,
+  "appVersion": "2.0.21",
+  "versionCode": 22100,
+  "webVersion": "2.0.30",
+  "before": {
+    "accounts": 57,
+    "orders": 39,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "after": {
+    "accounts": 57,
+    "orders": 39,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "existingRecordIdsPreserved": true,
+  "schemaAndConfigurationUnchanged": true,
+  "officialAndHelpUnchanged": true,
+  "oldReleaseEntriesPreserved": 21,
+  "backup": "/var/backups/deuterium/checkout-v221-22100-b5e7cd6ef589",
+  "current": {
+    "go": "/opt/deuterium/releases/checkout-v221-b5e7cd6ef589",
+    "web": "/var/www/deuterium/releases/web-2.0.30-b5e7cd6ef589/dist"
+  },
+  "ready": true
+}

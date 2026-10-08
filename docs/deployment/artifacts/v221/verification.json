@@ -1,0 +1,138 @@
+{
+  "sourceCommit": "b5e7cd6ef589985c8c033c7f1c1686f191e42c39",
+  "appVersion": "2.0.21",
+  "versionCode": 22100,
+  "webVersion": "2.0.30",
+  "apkHashAndBytesVerified": true,
+  "updateChecks": [
+    {
+      "versionCode": 20004,
+      "offered": 22100
+    },
+    {
+      "versionCode": 21300,
+      "offered": 22100
+    },
+    {
+      "versionCode": 21500,
+      "offered": 22100
+    },
+    {
+      "versionCode": 21700,
+      "offered": 22100
+    },
+    {
+      "versionCode": 21800,
+      "offered": 22100
+    },
+    {
+      "versionCode": 21900,
+      "offered": 22100
+    },
+    {
+      "versionCode": 22000,
+      "offered": 22100
+    },
+    {
+      "versionCode": 22099,
+      "offered": 22100
+    },
+    {
+      "versionCode": 22100,
+      "offered": null
+    },
+    {
+      "versionCode": 22101,
+      "offered": null
+    }
+  ],
+  "webFiles": [
+    {
+      "origin": "https://47.103.99.34",
+      "asset": "/assets/index-ClkJM_9Q.js",
+      "sha256": "169071593cacb4f70710cb09467472f6ab4f9370780e4143cd80624f0fc876dd"
+    },
+    {
+      "origin": "https://47.103.99.34",
+      "asset": "/assets/index-D8fkwXwP.css",
+      "sha256": "58c50b71e45b42a6223014aa465c69a2d0b2ce98b868818aa97a5a8695b9930b"
+    },
+    {
+      "origin": "https://chat.deuteriumix.com",
+      "asset": "/assets/index-ClkJM_9Q.js",
+      "sha256": "169071593cacb4f70710cb09467472f6ab4f9370780e4143cd80624f0fc876dd"
+    },
+    {
+      "origin": "https://chat.deuteriumix.com",
+      "asset": "/assets/index-D8fkwXwP.css",
+      "sha256": "58c50b71e45b42a6223014aa465c69a2d0b2ce98b868818aa97a5a8695b9930b"
+    }
+  ],
+  "catalog": {
+    "firstPage": 40,
+    "secondPage": 40,
+    "duplicates": 0,
+    "unlimitedInventoryCorrect": true,
+    "searchMatched": true,
+    "firstPageMs": 197.7,
+    "secondPageMs": 178.6,
+    "searchMs": 1134.0,
+    "timingOrigin": "maintainer PC to public HTTPS API, not a user handset",
+    "coverHashVerified": true
+  },
+  "liveGroupedQuote": {
+    "storeCount": 2,
+    "sumOfStoreAmountsMatches": true,
+    "onlyQuoteRequestedNoPaymentOrMailCreated": true
+  },
+  "categoryGroups": [
+    {
+      "name": "\u5176\u4ed6",
+      "checkedProducts": 1
+    },
+    {
+      "name": "\u5bb6\u5177\u5bb6\u5c45",
+      "checkedProducts": 40
+    },
+    {
+      "name": "\u5efa\u7b51\u5efa\u6750",
+      "checkedProducts": 40
+    },
+    {
+      "name": "\u706f\u5177\u7167\u660e",
+      "checkedProducts": 40
+    },
+    {
+      "name": "\u7eff\u690d\u5ead\u9662",
+      "checkedProducts": 40
+    },
+    {
+      "name": "\u88c5\u9970\u6446\u4ef6",
+      "checkedProducts": 40
+    }
+  ],
+  "privateNoStoreAndAccountEligibleCouponPreviews": true,
+  "activeEligibleCouponsAtVerification": 1,
+  "offerPreviewsOnFirstPage": 40,
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ],
+  "mekAlreadyStoppedBeforeRelease": "2026-10-08T16:45:36+08:00 (manager STOPPED; final world-save log)",
+  "temporarySessionRevoked": true,
+  "configurationAndUnrelatedSitesPreserved": true
+}
