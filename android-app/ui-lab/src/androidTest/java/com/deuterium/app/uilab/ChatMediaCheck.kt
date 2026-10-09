@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
 import okhttp3.*
@@ -130,13 +131,19 @@ object ChatMediaCheck {
                 state.chat+=ChatLine(3,"你","[贴纸]",true,remoteId="moving_message",serverAt=3,media=moving)
             }
             runBlocking{withContext(Dispatchers.Main){state.chatMedia!!.refreshStickers()}}
+            val previewOpen=mutableStateOf(false)
             val activity=test.startActivitySync(Intent(context,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
-            test.runOnMainSync{activity.setContent{LabTheme(theme,theme==1,true){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
+            test.runOnMainSync{activity.setContent{LabTheme(theme,theme==1,true){
+              val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
+              CompositionLocalProvider(LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
+                GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()){
                 Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))){ChatPage(state,90.dp,{},{})}
                 Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp).background(MaterialTheme.colorScheme.background).statusBarsPadding(),contentAlignment=Alignment.Center){Text("公共聊天",style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurface)}
-            }}}}
+                }
+                if(previewOpen.value)ChatAttachmentPreview(Uri.fromFile(source).toString(),false,false,null,{},{},{previewOpen.value=false})
+            }}}}}
             fun find(node:AccessibilityNodeInfo?,label:String):AccessibilityNodeInfo?{if(node==null)return null;if(node.text?.toString()==label||node.contentDescription?.toString()==label)return node;repeat(node.childCount){find(node.getChild(it),label)?.let{return it}};return null}
-            fun click(label:String){waitFor("missing $label"){find(test.uiAutomation.rootInActiveWindow,label)!=null};var node=find(test.uiAutomation.rootInActiveWindow,label)!!;while(!node.isClickable)node=node.parent;check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK));test.waitForIdleSync();Thread.sleep(250)}
+            fun click(label:String){waitFor("missing $label"){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();find(test.uiAutomation.rootInActiveWindow,label)!=null};var node=find(test.uiAutomation.rootInActiveWindow,label)!!;while(!node.isClickable)node=node.parent;check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK));test.waitForIdleSync();Thread.sleep(250)}
             fun shot(name:String){test.waitForIdleSync();Thread.sleep(400);test.uiAutomation.takeScreenshot()!!.let{b->File(context.filesDir,"qa-chat-$name.png").outputStream().use{b.compress(Bitmap.CompressFormat.PNG,100,it)};b.recycle()}}
             waitFor("chat rendered"){find(test.uiAutomation.rootInActiveWindow,"选择表情")!=null};Thread.sleep(1200)
             val tile=find(test.uiAutomation.rootInActiveWindow,"查看贴纸")!!;val tileBounds=android.graphics.Rect();tile.getBoundsInScreen(tileBounds)
@@ -144,20 +151,63 @@ object ChatMediaCheck {
             val firstFrame=tileHash();Thread.sleep(230);val secondFrame=tileHash()
             check(if(theme==1)firstFrame!=secondFrame else firstFrame==secondFrame){"GIF playback/reduced motion mismatch"}
             result.putString("gif_playback",if(theme==1)"PASS visible animation changes pixels" else "PASS reduced motion freezes frame")
-            shot(if(theme==2)"dark" else "light");click("选择表情");shot("emoji-$theme");click("贴纸 10/10");shot("stickers-$theme");check(find(test.uiAutomation.rootInActiveWindow,"贴纸已满，删除已有贴纸后可继续添加")!=null)
+            test.uiAutomation.takeScreenshot()!!.let{screen->
+                fun distance(a:Int,b:Int)=kotlin.math.abs(Color.red(a)-Color.red(b))+kotlin.math.abs(Color.green(a)-Color.green(b))+kotlin.math.abs(Color.blue(a)-Color.blue(b))
+                val corner=screen.getPixel(tileBounds.left+3,tileBounds.top+3)
+                val outside=screen.getPixel(tileBounds.left-3,tileBounds.top+3)
+                val top=screen.getPixel(tileBounds.centerX(),tileBounds.top+3)
+                File(context.filesDir,"qa-chat-sticker-rounding-$theme.png").outputStream().use{screen.compress(Bitmap.CompressFormat.PNG,100,it)}
+                check(distance(corner,outside)<=3&&distance(top,outside)>distance(corner,outside)+5){"Animated sticker corner mismatch: bounds=$tileBounds corner=${Color.red(corner)},${Color.green(corner)},${Color.blue(corner)} outside=${Color.red(outside)},${Color.green(outside)},${Color.blue(outside)} top=${Color.red(top)},${Color.green(top)},${Color.blue(top)}"}
+                screen.recycle()
+            }
+            result.putString("sticker_rounding","PASS rounded animated artwork with transparent corners")
+            shot(if(theme==2)"dark" else "light")
+            val anchorSamples=mutableListOf<Int>()
+            fun composerAnchor(){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();find(test.uiAutomation.rootInActiveWindow,"发送消息")?.let{it.refresh();val r=android.graphics.Rect();it.getBoundsInScreen(r);anchorSamples+=r.bottom}}
+            composerAnchor()
+            var toggle=find(test.uiAutomation.rootInActiveWindow,"选择表情")!!;while(!toggle.isClickable)toggle=toggle.parent
+            check(toggle.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+            repeat(12){Thread.sleep(32);composerAnchor()}
+            shot("emoji-$theme")
+            // Accessibility updates may wait for UI idle and omit in-flight frames. Verify the
+            // endpoints here; the recorded display frames are used for the motion trajectory.
+            check(anchorSamples.first()-anchorSamples.last()>context.resources.displayMetrics.density*100){"Panel did not reserve its dock: $anchorSamples"}
+            result.putString("panel_motion","PASS composer dock endpoints; rendered trajectory verified separately: ${anchorSamples.first()} -> ${anchorSamples.last()}")
+            shot("emoji-$theme");click("手势");shot("gestures-$theme");click("👍");check(state.chatDraft.text=="👍");click("删除表情");check(state.chatDraft.text.isEmpty())
+            click("心情");click("❤️‍🔥");check(state.chatDraft.text=="❤️‍🔥");click("删除表情");check(state.chatDraft.text.isEmpty())
+            click("贴纸 10/10");shot("stickers-$theme");check(find(test.uiAutomation.rootInActiveWindow,"贴纸已满，删除已有贴纸后可继续添加")!=null)
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);Thread.sleep(300);click("查看图片");shot("viewer-$theme")
             fun zoomed(node:AccessibilityNodeInfo?):Boolean {if(node==null)return false;val state=androidx.core.view.accessibility.AccessibilityNodeInfoCompat.wrap(node).stateDescription?.toString();if(state=="缩放 300%")return true;repeat(node.childCount){if(zoomed(node.getChild(it)))return true};return false}
             val screen=test.uiAutomation.takeScreenshot()!!;val cx=screen.width/2f;val cy=screen.height/2f;screen.recycle()
             fun tap(){val now=android.os.SystemClock.uptimeMillis();val down=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,cx,cy,0);test.sendPointerSync(down);down.recycle();Thread.sleep(25);val up=android.view.MotionEvent.obtain(now,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,cx,cy,0);test.sendPointerSync(up);up.recycle()}
             tap();Thread.sleep(60);tap();waitFor("double tap zoom"){zoomed(test.uiAutomation.rootInActiveWindow)};shot("zoom-$theme");click("关闭图片");waitFor("viewer closed"){find(test.uiAutomation.rootInActiveWindow,"选择表情")!=null}
             result.putString("viewer","PASS full image + double tap zoom + close")
-            click("发消息，输入 @ 提及玩家");Thread.sleep(700)
+            click("输入消息");Thread.sleep(700)
             val keyboardAnchor=android.graphics.Rect();find(test.uiAutomation.rootInActiveWindow,"选择表情")!!.getBoundsInScreen(keyboardAnchor)
             click("选择表情");Thread.sleep(500)
             val panelAnchor=android.graphics.Rect();find(test.uiAutomation.rootInActiveWindow,"切换键盘")!!.getBoundsInScreen(panelAnchor)
             check(kotlin.math.abs(keyboardAnchor.bottom-panelAnchor.bottom)<context.resources.displayMetrics.density*28){"Keyboard/panel changed composer position: $keyboardAnchor -> $panelAnchor"}
             shot("keyboard-panel-$theme");click("切换键盘");Thread.sleep(500)
             result.putString("keyboard","PASS keyboard/panel retains composer position")
+            test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);Thread.sleep(300)
+            test.runOnMainSync{previewOpen.value=true}
+            waitFor("preview half sheet"){find(test.uiAutomation.rootInActiveWindow,"展开预览")!=null};shot("attachment-half-$theme")
+            fun dragHandle(label:String,delta:Float){
+                if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache()
+                val node=find(test.uiAutomation.rootInActiveWindow,label)!!;val bounds=android.graphics.Rect();node.getBoundsInScreen(bounds)
+                val x=bounds.exactCenterX();val y=bounds.exactCenterY();val downAt=android.os.SystemClock.uptimeMillis()
+                fun event(action:Int,at:Float){val ev=android.view.MotionEvent.obtain(downAt,android.os.SystemClock.uptimeMillis(),action,x,at,0);test.sendPointerSync(ev);ev.recycle()}
+                event(android.view.MotionEvent.ACTION_DOWN,y)
+                repeat(12){Thread.sleep(18);event(android.view.MotionEvent.ACTION_MOVE,y+delta*(it+1)/12)}
+                event(android.view.MotionEvent.ACTION_UP,y+delta);test.waitForIdleSync();Thread.sleep(350)
+            }
+            dragHandle("展开预览",-context.resources.displayMetrics.density*220)
+            waitFor("preview expanded by drag"){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();find(test.uiAutomation.rootInActiveWindow,"收起预览")!=null};shot("attachment-full-$theme")
+            dragHandle("收起预览",context.resources.displayMetrics.density*220)
+            waitFor("preview collapsed by drag"){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();find(test.uiAutomation.rootInActiveWindow,"展开预览")!=null}
+            click("展开预览")
+            click("收起预览");click("取消");waitFor("preview dismissed"){!previewOpen.value}
+            result.putString("attachment","PASS half-height / drag expand / drag collapse / handle click / animated dismissal")
             result.putString("ui","PASS public images/GIF + emoji panel + full sticker library")
             result.putString("status","PASS");test.finish(-1,result)
         }catch(e:Throwable){result.putString("error",e.stackTraceToString());test.finish(1,result)}finally{scope.cancel();server.shutdown()}

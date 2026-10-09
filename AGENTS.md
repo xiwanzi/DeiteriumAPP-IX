@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-09：**聊天输入区动效候选已完成本机调整，尚未上线**。按用户录屏调整胶囊输入栏、键盘/表情联动、分类与紧凑贴纸面板、可拖拽图片预览，并增加静态/动态贴纸自动圆角。维护 `.worktrees/chat-media` / `xiwanzi/chat-composer-motion`，见[验收](docs/qa/chat-composer-motion-20261009.md)。线上仍为下方 2.0.22 / Web 2.0.31。
+
 2026-10-09：**App 2.0.22（22200）、Web 2.0.31 与配套 Go 已于 19:21 上线**（PR #85，源码 `60b0cb525842`）。公共聊天新增 Emoji/图片/GIF/10 个云端贴纸，三天媒体与去重、500MiB 本机聊天缓存、30 天历史补拉；036 迁移和真实 OSS 联调通过。58 账号、44 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留；三常驻节点在线，MEK 继续停止。维护 `.worktrees/chat-media` / `xiwanzi/release-v222-live`，见[上线记录](docs/deployment/deuterium-2.0.22-live.md)。下方候选与较早发布均为历史。
 
 2026-10-09：**公共聊天媒体候选已完成本机实现与验收，未推送/部署**。维护 `.worktrees/chat-media` / `xiwanzi/chat-media`：单图前端压缩、Emoji/GIF、每账号 10 个云端贴纸、三天媒体与内容去重、App 500MiB 无时间过期聊天缓存、30 天历史补拉。App/Web 发布版本保持，游戏仅文字摘要。见[契约](docs/contracts/public-chat-media.md)和[验收](docs/qa/chat-media-20261009.md)。线上状态仍以下方 2.0.21 记录为准。

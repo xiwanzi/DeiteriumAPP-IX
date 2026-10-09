@@ -4,6 +4,15 @@ import { readFileSync } from "node:fs";
 import { outputSize, webpChunks, animatedWebp } from "./chat-media-codec.js";
 import { normalizeMessage, mergeMessages, DeuteriumClient } from "./api.js";
 import { acquireChatMedia } from "./chat-media.js";
+import { deleteChatGrapheme } from "./chat-expressions.js";
+
+test("expression backspace removes full joined emoji and preserves text around the caret",()=>{
+  for(const emoji of ["❤️‍🔥","👨‍👩‍👧‍👦","👍🏽","🇨🇳","1️⃣"]){
+    assert.deepEqual(deleteChatGrapheme("前"+emoji+"后",1+emoji.length),{text:"前后",caret:1});
+  }
+  assert.deepEqual(deleteChatGrapheme("你好世界",1,3),{text:"你界",caret:1});
+  assert.deepEqual(deleteChatGrapheme("你好",0),{text:"你好",caret:0});
+});
 
 test("chat media sizing keeps long screenshot text readable and never enlarges small stickers",()=>{
   assert.deepEqual(outputSize(4000,3000),{width:1920,height:1440,long:false});

@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Search,
   Hash,
   Send,
   Smile,
+  Keyboard,
   Reply,
   X,
   PanelRight,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 import { Avatar, Badge, Button, Empty, media } from "./components.jsx";
 import { id } from "./format.js";
+import { deleteChatGrapheme } from "./chat-expressions.js";
 import { ChatMediaBubble, ChatPictureButton, ChatExpressionPanel, ChatImageViewer } from "./ChatMedia.jsx";
 
 export default function Messenger({
@@ -60,7 +62,7 @@ export default function Messenger({
   mediaState,
 }) {
   const [viewingMedia, setViewingMedia] = useState(null);
-  const composerElement = useRef(null), [composerHeight, setComposerHeight] = useState(164);
+  const composerElement = useRef(null), [composerHeight, setComposerHeight] = useState(68);
   const [active, setActive] = useState("public"),
     [contactQuery, setContactQuery] = useState(""),
     [text, setText] = useState(drafts[`${user.id}:public`] || ""),
@@ -74,8 +76,8 @@ export default function Messenger({
     [error, setError] = useState(""),
     [newBelow, setNewBelow] = useState(false),
     [copied, setCopied] = useState("");
+  const selection = useRef({start: 0, end: 0}), dockPinUntil = useRef(0);
   const scroll = useRef(null),
-    end = useRef(null),
     input = useRef(null),
     searchInput = useRef(null),
     atBottom = useRef(true),
@@ -100,11 +102,29 @@ export default function Messenger({
     ready = connection === "connected",
     unsupported = current?.unavailable;
   const toBottom = () => {
-    end.current?.scrollIntoView({ block: "nearest", behavior: "instant" });
+    if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight;
     atBottom.current = true;
     setNewBelow(false);
   };
-  useEffect(() => { const observer = new ResizeObserver(([entry]) => { setComposerHeight(entry.target.getBoundingClientRect().height); if (atBottom.current) requestAnimationFrame(toBottom); }); if (composerElement.current) observer.observe(composerElement.current); return () => observer.disconnect(); }, []);
+  const rememberSelection = () => { if (input.current) selection.current = {start: input.current.selectionStart, end: input.current.selectionEnd}; };
+  const insertEmoji = value => {
+    const start = Math.min(selection.current.start, text.length), finish = Math.min(selection.current.end, text.length);
+    const next = text.slice(0, start) + value + text.slice(finish); if (next.length > maxLength) return false;
+    setText(next); selection.current = {start: start + value.length, end: start + value.length};
+    requestAnimationFrame(() => input.current?.setSelectionRange(selection.current.start, selection.current.end));
+  };
+  const backspaceEmoji = () => {
+    const next = deleteChatGrapheme(text, Math.min(selection.current.start, text.length), Math.min(selection.current.end, text.length));
+    setText(next.text); selection.current = {start: next.caret, end: next.caret};
+    requestAnimationFrame(() => input.current?.setSelectionRange(next.caret, next.caret));
+  };
+  const toggleExpressions = () => {
+    if (atBottom.current) dockPinUntil.current = performance.now() + 400;
+    if (emoji) { setEmoji(false); input.current?.focus({preventScroll: true}); }
+    else { rememberSelection(); input.current?.blur(); setEmoji(true); if (channel === "public") mediaService?.refreshStickers(); }
+  };
+  useLayoutEffect(() => { if (input.current) { input.current.style.height = "0px"; input.current.style.height = Math.min(132, Math.max(44, input.current.scrollHeight)) + "px"; } }, [text, channel]);
+  useEffect(() => { const observer = new ResizeObserver(([entry]) => { setComposerHeight(entry.target.getBoundingClientRect().height); if (atBottom.current || performance.now() < dockPinUntil.current) requestAnimationFrame(toBottom); }); if (composerElement.current) observer.observe(composerElement.current); return () => observer.disconnect(); }, []);
   useEffect(() => {
     if (channel !== prevLast.current?.channel || atBottom.current) {
       requestAnimationFrame(toBottom);
@@ -136,6 +156,7 @@ export default function Messenger({
         setSearch("");
         setShowSearch(false);
         setReply(null);
+        setEmoji(false);
       }
     };
     const searchEvent = () => setShowSearch(true);
@@ -156,6 +177,8 @@ export default function Messenger({
     setShowSearch(false);
     setError("");
     setMobileThread(true);
+    setEmoji(false);
+    selection.current = {start: 0, end: 0};
     atBottom.current = true;
     lastAttempt.current = null;
     requestAnimationFrame(() => input.current?.focus());
@@ -396,6 +419,8 @@ export default function Messenger({
         <div
           ref={scroll}
           className="pc-message-scroll"
+          onPointerDown={() => { dockPinUntil.current = 0; }}
+          onWheel={() => { dockPinUntil.current = 0; }}
           onScroll={() => {
             const el = scroll.current;
             atBottom.current =
@@ -553,7 +578,6 @@ export default function Messenger({
               );
             })
           )}
-          <div ref={end} />
         </div>
         {newBelow && (
           <button className="new-message-button" style={{ bottom: composerHeight + 14 }} onClick={toBottom}>
@@ -563,7 +587,7 @@ export default function Messenger({
         )}
         <form
           ref={composerElement}
-          className="pc-composer"
+          className="pc-composer chat-composer"
           onSubmit={(e) => {
             e.preventDefault();
             send();
@@ -586,107 +610,26 @@ export default function Messenger({
               </button>
             </div>
           )}
-          <div className="composer-toolbar">
-            <div>
-              <button
-                type="button"
-                aria-label="选择表情"
-                aria-expanded={emoji}
-                onClick={() => { if (!emoji && channel === "public") mediaService?.refreshStickers(); setEmoji(!emoji); }}
-              >
-                <Smile size={19} />
-              </button>
-              {channel === "public" && mediaService && <ChatPictureButton service={mediaService} reply={reply} onSent={() => setReply(null)} />}
-              <span>
-                {unsupported
-                  ? "暂不可发送"
-                  : isLive
-                    ? `${channel === "public" ? "公共频道" : channel === "assistant" ? "AI 会话" : "私聊"} · 最多 ${maxLength} 字`
-                    : "Enter 发送，Shift + Enter 换行"}
-              </span>
-            </div>
-            <span>
-              {text.length} / {maxLength}
-            </span>
+          <div className="chat-composer-capsule">
+            <button type="button" className="chat-expression-toggle" aria-label={emoji ? "切换键盘" : "选择表情"} aria-expanded={emoji} onMouseDown={e => e.preventDefault()} onClick={toggleExpressions}>
+              {emoji ? <Keyboard size={22} /> : <Smile size={22} />}
+            </button>
+            <textarea ref={input} aria-label="消息内容" placeholder={unsupported ? "暂不可发送" : "输入消息"} disabled={Boolean(unsupported)} value={text} maxLength={maxLength} rows={1}
+              onChange={e => { setText(e.target.value); rememberSelection(); }} onSelect={rememberSelection}
+              onFocus={() => { if (emoji) setEmoji(false); }} onBlur={() => { rememberSelection(); onDraft?.(channel, text); }}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) { e.preventDefault(); send(); } }} />
+            {channel === "public" && mediaService && <ChatPictureButton service={mediaService} reply={reply} onError={setError} onSent={() => setReply(null)} />}
+            <button type="submit" className="chat-send-button" aria-label="发送消息" disabled={sending[channel] || !text.trim() || !ready || Boolean(unsupported)}>
+              <span>{sending[channel] ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}</span>
+            </button>
           </div>
-          {emoji && channel === "public" && mediaService ? <ChatExpressionPanel service={mediaService} state={mediaState} onEmoji={e => { const start = input.current?.selectionStart ?? text.length, finish = input.current?.selectionEnd ?? start; const next = text.slice(0, start) + e + text.slice(finish); if (next.length <= maxLength) { setText(next); requestAnimationFrame(() => input.current?.setSelectionRange(start + e.length, start + e.length)); } }} onSticker={async media => { try { await mediaService.enqueue(null, reply, media); setReply(null); } catch (e) { setError(e.message); } }} onPreview={(media, rect, preview) => setViewingMedia({ media, rect, preview })} /> : emoji && (
-            <div className="emoji-picker">
-              {[
-                "🌿",
-                "✨",
-                "👍",
-                "😊",
-                "🎉",
-                "🏡",
-                "💙",
-                "🌙",
-                "⛏️",
-                "🌸",
-                "谢谢！",
-                "收到！",
-              ].map((e) => (
-                <button
-                  key={e}
-                  type="button"
-                  onClick={() => {
-                    setText((t) => (t + e).slice(0, maxLength));
-                    setEmoji(false);
-                    input.current?.focus();
-                  }}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-          )}
-          <textarea
-            ref={input}
-            aria-label="消息内容"
-            placeholder={
-              unsupported ? "等待后端接入此会话" : `发送给 ${current?.name}…`
-            }
-            disabled={Boolean(unsupported)}
-            value={text}
-            maxLength={maxLength}
-            rows={2}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={() => onDraft?.(channel, text)}
-            onKeyDown={(e) => {
-              if (
-                e.key === "Enter" &&
-                !e.shiftKey &&
-                !e.nativeEvent.isComposing &&
-                e.keyCode !== 229
-              ) {
-                e.preventDefault();
-                send();
-              }
-            }}
-          />
-          {error && (
-            <p className="composer-error" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="composer-bottom">
-            <span>
-              <ShieldCheckSmall />
-              通过 Deuterium ID 验证身份
-            </span>
-            <Button
-              type="submit"
-              disabled={
-                sending[channel] || !text.trim() || !ready || Boolean(unsupported)
-              }
-            >
-              {sending[channel] ? (
-                <LoaderCircle className="spin" size={15} />
-              ) : (
-                <Send size={15} />
-              )}
-              发送
-            </Button>
-          </div>
+          {error && <p className="composer-error" role="alert">{error}</p>}
+          {text.length > maxLength * .8 && <div className="chat-character-count">{text.length} / {maxLength}</div>}
+          {channel === "public" && mediaService ? <ChatExpressionPanel service={mediaService} state={mediaState} open={emoji} onEmoji={insertEmoji} onBackspace={backspaceEmoji}
+            onSticker={async media => { try { await mediaService.enqueue(null, reply, media); setReply(null); } catch (e) { setError(e.message); } }}
+            onPreview={(media, rect, preview, source) => setViewingMedia({ media, rect, preview, source })} /> : <div className={`chat-expression-viewport simple ${emoji ? "open" : ""}`} aria-hidden={!emoji} inert={!emoji}>
+              <div className="emoji-picker">{["🌿", "✨", "👍", "😊", "🎉", "🏡", "💙", "🌙", "⛏️", "🌸"].map(e => <button key={e} type="button" onMouseDown={event => event.preventDefault()} onClick={() => insertEmoji(e)}>{e}</button>)}</div>
+            </div>}
         </form>
       </section>
       {viewingMedia && <ChatImageViewer service={mediaService} {...viewingMedia} close={() => setViewingMedia(null)} />}
@@ -788,20 +731,5 @@ export default function Messenger({
         </aside>
       )}
     </div>
-  );
-}
-function ShieldCheckSmall() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z" />
-      <path d="m8 12 3 3 5-6" />
-    </svg>
   );
 }
