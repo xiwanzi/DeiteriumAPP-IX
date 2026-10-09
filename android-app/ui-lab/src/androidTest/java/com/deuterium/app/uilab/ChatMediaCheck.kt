@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /** Runs only in the separate .chatmediaqa application, with loopback API and
  * in-process object transport. Never logs in or writes to a real account. */
 object ChatMediaCheck {
-    fun run(test:Instrumentation,theme:Int){
+    fun run(test:Instrumentation,theme:Int,glassCheck:Boolean=false,overlayGlass:Boolean=true){
         val result=Bundle();val context=test.targetContext
         check(context.packageName.endsWith(".chatmediaqa")){"Chat media checks require the isolated QA application"}
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val server=MockWebServer()
@@ -84,6 +84,12 @@ object ChatMediaCheck {
             val root=File(context.filesDir,"qa-chat-media").apply{mkdirs()}
             val source=File(root,"screenshot.png")
             val bitmap=Bitmap.createBitmap(1080,6500,Bitmap.Config.ARGB_8888);val canvas=Canvas(bitmap);canvas.drawColor(Color.WHITE);val paint=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=Color.rgb(30,40,65);textSize=30f}
+            if(glassCheck){
+                paint.color=Color.rgb(240,82,116);canvas.drawRect(0f,0f,540f,6500f,paint)
+                paint.color=Color.rgb(37,139,235);canvas.drawRect(540f,0f,1080f,6500f,paint)
+                paint.color=Color.argb(90,255,255,255);for(y in 0..6500 step 16)canvas.drawRect(0f,y.toFloat(),1080f,(y+4).toFloat(),paint)
+                paint.color=Color.rgb(30,40,65)
+            }
             for(y in 60..6450 step 60)canvas.drawText("Deuterium 公共聊天 压缩后文字仍需清楚 1234567890",30f,y.toFloat(),paint)
             source.outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle()
             val prepared=runBlocking{ChatImageCompressor.prepare(source,false)}
@@ -126,6 +132,7 @@ object ChatMediaCheck {
             val state=LabState(scope,userName="ChatQA",api=api)
             test.runOnMainSync{
                 Players.add(PlayerProfile("Alice",playerRef="alice"));state.chatStatus="已连接服务器"
+                if(glassCheck)repeat(10){i->state.chat+=ChatLine(-20L+i,"Alice","更早的本机消息 ${i+1}，用于验证滚动内容能够从玻璃下方经过。",false,serverAt=-20L+i)}
                 state.chat+=ChatLine(1,"Alice","这是本机聊天媒体验收。",false,serverAt=1)
                 state.chat+=ChatLine(2,"Alice","[图片]",false,remoteId="cached_40_days",serverAt=2,media=media)
                 state.chat+=ChatLine(3,"你","[贴纸]",true,remoteId="moving_message",serverAt=3,media=moving)
@@ -135,9 +142,9 @@ object ChatMediaCheck {
             val activity=test.startActivitySync(Intent(context,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             test.runOnMainSync{activity.setContent{LabTheme(theme,theme==1,true){
               val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
-              CompositionLocalProvider(LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
+              CompositionLocalProvider(LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalOverlayGlassEnabled provides overlayGlass){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
                 GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()){
-                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))){ChatPage(state,90.dp,{},{})}
+                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime)){ChatPage(state,90.dp,{},{})}
                 Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp).background(MaterialTheme.colorScheme.background).statusBarsPadding(),contentAlignment=Alignment.Center){Text("公共聊天",style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurface)}
                 }
                 if(previewOpen.value)ChatAttachmentPreview(Uri.fromFile(source).toString(),false,false,null,{},{},{previewOpen.value=false})
@@ -208,6 +215,26 @@ object ChatMediaCheck {
             click("展开预览")
             click("收起预览");click("取消");waitFor("preview dismissed"){!previewOpen.value}
             result.putString("attachment","PASS half-height / drag expand / drag collapse / handle click / animated dismissal")
+            if(glassCheck){
+                click("选择表情");click("表情符号");click("表情")
+                fun bounds(label:String):android.graphics.Rect {if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();return android.graphics.Rect().also{find(test.uiAutomation.rootInActiveWindow,label)!!.getBoundsInScreen(it)}}
+                // Scroll actual chat media under the dock; no duplicate image is inserted into glass.
+                val input=bounds("输入消息");val picture=bounds("查看图片")
+                val target=input.top-context.resources.displayMetrics.density*35
+                val delta=(target-picture.top).coerceIn(0f,context.resources.displayMetrics.heightPixels*.6f)
+                val startY=context.resources.displayMetrics.density*110;val x=picture.exactCenterX();val downAt=android.os.SystemClock.uptimeMillis()
+                fun swipe(action:Int,y:Float){val event=android.view.MotionEvent.obtain(downAt,android.os.SystemClock.uptimeMillis(),action,x,y,0);test.sendPointerSync(event);event.recycle()}
+                swipe(android.view.MotionEvent.ACTION_DOWN,startY)
+                repeat(20){Thread.sleep(22);swipe(android.view.MotionEvent.ACTION_MOVE,startY+delta*(it+1)/20)}
+                swipe(android.view.MotionEvent.ACTION_UP,startY+delta);test.waitForIdleSync();Thread.sleep(600)
+                shot(if(overlayGlass)"glass-$theme" else "glass-off-$theme")
+                val behind=bounds("查看图片");val dockInput=bounds("输入消息")
+                check(behind.bottom>dockInput.bottom+context.resources.displayMetrics.density*55){"Chat image did not extend behind the dock: $behind / $dockInput"}
+                val panelBounds=bounds("表情面板")
+                test.uiAutomation.takeScreenshot()!!.let{frame->check(panelBounds.left==0&&panelBounds.right==frame.width&&panelBounds.bottom==frame.height){"Panel must reach both sides and the physical bottom: $panelBounds / ${frame.width}x${frame.height}"};frame.recycle()}
+                result.putString("panel_edges","PASS top corners only; both sides and gesture area reach screen edges")
+                result.putString("glass_backdrop","PASS actual message image under input/panel: $behind / $dockInput")
+            }
             result.putString("ui","PASS public images/GIF + emoji panel + full sticker library")
             result.putString("status","PASS");test.finish(-1,result)
         }catch(e:Throwable){result.putString("error",e.stackTraceToString());test.finish(1,result)}finally{scope.cancel();server.shutdown()}

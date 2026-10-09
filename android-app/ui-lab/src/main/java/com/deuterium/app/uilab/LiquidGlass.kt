@@ -37,7 +37,7 @@ fun Modifier.recordGlassBackdrop(layer: GraphicsLayer): Modifier = drawWithConte
     drawLayer(layer)
 }
 
-/** Records only the background, never text or controls. No bitmap readback or cyclic layers. */
+/** Samples a caller-owned layer. That layer must exclude this surface to avoid cyclic drawing. */
 @Composable
 fun LiquidGlass(
     modifier: Modifier = Modifier,
@@ -49,6 +49,7 @@ fun LiquidGlass(
     enabled:Boolean=LocalOverlayGlassEnabled.current,
     screenCoordinates:Boolean=false,
     parameters:GlassParameters=LocalGlassParameters.current,
+    topCornersOnly:Boolean=false,
     content: @Composable BoxScope.() -> Unit
 ) {
     val tilt = LocalDeviceTilt.current
@@ -57,12 +58,15 @@ fun LiquidGlass(
     val wash = if(tint == Color.Unspecified) surface else tint
     val frost = rememberGraphicsLayer()
     val refractionShader = remember { if(Build.VERSION.SDK_INT >= 33) RuntimeShader(GlassShader) else null }
+    val shape=if(topCornersOnly)RoundedCornerShape(topStart=radius,topEnd=radius) else RoundedCornerShape(radius)
     var position by remember { mutableStateOf(Offset.Zero) }
     Box(modifier.onGloballyPositioned { position = if(screenCoordinates)it.positionOnScreen() else it.positionInRoot() }
-        .clip(RoundedCornerShape(radius))
+        .clip(shape)
         .then(if(onClick == null) Modifier else Modifier.clickable(onClick = onClick))
         .drawWithCache {
             val corner = radius.toPx()
+            val rimInset=.75.dp.toPx()
+            val rimOutline=shape.createOutline(Size((size.width-2*rimInset).coerceAtLeast(0f),(size.height-2*rimInset).coerceAtLeast(0f)),layoutDirection,this)
             val sheen = Brush.linearGradient(listOf(Color.White.copy(alpha = (if(dark) .16f else .46f) * parameters.highlight), Color.Transparent, Color.White.copy(alpha = .05f * parameters.highlight)))
             frost.renderEffect = if(enabled && Build.VERSION.SDK_INT >= 31) {
                 val blur = if(parameters.blur > .1f) RenderEffect.createBlurEffect(parameters.blur.dp.toPx(), parameters.blur.dp.toPx(), Shader.TileMode.CLAMP) else null
@@ -70,6 +74,7 @@ fun LiquidGlass(
                     val shader = refractionShader
                     shader.setFloatUniform("resolution", size.width, size.height)
                     shader.setFloatUniform("corner", corner)
+                    shader.setFloatUniform("topOnly", if(topCornersOnly)1f else 0f)
                     shader.setFloatUniform("strength", parameters.refraction)
                     val refraction = RenderEffect.createRuntimeShaderEffect(shader, "content")
                     (if(blur == null) refraction else RenderEffect.createChainEffect(refraction, blur)).asComposeRenderEffect()
@@ -90,7 +95,8 @@ fun LiquidGlass(
                     drawRect(sheen, alpha = .55f)
                     val movingRim = Brush.linearGradient(listOf(Color.White.copy(alpha=(if(dark).65f else 1f)*parameters.highlight),Color.White.copy(alpha=.12f*parameters.highlight),Color.White.copy(alpha=.65f*parameters.highlight)),
                         start=Offset(size.width*(.1f+angle.x*.5f),size.height*(.1f+angle.y*.5f)),end=Offset(size.width*(.9f-angle.x*.4f),size.height*(.9f-angle.y*.4f)))
-                    drawRoundRect(movingRim, topLeft = Offset(.75.dp.toPx(), .75.dp.toPx()),
+                    if(topCornersOnly)translate(rimInset,rimInset){drawOutline(rimOutline,movingRim,style=Stroke(.85.dp.toPx()))}
+                    else drawRoundRect(movingRim, topLeft = Offset(.75.dp.toPx(), .75.dp.toPx()),
                         size = androidx.compose.ui.geometry.Size(size.width - 1.5.dp.toPx(), size.height - 1.5.dp.toPx()),
                         cornerRadius = CornerRadius(corner), style = Stroke(.85.dp.toPx()))
                 }
@@ -102,10 +108,12 @@ private const val GlassShader = """
 uniform shader content;
 uniform float2 resolution;
 uniform float corner;
+uniform float topOnly;
 uniform float strength;
 half4 main(float2 p) {
     float2 halfSize = resolution * 0.5;
     float r = min(corner, min(halfSize.x, halfSize.y));
+    if (topOnly > 0.5 && p.y > halfSize.y) r = 0.0;
     float2 q = abs(p - halfSize) - (halfSize - r);
     float d = length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0) - r;
     float edge = 1.0 - smoothstep(0.0, 20.0, -d);

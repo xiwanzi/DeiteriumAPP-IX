@@ -6,10 +6,14 @@
 .chat-selection-card button:disabled{opacity:.45;cursor:default}
 .chat-selection-card>.composer-error{padding:0 20px}
 
-.pc-composer.chat-composer { padding: 0; min-height: 0; border: 0; background: transparent; }
-.chat-composer-capsule { display: flex; align-items: flex-end; padding: 2px 3px; margin: 7px 9px; border: 1px solid color-mix(in srgb, var(--border) 65%, transparent); border-radius: 26px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(22px); box-shadow: 0 2px 9px #00000004; }
+.pc-thread { --chat-input-wash: #ffffff99; --chat-panel-wash: #f8fbffca; --chat-glass-rim: #ffffffb8; --chat-glass-ink: color-mix(in srgb,var(--text) 82%,transparent); }
+[data-theme="dark"] .pc-thread { --chat-input-wash: #1b243199; --chat-panel-wash: #1b2634c2; --chat-glass-rim: #ffffff26; }
+.pc-thread > .pc-message-scroll { padding-bottom: calc(var(--chat-dock-height, 68px) + 15px); }
+.pc-composer.chat-composer { position: absolute; z-index: 3; inset: auto 0 0; padding: 0; min-height: 0; border: 0; background: transparent; }
+.chat-composer-capsule { display: flex; align-items: flex-end; padding: 2px 3px; margin: 7px 9px; border: 1px solid var(--chat-glass-rim); border-radius: 26px; background: var(--chat-input-wash); -webkit-backdrop-filter: blur(14px) saturate(1.12); backdrop-filter: blur(14px) saturate(1.12); box-shadow: inset 0 1px 0 #ffffff14,0 2px 9px #00000004; }
 .chat-composer-capsule > textarea { flex: 1; display: block; min-width: 0; width: 0; height: 44px; min-height: 44px; max-height: 132px; padding: 11px 4px; border: 0; margin: 0; resize: none; background: transparent; color: var(--text); font: inherit; font-size: 14px; line-height: 22px; outline: none; border-radius: 0; box-shadow: none; }
-.chat-composer-capsule > textarea::placeholder { color: var(--muted); }
+.chat-composer-capsule > textarea::placeholder { color: color-mix(in srgb,var(--text) 96%,transparent); }
+.chat-composer-capsule .chat-expression-toggle,.chat-composer-capsule .chat-picture-button { color: var(--chat-glass-ink); }
 .chat-expression-toggle, .chat-picture-button, .chat-send-button { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border: 0; padding: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; }
 .chat-expression-toggle:hover, .chat-picture-button:hover { background: var(--hover); color: var(--blue); }
 .chat-expression-toggle svg { animation: chat-icon-in .15s ease-out; }
@@ -23,7 +27,7 @@
 
 .chat-expression-viewport { --expression-height: min(320px, 45dvh); height: 0; overflow: hidden; transition: height .28s cubic-bezier(.2,0,0,1); }
 .chat-expression-viewport.open { height: var(--expression-height); }
-.chat-expression-panel { display: flex; flex-direction: column; height: var(--expression-height); min-height: 0; margin: 0; padding: 0; background: color-mix(in srgb, var(--surface) 96%, var(--bg)); border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
+.chat-expression-panel { display: flex; flex-direction: column; height: var(--expression-height); min-height: 0; margin: 0; padding: 0 0 env(safe-area-inset-bottom); border-radius: 28px 28px 0 0; overflow: hidden; background: var(--chat-panel-wash); border: 1px solid var(--chat-glass-rim); -webkit-backdrop-filter: blur(45px) saturate(1.10); backdrop-filter: blur(45px) saturate(1.10); box-shadow: inset 0 1px 0 #ffffff0d; }
 .chat-expression-page { display: flex; flex-direction: column; min-height: 0; flex: 1; animation: chat-expression-page .22s cubic-bezier(.2,0,0,1); }
 .chat-expression-page.emoji { --expression-slide: -18px; }
 .chat-expression-page.sticker { --expression-slide: 18px; }
@@ -35,8 +39,8 @@
 .chat-emoji-grid button:hover { background: var(--hover); }
 .chat-expression-empty { grid-column: 1/-1; margin: 50px auto; font-size: 13px; color: var(--muted); }
 .chat-expression-footer { flex-shrink: 0; height: 52px; display: flex; justify-content: center; align-items: center; position: relative; }
-.chat-expression-tabs { position: relative; display: flex; width: 214px; height: 38px; border-radius: 22px; padding: 0; background: var(--hover); isolation: isolate; }
-.chat-expression-tabs::before { content: ""; position: absolute; z-index: -1; top: 3px; left: 3px; bottom: 3px; width: calc(50% - 3px); border-radius: 18px; background: var(--surface); box-shadow: 0 1px 4px #00000008; transform: translateX(calc(var(--tab) * 100%)); transition: transform .23s cubic-bezier(.2,0,0,1); }
+.chat-expression-tabs { position: relative; display: flex; width: 214px; height: 38px; border-radius: 22px; padding: 0; background: color-mix(in srgb,var(--hover) 65%,transparent); isolation: isolate; }
+.chat-expression-tabs::before { content: ""; position: absolute; z-index: -1; top: 3px; left: 3px; bottom: 3px; width: calc(50% - 3px); border-radius: 18px; background: color-mix(in srgb,var(--surface) 68%,transparent); box-shadow: 0 1px 4px #00000008; transform: translateX(calc(var(--tab) * 100%)); transition: transform .23s cubic-bezier(.2,0,0,1); }
 .chat-expression-tabs button { flex: 1; border: 0; padding: 0; min-width: 0; border-radius: 22px; color: var(--muted); background: none; font-size: 12px; cursor: pointer; }
 .chat-expression-tabs button[aria-selected="true"] { color: var(--blue); }
 .chat-expression-tabs small { margin-left: 3px; font-size: 10px; opacity: .8; }
@@ -86,3 +90,6 @@
 @keyframes chat-preview-scrim-in { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width:767px) { .chat-composer-capsule { margin: 6px 7px; } .chat-composer-capsule > textarea { font-size: 16px; } }
 @media (prefers-reduced-motion:reduce) { .chat-expression-viewport, .chat-expression-tabs::before, .chat-send-button > span, .chat-attachment-preview .chat-selection-card, .chat-preview-scrim { transition: none; animation: none; } .chat-expression-page, .chat-expression-toggle svg, .chat-attachment-preview.closing .chat-selection-card { animation: none; } }
+.chat-expression-panel .chat-expression-hint,.chat-expression-panel .chat-sticker-heading,.chat-expression-panel .chat-emoji-categories button:not([aria-selected="true"]),.chat-expression-panel .chat-expression-tabs button:not([aria-selected="true"]),.chat-expression-panel .chat-expression-backspace { color: var(--chat-glass-ink); }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) { .chat-composer-capsule,.chat-expression-panel { background: var(--surface); } }
+@media (prefers-reduced-transparency:reduce) { .chat-composer-capsule,.chat-expression-panel { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }

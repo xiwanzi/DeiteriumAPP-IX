@@ -263,7 +263,7 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
                             current=="storage"->StoragePage(inset)
                             current=="wallet"->WalletPage(state,{openTransfer()},{record=it},inset){open("bills:$it")}
                             current.startsWith("bills:")->BillHistoryPage(state,current.removePrefix("bills:"),inset){record=it}
-                            current=="public"->Box(Modifier.fillMaxSize().windowInsetsPadding(ime.union(WindowInsets.navigationBars))){ChatPage(state,secondaryContentTop,{open("player:$it")}){openTransfer(it)}}
+                            current=="public"->Box(Modifier.fillMaxSize().windowInsetsPadding(ime)){ChatPage(state,secondaryContentTop,{open("player:$it")}){openTransfer(it)}}
                             current=="ai"||current.startsWith("dm:")->Box(Modifier.fillMaxSize().windowInsetsPadding(conversationInsets)){DirectChatPage(state,if(current=="ai")"AI 助手" else current.removePrefix("dm:"),secondaryContentTop,onPlans={open("ai-plans")}){open("player:$it")}}
                             current=="announcement"->CommunityDetail(false,state,inset)
                             current=="commissions"||current=="events"||current=="event"->CommissionHallPage(state,inset,{open("commission:$it")})

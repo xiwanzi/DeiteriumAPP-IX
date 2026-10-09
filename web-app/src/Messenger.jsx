@@ -62,7 +62,7 @@ export default function Messenger({
   mediaState,
 }) {
   const [viewingMedia, setViewingMedia] = useState(null);
-  const composerElement = useRef(null), [composerHeight, setComposerHeight] = useState(68);
+  const composerElement = useRef(null);
   const [active, setActive] = useState("public"),
     [contactQuery, setContactQuery] = useState(""),
     [text, setText] = useState(drafts[`${user.id}:public`] || ""),
@@ -124,7 +124,15 @@ export default function Messenger({
     else { rememberSelection(); input.current?.blur(); setEmoji(true); if (channel === "public") mediaService?.refreshStickers(); }
   };
   useLayoutEffect(() => { if (input.current) { input.current.style.height = "0px"; input.current.style.height = Math.min(132, Math.max(44, input.current.scrollHeight)) + "px"; } }, [text, channel]);
-  useEffect(() => { const observer = new ResizeObserver(([entry]) => { setComposerHeight(entry.target.getBoundingClientRect().height); if (atBottom.current || performance.now() < dockPinUntil.current) requestAnimationFrame(toBottom); }); if (composerElement.current) observer.observe(composerElement.current); return () => observer.disconnect(); }, []);
+  useLayoutEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      const height = entry.target.getBoundingClientRect().height;
+      entry.target.closest(".pc-thread")?.style.setProperty("--chat-dock-height", `${height}px`);
+      if (atBottom.current || performance.now() < dockPinUntil.current) toBottom();
+    });
+    if (composerElement.current) observer.observe(composerElement.current);
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     if (channel !== prevLast.current?.channel || atBottom.current) {
       requestAnimationFrame(toBottom);
@@ -580,7 +588,7 @@ export default function Messenger({
           )}
         </div>
         {newBelow && (
-          <button className="new-message-button" style={{ bottom: composerHeight + 14 }} onClick={toBottom}>
+          <button className="new-message-button" style={{ bottom: "calc(var(--chat-dock-height, 68px) + 14px)" }} onClick={toBottom}>
             <ArrowDown size={15} />
             回到最新消息
           </button>

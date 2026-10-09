@@ -108,8 +108,8 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
     LaunchedEffect(state.ai?.recoveredDraft){if(name=="AI 助手"&&draft.text.isBlank()&&!state.ai?.recoveredDraft.isNullOrBlank())draft=TextFieldValue(state.ai!!.recoveredDraft)}
     LaunchedEffect(messages.lastOrNull()?.id){if(list.firstVisibleItemIndex<2||messages.lastOrNull()?.mine==true){if(motion)list.animateScrollToItem(0) else list.scrollToItem(0)}}
     LaunchedEffect(list.firstVisibleItemIndex,messages.size){if(messages.size>=90&&list.firstVisibleItemIndex>=messages.size-12)state.loadOlderDirect(name)}
-    Column(Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(),state=list,reverseLayout=true,contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset+18.dp,bottom=16.dp),verticalArrangement=Arrangement.spacedBy(10.dp,Alignment.Bottom)) {
+    ChatGlassLayout(body={dockInset->
+        LazyColumn(Modifier.fillMaxSize(),state=list,reverseLayout=true,contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset+18.dp,bottom=dockInset+16.dp),verticalArrangement=Arrangement.spacedBy(10.dp,Alignment.Bottom)) {
             if(state.directPending[name]==true)item{Text(if(name=="AI 助手")state.ai?.statusText ?: "正在生成回复…" else "正在发送…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             state.directErrors[name]?.let{error->item{Text(error,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error)}}
             items(messages.asReversed(),key={it.id}) { line -> Row(Modifier.fillMaxWidth(),horizontalArrangement=if(line.mine)Arrangement.End else Arrangement.Start) {
@@ -127,12 +127,13 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
             item { Text(if(name=="AI 助手")state.ai?.quotaText ?: "DEUTERIUM ASSISTANT" else "今天",Modifier.fillMaxWidth().padding(vertical=12.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center) }
             if(state.directHistoryLoading[name]==true)item{Text("正在读取历史消息…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }
+    },composer={Column {
         if(name=="AI 助手"&&messages.isEmpty()&&state.ai?.conversationId!=null&&state.ai?.busy==false&&state.ai?.recoveredDraft.isNullOrBlank())PlainButton(onPlans,Modifier.fillMaxWidth()){Text("Saki AI · 套餐与额度")}
         if(name=="AI 助手"&&messages.isEmpty())Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             listOf("给我一些建筑建议","怎样使用市场").forEach{AssistChoice({scope.launch{state.sendDirect(name,it)}},label={Text(it)})}
         }
         MessageComposer(draft,{draft=it.copy(text=it.text.take(if(name=="AI 助手")2000 else 256))},{send()},if(name=="AI 助手")"向 AI 提问" else "发送消息",focus,replying,{replyId=null})
-    }
+    }})
     selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward=if(name!="AI 助手")({forwarding=line})else null){replyId=line.id;scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
     forwarding?.let{ForwardMessageSheet(state,it,name){forwarding=null}}
     if(aiOptions)state.ai?.let{AiOptionsSheet(it,{aiOptions=false},{aiOptions=false;onPlans()}){draft=TextFieldValue("");replyId=null;aiOptions=false}}

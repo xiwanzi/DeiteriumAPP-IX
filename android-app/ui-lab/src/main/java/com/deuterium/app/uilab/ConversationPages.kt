@@ -90,10 +90,10 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
         } else if(added) unread++
     }
     LaunchedEffect(list.firstVisibleItemIndex,state.chat.size){if(state.chat.size>=90&&list.firstVisibleItemIndex>=state.chat.size-12)state.loadOlderPublic()}
-    Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f)) {
+    ChatGlassLayout(body={dockInset->
+        Box(Modifier.fillMaxSize()) {
             LazyColumn(state = list, modifier = Modifier.fillMaxSize(), reverseLayout = true,
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset + 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset + 12.dp, bottom = dockInset+8.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
                 if(state.chatReplyPending) item(key = "typing") { TypingStatus("正在发送…") }
                 state.chatMedia?.let{service->items(service.pending.filter{!it.importing&&state.chat.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}}
                 items(state.chat.asReversed(), key = { it.id }, contentType = { "message" }) { line ->
@@ -137,8 +137,8 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                 item(key = "day") { Text(state.chatStatus, Modifier.fillMaxWidth().padding(vertical = 6.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
                 if(state.loadingChatHistory)item(key="history-loading"){Text("正在读取历史消息…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             }
-            if(unread > 0 && !nearBottom) FilledTonalButton(onClick = { scope.launch { list.animateScrollToItem(0); unread = 0 } }, modifier = Modifier.align(Alignment.BottomCenter)) { Text("↓ $unread 条新消息") }
-            androidx.compose.animation.AnimatedVisibility(query != null, modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 8.dp),
+            if(unread > 0 && !nearBottom) FilledTonalButton(onClick = { scope.launch { list.animateScrollToItem(0); unread = 0 } }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom=dockInset)) { Text("↓ $unread 条新消息") }
+            androidx.compose.animation.AnimatedVisibility(query != null, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom=dockInset).padding(horizontal = 16.dp, vertical = 8.dp),
                 enter = fadeIn(tween(if(motion) 140 else 0)) + slideInVertically(tween(if(motion) 180 else 0)) { it / 3 },
                 exit = fadeOut(tween(if(motion) 100 else 0)) + slideOutVertically { it / 4 }) {
                 LiquidGlass(Modifier.fillMaxWidth(), radius = 22.dp) {
@@ -158,10 +158,11 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                 }
             }
         }
+    },composer={Column {
         if(copied) Text("已复制消息", Modifier.padding(horizontal = 24.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
         if(state.chatMedia!=null)ChatMediaComposer(state,focus){mediaViewer=it}
-        else MessageComposer(state.chatDraft,{if(it.text.length<=256)state.chatDraft=it},state::sendChat,"发消息，输入 @ 提及玩家",focus,state.chatReplyTo,{state.chatReplyTo=null})
-    }
+        else Box(Modifier.navigationBarsPadding()){MessageComposer(state.chatDraft,{if(it.text.length<=256)state.chatDraft=it},state::sendChat,"发消息，输入 @ 提及玩家",focus,state.chatReplyTo,{state.chatReplyTo=null})}
+    }})
     selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward=if(line.media==null)({forwarding=line})else null,onCollect=if(line.media!=null)({scope.launch{runCatching{state.chatMedia?.collect(line.media,line.remoteId)}.onFailure{state.storageMessage=it.message}}})else null){state.chatReplyTo=ChatReply(line.id,if(line.mine)state.userName else line.name,line.text,line.remoteId);scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
     mediaViewer?.let{request->state.chatMedia?.let{ChatMediaViewer(it,request){mediaViewer=null}}}
     forwarding?.let{ForwardMessageSheet(state,it,null){forwarding=null}}
