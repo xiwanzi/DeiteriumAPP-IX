@@ -44,7 +44,7 @@ export class DeuteriumClient {
   }
   async request(
     path,
-    { method = "GET", body, signal, sessionRequired = true, idempotencyKey, ysmUpload, expectedPlayerRef } = {},
+    { method = "GET", body, signal, sessionRequired = true, idempotencyKey, ysmUpload, ysmCloudUpload, expectedPlayerRef } = {},
   ) {
     if (!path.startsWith("/api/v1/") || path.includes("://"))
       throw new ApiError("只允许本站 API 请求");
@@ -65,6 +65,20 @@ export class DeuteriumClient {
         "X-Expected-Revision": String(ysmUpload.revision),
       });
     }
+    if (ysmCloudUpload) {
+      if (ysmUpload || path !== "/api/v1/admin/ysm/cloud/upload" || method !== "POST" || !(body instanceof Blob)) throw new ApiError("模型上传请求不正确。");
+      Object.assign(headers, {
+        "Content-Type": "application/octet-stream",
+        "X-Asset-Id": encodeURIComponent(ysmCloudUpload.assetId),
+        "X-Asset-Name": encodeURIComponent(ysmCloudUpload.name),
+        "X-Asset-Format": ysmCloudUpload.format,
+        "X-Asset-Sha256": ysmCloudUpload.sha256,
+        "X-Asset-Visibility": "PUBLIC",
+        "X-Asset-Metadata-Encoding": "utf-8-percent",
+        "X-Asset-Base-Revision": String(ysmCloudUpload.revision),
+        "X-Deuterium-Model-Metadata": encodeURIComponent(JSON.stringify(ysmCloudUpload.metadata)),
+      });
+    }
     if (
       !["GET", "HEAD"].includes(method) &&
       path !== "/api/v1/web/session" &&
@@ -76,16 +90,17 @@ export class DeuteriumClient {
     try {
       response = await this.fetch(path, {
         method,
-        body: ysmUpload ? body : body === undefined ? undefined : JSON.stringify(body),
+        body: ysmUpload || ysmCloudUpload ? body : body === undefined ? undefined : JSON.stringify(body),
         headers,
         credentials: "same-origin",
         cache: "no-store",
         signal: signal || AbortSignal.timeout(15000),
       });
     } catch (e) {
-      if (signal?.aborted && !(path.startsWith("/api/v1/admin/ysm/") && path.endsWith("/confirm"))) throw e;
+      const uncertainYsm = path.startsWith("/api/v1/admin/ysm/") && (path.endsWith("/confirm") || path.includes("/cloud/") && method === "POST");
+      if (signal?.aborted && !uncertainYsm) throw e;
       throw new ApiError(
-        path.startsWith("/api/v1/admin/ysm/") && path.endsWith("/confirm") ? "等待结果中断，请先核对任务和配置版本，不要重复提交。" : "无法连接服务，输入内容已保留，请稍后重试。",
+        uncertainYsm ? "等待结果中断，请先核对任务和配置版本，不要重复提交。" : "无法连接服务，输入内容已保留，请稍后重试。",
         "NETWORK_ERROR",
       );
     }

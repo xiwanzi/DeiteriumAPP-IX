@@ -14,7 +14,7 @@ import DesktopLauncherSettings from "./DesktopLauncherSettings.jsx";
 import AiSettings from "./AiSettings.jsx";
 import AccountManagement from "./AccountManagement.jsx";
 import WhitelistManagement from "./WhitelistManagement.jsx";
-import YsmManagement from "./YsmManagement.jsx";
+import YsmManagement from "./YsmCloudManagement.jsx";
 import CatalogManagement from "./CatalogManagement.jsx";
 import CouponManagement from "./CouponManagement.jsx";
 import { useUnsavedChanges } from "./unsaved-changes.js";
