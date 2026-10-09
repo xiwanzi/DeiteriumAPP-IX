@@ -1,0 +1,36 @@
+{
+  "deployedAt": "2026-10-09T19:21:12.600239+08:00",
+  "sourceCommit": "60b0cb52584266c11ece951c9a8836035f54dd75",
+  "mergeCommit": "4e9eb082b214c5bde2c3244a03b322f81440fe7f",
+  "pr": 85,
+  "appVersion": "2.0.22",
+  "versionCode": 22200,
+  "webVersion": "2.0.31",
+  "before": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "after": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "existingRecordIdsPreserved": true,
+  "configurationUnchanged": true,
+  "addedMigration": "036_chat_media.sql",
+  "officialAndHelpUnchanged": true,
+  "oldReleaseEntriesPreserved": 22,
+  "backup": "/var/backups/deuterium/chat-media-v222-22200-60b0cb525842",
+  "current": {
+    "go": "/opt/deuterium/releases/chat-media-v222-60b0cb525842",
+    "web": "/var/www/deuterium/releases/web-2.0.31-60b0cb525842/dist"
+  },
+  "ready": true
+}

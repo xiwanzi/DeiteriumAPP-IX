@@ -1,0 +1,90 @@
+{
+  "appVersion": "2.0.22",
+  "versionCode": 22200,
+  "webVersion": "2.0.31",
+  "apkHashAndBytesVerified": true,
+  "updates": [
+    {
+      "versionCode": 20004,
+      "offered": 22200
+    },
+    {
+      "versionCode": 21500,
+      "offered": 22200
+    },
+    {
+      "versionCode": 22100,
+      "offered": 22200
+    },
+    {
+      "versionCode": 22199,
+      "offered": 22200
+    },
+    {
+      "versionCode": 22200,
+      "offered": null
+    },
+    {
+      "versionCode": 22201,
+      "offered": null
+    }
+  ],
+  "web": [
+    {
+      "origin": "https://47.103.99.34",
+      "verifiedAssets": 5,
+      "csp": ""
+    },
+    {
+      "origin": "https://chat.deuteriumix.com",
+      "verifiedAssets": 5,
+      "csp": ""
+    }
+  ],
+  "media": [
+    {
+      "sample": "android-screenshot",
+      "width": 1080,
+      "height": 6500,
+      "animated": false,
+      "signedPutAndRead": true,
+      "cors": true,
+      "dedupAndRequestRecovery": true,
+      "otherAccountDenied": true
+    },
+    {
+      "sample": "android-motion",
+      "width": 256,
+      "height": 256,
+      "animated": true,
+      "signedPutAndRead": true,
+      "cors": true,
+      "dedupAndRequestRecovery": true,
+      "otherAccountDenied": true
+    }
+  ],
+  "stickersRestored": true,
+  "testUploadGrantsExpired": 4,
+  "temporarySessionsRevoked": true,
+  "noPublicMessagesOrGameDeliveriesCreated": true,
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ],
+  "catalogFirstPage": 40,
+  "migration": "036_chat_media.sql"
+}

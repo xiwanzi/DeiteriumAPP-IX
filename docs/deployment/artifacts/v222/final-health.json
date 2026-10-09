@@ -1,0 +1,16 @@
+{
+  "ready": true,
+  "configurationUnchanged": true,
+  "previousReleasesPreserved": true,
+  "unrelatedSitesPreserved": true,
+  "activeQAUploadGrants": 0,
+  "errorOrMediaCleanupWarningCount": 0,
+  "counts": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  }
+}
