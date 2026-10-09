@@ -12,8 +12,8 @@ android {
         applicationId = "com.deuterium.app.uilab"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22100
-        versionName = "2.0.21"
+        versionCode = 22200
+        versionName = "2.0.22"
         testInstrumentationRunner = providers.gradleProperty("deuteriumTestRunner").orElse("com.deuterium.app.uilab.LiveBackendInstrumentation").get()
         val apiBase = providers.gradleProperty("deuteriumApiBase").orElse("https://47.103.99.34").get()
         require(apiBase.matches(Regex("https?://[A-Za-z0-9.:-]+"))) { "deuteriumApiBase must be an HTTP(S) origin" }
