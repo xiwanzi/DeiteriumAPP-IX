@@ -1,0 +1,71 @@
+{
+  "appVersion": "2.0.25",
+  "versionCode": 22500,
+  "webVersion": "2.0.34",
+  "apkHashAndBytesVerified": true,
+  "updateChecks": [
+    {
+      "versionCode": 20004,
+      "offered": 22500
+    },
+    {
+      "versionCode": 21500,
+      "offered": 22500
+    },
+    {
+      "versionCode": 22200,
+      "offered": 22500
+    },
+    {
+      "versionCode": 22400,
+      "offered": 22500
+    },
+    {
+      "versionCode": 22499,
+      "offered": 22500
+    },
+    {
+      "versionCode": 22500,
+      "offered": null
+    },
+    {
+      "versionCode": 22501,
+      "offered": null
+    }
+  ],
+  "web": [
+    {
+      "origin": "https://47.103.99.34",
+      "verifiedAssets": 5
+    },
+    {
+      "origin": "https://chat.deuteriumix.com",
+      "verifiedAssets": 5
+    }
+  ],
+  "stickerAPI": "PASS",
+  "catalogFirstPage": 40,
+  "coreNodes": [
+    {
+      "serverId": "login",
+      "online": true
+    },
+    {
+      "serverId": "amiya",
+      "online": true
+    },
+    {
+      "serverId": "odyssey",
+      "online": true
+    },
+    {
+      "serverId": "mek",
+      "online": false
+    }
+  ],
+  "temporarySessionRevoked": true,
+  "backendBinaryAndSchemaUnchanged": true,
+  "configurationAndUnrelatedSitesPreserved": true,
+  "oldReleaseEntriesPreserved": 25,
+  "ready": true
+}

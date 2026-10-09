@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "984ceee1163dd567de1f15ba7d9a2fa4bdeae11f",
+  "mergeCommit": "22df11463f3b5804424fb37e07ed47f39e25ed10",
+  "pr": 91,
+  "appVersion": "2.0.25",
+  "versionCode": 22500,
+  "webVersion": "2.0.34",
+  "files": [
+    {
+      "name": "Deuterium-2.0.25-22500-test.apk",
+      "sizeBytes": 9055762,
+      "sha256": "68b784105a1461c7dbecbbd72fdc05b267160867d416d9114b2fc8015f09975a"
+    },
+    {
+      "name": "web-2.0.34.zip",
+      "sizeBytes": 34012272,
+      "sha256": "196205fb57304c1fa639870e6357d1366d1fadf2cce2c304ec9a45ee38043c1f"
+    }
+  ],
+  "signingCertificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "validation": {
+    "androidJvmTests": 172,
+    "webTests": 81,
+    "browserRegressionChecks": 32,
+    "goRegression": "Not rerun: backend unchanged",
+    "nativeChatMediaLightDark": "PASS (isolated QA)",
+    "artifactSecretScan": "PASS",
+    "demoAssetsExcluded": true
+  }
+}
