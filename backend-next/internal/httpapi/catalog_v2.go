@@ -160,6 +160,10 @@ func (s *Server) catalogAuthV2(w http.ResponseWriter, r *http.Request) (store.Se
 		catalogFailV2(w, r, e)
 		return session, false
 	}
+	if actor := r.Header.Get("X-Deuterium-Actor"); actor != "" && actor != session.User.PlayerRef {
+		failure(w, r, 409, "ACCOUNT_CHANGED", "账号已切换，请重新打开聊天。")
+		return session, false
+	}
 	return session, true
 }
 func (s *Server) catalogRenderV2(w http.ResponseWriter, r *http.Request, user string, d store.CatalogRecordV2, management bool, status int) {

@@ -28,6 +28,7 @@ class ApiFailure(val code: String, message: String, val status: Int = 0, val ret
 /** All asset and identity authority stays on the backend. No offline-success fallback. */
 class BackendApi internal constructor(context: Context, origin: String = BuildConfig.API_BASE_URL, client: OkHttpClient? = null) {
     private val appContext=context.applicationContext
+    internal val context:Context get()=appContext
     private val prefs = context.getSharedPreferences("backend-v2", Context.MODE_PRIVATE)
     private val pendingWrites=PendingPreferences(prefs)
     val baseUrl: String = origin.trimEnd('/')

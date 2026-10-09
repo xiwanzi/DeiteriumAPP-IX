@@ -16,7 +16,7 @@ import java.util.Locale
 import java.util.UUID
 
 data class LedgerEntry(val id: Long, val name: String, val detail: String, val amount: Long, val time: String, val at: LocalDateTime = LocalDateTime.now())
-data class ChatLine(val id: Long, val name: String, val text: String, val mine: Boolean, val time: String = "刚刚", val reply: ChatReply? = null, val remoteId: String = "", val serverAt: Long = 0, val forwarded:ChatReply?=null,val aiStatus:String?=null,val sources:List<AiSource> = emptyList(),val searchUsed:Boolean=false)
+data class ChatLine(val id: Long, val name: String, val text: String, val mine: Boolean, val time: String = "刚刚", val reply: ChatReply? = null, val remoteId: String = "", val serverAt: Long = 0, val forwarded:ChatReply?=null,val aiStatus:String?=null,val sources:List<AiSource> = emptyList(),val searchUsed:Boolean=false,val media:ChatMedia?=null,val clientMessageId:String="")
 data class Announcement(val id: String, val title: String, val content: String, val publishedAt: String)
 fun credit(cents: Long): String = String.format(Locale.US, "%,.2f", cents / 100.0)
 fun apiCents(value: String): Long = value.toBigDecimal().movePointRight(2).longValueExact()
@@ -102,6 +102,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     private var closed = false
     private var preferencesSyncedAt=0L
     private var uncertainMessage: Triple<String, String, String?>? = null
+    internal val chatMedia=api?.let{BackendChatMedia(it,scope){message->addMessage(message,false)}}
+    private var cacheRestored=false
     val interventions=api?.let{BackendInterventions(it,this)}
     val ai=api?.let{BackendAI(it,this)}
     init { commerce.interventions=interventions;commissions.interventions=interventions;commerce.network=api?.let{BackendCatalog(it,this)};commissions.network=api?.let{BackendCommissions(it,this)} }
@@ -110,6 +112,20 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     fun connect() {
         val service = api ?: return
         scope.launch {
+            if(!cacheRestored){
+                cacheRestored=true
+                try{chatMedia?.cache?.let{cache->withContext(Dispatchers.IO){cache.read(limit=1000)}.forEach{record->
+                    val peer=record.value.optString("_cachePeerRef")
+                    if(!isErasedPlayer(peer)){
+                        val thread=if(record.channel=="public")null else record.value.optString("_cachePeerName").takeIf{it.isNotBlank()}
+                        if(record.channel=="public"||thread!=null){if(thread!=null)rememberConversation(thread,record.channel);addMessage(record.value,false,thread,persist=false)}
+                    }
+                }}}
+                catch(cancelled:CancellationException){throw cancelled}
+                catch(_:Exception){storageMessage="本机聊天缓存暂时无法读取，可在存储空间中清理；在线消息仍会正常同步"}
+                scope.launch{chatMedia?.start()}
+                scope.launch{ChatCache.cleared.collect{records->if(records){chat.clear();directChats.values.forEach{it.clear()};publicHistoryLoaded=false;publicHistoryCursor=null;directHistoryCursors.clear()}}}
+            }
             runCatching { service.verifySession() }.onSuccess { profileBio = service.user?.optString("bio").orEmpty();profileDisplayName=service.displayName }
                 .onFailure { report(it) }
             if(!service.signedIn || !service.gameVerified || closed) return@launch
@@ -157,12 +173,17 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     }
     private fun cursor(response:JSONObject)=response.optJSONObject("_page")?.optString("nextCursor")?.takeUnless{it.isBlank()||it=="null"}
     suspend fun loadOlderPublic(){
+        if(!loadingChatHistory&&chat.isNotEmpty()){
+            val beforeAt=chat.first().serverAt
+            val cached=chatMedia?.cache?.let{cache->withContext(Dispatchers.IO){cache.read("public",beforeAt,100)}}.orEmpty()
+            if(cached.isNotEmpty()){cached.forEach{addMessage(it.value,false,persist=false)};return}
+        }
         val before=publicHistoryCursor ?: return;if(loadingChatHistory)return
         loadingChatHistory=true
         runCatching{api!!.request("GET","/chat/messages?limit=100&before=${URLEncoder.encode(before,"UTF-8")}")}.onSuccess{response->response.getJSONArray("messages").objects().asReversed().forEach{addMessage(it,false)};publicHistoryCursor=cursor(response)}.onFailure{report(it)}
         loadingChatHistory=false
     }
-    private fun addMessage(value: JSONObject, notify: Boolean, thread:String?=null) {
+    private fun addMessage(value: JSONObject, notify: Boolean, thread:String?=null,persist:Boolean=true) {
         val target=if(thread==null)chat else conversation(thread)
         val id = value.optString("messageId"); if(id.isBlank() || target.any { it.remoteId == id }) return
         val sender = value.optJSONObject("sender") ?: return
@@ -174,7 +195,13 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         val at=sentAt.atZone(ZoneId.systemDefault()).toLocalDateTime()
         val reply = value.optJSONObject("reply")?.let { ChatReply(it.optString("messageId").hashCode().toLong(), it.optJSONObject("sender")?.optString("gameId").orEmpty(), if(it.optString("availability")=="UNAVAILABLE")"原消息不可见" else it.optString("content"), it.optString("messageId")) }
         val forwarded=value.optJSONObject("forwarded")?.let{ChatReply(it.optString("messageId").hashCode().toLong(),it.optJSONObject("sender")?.optString("gameId").orEmpty(),it.optString("content"),it.optString("messageId"))}
-        target.insertInOrder(ChatLine(++serial, if(mine) "你" else name, value.optString("content"), mine, at.format(DateTimeFormatter.ofPattern("HH:mm")), reply, id, sentAt.toEpochMilli(),forwarded),chatChronology)
+        target.insertInOrder(ChatLine(++serial, if(mine) "你" else name, value.optString("content"), mine, at.format(DateTimeFormatter.ofPattern("HH:mm")), reply, id, sentAt.toEpochMilli(),forwarded,media=value.optJSONObject("media")?.let{runCatching{ChatMedia.parse(it)}.getOrNull()},clientMessageId=value.optString("clientMessageId")),chatChronology)
+        if(persist)chatMedia?.cache?.let{cache->
+            val saved=JSONObject(value.toString());val epoch=ChatCache.epoch
+            val channel=if(thread==null)"public" else value.optString("conversationId").ifBlank{conversationIds[thread].orEmpty()}
+            if(thread!=null){saved.put("_cachePeerName",thread);saved.put("_cachePeerRef",Players.find{it.name==thread}?.playerRef.orEmpty())}
+            if(channel.isNotBlank())scope.launch(Dispatchers.IO){runCatching{cache.save(channel,saved,epoch)}}
+        }
         val mentions=value.optJSONArray("mentionedPlayerRefs")
         val mentioned=mentions!=null&&(0 until mentions.length()).any{mentions.optString(it)==api?.playerRef}
         if(notify && !mine && (name in followed || mentioned)) {
@@ -376,13 +403,19 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             account.verifyCurrent(service.financialScope())
             val currentIds=values.map{it.getString("conversationId")}.toSet()
             knownBefore.filter{(name,id)->id !in currentIds&&conversationIds[name]==id}.keys.forEach(::forgetConversation)
-            values.forEach{value->val other=value.getJSONObject("otherPlayer");if(isErasedPlayer(other.optString("playerRef")))return@forEach;rememberPlayer(other);val name=other.getString("gameId");val id=value.getString("conversationId");if(conversationIds[name]?.let{it!=id}==true)forgetConversation(name);conversationIds[name]=id;value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)};conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[conversationIds[name]])0 else value.optInt("unreadCount").coerceAtLeast(0)}
+            values.forEach{value->val other=value.getJSONObject("otherPlayer");if(isErasedPlayer(other.optString("playerRef")))return@forEach;rememberPlayer(other);val name=other.getString("gameId");val id=value.getString("conversationId");rememberConversation(name,id);value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)};conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[conversationIds[name]])0 else value.optInt("unreadCount").coerceAtLeast(0)}
             contactsKnown=true;contactsError=null
         }catch(cancelled:kotlinx.coroutines.CancellationException){throw cancelled}
         catch(error:Exception){contactsError=error.message ?: "联系人暂时无法同步"}
         finally{contactsRefreshing=false;contactRefreshLock.unlock()}
     }
     suspend fun refreshContacts()=loadConversations()
+    private fun rememberConversation(name:String,id:String){
+        if(conversationIds[name]?.let{it!=id}==true)forgetConversation(name)
+        val previous=conversationIds.entries.firstOrNull{it.value==id&&it.key!=name}?.key
+        if(previous!=null){directChats.remove(previous)?.let{directChats[name]=it};conversationIds.remove(previous);directHistoryCursors.remove(previous)?.let{directHistoryCursors[name]=it}}
+        conversationIds[name]=id
+    }
     private fun forgetConversation(name:String){
         conversationIds.remove(name)?.let{readCursors.remove(it)};directChats.remove(name);conversationUnread.remove(name);directErrors.remove(name);directHistoryCursors.remove(name);directHistoryLoading.remove(name);directPending.remove(name)
     }
@@ -398,6 +431,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }while(result.optBoolean("hasMore"))
     }
     internal suspend fun applyAccountDeletions(refs:Set<String>){
+        chatMedia?.cache?.let{cache->withContext(Dispatchers.IO){cache.removePlayers(refs)}}
         val people=Players.filter{it.playerRef in refs}
         val names=people.map{it.name}.toSet()
         val images=people.mapNotNull{it.avatar}.toSet()+commerce.listings.filter{it.sellerRef in refs}.flatMap{it.photos}
@@ -464,6 +498,12 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         finally{onlinePlayersRefreshing=false}
     }
     suspend fun loadOlderDirect(name:String){
+        if(directHistoryLoading[name]!=true&&conversation(name).isNotEmpty()){
+            val beforeAt=conversation(name).first().serverAt
+            val channel=conversationIds[name]
+            val cached=if(channel==null)emptyList()else chatMedia?.cache?.let{cache->withContext(Dispatchers.IO){cache.read(channel,beforeAt,100)}}.orEmpty()
+            if(cached.isNotEmpty()){cached.forEach{addMessage(it.value,false,name,persist=false)};return}
+        }
         val before=directHistoryCursors[name] ?: return;val id=conversationIds[name] ?: return;if(directHistoryLoading[name]==true)return
         directHistoryLoading[name]=true
         runCatching{api!!.request("GET","/chat/conversations/$id/messages?limit=100&cursor=${URLEncoder.encode(before,"UTF-8")}")}.onSuccess{response->response.getJSONArray("items").objects().asReversed().forEach{addMessage(it,false,name)};directHistoryCursors[name]=cursor(response)}.onFailure{directErrors[name]=it.message ?: "历史消息读取失败"}

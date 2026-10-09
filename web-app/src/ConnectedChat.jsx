@@ -4,6 +4,7 @@ import { Button, Field, Modal, Avatar, Empty } from "./components.jsx";
 import { createChatConnection, normalizeMessage, mergeMessages, recoveryCursor } from "./api.js";
 import { id } from "./format.js";
 import useAiConversation from "./AiConversation.jsx";
+import { acquireChatMedia } from "./chat-media.js";
 
 const pendingKey = (user) => `deuterium-chat-pending:${user.userId}`;
 function readPending(user) {
@@ -15,6 +16,7 @@ function pendingMessage(user, entry) {
 }
 
 export default function ConnectedChat({ client, user, onProfile, onUnavailable, requestedConversation }) {
+  const [mediaService, setMediaService] = useState(null), [mediaState, setMediaState] = useState({ jobs: [], stickers: [], error: "" });
   const pending = useRef(readPending(user)),
     [messages, setMessages] = useState(() => Object.values(pending.current).filter((entry) => entry.clientMessageId && entry.channel).map((entry) => pendingMessage(user, entry))),
     [conversations, setConversations] = useState([]), [activeConversation, setActiveConversation] = useState(requestedConversation || "public"),
@@ -113,7 +115,12 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
     }
   };
   const send = ({ channel, text, reply, clientMessageId }) => channel === "assistant" ? ai.send({ text, clientMessageId }) : submitEntry(pending.current[clientMessageId] || Object.values(pending.current).find((entry) => entry.channel === channel && entry.text === text && entry.reply?.id === reply?.id && !entry.forward) || { channel, text, reply, clientMessageId, sentAt: new Date().toISOString() });
-  const retry = (message) => submitEntry(pending.current[message.clientMessageId] || { channel: message.channel, text: message.text, reply: message.reply, forward: message.forwardRequest, clientMessageId: message.clientMessageId, sentAt: message.sentAt });
+  const retry = (message) => message.isMediaPending ? mediaService.retry(message.clientMessageId) : submitEntry(pending.current[message.clientMessageId] || { channel: message.channel, text: message.text, reply: message.reply, forward: message.forwardRequest, clientMessageId: message.clientMessageId, sentAt: message.sentAt });
+  useEffect(() => {
+    const service = acquireChatMedia(client, user, setMediaState, value => integrate([normalizeMessage(value, user)]));
+    setMediaService(service); return () => { service.update=()=>{};service.accepted=()=>{}; };
+  }, [client, user.playerRef]);
+  const mediaPending = mediaState.jobs.filter(j => !j.importing && !messages.some(m => m.clientMessageId === j.id && !m.id.startsWith("pending:"))).map(j => ({ id: `pending:${j.id}`, clientMessageId: j.id, isMediaPending: true, channel: "public", text: j.type === "sticker" ? "[贴纸]" : "[图片]", media: j.media || { type: j.type, width: j.width || 240, height: j.height || 180, animated: j.animated }, localURL: j.localURL, sender: user.playerRef, senderName: user.displayName || user.gameId, mine: true, status: j.status === "failed" ? "failed" : "sending", error: j.error, reply: j.reply, sentAt: new Date(j.createdAt).toISOString(), time: new Date(j.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) }));
   const markRead = async (channel, messageID) => {
     if (messageID.startsWith("pending:") || readRef.current[channel] === messageID) return;
     readRef.current[channel] = messageID;
@@ -149,7 +156,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
   };
   return <>
     {(activeConversation === "assistant" ? ai.error : error) && <div className="connected-history-error" role="alert"><span>{activeConversation === "assistant" ? ai.error : error}</span><button onClick={() => { if (activeConversation === "assistant") ai.load(); else { loadConversations(); loadMessages(activeConversation); } }}>重新连接</button></div>}
-    <Messenger user={{ ...user, id: user.playerRef, name: user.displayName || user.gameId }} contacts={contacts} messages={[...messages.map((message) => ({ ...message, senderName: profiles[message.sender]?.displayName || message.senderName, senderProfile: profiles[message.sender] || message.senderProfile })), ...ai.messages]} onSend={send} onRetry={retry}
+    <Messenger user={{ ...user, id: user.playerRef, name: user.displayName || user.gameId }} contacts={contacts} messages={mergeMessages([...messages.map((message) => ({ ...message, senderName: profiles[message.sender]?.displayName || message.senderName, senderProfile: profiles[message.sender] || message.senderProfile })), ...ai.messages], mediaPending)} onSend={send} onRetry={retry} mediaService={mediaService} mediaState={mediaState}
       activeConversation={activeConversation} onConversationChange={setActiveConversation} onNewConversation={() => setModal({ type: "new" })}
       canReply={activeConversation !== "assistant"} onForwardMessage={activeConversation === "assistant" ? undefined : (message) => setModal({ type: "forward", message, clientMessageId: id() })}
       connection={activeConversation === "public" ? publicConnection : activeConversation === "assistant" ? ai.connection : directConnection} onReconnect={() => activeConversation === "public" ? transport.current?.reconnect() : activeConversation === "assistant" ? ai.load() : loadMessages(activeConversation)}

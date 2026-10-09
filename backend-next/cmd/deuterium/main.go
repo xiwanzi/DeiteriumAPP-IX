@@ -174,6 +174,7 @@ func run(args []string) error {
 		defer app.Close()
 		app.StartCommerceV2()
 		app.StartAssetLifecycleV2()
+		app.StartChatMediaLifecycle()
 		server := &http.Server{Addr: c.Listen, Handler: app.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16384}
 		result := make(chan error, 1)
 		go func() { result <- server.ListenAndServe() }()

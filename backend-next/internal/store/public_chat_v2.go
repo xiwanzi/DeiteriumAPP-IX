@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func publicChatFingerprintV2(content, replyID string, mentions []string) (string, []string, error) {
+func publicChatFingerprintV2(content, replyID string, mentions []string, media ...*ChatMediaSend) (string, []string, error) {
 	if !ValidSocialText(content, 1, 256) || strings.ContainsAny(content, "\r\n\t") || replyID != "" && !ValidSocialID(replyID) || len(mentions) > 20 {
 		return "", nil, ErrSocialInvalid
 	}
@@ -25,6 +25,17 @@ func publicChatFingerprintV2(content, replyID string, mentions []string) (string
 		ordered = append(ordered, ref)
 	}
 	sort.Strings(ordered)
+	if len(media) > 0 && media[0] != nil {
+		if !media[0].Valid() || content != media[0].Summary() {
+			return "", nil, ErrSocialInvalid
+		}
+		encoded, _ := json.Marshal(struct {
+			Content, Reply string
+			Mentions       []string
+			Media          *ChatMediaSend
+		}{content, replyID, ordered, media[0]})
+		return Digest(encoded), ordered, nil
+	}
 	if replyID == "" && len(ordered) == 0 {
 		return Digest([]byte(content)), ordered, nil
 	}
@@ -35,8 +46,8 @@ func publicChatFingerprintV2(content, replyID string, mentions []string) (string
 	}{content, replyID, ordered})
 	return Digest(encoded), ordered, nil
 }
-func (s *Store) ExistingAppChatV2(ctx context.Context, userID, clientID, content, replyID string, mentions []string) (string, error) {
-	fingerprint, _, err := publicChatFingerprintV2(content, replyID, mentions)
+func (s *Store) ExistingAppChatV2(ctx context.Context, userID, clientID, content, replyID string, mentions []string, media ...*ChatMediaSend) (string, error) {
+	fingerprint, _, err := publicChatFingerprintV2(content, replyID, mentions, media...)
 	if err != nil {
 		return "", err
 	}
@@ -50,11 +61,11 @@ func (s *Store) ExistingAppChatV2(ctx context.Context, userID, clientID, content
 
 // Public content, metadata and game delivery records commit as one operation.
 // Legacy messages without metadata retain their original content fingerprint.
-func (s *Store) PublishAppChatV2(ctx context.Context, u User, clientID, content, replyID string, mentions, nodes []string) (messageID string, replayed bool, err error) {
+func (s *Store) PublishAppChatV2(ctx context.Context, u User, clientID, content, replyID string, mentions, nodes []string, media ...*ChatMediaSend) (messageID string, replayed bool, err error) {
 	if !ValidSocialID(clientID) {
 		return "", false, ErrSocialInvalid
 	}
-	fingerprint, ordered, err := publicChatFingerprintV2(content, replyID, mentions)
+	fingerprint, ordered, err := publicChatFingerprintV2(content, replyID, mentions, media...)
 	if err != nil {
 		return "", false, err
 	}
@@ -99,7 +110,21 @@ func (s *Store) PublishAppChatV2(ctx context.Context, u User, clientID, content,
 		}
 	}
 	mentionsJSON, _ := json.Marshal(ordered)
-	if _, err = tx.ExecContext(ctx, `INSERT INTO public_chat_metadata_v2(message_id,reply_json,mentioned_refs_json) VALUES(?,?,?)`, messageID, replyJSON, mentionsJSON); err != nil {
+	var mediaJSON any
+	if len(media) > 0 && media[0] != nil {
+		m, e := chatMediaForSend(ctx, tx, u.ID, media[0])
+		if e != nil {
+			return "", false, e
+		}
+		mediaJSON, e = json.Marshal(m)
+		if e != nil {
+			return "", false, e
+		}
+		if _, e = tx.ExecContext(ctx, `INSERT INTO public_chat_media(message_id,media_id,expires_at) VALUES(?,?,?)`, messageID, m.ID, m.ExpiresAt); e != nil {
+			return "", false, e
+		}
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO public_chat_metadata_v2(message_id,reply_json,mentioned_refs_json,media_json) VALUES(?,?,?,?)`, messageID, replyJSON, mentionsJSON, mediaJSON); err != nil {
 		return "", false, err
 	}
 	seq, err := result.LastInsertId()

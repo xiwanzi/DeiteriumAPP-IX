@@ -69,6 +69,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	s.registerReleasesV2(mux)
 	s.registerAssetsV2(mux)
+	s.registerChatMedia(mux)
 	s.registerSocialV2(mux)
 	s.registerCatalogV2(mux)
 	s.registerCommerceV2(mux)

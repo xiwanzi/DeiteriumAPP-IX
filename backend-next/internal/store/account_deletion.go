@@ -176,6 +176,8 @@ func eraseAccountPresentationTx(ctx context.Context, tx *sql.Tx, u User) error {
 		{`DELETE m FROM social_members_v2 m JOIN social_conversations_v2 c ON c.conversation_id=m.conversation_id WHERE c.user_lo=? OR c.user_hi=?`, []any{u.ID, u.ID}},
 		{`DELETE FROM social_conversations_v2 WHERE user_lo=? OR user_hi=?`, []any{u.ID, u.ID}},
 		{`DELETE FROM social_follows_v2 WHERE follower_id=? OR followed_id=?`, []any{u.ID, u.ID}},
+		{`DELETE FROM chat_stickers WHERE user_id=?`, []any{u.ID}},
+		{`DELETE FROM chat_media_uploads WHERE user_id=?`, []any{u.ID}},
 		{`DELETE d FROM core_chat_deliveries d JOIN chat_messages_next m ON m.sequence_id=d.message_sequence WHERE m.sender_ref=? OR m.sender_uuid=?`, []any{u.PlayerRef, u.ServerUUID}},
 		{`DELETE p FROM public_chat_metadata_v2 p JOIN chat_messages_next m ON m.message_id=p.message_id WHERE m.sender_ref=? OR m.sender_uuid=?`, []any{u.PlayerRef, u.ServerUUID}},
 		{`DELETE FROM chat_messages_next WHERE sender_ref=? OR sender_uuid=?`, []any{u.PlayerRef, u.ServerUUID}},
