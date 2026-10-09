@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-09：**App 2.0.22（22200）、Web 2.0.31 与配套 Go 已于 19:21 上线**（PR #85，源码 `60b0cb525842`）。公共聊天新增 Emoji/图片/GIF/10 个云端贴纸，三天媒体与去重、500MiB 本机聊天缓存、30 天历史补拉；036 迁移和真实 OSS 联调通过。58 账号、44 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留；三常驻节点在线，MEK 继续停止。维护 `.worktrees/chat-media` / `xiwanzi/release-v222-live`，见[上线记录](docs/deployment/deuterium-2.0.22-live.md)。下方候选与较早发布均为历史。
+
 2026-10-09：**公共聊天媒体候选已完成本机实现与验收，未推送/部署**。维护 `.worktrees/chat-media` / `xiwanzi/chat-media`：单图前端压缩、Emoji/GIF、每账号 10 个云端贴纸、三天媒体与内容去重、App 500MiB 无时间过期聊天缓存、30 天历史补拉。App/Web 发布版本保持，游戏仅文字摘要。见[契约](docs/contracts/public-chat-media.md)和[验收](docs/qa/chat-media-20261009.md)。线上状态仍以下方 2.0.21 记录为准。
 
 2026-10-08：**App 2.0.21（22100）、Web 2.0.30 与配套 Go 已于 23:27 上线**（PR #83，源码 `b5e7cd6ef589`）。购物袋支持跨店一次确认、按店独立订单/游戏邮件/退款，优惠券页恢复原样，其他优惠展示保持。57 条账号、39 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留；三常驻节点在线，MEK 继续停止。维护 `.worktrees/catalog-scale` / `xiwanzi/release-v221-live`，见[上线记录](docs/deployment/deuterium-2.0.21-live.md)。下方为较早记录。

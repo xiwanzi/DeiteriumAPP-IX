@@ -1,0 +1,36 @@
+{
+  "sourceCommit": "60b0cb52584266c11ece951c9a8836035f54dd75",
+  "mergeCommit": "4e9eb082b214c5bde2c3244a03b322f81440fe7f",
+  "pr": 85,
+  "appVersion": "2.0.22",
+  "versionCode": 22200,
+  "webVersion": "2.0.31",
+  "files": [
+    {
+      "name": "Deuterium-2.0.22-22200-test.apk",
+      "sizeBytes": 9039378,
+      "sha256": "52fa83217b0e754863569380dce233159a320d5df5db2bf1baba63d3908fa9cb"
+    },
+    {
+      "name": "deuterium-linux-amd64",
+      "sizeBytes": 30146979,
+      "sha256": "2a2168aac81e565b5f3a9790ae12a501585e26f6af781373e740970b43bdc3b4"
+    },
+    {
+      "name": "web-2.0.31.zip",
+      "sizeBytes": 34007517,
+      "sha256": "2a3222ce040d52170c70b81f4bb7c96bb826bed55de42bef86a56e452c17523e"
+    }
+  ],
+  "signingCertificateSha256": "04a213066a78a968c2a1328a153a0967f99d117e0a826285e3f4af705db6f2f3",
+  "validation": {
+    "androidJvmTests": 172,
+    "webTests": 80,
+    "chatMediaIntegrationRaceTests": 4,
+    "codecCrossPlatformSamples": 16,
+    "goRegression": "See chat-media-20261009.md; obsolete mixed-store assertion corrected and targeted pass",
+    "nativeChatMediaLightDark": "PASS (isolated QA)",
+    "artifactSecretScan": "PASS",
+    "demoAssetsExcluded": true
+  }
+}
