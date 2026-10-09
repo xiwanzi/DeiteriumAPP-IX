@@ -1,0 +1,36 @@
+{
+  "deployedAt": "2026-10-10T01:55:02.684800+08:00",
+  "sourceCommit": "984ceee1163dd567de1f15ba7d9a2fa4bdeae11f",
+  "mergeCommit": "22df11463f3b5804424fb37e07ed47f39e25ed10",
+  "pr": 91,
+  "appVersion": "2.0.25",
+  "versionCode": 22500,
+  "webVersion": "2.0.34",
+  "before": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "after": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "existingRecordIdsPreserved": true,
+  "schemaAndConfigurationUnchanged": true,
+  "backendBinaryUnchanged": true,
+  "officialAndHelpUnchanged": true,
+  "oldReleaseEntriesPreserved": 25,
+  "backup": "/var/backups/deuterium/chat-tuning-v225-22500-984ceee1163d",
+  "current": {
+    "go": "/opt/deuterium/releases/chat-media-v222-60b0cb525842",
+    "web": "/var/www/deuterium/releases/web-2.0.34-984ceee1163d/dist"
+  },
+  "ready": true
+}

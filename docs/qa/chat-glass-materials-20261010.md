@@ -1,6 +1,6 @@
 # 聊天玻璃独立参数与可读性调校
 
-2026-10-10。用户要求在下一次发布前，按参考风格提高玻璃质感与可读性，独立调整输入框和表情/贴纸栏。本轮为 **本机候选，未发布**；线上仍为 App 2.0.24 / Web 2.0.33。维护 `.worktrees/chat-media` / `xiwanzi/chat-glass-tuning`。
+2026-10-10。用户要求在下一次发布前，按参考风格提高玻璃质感与可读性，独立调整输入框和表情/贴纸栏。本轮已于 01:55 随 **App 2.0.25 / Web 2.0.34 上线**，见[发布记录](../deployment/deuterium-2.0.25-live.md)。维护 `.worktrees/chat-media` / `xiwanzi/release-v225-live`。
 
 ## 独立默认值
 
@@ -31,4 +31,4 @@
 
 产物 `C:/DeuteriumAPP/output/chat-material-tuning/`：`before-after.jpg`、`native-glass-1.png`、`native-glass-2.png`、`native-material-tuner-1.png`、`native-material-tuner-2.png`、参考配色图和像素对比 JSON。
 
-日志 `.tools/chat-material-tuning-native-light.log` / `dark.log`、`chat-material-tuning-web-{motion,regression}.log`、`chat-material-tuning-final-build.log`。未部署本轮参数，未改变后端、游戏插件或生产业务数据。
+日志 `.tools/chat-material-tuning-native-light.log` / `dark.log`、`chat-material-tuning-web-{motion,regression}.log`、`chat-material-tuning-final-build.log`。本轮参数已发布；后端二进制、游戏插件及既有业务数据保留。
