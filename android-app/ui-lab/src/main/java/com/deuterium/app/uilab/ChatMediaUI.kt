@@ -215,14 +215,17 @@ internal fun ChatMediaComposer(state:LabState,focus:androidx.compose.ui.focus.Fo
     BackHandler(panel){panel=false;switchingToKeyboard=false}
     Column {
         MessageComposer(state.chatDraft,{if(it.text.length<=256)state.chatDraft=it},state::sendChat,"输入消息",focus,state.chatReplyTo,{state.chatReplyTo=null},onEmoji=::toggle,onImage={choose(false)},onFocus={if(panel)showKeyboard()},emojiOpen=panel)
-        // The parent already reserves the animated IME inset. Both occupy one shared dock.
-        val reserved=(dock.value-max(ime,navigation)).coerceAtLeast(0f)
-        Box(Modifier.fillMaxWidth().height(with(density){reserved.toDp()}).clipToBounds().then(if(reserved<=0f)Modifier.clearAndSetSemantics{} else Modifier)){
+        // Navigation padding belongs inside the panel material, so it reaches the screen edge.
+        // With the panel closed, this same space keeps the input clear of system gestures.
+        val reserved=(max(dock.value,navigation.toFloat())-ime).coerceAtLeast(0f)
+        Box(Modifier.fillMaxWidth().height(with(density){reserved.toDp()}).clipToBounds().graphicsLayer{alpha=if(dock.value>0f)1f else 0f}.then(if(dock.value<=0f||reserved<=0f)Modifier.clearAndSetSemantics{} else Modifier)){
             // Keep the first page measured before the animation starts, so lazy-grid startup
             // cannot consume the short entrance animation's first frames.
             panelState.SaveableStateProvider("expressions"){
-                Box(Modifier.fillMaxWidth().wrapContentHeight(Alignment.Top,unbounded=true).requiredHeight(with(density){(panelHeight-navigation).coerceAtLeast(1f).toDp()}),contentAlignment=Alignment.TopStart){
-                    ChatExpressionPanel(state,{choose(true)},onView)
+                Box(Modifier.fillMaxWidth().wrapContentHeight(Alignment.Top,unbounded=true).requiredHeight(with(density){panelHeight.toDp()}),contentAlignment=Alignment.TopStart){
+                    ChatGlassSurface(Modifier.fillMaxSize().semantics{contentDescription="表情面板"}.pointerInput(Unit){detectTapGestures{}},panel=true){
+                        Box(Modifier.fillMaxSize().navigationBarsPadding()){ChatExpressionPanel(state,{choose(true)},onView)}
+                    }
                 }
             }
         }

@@ -34,15 +34,15 @@ fun MessageComposer(value:TextFieldValue,onValue:(TextFieldValue)->Unit,onSend:(
     val sendColor by animateColorAsState(if(enabled)colors.primary else colors.surfaceVariant,tween(if(motion)160 else 0),label="send available")
     Column {
     reply?.let{ReplyPreview(it,onCancelReply)}
-    LiquidGlass(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=6.dp),radius=26.dp){
+    ChatGlassSurface(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=6.dp)){
       Row(Modifier.fillMaxWidth().padding(horizontal=3.dp,vertical=2.dp),verticalAlignment=Alignment.Bottom){
         onEmoji?.let{action->IconButton(action,Modifier.size(44.dp)){
             Crossfade(emojiOpen,animationSpec=tween(if(motion)140 else 0),label="expression toggle"){open->
-                Icon(if(open)Icons.Outlined.Keyboard else Icons.Outlined.SentimentSatisfied,if(open)"切换键盘" else "选择表情",Modifier.size(23.dp),tint=colors.onSurfaceVariant)
+                Icon(if(open)Icons.Outlined.Keyboard else Icons.Outlined.SentimentSatisfied,if(open)"切换键盘" else "选择表情",Modifier.size(23.dp),tint=colors.onSurface.copy(alpha=.82f))
             }
         }}
-        BasicTextField(value,onValue,Modifier.weight(1f).heightIn(min=44.dp).padding(start=if(onEmoji==null)12.dp else 0.dp,end=4.dp,top=10.dp,bottom=10.dp).then(if(focus!=null)Modifier.focusRequester(focus) else Modifier).onFocusChanged{if(it.isFocused)onFocus?.invoke()},interactionSource=inputInteraction,textStyle=MaterialTheme.typography.bodyLarge.copy(fontSize=16.sp,lineHeight=23.sp,color=colors.onSurface),maxLines=5,cursorBrush=SolidColor(colors.primary),keyboardOptions=KeyboardOptions(imeAction=ImeAction.Send),keyboardActions=KeyboardActions(onSend={if(enabled)onSend()}),decorationBox={inner->Box{if(value.text.isEmpty())Text(placeholder,fontSize=16.sp,maxLines=1,color=colors.onSurfaceVariant);inner()}})
-        onImage?.let{IconButton(it,Modifier.size(44.dp)){Icon(Icons.Outlined.AttachFile,"发送图片",Modifier.size(23.dp),tint=colors.onSurfaceVariant)}}
+        BasicTextField(value,onValue,Modifier.weight(1f).heightIn(min=44.dp).padding(start=if(onEmoji==null)12.dp else 0.dp,end=4.dp,top=10.dp,bottom=10.dp).then(if(focus!=null)Modifier.focusRequester(focus) else Modifier).onFocusChanged{if(it.isFocused)onFocus?.invoke()},interactionSource=inputInteraction,textStyle=MaterialTheme.typography.bodyLarge.copy(fontSize=16.sp,lineHeight=23.sp,color=colors.onSurface),maxLines=5,cursorBrush=SolidColor(colors.primary),keyboardOptions=KeyboardOptions(imeAction=ImeAction.Send),keyboardActions=KeyboardActions(onSend={if(enabled)onSend()}),decorationBox={inner->Box{if(value.text.isEmpty())Text(placeholder,fontSize=16.sp,maxLines=1,color=colors.onSurface.copy(alpha=.96f));inner()}})
+        onImage?.let{IconButton(it,Modifier.size(44.dp)){Icon(Icons.Outlined.AttachFile,"发送图片",Modifier.size(23.dp),tint=colors.onSurface.copy(alpha=.82f))}}
         IconButton(onSend,Modifier.size(44.dp),enabled=enabled){
             Box(Modifier.size(34.dp).background(sendColor,CircleShape),contentAlignment=Alignment.Center){Icon(Icons.AutoMirrored.Outlined.Send,"发送消息",Modifier.size(19.dp),tint=if(enabled)colors.onPrimary else colors.onSurfaceVariant)}
         }
