@@ -1,0 +1,36 @@
+{
+  "deployedAt": "2026-10-10T00:47:50.878929+08:00",
+  "sourceCommit": "ab3893a935bdb3d0577903d753572fb8c916673f",
+  "mergeCommit": "73db6f9ab9b71f77106691353198019dd5f56437",
+  "pr": 89,
+  "appVersion": "2.0.24",
+  "versionCode": 22400,
+  "webVersion": "2.0.33",
+  "before": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "after": {
+    "accounts": 58,
+    "orders": 44,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "existingRecordIdsPreserved": true,
+  "schemaAndConfigurationUnchanged": true,
+  "backendBinaryUnchanged": true,
+  "officialAndHelpUnchanged": true,
+  "oldReleaseEntriesPreserved": 24,
+  "backup": "/var/backups/deuterium/chat-glass-v224-22400-ab3893a935bd",
+  "current": {
+    "go": "/opt/deuterium/releases/chat-media-v222-60b0cb525842",
+    "web": "/var/www/deuterium/releases/web-2.0.33-ab3893a935bd/dist"
+  },
+  "ready": true
+}
