@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Avatar, Badge, Button, Empty, media } from "./components.jsx";
 import { id } from "./format.js";
+import { ChatMediaBubble, ChatPictureButton, ChatExpressionPanel, ChatImageViewer } from "./ChatMedia.jsx";
 
 export default function Messenger({
   user,
@@ -55,7 +56,11 @@ export default function Messenger({
   onForwardMessage,
   threadActions,
   conversationStatus,
+  mediaService,
+  mediaState,
 }) {
+  const [viewingMedia, setViewingMedia] = useState(null);
+  const composerElement = useRef(null), [composerHeight, setComposerHeight] = useState(164);
   const [active, setActive] = useState("public"),
     [contactQuery, setContactQuery] = useState(""),
     [text, setText] = useState(drafts[`${user.id}:public`] || ""),
@@ -99,6 +104,7 @@ export default function Messenger({
     atBottom.current = true;
     setNewBelow(false);
   };
+  useEffect(() => { const observer = new ResizeObserver(([entry]) => { setComposerHeight(entry.target.getBoundingClientRect().height); if (atBottom.current) requestAnimationFrame(toBottom); }); if (composerElement.current) observer.observe(composerElement.current); return () => observer.disconnect(); }, []);
   useEffect(() => {
     if (channel !== prevLast.current?.channel || atBottom.current) {
       requestAnimationFrame(toBottom);
@@ -471,14 +477,14 @@ export default function Messenger({
                       {m.source && <span>{m.source}</span>}
                       <time>{m.time}</time>
                     </div>
-                    <div className="bubble">
+                    <div className={`bubble ${m.media ? "has-media" : ""}`}>
                       {m.reply && (
                         <blockquote>
                           {m.reply.text || "引用消息暂不可见"}
                         </blockquote>
                       )}
                       {m.forwarded && <blockquote>转发自 {m.forwarded.senderName || "玩家"}<br />{m.forwarded.availability === "UNAVAILABLE" ? "原消息暂不可见" : m.forwarded.text}</blockquote>}
-                      {m.text}
+                      {m.media ? <ChatMediaBubble service={mediaService} media={m.media} messageID={m.isMediaPending ? null : m.id} localURL={m.localURL} onClick={(rect, preview, source) => { if (m.media.mediaId) setViewingMedia({ media: m.media, messageID: m.isMediaPending ? null : m.id, rect, preview, source }); }} /> : m.text}
                       {m.sources?.length > 0 && <div className="ai-sources">{m.sources.map((source, n) => <a key={`${source.url}:${n}`} href={source.url} target="_blank" rel="noopener noreferrer">{source.origin === "provider_text" ? "正文链接" : "来源"} · {source.title}</a>)}</div>}
                       {m.searchUsed && <small className="muted">已使用联网搜索</small>}
                       {m.sender === "assistant" && ["failed", "unknown", "incomplete"].includes(m.aiStatus) && <p className="composer-error">这次回复未完成，可以开始新对话。</p>}
@@ -520,7 +526,7 @@ export default function Messenger({
                     )}
                   </div>
                   <div className="pc-message-tools">
-                    <button
+                    {!m.media && <button
                       aria-label={`复制消息 ${m.id}`}
                       onClick={() => copy(m)}
                     >
@@ -529,7 +535,7 @@ export default function Messenger({
                       ) : (
                         <Copy size={15} />
                       )}
-                    </button>
+                    </button>}
                     {canReply && !m.id.startsWith("pending:") && (
                       <button
                         aria-label={`回复消息 ${m.id}`}
@@ -541,7 +547,7 @@ export default function Messenger({
                         <Reply size={15} />
                       </button>
                     )}
-                    {onForwardMessage && !m.id.startsWith("pending:") && <button aria-label={`转发消息 ${m.id}`} onClick={() => onForwardMessage(m)}><Forward size={15} /></button>}
+                    {onForwardMessage && !m.media && !m.id.startsWith("pending:") && <button aria-label={`转发消息 ${m.id}`} onClick={() => onForwardMessage(m)}><Forward size={15} /></button>}
                   </div>
                 </div>
               );
@@ -550,12 +556,13 @@ export default function Messenger({
           <div ref={end} />
         </div>
         {newBelow && (
-          <button className="new-message-button" onClick={toBottom}>
+          <button className="new-message-button" style={{ bottom: composerHeight + 14 }} onClick={toBottom}>
             <ArrowDown size={15} />
             回到最新消息
           </button>
         )}
         <form
+          ref={composerElement}
           className="pc-composer"
           onSubmit={(e) => {
             e.preventDefault();
@@ -585,10 +592,11 @@ export default function Messenger({
                 type="button"
                 aria-label="选择表情"
                 aria-expanded={emoji}
-                onClick={() => setEmoji(!emoji)}
+                onClick={() => { if (!emoji && channel === "public") mediaService?.refreshStickers(); setEmoji(!emoji); }}
               >
                 <Smile size={19} />
               </button>
+              {channel === "public" && mediaService && <ChatPictureButton service={mediaService} reply={reply} onSent={() => setReply(null)} />}
               <span>
                 {unsupported
                   ? "暂不可发送"
@@ -601,7 +609,7 @@ export default function Messenger({
               {text.length} / {maxLength}
             </span>
           </div>
-          {emoji && (
+          {emoji && channel === "public" && mediaService ? <ChatExpressionPanel service={mediaService} state={mediaState} onEmoji={e => { const start = input.current?.selectionStart ?? text.length, finish = input.current?.selectionEnd ?? start; const next = text.slice(0, start) + e + text.slice(finish); if (next.length <= maxLength) { setText(next); requestAnimationFrame(() => input.current?.setSelectionRange(start + e.length, start + e.length)); } }} onSticker={async media => { try { await mediaService.enqueue(null, reply, media); setReply(null); } catch (e) { setError(e.message); } }} onPreview={(media, rect, preview) => setViewingMedia({ media, rect, preview })} /> : emoji && (
             <div className="emoji-picker">
               {[
                 "🌿",
@@ -681,6 +689,7 @@ export default function Messenger({
           </div>
         </form>
       </section>
+      {viewingMedia && <ChatImageViewer service={mediaService} {...viewingMedia} close={() => setViewingMedia(null)} />}
       {details && (
         <aside className="pc-details">
           <header>

@@ -73,7 +73,7 @@ func TestCatalogQuoteRejectsUndeliverableAggregate(t *testing.T) {
 		t.Fatal("rejected aggregate wrote finance intent")
 	}
 }
-func TestCatalogQuoteRejectsMixedStores(t *testing.T) {
+func TestCatalogQuoteGroupsMixedStoresWithoutPaymentIntent(t *testing.T) {
 	f := newCatalogFixture(t)
 	ctx := context.Background()
 	a, content := catalogProductFixture(t, f)
@@ -102,11 +102,17 @@ func TestCatalogQuoteRejectsMixedStores(t *testing.T) {
 	next["categoryId"] = category.ID
 	next["deliveryTemplateRef"] = template.ID
 	b := quoteReviewProductV2(t, f, next, shop.ID, "second-product")
-	quoteReviewRejectedV2(t, f, "mixed-quote", []store.CatalogRecordV2{a, b}, []int{1, 1}, "MIXED_STORES")
+	// v2.0.21 deliberately accepts a cross-store quote and partitions checkout.
+	// Quoting must still be read-only with respect to payment/order intent.
+	quote := quoteReviewAcceptedV2(t, f, "mixed-quote", []store.CatalogRecordV2{a, b}, []int{1, 1})
+	groups, ok := quote["storeOrders"].([]any)
+	if !ok || len(groups) != 2 {
+		t.Fatalf("expected two store quotes, got %#v", quote["storeOrders"])
+	}
 	if catalogTestCount(t, f.s, "commerce_resources_v2") != 0 || catalogTestCount(t, f.s, "commerce_operations_v2") != 0 {
 		t.Fatal("mixed stores wrote payment intent")
 	}
-	t.Log("Quote now rejects products from different stores before payment confirmation")
+	t.Log("Cross-store quote preserves separate store orders without creating payment intent")
 }
 func TestCatalogQuoteRejectsCrossDomainPreservesPublishedIdentity(t *testing.T) {
 	f := newCatalogFixture(t)

@@ -9,12 +9,13 @@ import java.io.File
 data class StorageSnapshot(
     val application:Long=0,val images:Long=0,val updates:Long=0,val temporary:Long=0,
     val free:Long=0,val imageBudget:Long=AppImages.DISK_LIMIT,
+    val chat:Long=0,val chatMedia:Long=0,
 ) {
-    val total:Long get()=application+images+updates+temporary
-    val cache:Long get()=images+updates+temporary
+    val total:Long get()=application+images+updates+temporary+chat
+    val cache:Long get()=images+updates+temporary+chat
 }
 
-enum class CacheSelection { Images, Updates, Temporary, All }
+enum class CacheSelection { Images, Updates, Temporary, ChatMedia, ChatAll, All }
 
 object AppStorage {
     fun imageWorkFile(context:Context,name:String):File {
@@ -39,11 +40,14 @@ object AppStorage {
         val info=app.applicationInfo
         val binary=(listOf(info.sourceDir)+info.splitSourceDirs.orEmpty()).distinct().sumOf{File(it).length()}
         val privateBytes=StorageFiles.bytes(File(info.dataDir))
-        StorageSnapshot((binary+privateBytes-images-updates-temporary).coerceAtLeast(0),images,updates,temporary,app.filesDir.usableSpace,imageCache.diskBudget)
+        val chat=ChatCache.bytes(app)
+        StorageSnapshot((binary+privateBytes-images-updates-temporary-chat).coerceAtLeast(0),images,updates,temporary,app.filesDir.usableSpace,imageCache.diskBudget,chat,ChatCache.mediaBytes(app))
     }
 
     suspend fun clear(context:Context,selection:CacheSelection,updates:AppUpdates?):Long {
         var freed=0L
+        if(selection==CacheSelection.ChatMedia||selection==CacheSelection.ChatAll||selection==CacheSelection.All)
+            freed+=withContext(Dispatchers.IO){ChatCache.clear(context,selection!=CacheSelection.ChatMedia)}
         if(selection==CacheSelection.Images||selection==CacheSelection.All){
             val images=AppImages.get(context)
             val before=images.diskBytes()

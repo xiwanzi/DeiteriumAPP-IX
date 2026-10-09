@@ -48,13 +48,23 @@ fun StoragePage(topInset:Dp){
     var clearing by remember{mutableStateOf(false)}
     var message by remember{mutableStateOf<String?>(null)}
     var selection by remember{mutableStateOf<CacheSelection?>(null)}
+    var chatChoices by remember{mutableStateOf(false)}
     fun refresh(){scope.launch{scanning=true;try{stats=AppStorage.measure(context)}catch(cancelled:CancellationException){throw cancelled}catch(_:Exception){message="暂时无法统计，请稍后重试"}finally{scanning=false}}}
     LaunchedEffect(Unit){try{stats=AppStorage.measure(context)}catch(cancelled:CancellationException){throw cancelled}catch(_:Exception){message="暂时无法统计，请稍后重试"}finally{scanning=false}}
     val updateProtected=updates?.downloadsProtected==true
-    val estimate=when(selection){CacheSelection.Images->stats?.images;CacheSelection.Updates->stats?.updates;CacheSelection.Temporary->stats?.temporary;CacheSelection.All->stats?.let{it.cache-if(updateProtected)it.updates else 0};null->0} ?: 0
-    StorageContent(topInset,stats,scanning,clearing,updateProtected,message,::refresh){selection=it}
+    val estimate=when(selection){CacheSelection.Images->stats?.images;CacheSelection.Updates->stats?.updates;CacheSelection.Temporary->stats?.temporary;CacheSelection.ChatMedia->stats?.chatMedia;CacheSelection.ChatAll->stats?.chat;CacheSelection.All->stats?.let{it.cache-if(updateProtected)it.updates else 0};null->0} ?: 0
+    StorageContent(topInset,stats,scanning,clearing,updateProtected,message,::refresh){if(it==CacheSelection.ChatMedia)chatChoices=true else selection=it}
+    if(chatChoices)IosSheet({chatChoices=false}){Column(Modifier.fillMaxWidth().padding(24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
+        Text("聊天缓存",style=MaterialTheme.typography.headlineSmall)
+        Text("本机最多保留 500MB，不按时间过期。空间不足时先清理较早缓存的图片。",color=MaterialTheme.colorScheme.onSurfaceVariant)
+        SettingsGroup{
+            SettingsRow("仅清理聊天媒体",Icons.Outlined.PhotoLibrary,onClick={chatChoices=false;selection=CacheSelection.ChatMedia})
+            SettingsDivider();SettingsRow("清理聊天记录及媒体",Icons.Outlined.DeleteOutline,onClick={chatChoices=false;selection=CacheSelection.ChatAll})
+        }
+        Text("不会删除云端贴纸库。普通图片在服务器仅保留 3 天；文字可重新加载最近 30 天。较早的本机记录和已过期图片清理后无法恢复。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }}
     selection?.let{chosen->
-        IosDialog({if(!clearing)selection=null},{Text("清理缓存？")},{Text("预计释放 ${StorageFiles.display(estimate)}。图片会在需要时重新下载，账号和交易记录会保留。")},
+        IosDialog({if(!clearing)selection=null},{Text("清理缓存？")},{Text("预计释放 ${StorageFiles.display(estimate)}。"+when(chosen){CacheSelection.ChatAll,CacheSelection.All->"超过 30 天的本机聊天记录和已过期图片无法重新下载。云端贴纸、账号及交易记录会保留。";CacheSelection.ChatMedia->"已过期的聊天图片清理后无法恢复。聊天记录和云端贴纸会保留。";else->"图片会在需要时重新下载，账号和交易记录会保留。"})},
             {PlainButton({
                 selection=null;clearing=true;message=null
                 scope.launch{
@@ -94,6 +104,7 @@ internal fun StorageContent(topInset:Dp,stats:StorageSnapshot?,scanning:Boolean,
                     Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
                         Row(Modifier.fillMaxWidth()){StorageLegend("应用与数据",StorageGray,Modifier.weight(1f));StorageLegend("图片缓存",StorageBlue,Modifier.weight(1f))}
                         Row(Modifier.fillMaxWidth()){StorageLegend("更新文件",StoragePurple,Modifier.weight(1f));StorageLegend("临时缓存",StorageTeal,Modifier.weight(1f))}
+                        Row(Modifier.fillMaxWidth()){StorageLegend("聊天缓存",Color(0xFFE6A04A),Modifier.weight(1f))}
                     }
                     HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.5f),thickness=.5.dp)
                     Text(stats?.let{"手机剩余 ${StorageFiles.display(it.free)}"} ?: "正在统计存储空间…",style=MaterialTheme.typography.bodySmall,color=muted)
@@ -105,6 +116,8 @@ internal fun StorageContent(topInset:Dp,stats:StorageSnapshot?,scanning:Boolean,
                 StorageCaption("可清理缓存")
                 SettingsGroup{
                     StorageRow("图片缓存","头像、商品和委托图片",Icons.Outlined.PhotoLibrary,StorageBlue,stats?.images,!scanning&&!clearing&&(stats?.images ?: 0)>0){onClear(CacheSelection.Images)}
+                    SettingsDivider()
+                    StorageRow("聊天缓存","聊天记录、图片和贴纸 · 上限 500MB",Icons.Outlined.ChatBubbleOutline,Color(0xFFE6A04A),stats?.chat,!scanning&&!clearing&&(stats?.chat ?: 0)>0){onClear(CacheSelection.ChatMedia)}
                     SettingsDivider()
                     StorageRow("更新文件",if(updateProtected)"正在使用，暂不可清理" else "下载的安装包和资源包",Icons.Outlined.SystemUpdate,StoragePurple,stats?.updates,!scanning&&!clearing&&!updateProtected&&(stats?.updates ?: 0)>0){onClear(CacheSelection.Updates)}
                     SettingsDivider()
@@ -169,9 +182,9 @@ private fun StorageLegend(title:String,color:Color,modifier:Modifier){Row(modifi
 
 @Composable
 private fun StorageBar(stats:StorageSnapshot?){
-    val values=listOf((stats?.application ?: 0) to StorageGray,(stats?.images ?: 0) to StorageBlue,(stats?.updates ?: 0) to StoragePurple,(stats?.temporary ?: 0) to StorageTeal)
+    val values=listOf((stats?.application ?: 0) to StorageGray,(stats?.images ?: 0) to StorageBlue,(stats?.chat ?: 0) to Color(0xFFE6A04A),(stats?.updates ?: 0) to StoragePurple,(stats?.temporary ?: 0) to StorageTeal)
     Row(Modifier.fillMaxWidth().height(17.dp).clip(RoundedCornerShape(5.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
-        .semantics{contentDescription="存储占用分类：应用与数据、图片缓存、更新文件、临时缓存"}){
+        .semantics{contentDescription="存储占用分类：应用与数据、图片缓存、聊天缓存、更新文件、临时缓存"}){
         values.forEach{(bytes,color)->
             val fraction=if(stats?.total==null||stats.total==0L)0f else bytes.toFloat()/stats.total
             val animated by animateFloatAsState(fraction,if(LocalMotion.current)tween(350) else snap(),label="storage-category")

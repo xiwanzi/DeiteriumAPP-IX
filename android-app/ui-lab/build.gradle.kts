@@ -12,8 +12,8 @@ android {
         applicationId = "com.deuterium.app.uilab"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22100
-        versionName = "2.0.21"
+        versionCode = 22200
+        versionName = "2.0.22"
         testInstrumentationRunner = providers.gradleProperty("deuteriumTestRunner").orElse("com.deuterium.app.uilab.LiveBackendInstrumentation").get()
         val apiBase = providers.gradleProperty("deuteriumApiBase").orElse("https://47.103.99.34").get()
         require(apiBase.matches(Regex("https?://[A-Za-z0-9.:-]+"))) { "deuteriumApiBase must be an HTTP(S) origin" }
@@ -21,6 +21,13 @@ android {
     }
     buildFeatures { compose = true; buildConfig = true }
     buildTypes {
+        create("chatMediaQa") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".chatmediaqa"
+            versionNameSuffix = "-chat-media-candidate"
+            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:1\"")
+            matchingFallbacks += listOf("debug")
+        }
         create("shopDemo") {
             initWith(getByName("debug"))
             isDebuggable = false
@@ -74,6 +81,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("com.github.bumptech.glide:gifdecoder:4.16.0")
     implementation("io.noties.markwon:core:4.6.2")
     implementation("io.noties.markwon:ext-strikethrough:4.6.2")
     implementation("io.noties.markwon:ext-tables:4.6.2")

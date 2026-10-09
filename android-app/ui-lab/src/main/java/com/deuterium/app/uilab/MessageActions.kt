@@ -42,15 +42,16 @@ fun ReplyPreview(reply:ChatReply,onCancel:()->Unit) {
 }
 
 @Composable
-fun MessageActionSheet(line:ChatLine,onClose:()->Unit,onForward:(()->Unit)?=null,onReply:()->Unit) {
+fun MessageActionSheet(line:ChatLine,onClose:()->Unit,onForward:(()->Unit)?=null,onCollect:(()->Unit)?=null,onReply:()->Unit) {
     val clipboard=LocalClipboardManager.current;val context=LocalContext.current
     IosSheet(onClose){Column(Modifier.fillMaxWidth().padding(22.dp)){
         Text(line.name,style=MaterialTheme.typography.titleMedium)
         Text(line.text,Modifier.padding(top=9.dp,bottom=20.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=4,overflow=TextOverflow.Ellipsis)
         SettingsGroup{
-            SettingsRow("复制",Icons.Outlined.ContentCopy,onClick={clipboard.setText(AnnotatedString(line.text));onClose();android.widget.Toast.makeText(context,"已复制消息",android.widget.Toast.LENGTH_SHORT).show()})
-            SettingsDivider();SettingsRow("回复",Icons.Outlined.Reply,onClick={onClose();onReply()})
+            if(line.media==null){SettingsRow("复制",Icons.Outlined.ContentCopy,onClick={clipboard.setText(AnnotatedString(line.text));onClose();android.widget.Toast.makeText(context,"已复制消息",android.widget.Toast.LENGTH_SHORT).show()});SettingsDivider()}
+            SettingsRow("回复",Icons.Outlined.Reply,onClick={onClose();onReply()})
             if(onForward!=null){SettingsDivider();SettingsRow("转发",Icons.Outlined.Forward,onClick={onClose();onForward()})}
+            if(onCollect!=null){SettingsDivider();SettingsRow("添加到贴纸",Icons.Outlined.AddPhotoAlternate,onClick={onClose();onCollect()})}
         }
         PlainButton(onClose,Modifier.fillMaxWidth().padding(top=8.dp)){Text("取消")}
     }}

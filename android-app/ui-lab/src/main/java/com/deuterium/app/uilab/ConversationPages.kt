@@ -56,6 +56,7 @@ fun PlayerAvatar(name: String, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer: (String) -> Unit) {
+    var mediaViewer by remember{mutableStateOf<ChatViewerRequest?>(null)}
     val motion = LocalMotion.current
     val list = rememberLazyListState()
     val clipboard = LocalClipboardManager.current
@@ -94,6 +95,7 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
             LazyColumn(state = list, modifier = Modifier.fillMaxSize(), reverseLayout = true,
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset + 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
                 if(state.chatReplyPending) item(key = "typing") { TypingStatus("正在发送…") }
+                state.chatMedia?.let{service->items(service.pending.filter{!it.importing&&state.chat.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}}
                 items(state.chat.asReversed(), key = { it.id }, contentType = { "message" }) { line ->
                     Row(Modifier.fillMaxWidth().then(if(motion) Modifier.animateItem() else Modifier), horizontalArrangement = if(line.mine) Arrangement.End else Arrangement.Start) {
                         if(!line.mine) {
@@ -109,6 +111,10 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                                 if(line.name in state.followed) Icon(Icons.Outlined.Star, "特别关心", Modifier.padding(start = 4.dp, bottom = 5.dp).size(13.dp), tint = MaterialTheme.colorScheme.primary)
                             }
                             val shape = RoundedCornerShape(topStart = 19.dp, topEnd = 19.dp, bottomStart = if(line.mine)19.dp else 6.dp, bottomEnd = if(line.mine)6.dp else 19.dp)
+                            if(line.media!=null&&state.chatMedia!=null){
+                                line.reply?.let{QuotedMessage(it,false,Modifier.padding(bottom=7.dp))}
+                                ChatMediaTile(state.chatMedia,line.media,line.remoteId,playRequested=!list.isScrollInProgress,onOpen={mediaViewer=it},onLong={selectedMessage=line})
+                            }else{
                             Surface(shape = shape, color = if(line.mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                                 contentColor = if(line.mine) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.clip(shape).combinedClickable(onClick = {}, onLongClick = {
@@ -122,6 +128,7 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                                     line.reply?.let{QuotedMessage(it,line.mine,Modifier.padding(bottom=7.dp))}
                                     Text(annotated,style=MaterialTheme.typography.bodyLarge.copy(fontSize=16.sp,lineHeight=23.sp))
                                 }
+                            }
                             }
                             if(line.mine&&line.id==state.chat.lastOrNull{it.mine}?.id)Text("已发送", Modifier.padding(horizontal = 3.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -152,9 +159,11 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
             }
         }
         if(copied) Text("已复制消息", Modifier.padding(horizontal = 24.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
-        MessageComposer(state.chatDraft,{if(it.text.length<=256)state.chatDraft=it},state::sendChat,"发消息，输入 @ 提及玩家",focus,state.chatReplyTo,{state.chatReplyTo=null})
+        if(state.chatMedia!=null)ChatMediaComposer(state,focus){mediaViewer=it}
+        else MessageComposer(state.chatDraft,{if(it.text.length<=256)state.chatDraft=it},state::sendChat,"发消息，输入 @ 提及玩家",focus,state.chatReplyTo,{state.chatReplyTo=null})
     }
-    selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward={forwarding=line}){state.chatReplyTo=ChatReply(line.id,if(line.mine)state.userName else line.name,line.text,line.remoteId);scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
+    selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward=if(line.media==null)({forwarding=line})else null,onCollect=if(line.media!=null)({scope.launch{runCatching{state.chatMedia?.collect(line.media,line.remoteId)}.onFailure{state.storageMessage=it.message}}})else null){state.chatReplyTo=ChatReply(line.id,if(line.mine)state.userName else line.name,line.text,line.remoteId);scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
+    mediaViewer?.let{request->state.chatMedia?.let{ChatMediaViewer(it,request){mediaViewer=null}}}
     forwarding?.let{ForwardMessageSheet(state,it,null){forwarding=null}}
     player?.let { selected -> PlayerDetails(selected, state, { mention(selected.name) }, { player = null; onTransfer(selected.name) }, { player = null }) }
 }

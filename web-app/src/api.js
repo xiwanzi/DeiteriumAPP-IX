@@ -44,11 +44,12 @@ export class DeuteriumClient {
   }
   async request(
     path,
-    { method = "GET", body, signal, sessionRequired = true, idempotencyKey, ysmUpload } = {},
+    { method = "GET", body, signal, sessionRequired = true, idempotencyKey, ysmUpload, expectedPlayerRef } = {},
   ) {
     if (!path.startsWith("/api/v1/") || path.includes("://"))
       throw new ApiError("只允许本站 API 请求");
     const headers = { Accept: "application/json" };
+    if (expectedPlayerRef) headers["X-Deuterium-Actor"] = expectedPlayerRef;
     if (idempotencyKey) {
       if (!/^[A-Za-z0-9_.:-]{1,128}$/.test(idempotencyKey)) throw new ApiError("请求标识不正确。");
       headers["Idempotency-Key"] = idempotencyKey;
@@ -102,7 +103,7 @@ export class DeuteriumClient {
       const err = value.error || {};
       if (err.code === "GAME_VERIFICATION_REQUIRED") this.onVerificationRequired();
       if (response.status === 401 && sessionRequired) {
-        this.#csrf = "";
+        this.clear();
         this.onUnauthorized();
       }
       throw new ApiError(
@@ -124,12 +125,14 @@ export class DeuteriumClient {
       sessionRequired: false,
     });
     this.#csrf = r.data.csrfToken;
+    if (this.chatMediaSession?.user.playerRef !== r.data.user?.playerRef) this.chatMediaSession?.stop();
     this.onSession(r.data);
     return r.data;
   }
   async restore() {
     const r = await this.request("/api/v1/web/session");
     this.#csrf = r.data.csrfToken;
+    if (this.chatMediaSession?.user.playerRef !== r.data.user?.playerRef) this.chatMediaSession?.stop();
     this.onSession(r.data);
     return r.data;
   }
@@ -138,10 +141,12 @@ export class DeuteriumClient {
       method: "DELETE",
     });
     this.#csrf = "";
+    this.chatMediaSession?.stop(); this.chatMediaSession = null;
     return result;
   }
   clear() {
     this.#csrf = "";
+    this.chatMediaSession?.stop(); this.chatMediaSession = null;
   }
   history(before, signal) {
     return this.request(
@@ -220,6 +225,7 @@ export function normalizeMessage(message, currentUser) {
     id: message.messageId,
     channel: message.conversationId || "public",
     text: message.content,
+	media: message.media || null,
     sender: message.sender?.playerRef,
     senderName: message.sender?.gameId || "玩家",
     senderProfile: message.sender,

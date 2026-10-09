@@ -19,6 +19,7 @@ type Player struct {
 }
 
 type ChatMessage struct {
+	Media               *ChatMedia   `json:"media,omitempty"`
 	ID                  string       `json:"messageId"`
 	Sender              Player       `json:"sender"`
 	Content             string       `json:"content"`
@@ -156,18 +157,23 @@ func (s *Store) PublishAppChat(ctx context.Context, u User, clientID, content st
 	return
 }
 
-const chatColumns = "m.sequence_id,m.message_id,m.sender_uuid,m.sender_name,m.sender_ref,m.registered,m.content,m.kind,m.sent_at,m.client_message_id,p.reply_json,p.mentioned_refs_json"
+const chatColumns = "m.sequence_id,m.message_id,m.sender_uuid,m.sender_name,m.sender_ref,m.registered,m.content,m.kind,m.sent_at,m.client_message_id,p.reply_json,p.mentioned_refs_json,p.media_json"
 
 func scanMessages(rows *sql.Rows) ([]ChatMessage, error) {
 	defer rows.Close()
 	messages := []ChatMessage{}
 	for rows.Next() {
 		var m ChatMessage
-		var reply, mentions sql.NullString
-		if err := rows.Scan(&m.Sequence, &m.ID, &m.ServerUUID, &m.Sender.GameID, &m.Sender.PlayerRef, &m.Sender.Registered, &m.Content, &m.Kind, &m.SentAt, &m.ClientMessageID, &reply, &mentions); err != nil {
+		var reply, mentions, media sql.NullString
+		if err := rows.Scan(&m.Sequence, &m.ID, &m.ServerUUID, &m.Sender.GameID, &m.Sender.PlayerRef, &m.Sender.Registered, &m.Content, &m.Kind, &m.SentAt, &m.ClientMessageID, &reply, &mentions, &media); err != nil {
 			return nil, err
 		}
 		m.Sender.Source = "game_id"
+		if media.Valid {
+			if err := json.Unmarshal([]byte(media.String), &m.Media); err != nil {
+				return nil, err
+			}
+		}
 		if reply.Valid {
 			if err := json.Unmarshal([]byte(reply.String), &m.Reply); err != nil {
 				return nil, err
@@ -188,11 +194,11 @@ func (s *Store) Messages(ctx context.Context, cursor int64, after bool, limit in
 	var rows *sql.Rows
 	var err error
 	if after {
-		rows, err = s.DB.QueryContext(ctx, q+" WHERE m.sequence_id>? ORDER BY m.sequence_id LIMIT ?", cursor, limit)
+		rows, err = s.DB.QueryContext(ctx, q+" WHERE m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) AND m.sequence_id>? ORDER BY m.sequence_id LIMIT ?", cursor, limit)
 	} else if cursor > 0 {
-		rows, err = s.DB.QueryContext(ctx, q+" WHERE m.sequence_id<? ORDER BY m.sequence_id DESC LIMIT ?", cursor, limit)
+		rows, err = s.DB.QueryContext(ctx, q+" WHERE m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) AND m.sequence_id<? ORDER BY m.sequence_id DESC LIMIT ?", cursor, limit)
 	} else {
-		rows, err = s.DB.QueryContext(ctx, q+" ORDER BY m.sequence_id DESC LIMIT ?", limit)
+		rows, err = s.DB.QueryContext(ctx, q+" WHERE m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) ORDER BY m.sequence_id DESC LIMIT ?", limit)
 	}
 	if err != nil {
 		return nil, err

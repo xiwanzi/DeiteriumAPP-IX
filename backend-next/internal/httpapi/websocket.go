@@ -303,16 +303,23 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte) map[string]any {
 	var in struct {
-		ClientMessageID     string   `json:"clientMessageId"`
-		Content             string   `json:"content"`
-		MentionedPlayerRefs []string `json:"mentionedPlayerRefs"`
-		ReplyToMessageID    string   `json:"replyToMessageId"`
+		Media               *store.ChatMediaSend `json:"media,omitempty"`
+		ClientMessageID     string               `json:"clientMessageId"`
+		Content             string               `json:"content"`
+		MentionedPlayerRefs []string             `json:"mentionedPlayerRefs"`
+		ReplyToMessageID    string               `json:"replyToMessageId"`
 	}
 	failed := func(code, message string) map[string]any {
 		return map[string]any{"clientMessageId": in.ClientMessageID, "status": "failed", "error": map[string]string{"code": code, "message": message}}
 	}
 	if bridge.Decode(payload, &in) != nil || !bridge.ValidMessageID(in.ClientMessageID) {
 		return failed("INVALID_REQUEST", "消息格式不正确。")
+	}
+	if in.Media != nil {
+		if !in.Media.Valid() {
+			return failed("INVALID_REQUEST", "图片信息不正确。")
+		}
+		in.Content = in.Media.Summary()
 	}
 	content, err := bridge.Content(in.Content)
 	if err != nil {
@@ -322,7 +329,7 @@ func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte)
 	if err != nil {
 		return failed("UNAUTHORIZED", "会话已失效。")
 	}
-	id, err := s.Store.ExistingAppChatV2(ctx, v.User.ID, in.ClientMessageID, content, in.ReplyToMessageID, in.MentionedPlayerRefs)
+	id, err := s.Store.ExistingAppChatV2(ctx, v.User.ID, in.ClientMessageID, content, in.ReplyToMessageID, in.MentionedPlayerRefs, in.Media)
 	if err == nil {
 		_ = s.Store.PublicSocialNotificationsV2(ctx, "app:"+v.User.ID, in.ClientMessageID)
 		return s.acceptedChatV203(ctx, in.ClientMessageID, id)
@@ -346,8 +353,14 @@ func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte)
 		}
 		return failed("SERVICE_UNAVAILABLE", "服务暂不可用。")
 	}
-	id, _, err = s.Store.PublishAppChatV2(ctx, v.User, in.ClientMessageID, content, in.ReplyToMessageID, in.MentionedPlayerRefs, nodes)
+	id, _, err = s.Store.PublishAppChatV2(ctx, v.User, in.ClientMessageID, content, in.ReplyToMessageID, in.MentionedPlayerRefs, nodes, in.Media)
 	if err != nil {
+		if errors.Is(err, store.ErrMediaExpired) {
+			return failed("MEDIA_EXPIRED", "图片已过期，请重新选择。")
+		}
+		if errors.Is(err, store.ErrAssetForbidden) {
+			return failed("NOT_FOUND", "图片不存在或不可用。")
+		}
 		if errors.Is(err, store.ErrConflict) {
 			return failed("IDEMPOTENCY_CONFLICT", "相同消息标识对应不同内容。")
 		}

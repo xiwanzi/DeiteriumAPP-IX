@@ -57,10 +57,11 @@ type SocialMessage struct {
 	Sequence        int64        `json:"-"`
 }
 type SocialSendRequest struct {
-	ClientMessageID     string   `json:"clientMessageId"`
-	Content             string   `json:"content"`
-	ReplyToMessageID    string   `json:"replyToMessageId,omitempty"`
-	MentionedPlayerRefs []string `json:"mentionedPlayerRefs,omitempty"`
+	Media               *ChatMediaSend `json:"media,omitempty"`
+	ClientMessageID     string         `json:"clientMessageId"`
+	Content             string         `json:"content"`
+	ReplyToMessageID    string         `json:"replyToMessageId,omitempty"`
+	MentionedPlayerRefs []string       `json:"mentionedPlayerRefs,omitempty"`
 }
 type SocialForwardRequest struct {
 	ClientMessageID      string `json:"clientMessageId"`
@@ -480,7 +481,7 @@ type socialQuery interface {
 const socialMessageColumns = `x.sequence_id,x.message_id,x.conversation_id,x.client_message_id,x.content,x.reply_json,x.forwarded_json,x.sent_at,i.player_ref,i.game_id`
 
 func socialMessages(ctx context.Context, q socialQuery, userID, conversation string, before int64, limit int) ([]SocialMessage, error) {
-	rows, err := q.QueryContext(ctx, `SELECT `+socialMessageColumns+` FROM social_messages_v2 x JOIN identities i ON i.id=x.sender_id JOIN social_members_v2 m ON m.conversation_id=x.conversation_id AND m.user_id=? WHERE x.conversation_id=? AND (?=0 OR x.sequence_id<?) ORDER BY x.sequence_id DESC LIMIT ?`, userID, conversation, before, before, limit)
+	rows, err := q.QueryContext(ctx, `SELECT `+socialMessageColumns+` FROM social_messages_v2 x JOIN identities i ON i.id=x.sender_id JOIN social_members_v2 m ON m.conversation_id=x.conversation_id AND m.user_id=? WHERE x.conversation_id=? AND x.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) AND (?=0 OR x.sequence_id<?) ORDER BY x.sequence_id DESC LIMIT ?`, userID, conversation, before, before, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -606,6 +607,9 @@ func AddNotificationWithPushV206(ctx context.Context, tx *sql.Tx, userID, eventK
 	return err
 }
 func (s *Store) SendDirectV2(ctx context.Context, u User, conversation string, input SocialSendRequest, forward *SocialForwardRequest) (json.RawMessage, error) {
+	if input.Media != nil {
+		return nil, ErrSocialInvalid
+	}
 	if !ValidSocialID(conversation) || !ValidSocialID(input.ClientMessageID) || len(input.MentionedPlayerRefs) > 20 {
 		return nil, ErrSocialInvalid
 	}
