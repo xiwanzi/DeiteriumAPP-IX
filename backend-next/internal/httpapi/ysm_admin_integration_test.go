@@ -3,6 +3,7 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -17,6 +18,73 @@ import (
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
+
+func TestYSMCloudAdminBinaryUploadAuditAndRevocation(t *testing.T) {
+	f := newSocialFixtureV2(t)
+	csrf := strings.Repeat("c", 43)
+	payload := bytes.Repeat([]byte{0, 255, 17}, 90000)
+	var uploads atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/config":
+			http.SetCookie(w, &http.Cookie{Name: "dysm_csrf", Value: csrf})
+			json.NewEncoder(w).Encode(map[string]any{"csrfToken": csrf})
+		case "/api/cloud/connection":
+			json.NewEncoder(w).Encode(map[string]any{"csrfToken": csrf, "origin": "https://cloud.example.invalid", "tokenConfigured": true})
+		case "/api/cloud/upload":
+			uploads.Add(1)
+			body, err := io.ReadAll(r.Body)
+			if err != nil || !bytes.Equal(body, payload) || r.ContentLength != int64(len(payload)) {
+				t.Error("binary upload changed")
+			}
+			if r.Header.Get("Authorization") != "" || r.Header.Get("X-CSRF-Token") != csrf || r.Header.Get("Idempotency-Key") != "stable-upload" {
+				t.Error("credential or metadata boundary failed")
+			}
+			w.WriteHeader(201)
+			io.WriteString(w, `{"revision":1}`)
+		case "/api/cloud/models/d9_182faf5bbb8d912fe91251dfb01ee3656afd0e87/archive":
+			io.WriteString(w, `{"ok":true}`)
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer upstream.Close()
+	f.app.ysm = newYSMBridge(config.Config{YSMAdminURL: upstream.URL})
+	ctx := context.Background()
+	if err := f.store.Grant(ctx, f.users["Alice"].ID, "platform.admin"); err != nil {
+		t.Fatal(err)
+	}
+	f.request(t, "Bob", "GET", ysmPrefix+"cloud/connection", nil, 403)
+	data := socialDataV2(f.request(t, "Alice", "GET", ysmPrefix+"cloud/connection", nil, 200))
+	if _, exists := data["csrfToken"]; exists {
+		t.Fatal("upstream csrf exposed")
+	}
+	request, _ := http.NewRequest("POST", f.http.URL+ysmPrefix+"cloud/upload", bytes.NewReader(payload))
+	request.Header.Set("Authorization", "Bearer "+f.tokens["Alice"])
+	request.Header.Set("Content-Type", "application/octet-stream")
+	request.Header.Set("Idempotency-Key", "stable-upload")
+	response, err := f.http.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(response.Body)
+	response.Body.Close()
+	if response.StatusCode != 200 {
+		t.Fatalf("upload: %d %s", response.StatusCode, raw)
+	}
+	var audits int
+	if err := f.store.DB.QueryRow("SELECT COUNT(*) FROM audit_events_next WHERE actor_id=? AND action IN ('ysm.cloud.upload.requested','ysm.cloud.upload.accepted')", f.users["Alice"].ID).Scan(&audits); err != nil || audits != 2 {
+		t.Fatalf("audit: %d %v", audits, err)
+	}
+	f.request(t, "Alice", "POST", ysmPrefix+"cloud/models/d9_182faf5bbb8d912fe91251dfb01ee3656afd0e87/archive", map[string]any{"expectedVersion": 1}, 200)
+	if err := f.store.Revoke(ctx, store.Digest([]byte(f.tokens["Alice"]))); err != nil {
+		t.Fatal(err)
+	}
+	f.request(t, "Alice", "POST", ysmPrefix+"cloud/models/a/archive", map[string]any{"expectedVersion": 1}, 401)
+	if uploads.Load() != 1 {
+		t.Fatal("unexpected extra upload")
+	}
+}
 
 func TestYSMAdminAuthorizationPreviewConfirmAndRevocation(t *testing.T) {
 	f := newSocialFixtureV2(t)
