@@ -149,7 +149,7 @@ class DeuteriumActivity : ComponentActivity() {
                     window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(windowBackground.toArgb()))
                     WindowCompat.getInsetsController(window,window.decorView).apply { isAppearanceLightStatusBars = !dark; isAppearanceLightNavigationBars = !dark }
                 }
-                CompositionLocalProvider(LocalHeaderGlassParameters provides params.header,LocalAppUpdates provides updates,LocalContentColor provides MaterialTheme.colorScheme.onSurface, LocalOverlayGlassEnabled provides overlayGlass,LocalDeviceTilt provides rememberDeviceTilt(tilt && motion && (glass||overlayGlass))) {
+                CompositionLocalProvider(LocalGlassMaterials provides params,LocalHeaderGlassParameters provides params.header,LocalAppUpdates provides updates,LocalContentColor provides MaterialTheme.colorScheme.onSurface, LocalOverlayGlassEnabled provides overlayGlass,LocalDeviceTilt provides rememberDeviceTilt(tilt && motion && (glass||overlayGlass))) {
                     Box(Modifier.fillMaxSize()) {
                     Crossfade(targetState=if(!signedIn)"login" else if(!api.gameVerified)"verify" else "app",animationSpec=tween(if(motion)240 else 0),label="identity-gate"){identityStage ->
                     if(identityStage=="login") AuthPage { name ->

@@ -50,6 +50,7 @@ fun LiquidGlass(
     screenCoordinates:Boolean=false,
     parameters:GlassParameters=LocalGlassParameters.current,
     topCornersOnly:Boolean=false,
+    shadeOpacity:Float?=null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val tilt = LocalDeviceTilt.current
@@ -89,7 +90,7 @@ fun LiquidGlass(
                 }
                 drawRect(wash.copy(alpha = if(!enabled) 1f else parameters.opacity))
                 if(enabled) {
-                    drawRect(if(dark) Color.Black.copy(alpha=.13f) else Color(0xFF292934).copy(alpha=.085f))
+                    drawRect(if(dark) Color.Black.copy(alpha=shadeOpacity ?: .13f) else Color(0xFF292934).copy(alpha=shadeOpacity ?: .085f))
                     val angle = tilt.value
                     drawRect(Brush.radialGradient(listOf(Color.White.copy(alpha = .25f * parameters.highlight), Color.Transparent), center = Offset(size.width*(.25f+angle.x*.55f),size.height*(.2f+angle.y*.6f)), radius = size.width*.8f))
                     drawRect(sheen, alpha = .55f)

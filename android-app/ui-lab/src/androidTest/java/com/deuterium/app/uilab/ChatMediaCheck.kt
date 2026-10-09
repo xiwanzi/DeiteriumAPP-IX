@@ -43,6 +43,17 @@ object ChatMediaCheck {
     fun run(test:Instrumentation,theme:Int,glassCheck:Boolean=false,overlayGlass:Boolean=true){
         val result=Bundle();val context=test.targetContext
         check(context.packageName.endsWith(".chatmediaqa")){"Chat media checks require the isolated QA application"}
+        val materialPrefs=context.getSharedPreferences("qa-chat-materials",0)
+        materialPrefs.edit().clear().putInt("materialVersion",2).putFloat("bottomBar.blur",11f).putFloat("overlay.blur",29f).putFloat("header.blur",9f).commit()
+        val materialStore=GlassSettingsStore(materialPrefs)
+        val legacy=materialStore.load()
+        check(legacy.bottomBar.blur==11f&&legacy.overlay.blur==29f&&legacy.header.blur==9f)
+        val tuned=legacy.copy(chatInputLight=legacy.chatInputLight.copy(blur=27f,opacity=.84f),chatPanelDark=legacy.chatPanelDark.copy(blur=63f))
+        materialStore.save(tuned);check(materialStore.load()==tuned)
+        check(tuned.chatInputDark==legacy.chatInputDark&&tuned.chatPanelLight==legacy.chatPanelLight&&tuned.overlay==legacy.overlay)
+        materialPrefs.edit().putFloat("chatInput.light.blur",Float.NaN).commit()
+        check(materialStore.load().chatInputLight.blur==GlassMaterials().chatInputLight.blur&&materialStore.load().chatPanelDark.blur==63f)
+        result.putString("material_persistence","PASS legacy settings retained; input/panel and light/dark save independently; 52+ dp blur survives reload")
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val server=MockWebServer()
         val objectBytes=ConcurrentHashMap<String,ByteArray>();val manifests=ConcurrentHashMap<String,JSONObject>();val sent=ConcurrentHashMap<String,JSONObject>();val stickers=JSONArray()
         val puts=AtomicInteger();val sends=AtomicInteger();val failOnce=AtomicBoolean(true)
@@ -139,15 +150,18 @@ object ChatMediaCheck {
             }
             runBlocking{withContext(Dispatchers.Main){state.chatMedia!!.refreshStickers()}}
             val previewOpen=mutableStateOf(false)
+            val tunerOpen=mutableStateOf(false)
+            val uiMaterials=mutableStateOf(GlassMaterials())
             val activity=test.startActivitySync(Intent(context,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             test.runOnMainSync{activity.setContent{LabTheme(theme,theme==1,true){
               val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
-              CompositionLocalProvider(LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalOverlayGlassEnabled provides overlayGlass){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
+              CompositionLocalProvider(LocalGlassMaterials provides uiMaterials.value,LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalOverlayGlassEnabled provides overlayGlass){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
                 GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()){
                 Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime)){ChatPage(state,90.dp,{},{})}
                 Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp).background(MaterialTheme.colorScheme.background).statusBarsPadding(),contentAlignment=Alignment.Center){Text("公共聊天",style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurface)}
                 }
                 if(previewOpen.value)ChatAttachmentPreview(Uri.fromFile(source).toString(),false,false,null,{},{},{previewOpen.value=false})
+                if(tunerOpen.value)GlassTuner(uiMaterials.value,{uiMaterials.value=it;materialStore.save(it)},{tunerOpen.value=false})
             }}}}}
             fun find(node:AccessibilityNodeInfo?,label:String):AccessibilityNodeInfo?{if(node==null)return null;if(node.text?.toString()==label||node.contentDescription?.toString()==label)return node;repeat(node.childCount){find(node.getChild(it),label)?.let{return it}};return null}
             fun click(label:String){waitFor("missing $label"){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();find(test.uiAutomation.rootInActiveWindow,label)!=null};var node=find(test.uiAutomation.rootInActiveWindow,label)!!;while(!node.isClickable)node=node.parent;check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK));test.waitForIdleSync();Thread.sleep(250)}
@@ -234,6 +248,23 @@ object ChatMediaCheck {
                 test.uiAutomation.takeScreenshot()!!.let{frame->check(panelBounds.left==0&&panelBounds.right==frame.width&&panelBounds.bottom==frame.height){"Panel must reach both sides and the physical bottom: $panelBounds / ${frame.width}x${frame.height}"};frame.recycle()}
                 result.putString("panel_edges","PASS top corners only; both sides and gesture area reach screen edges")
                 result.putString("glass_backdrop","PASS actual message image under input/panel: $behind / $dockInput")
+                test.runOnMainSync{tunerOpen.value=true}
+                click("输入栏")
+                fun range(node:AccessibilityNodeInfo?):AccessibilityNodeInfo?{if(node==null)return null;if(node.contentDescription?.toString()=="模糊半径"&&node.rangeInfo!=null)return node;repeat(node.childCount){range(node.getChild(it))?.let{return it}};return null}
+                fun setBlur(value:Float){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();val slider=range(test.uiAutomation.rootInActiveWindow)!!;check(slider.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS.id,Bundle().apply{putFloat(AccessibilityNodeInfo.ACTION_ARGUMENT_PROGRESS_VALUE,value)}));test.waitForIdleSync();Thread.sleep(150)}
+                setBlur(30f)
+                check((if(theme==2)uiMaterials.value.chatInputDark else uiMaterials.value.chatInputLight).blur==30f)
+                check(uiMaterials.value.chatPanelLight==GlassMaterials().chatPanelLight&&uiMaterials.value.chatPanelDark==GlassMaterials().chatPanelDark)
+                click("表情面板");setBlur(60f)
+                check((if(theme==2)uiMaterials.value.chatPanelDark else uiMaterials.value.chatPanelLight).blur==60f)
+                check((if(theme==2)uiMaterials.value.chatInputDark else uiMaterials.value.chatInputLight).blur==30f)
+                check(materialStore.load()==uiMaterials.value)
+                click("还原")
+                check((if(theme==2)uiMaterials.value.chatPanelDark else uiMaterials.value.chatPanelLight).blur==52f)
+                check((if(theme==2)uiMaterials.value.chatInputDark else uiMaterials.value.chatInputLight).blur==30f)
+                shot("material-tuner-$theme")
+                click("完成");waitFor("tuner closed"){!tunerOpen.value}
+                result.putString("material_controls","PASS four areas; input/panel sliders and reset change only selected area and theme")
             }
             result.putString("ui","PASS public images/GIF + emoji panel + full sticker library")
             result.putString("status","PASS");test.finish(-1,result)

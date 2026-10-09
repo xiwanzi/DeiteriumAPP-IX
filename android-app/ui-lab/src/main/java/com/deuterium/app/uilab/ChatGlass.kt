@@ -10,7 +10,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -20,6 +20,17 @@ import androidx.compose.ui.unit.dp
 
 private class ChatBackdrop(val layer:GraphicsLayer){var origin by mutableStateOf(Offset.Zero)}
 private val LocalChatBackdrop=staticCompositionLocalOf<ChatBackdrop?>{null}
+
+internal data class ChatGlassStyle(val parameters:GlassParameters,val tint:Color,val shade:Float)
+
+internal fun chatGlassStyle(materials:GlassMaterials,panel:Boolean,dark:Boolean):ChatGlassStyle {
+    val parameters=if(panel){if(dark)materials.chatPanelDark else materials.chatPanelLight}
+        else if(dark)materials.chatInputDark else materials.chatInputLight
+    return ChatGlassStyle(parameters,
+        if(panel){if(dark)Color(0xFF1D2C3D) else Color(0xFFF8FAFC)}
+        else if(dark)Color(0xFF1C2A3B) else Color(0xFFF7F9FC),
+        if(dark).045f else if(panel).015f else .02f)
+}
 
 /** Measure the dock first, then draw messages behind it with the same bottom content inset.
  * Only the message layer is recorded; sampling a layer that also contains glass is cyclic. */
@@ -60,17 +71,10 @@ internal fun ChatGlassLayout(body:@Composable (Dp)->Unit,composer:@Composable ()
 internal fun ChatGlassSurface(modifier:Modifier=Modifier,panel:Boolean=false,content:@Composable BoxScope.()->Unit){
     val colors=MaterialTheme.colorScheme
     val dark=colors.background.red<.5f
-    val base=LocalGlassParameters.current
+    val style=chatGlassStyle(LocalGlassMaterials.current,panel,dark)
     val backdrop=LocalChatBackdrop.current
-    // The two roles follow the user's material controls, with distinct reading density.
-    val opacity=(base.opacity*(if(panel)if(dark)1.10f else 1.18f else if(dark).86f else .90f)).coerceIn(0f,.94f)
-    val material=base.copy(
-        blur=(base.blur*(if(panel)1.25f else .38f)).coerceIn(0f,96f),
-        opacity=if(Build.VERSION.SDK_INT>=31)opacity else maxOf(opacity,.92f),
-        refraction=base.refraction*(if(panel).45f else .65f),
-        highlight=base.highlight*(if(panel).65f else .85f)
-    )
+    val material=if(Build.VERSION.SDK_INT>=31)style.parameters else style.parameters.copy(opacity=maxOf(style.parameters.opacity,.94f))
     LiquidGlass(modifier,radius=if(panel)28.dp else 26.dp,
         backdrop=backdrop?.layer ?: LocalGlassBackdrop.current,backdropOrigin=backdrop?.origin ?: Offset.Zero,
-        tint=lerp(colors.surface,colors.primary,if(dark).08f else .015f),parameters=material,topCornersOnly=panel,content=content)
+        tint=style.tint,parameters=material,shadeOpacity=style.shade,topCornersOnly=panel,content=content)
 }
