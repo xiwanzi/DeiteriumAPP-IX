@@ -84,6 +84,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerDesktopLauncher(mux)
 	s.registerAdmission(mux)
 	s.registerYSM(mux)
+	mux.HandleFunc("GET /internal/v1/ysm/identities/{uuid}", s.ysmIdentity)
 	mux.HandleFunc("GET /api/v1/admin/runtime/capacity", s.runtimeCapacity)
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) { success(w, r, map[string]string{"status": "ok"}) })
 	mux.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {

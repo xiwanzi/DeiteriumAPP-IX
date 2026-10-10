@@ -31,6 +31,7 @@ type Node struct {
 }
 
 type Config struct {
+	YSMIdentityTokenSHA256      string      `json:"ysmIdentityTokenSha256,omitempty"`
 	YSMAdminURL                 string      `json:"ysmAdminUrl,omitempty"`
 	YSMAdminOrigin              string      `json:"ysmAdminOrigin,omitempty"`
 	Concurrency                 Concurrency `json:"concurrency,omitempty"`
@@ -74,6 +75,12 @@ func Load(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
+	if c.YSMIdentityTokenSHA256 != "" {
+		v, err := hex.DecodeString(c.YSMIdentityTokenSHA256)
+		if err != nil || len(v) != 32 {
+			return errors.New("ysmIdentityTokenSha256 must be a SHA-256 digest")
+		}
+	}
 	if c.DMEventToken != "" && (len(c.DMEventToken) < 32 || len(c.DMEventToken) > 256 || strings.ContainsAny(c.DMEventToken, " \r\n\t")) {
 		return errors.New("DEUTERIUM_DM_EVENT_TOKEN must contain 32-256 non-whitespace bytes")
 	}
