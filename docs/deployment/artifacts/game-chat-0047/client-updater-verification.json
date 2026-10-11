@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "from": "0.0.45-dev",
+  "version": "0.0.47-dev",
+  "updated": [
+    "mods/deuterium-chat-neoforge-1.21.1-0.1.3.jar",
+    "config/deuterium-opening.properties"
+  ],
+  "removed": [
+    "mods/deuterium-chat-neoforge-1.21.1-0.1.2.jar",
+    "mods/deuterium-chat-neoforge-1.21.1-0.1.1.jar"
+  ],
+  "personal_files_and_early_provider_preserved": true,
+  "second_update_noop": true
+}

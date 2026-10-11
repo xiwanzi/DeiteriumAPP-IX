@@ -1,0 +1,22 @@
+{
+  "source": "50f918e",
+  "merge": "2ee1957b054dc189b22d703d07b09245ab3a45a8",
+  "pr": 101,
+  "backup": "/var/backups/deuterium/game-chat-0.0.46-50f918e",
+  "current": "/opt/deuterium/releases/game-chat-avatar-50f918e",
+  "sha256": "7c24bd37127c63523aada1499c2577f143730f928dd431d6f0491f7114c38f43",
+  "ready": true,
+  "configurationUnchanged": true,
+  "existingRecordIdsPreserved": true,
+  "recordCounts": {
+    "identities": 61,
+    "commerce_resources_v2": 52,
+    "catalog_records_v2": 9328,
+    "asset_uploads_v2": 3077,
+    "support_tickets": 12
+  },
+  "migrations": [
+    "039_game_chat_avatars.sql"
+  ],
+  "deployedAt": "2026-10-11T23:19:57.516071+08:00"
+}
