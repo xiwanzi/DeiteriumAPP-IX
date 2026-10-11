@@ -27,8 +27,9 @@ func (r *Runtime) Player(name, uuid string) (p store.CorePlayerIdentity, err err
 	for node, raw := range r.presence {
 		var snapshot struct {
 			Players []struct {
-				PlayerUUID string `json:"playerUuid"`
-				GameID     string `json:"gameId"`
+				SessionEpoch string `json:"sessionEpoch"`
+				PlayerUUID   string `json:"playerUuid"`
+				GameID       string `json:"gameId"`
 			} `json:"players"`
 		}
 		if json.Unmarshal(raw, &snapshot) != nil {
@@ -39,7 +40,7 @@ func (r *Runtime) Player(name, uuid string) (p store.CorePlayerIdentity, err err
 				if p.PlayerUUID != "" {
 					return store.CorePlayerIdentity{}, errors.New("ambiguous player presence")
 				}
-				p = store.CorePlayerIdentity{PlayerUUID: v.PlayerUUID, GameID: v.GameID, ServerID: node, Online: true}
+				p = store.CorePlayerIdentity{PlayerUUID: v.PlayerUUID, GameID: v.GameID, ServerID: node, Online: true, SessionEpoch: v.SessionEpoch}
 			}
 		}
 	}

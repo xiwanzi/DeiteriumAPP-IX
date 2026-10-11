@@ -127,11 +127,12 @@ func (s *Store) RetryCore(ctx context.Context, id string) error {
 }
 
 type CorePlayerIdentity struct {
-	PlayerUUID string `json:"playerUuid"`
-	GameID     string `json:"gameId"`
-	ServerID   string `json:"serverId"`
-	Online     bool   `json:"online"`
-	LastSeen   int64  `json:"lastSeen"`
+	SessionEpoch string `json:"sessionEpoch"`
+	PlayerUUID   string `json:"playerUuid"`
+	GameID       string `json:"gameId"`
+	ServerID     string `json:"serverId"`
+	Online       bool   `json:"online"`
+	LastSeen     int64  `json:"lastSeen"`
 }
 
 func (s *Store) RememberCorePlayer(ctx context.Context, p CorePlayerIdentity) (string, error) {

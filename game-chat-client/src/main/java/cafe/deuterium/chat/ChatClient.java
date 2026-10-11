@@ -40,6 +40,7 @@ final class ChatClient {
         try {
             JsonObject p=JsonParser.parseString(json).getAsJsonObject();
             switch(ChatMessage.str(p,"type")) {
+                case "player-title" -> ChatTitles.receive(p);
                 case "session" -> {api=new ChatApi(p);node=api.server;ChatStore.INSTANCE.server=node;ChatStore.INSTANCE.selfRef=api.owner;ChatStore.INSTANCE.status="";nextPoll=0;media.refreshStickers();loadPins();}
                 case "media-result" -> {var future=mediaRequests.remove(ChatMessage.str(p,"requestId"));if(future!=null){if(p.has("error"))future.completeExceptionally(new java.io.IOException(ChatMessage.str(p,"error")));else future.complete(p.getAsJsonObject("message"));}}
                 case "message" -> {
@@ -136,5 +137,5 @@ final class ChatClient {
         }
         return mc.screen!=null&&mc.screen.handleComponentClicked(style);
     }
-    void reset(){readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
+    void reset(){ChatTitles.reset();readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
 }
