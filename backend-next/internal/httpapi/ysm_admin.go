@@ -13,6 +13,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +30,42 @@ var ysmRoutes = map[string]string{
 	"tasks": "GET", "diff": "GET", "audit": "GET", "migration": "GET", "gc": "GET", "diagnostics.zip": "GET",
 	"operations/preview": "POST", "operations/confirm": "POST", "models/stage": "POST",
 	"models/delete/preview": "POST", "models/confirm": "POST", "config/preview": "POST", "config/confirm": "POST",
+}
+
+var ysmCloudModelRoute = regexp.MustCompile(`^cloud/models/[A-Za-z0-9._-]+/(versions|archive|restore|rollback)$`)
+var ysmCloudNPCRoute = regexp.MustCompile(`^cloud/npcs/[A-Za-z0-9._-]+/[a-fA-F0-9-]{36}$`)
+
+func ysmAuditAction(path string) string {
+	if match := ysmCloudModelRoute.FindStringSubmatch(path); match != nil {
+		return "ysm.cloud.models." + match[1]
+	}
+	if ysmCloudNPCRoute.MatchString(path) {
+		return "ysm.cloud.npcs.update"
+	}
+	return "ysm." + strings.ReplaceAll(path, "/", ".")
+}
+
+func ysmRouteMethod(path, requested string) (string, bool) {
+	if path == "cloud/connection" {
+		return requested, requested == "GET" || requested == "POST"
+	}
+	switch path {
+	case "cloud/overview", "cloud/models", "cloud/releases", "cloud/players", "cloud/npcs", "cloud/activity":
+		return "GET", true
+	case "cloud/upload":
+		return "POST", true
+	}
+	if match := ysmCloudModelRoute.FindStringSubmatch(path); match != nil {
+		if match[1] == "versions" {
+			return "GET", true
+		}
+		return "POST", true
+	}
+	if ysmCloudNPCRoute.MatchString(path) {
+		return "POST", true
+	}
+	method, exists := ysmRoutes[path]
+	return method, exists
 }
 
 type ysmBridge struct {
@@ -81,7 +119,7 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, ysmPrefix)
-	method, exists := ysmRoutes[path]
+	method, exists := ysmRouteMethod(path, r.Method)
 	if !exists || r.URL.RawQuery != "" || r.URL.RawPath != "" {
 		failure(w, r, 404, "NOT_FOUND", "YSM 接口不存在。")
 		return
@@ -103,6 +141,7 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	confirm := strings.HasSuffix(path, "/confirm")
+	cloudMutation := strings.HasPrefix(path, "cloud/") && r.Method == "POST"
 	ctx := r.Context()
 	timeout := 15 * time.Second
 	if r.Method == "POST" {
@@ -120,6 +159,13 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 		limit := int64(1 << 20)
 		if path == "models/stage" {
 			limit = ysmUploadLimit
+		}
+		if path == "cloud/upload" {
+			limit = 128 << 20
+			if r.ContentLength <= 0 {
+				failure(w, r, 411, "LENGTH_REQUIRED", "上传文件必须具有明确大小。")
+				return
+			}
 		}
 		if r.ContentLength > limit {
 			failure(w, r, 413, "YSM_UPLOAD_TOO_LARGE", "文件超过上传大小限制。")
@@ -146,7 +192,7 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 			raw, _ := json.Marshal(map[string]string{"confirmationToken": ticket.Token})
 			body = bytes.NewReader(raw)
 			// Persist who requested a change before allowing the upstream mutation.
-			_, err = s.Store.DB.ExecContext(ctx, "INSERT INTO audit_events_next(actor_id,action,resource_id,created_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", session.User.ID, "ysm."+strings.ReplaceAll(path, "/", ".")+".requested", requestID(r))
+			_, err = s.Store.DB.ExecContext(ctx, "INSERT INTO audit_events_next(actor_id,action,resource_id,created_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", session.User.ID, ysmAuditAction(path)+".requested", requestID(r))
 			if err != nil {
 				failError(w, r, err)
 				return
@@ -159,15 +205,26 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 			}
 			body = r.Body
 		}
+		if cloudMutation {
+			_, err = s.Store.DB.ExecContext(ctx, "INSERT INTO audit_events_next(actor_id,action,resource_id,created_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", session.User.ID, ysmAuditAction(path)+".requested", requestID(r)+":"+path)
+			if err != nil {
+				failError(w, r, err)
+				return
+			}
+		}
 	}
-	response, err := b.request(ctx, path, r.Method, csrf, body, r.Header)
+	headers := r.Header.Clone()
+	if path == "cloud/upload" {
+		headers.Set("Content-Length", strconv.FormatInt(r.ContentLength, 10))
+	}
+	response, err := b.request(ctx, path, r.Method, csrf, body, headers)
 	if err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
 			failure(w, r, 413, "YSM_UPLOAD_TOO_LARGE", "文件超过上传大小限制。")
 			return
 		}
-		if confirm {
+		if confirm || cloudMutation {
 			failure(w, r, 504, "YSM_RESULT_UNKNOWN", "等待结果中断，请先查看任务、配置版本及审计记录，不要重复提交。")
 		} else {
 			failure(w, r, 502, "YSM_UNAVAILABLE", "暂时无法连接 YSM 管理服务，请稍后重试。")
@@ -197,7 +254,19 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 		case 404:
 			message = "YSM 模型或接口不存在，请刷新后重试。"
 		}
-		failure(w, r, status, "YSM_REQUEST_REJECTED", message)
+		code := "YSM_REQUEST_REJECTED"
+		if strings.HasPrefix(path, "cloud/") {
+			var cloud struct {
+				Code string `json:"code"`
+			}
+			if json.Unmarshal(raw, &cloud) == nil {
+				switch cloud.Code {
+				case "REVISION_CONFLICT", "ASSET_HASH_MISMATCH", "ASSET_TOO_LARGE", "STORAGE_UNAVAILABLE", "INVALID_METADATA", "IDEMPOTENCY_CONFLICT":
+					code = cloud.Code
+				}
+			}
+		}
+		failure(w, r, status, code, message)
 		return
 	}
 	if path == "diagnostics.zip" {
@@ -230,7 +299,7 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 		}
 		raw, _ = json.Marshal(object)
 	}
-	if confirm {
+	if confirm || cloudMutation {
 		// Linking the returned task/revision to the request makes the central audit useful
 		// while Velocity's original audit remains authoritative for final task outcomes.
 		resource := requestID(r)
@@ -239,7 +308,7 @@ func (s *Server) ysmAdmin(w http.ResponseWriter, r *http.Request) {
 				resource += ":" + string(v)
 			}
 		}
-		_, auditErr := s.Store.DB.ExecContext(ctx, "INSERT INTO audit_events_next(actor_id,action,resource_id,created_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", session.User.ID, "ysm."+strings.ReplaceAll(path, "/", ".")+".accepted", resource)
+		_, auditErr := s.Store.DB.ExecContext(ctx, "INSERT INTO audit_events_next(actor_id,action,resource_id,created_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", session.User.ID, ysmAuditAction(path)+".accepted", resource)
 		if auditErr != nil {
 			w.Header().Set("X-YSM-Audit-Status", "requested-only")
 		}
@@ -263,6 +332,16 @@ func (b *ysmBridge) request(ctx context.Context, path, method, csrf string, body
 		req.AddCookie(&http.Cookie{Name: "dysm_csrf", Value: csrf})
 		if path == "models/stage" {
 			for _, key := range []string{"Content-Type", "X-Model-Id", "X-Model-Id-Encoding", "X-Model-Operation", "X-Expected-Revision"} {
+				req.Header.Set(key, headers.Get(key))
+			}
+		}
+		if path == "cloud/upload" {
+			length, err := strconv.ParseInt(headers.Get("Content-Length"), 10, 64)
+			if err != nil || length < 1 || length > 128<<20 {
+				return nil, errors.New("invalid Cloud upload length")
+			}
+			req.ContentLength = length
+			for _, key := range []string{"Content-Type", "Idempotency-Key", "X-Asset-Id", "X-Asset-Name", "X-Asset-Format", "X-Asset-Sha256", "X-Asset-Visibility", "X-Asset-Metadata-Encoding", "X-Asset-Base-Revision", "X-Deuterium-Model-Metadata"} {
 				req.Header.Set(key, headers.Get(key))
 			}
 		}
