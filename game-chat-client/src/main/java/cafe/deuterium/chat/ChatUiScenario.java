@@ -39,6 +39,8 @@ public final class ChatUiScenario implements UIScenario {
             ChatStore.INSTANCE.add(new ChatMessage("private_preview_b","","L1ghT_","private","","fixture-b",Component.empty(),fixture.media.get("cloud"),Instant.now(),true,false,""));
         }).frames(8).screenshot("background").openScreen("full chat",ctx->new ChatScreenFull()).awaitScreen(ChatScreenFull.class)
           .waitUntil("media decoded and uploaded",ctx->ChatClient.INSTANCE.media.ready("cloud")&&ChatClient.INSTANCE.media.ready("sticker")&&ChatClient.INSTANCE.media.ready("motion"))
+          .waitUntil("offline avatar loaded from server",ctx->ChatAvatars.get("xiwanzi",null).portrait!=null)
+          .check("offline face retains observed skin",ctx->{var skin=net.minecraft.resources.ResourceLocation.parse("minecraft:textures/entity/player/wide/steve.png");ChatAvatars.get("OfflineFixture",skin);return ChatAvatars.get("OfflineFixture",null).observed.equals(skin);})
           .frames(80).screenshot("full-chat")
           .step("compose hover sample",ctx->((ChatScreenFull)net.minecraft.client.Minecraft.getInstance().screen).view.input.setText("准备出发！"))
           .hover("#chat-send").frames(12).screenshot("composer-hover")

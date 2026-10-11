@@ -16,7 +16,9 @@ final class SkinFaceTexture implements IGuiTexture {
     @Override public void draw(GuiGraphics g,float mx,float my,float x,float y,float w,float h,float tick){draw(g,name,x,y,Math.min(w,h),255);}
     static void draw(GuiGraphics g,String name,float x,float y,float size,int alpha){
         var mc=Minecraft.getInstance();var info=mc.getConnection()==null?null:mc.getConnection().getPlayerInfo(name);
-        var skin=info==null?DefaultPlayerSkin.getDefaultTexture():info.getSkin().texture();
+        var cached=ChatAvatars.get(name,info==null?null:info.getSkin().texture());
+        boolean portrait=info==null&&cached.observed==null&&cached.portrait!=null;
+        var skin=info!=null?info.getSkin().texture():portrait?cached.portrait:cached.observed!=null?cached.observed:DefaultPlayerSkin.getDefaultTexture();
         g.flush();
         int src=GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB),dst=GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
         int srcA=GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA),dstA=GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
@@ -25,7 +27,7 @@ final class SkinFaceTexture implements IGuiTexture {
         try{
             RenderSystem.enableBlend();RenderSystem.blendFuncSeparate(GL11.GL_SRC_ALPHA,GL11.GL_ONE_MINUS_SRC_ALPHA,GL11.GL_ONE,GL11.GL_ONE_MINUS_SRC_ALPHA);
             g.setColor(1,1,1,alpha/255f);g.pose().translate(x,y,0);g.pose().scale(size/8,size/8,1);
-            PlayerFaceRenderer.draw(g,skin,0,0,8,true,false);g.flush();
+            if(portrait)g.blit(skin,0,0,0,0,8,8,8,8);else PlayerFaceRenderer.draw(g,skin,0,0,8,true,false);g.flush();
         }finally{
             g.pose().popPose();g.setColor(1,1,1,1);RenderSystem.blendFuncSeparate(src,dst,srcA,dstA);
             if(blend)RenderSystem.enableBlend();else RenderSystem.disableBlend();

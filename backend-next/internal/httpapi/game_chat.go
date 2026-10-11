@@ -32,7 +32,7 @@ func gameChatRoute(r *http.Request) bool {
 	}
 	parts := strings.Split(p, "/")
 	if len(parts) == 3 && parts[0] == "chat" {
-		return (parts[1] == "sends" && m == "GET") || ((parts[1] == "stickers" || parts[1] == "follows") && m == "DELETE")
+		return ((parts[1] == "sends" || parts[1] == "avatars") && m == "GET") || ((parts[1] == "stickers" || parts[1] == "follows") && m == "DELETE")
 	}
 	if len(parts) == 4 && parts[0] == "chat" && parts[1] == "conversations" {
 		return (parts[3] == "messages" && (m == "GET" || m == "POST")) || (parts[3] == "read" && m == "POST")
@@ -47,6 +47,7 @@ func gameChatRoute(r *http.Request) bool {
 }
 
 func (s *Server) registerGameChat(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/v1/chat/avatars/{gameId}", s.gameAvatar)
 	mux.HandleFunc("POST /bridge/v1/game-chat/team", s.relayGameTeam)
 	mux.HandleFunc("POST /bridge/v1/game-chat/media", s.sendGameMedia)
 	mux.HandleFunc("GET /api/v1/chat/game-messages", func(w http.ResponseWriter, r *http.Request) {

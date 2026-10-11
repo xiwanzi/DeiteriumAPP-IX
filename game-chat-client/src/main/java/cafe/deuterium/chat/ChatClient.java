@@ -136,5 +136,5 @@ final class ChatClient {
         }
         return mc.screen!=null&&mc.screen.handleComponentClicked(style);
     }
-    void reset(){readThrough.clear();sharingLocation=false;epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
+    void reset(){readThrough.clear();sharingLocation=false;epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
 }

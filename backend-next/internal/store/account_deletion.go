@@ -194,6 +194,7 @@ func eraseAccountPresentationTx(ctx context.Context, tx *sql.Tx, u User) error {
 		{`UPDATE asset_uploads_v2 a SET alt_text='',expires_at=LEAST(expires_at,UTC_TIMESTAMP(6)),lifecycle_checked_at=NULL,removed_at=IF(NOT EXISTS(SELECT 1 FROM asset_bindings_v2 b WHERE b.asset_id=a.asset_id),UTC_TIMESTAMP(6),removed_at) WHERE user_id=?`, []any{u.ID}},
 		{`DELETE FROM game_verifications WHERE user_id=? OR player_uuid=?`, []any{u.ID, u.ServerUUID}},
 		{`DELETE FROM core_player_directory WHERE player_uuid=?`, []any{u.ServerUUID}},
+		{`DELETE FROM game_chat_avatars WHERE player_uuid=?`, []any{u.ServerUUID}},
 	}
 	for _, q := range queries {
 		if _, err := tx.ExecContext(ctx, q.sql, q.args...); err != nil {
