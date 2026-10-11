@@ -1,0 +1,51 @@
+{
+  "verifiedAt": "2026-10-11T22:33:24.647720+08:00",
+  "version": "0.0.44-dev",
+  "publicHttpsFullHashVerified": true,
+  "publicRangeMetadataVerified": true,
+  "tarSha256": "1d962493d87399e4da1e047f9379d4432d1e63ebf8e39fb5798ce4ff3aa53daf",
+  "tarBytes": 18889216,
+  "clientOtherModsUnchanged": true,
+  "serverOtherModsAndPluginsUnchanged": true,
+  "allFourCoreFilesVersion": "1.0.4",
+  "configurationUnchanged": true,
+  "counts": {
+    "accounts": "61",
+    "orders": "47",
+    "commissions": "5",
+    "products": "3085",
+    "tickets": "12",
+    "deletions": "2"
+  },
+  "manager": {
+    "ok": true,
+    "results": [
+      {
+        "node": "login",
+        "status": 3,
+        "state": "RUNNING",
+        "pid": 22664
+      },
+      {
+        "node": "amiya",
+        "status": 3,
+        "state": "RUNNING",
+        "pid": 18028
+      },
+      {
+        "node": "odyssey",
+        "status": 3,
+        "state": "RUNNING",
+        "pid": 46864
+      },
+      {
+        "node": "mek",
+        "status": 0,
+        "state": "STOPPED",
+        "pid": 0
+      }
+    ]
+  },
+  "webVersion": "2.0.35",
+  "oldClientEntriesPreserved": 58
+}

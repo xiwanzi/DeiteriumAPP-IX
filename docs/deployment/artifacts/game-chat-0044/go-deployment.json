@@ -1,0 +1,23 @@
+{
+  "source": "67837e3",
+  "merge": "2f544a3934b2261308f2cb4a2821e9b2a6b80dee",
+  "pr": 96,
+  "backup": "/var/backups/deuterium/game-chat-0.0.44-67837e3",
+  "current": "/opt/deuterium/releases/game-chat-67837e3",
+  "sha256": "c8d64b388574bed2bbc54692fb586d3612819728a7905e92664ebe57f48cf893",
+  "ready": true,
+  "configurationUnchanged": true,
+  "existingRecordIdsPreserved": true,
+  "recordCounts": {
+    "identities": 61,
+    "commerce_resources_v2": 52,
+    "catalog_records_v2": 9328,
+    "asset_uploads_v2": 3077,
+    "support_tickets": 12
+  },
+  "migrations": [
+    "037_game_chat_origin.sql",
+    "038_scoped_chat_media.sql"
+  ],
+  "deployedAt": "2026-10-11T22:22:20.018097+08:00"
+}
