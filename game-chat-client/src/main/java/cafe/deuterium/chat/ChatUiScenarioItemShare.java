@@ -24,6 +24,8 @@ public final class ChatUiScenarioItemShare implements UIScenario {
          .step("bridge arrives first",ctx->{ChatStore.INSTANCE.clear();structured("bridge-first");nativeMessage();}).check("one localized rich item when bridge arrives first",ctx->singleRich())
          .step("native already displayed",ctx->{ChatStore.INSTANCE.clear();nativeMessage();}).ticks(16)
          .step("late bridge",ctx->structured("late-bridge")).check("displayed duplicate removed",ctx->singleRich())
+         .step("history poll arrived before rich packet",ctx->{ChatStore.INSTANCE.clear();ChatStore.INSTANCE.add(new ChatMessage("poll-first","fixture-player","xiwanzi","world","amiya","",Component.literal(ChatLegacy.localize("[block.minecraft.brown_terracotta x1]")),null,Instant.now(),false,false,""));nativeMessage();structured("poll-first");})
+         .check("poll cannot discard item hover",ctx->singleRich())
          .openScreen("item bubble",ctx->new ChatScreenFull()).awaitScreen(ChatScreenFull.class).frames(25).screenshot("item-bubble")
          .step("share options",ctx->ChatPanels.more(((ChatScreenFull)Minecraft.getInstance().screen).view.root)).frames(15).screenshot("share-options")
          .clickAt(230/3,650/3,0).check("single current position",ctx->ChatPanels.state(((ChatScreenFull)Minecraft.getInstance().screen).view.root).equals("location")).frames(15).screenshot("current-position")

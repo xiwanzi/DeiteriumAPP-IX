@@ -12,3 +12,5 @@
 客户端构建与单元测试通过。实际 NeoForge + Modern UI + IMBlocker + Xaero、中文语言下联合运行 `41348_7222e168`：两个场景均 PASS，共 136 步、11 项检查。含三种物品消息到达时序、悬停信息保留、单次位置预览和私密频道拒绝分享；同时完整聊天交互回归通过。截图显示中文物品名称且没有重复原始行。UI 场景与夹具不进入正式 JAR。
 
 本机证据：`output/qa-game-chat/item-share-initial` 及 `game-chat-client/build/ldlib2-uitest/screenshots/deuterium_chat_item/`。当前物品按钮使用现有 TrChat 服务器链路，未把模拟接收夹具宣称为生产实发验收。
+
+最终边界补充：若 HTTP 历史轮询先写入同 ID 的纯文本，Core 富文本到达时必须替换而不是被去重忽略。0.1.6 使用原顺序替换该行，新增第四种时序检查。中文场景 `34856_53425450` PASS，新增检查确认物品悬停不会被历史轮询覆盖。
