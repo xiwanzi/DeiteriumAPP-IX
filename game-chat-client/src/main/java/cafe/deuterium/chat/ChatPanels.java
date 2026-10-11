@@ -99,7 +99,7 @@ final class ChatPanels {
             open.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new SkinFaceTexture(c.name()))),6,20/3f,44/3f,44/3f));
             var name=ChatStyle.label(c.name(),5,0xFFE5B3D9);name.textStyle(st->st.font(DeuteriumChat.id("gilroy")));open.addChild(ChatStyle.rect(name,26,16/3f,rw-65,7));
             float nameW=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(c.name()).withStyle(st->st.withFont(DeuteriumChat.id("gilroy"))))*5/9f;
-            open.addChild(ChatStyle.rect(ChatStyle.label("[封弊者]",11/3f,0xFFA9B3B8),26+Math.min(nameW,rw-95)+7/3f,18/3f,25,6));
+            var title=ChatStyle.label("",11/3f,0xFFA9B3B8);title.setText(ChatTitles.title(c.ref(),c.name()));title.textStyle(st->st.adaptiveWidth(false).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.HIDE));title.getStyle().tooltips(ChatTitles.title(c.ref(),c.name()));float titleX=26+Math.min(nameW,rw-95)+7/3f;open.addChild(ChatStyle.rect(title,titleX,18/3f,Math.max(0,rw-42-titleX),6));
             var history=ChatStore.INSTANCE.inScope(c.id());String preview=history.isEmpty()?"":history.getLast().media!=null?("sticker".equals(ChatMessage.str(history.getLast().media,"type"))?"[贴纸]":"[图片]"):history.getLast().content.getString();
             if(!history.isEmpty()){var time=ChatStyle.label(history.getLast().time,10/3f,0xFF98A6A2);time.textStyle(st->st.font(DeuteriumChat.id("numbers")));open.addChild(ChatStyle.rect(time,rw-37,6,20,5));}
             open.addChild(ChatStyle.rect(ChatStyle.label(preview,13/3f,0xFF9CA8A3),26,15,rw-58,7));

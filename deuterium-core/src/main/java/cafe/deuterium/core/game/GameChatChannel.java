@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 public final class GameChatChannel implements PluginMessageListener,Listener,AutoCloseable {
     public static final String CHANNEL="deuterium:chat";
     private final JavaPlugin plugin;private final Supplier<CoreConfig> config;private final GameThread game;
+    private final GameTitles titles;
     private final ChatAccess chat;private final TeamChatAudience teams=new TeamChatAudience();
     private final ConcurrentMap<UUID,Peer> peers=new ConcurrentHashMap<>();
     private final ExecutorService io=new ThreadPoolExecutor(1,2,20,TimeUnit.SECONDS,new ArrayBlockingQueue<>(64),r->{Thread t=new Thread(r,"Deuterium-GameChat-IO");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
@@ -31,8 +32,9 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
     private final org.bukkit.scheduler.BukkitTask shareTask;
     private record LocationShare(String scope,long expires){}
     private static final class Peer { long lastHello,lastSend;final LinkedHashSet<String> requests=new LinkedHashSet<>(); }
-    public GameChatChannel(JavaPlugin plugin,Supplier<CoreConfig> config,GameThread game,ChatAccess chat){this.plugin=plugin;this.config=config;this.game=game;this.chat=chat;
+    public GameChatChannel(JavaPlugin plugin,Supplier<CoreConfig> config,GameThread game,ChatAccess chat,cafe.deuterium.core.runtime.Sessions sessions){this.plugin=plugin;this.config=config;this.game=game;this.chat=chat;
         Bukkit.getMessenger().registerIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().registerOutgoingPluginChannel(plugin,CHANNEL);Bukkit.getPluginManager().registerEvents(this,plugin);
+        titles=new GameTitles(plugin,config,sessions,(player,packet)->{if(supports(player))deliver(player,packet);});
         shareTask=Bukkit.getScheduler().runTaskTimer(plugin,()->{for(var entry:new ArrayList<>(shares.entrySet())){Player player=Bukkit.getPlayer(entry.getKey());if(player==null||System.currentTimeMillis()>entry.getValue().expires()){shares.remove(entry.getKey());if(player!=null)locationState(player,false);continue;}publishLocation(player,entry.getValue().scope());}},100,100);
     }
     public boolean supports(Player player){return peers.containsKey(player.getUniqueId());}
@@ -43,12 +45,12 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
             if(type.equals("hello")){hello(player);return;}
             Peer peer=peers.get(player.getUniqueId());if(peer==null)return;
             long now=System.currentTimeMillis();if(now-peer.lastSend<750){notice(player,"发送过于频繁，请稍后重试");return;}peer.lastSend=now;
-            if(type.equals("send"))send(player,peer,p);else if(type.equals("location"))location(player,p);else if(type.equals("media"))media(player,p);
+            if(type.equals("titles-list")||type.equals("title-select"))titles.request(player,p);else if(type.equals("send"))send(player,peer,p);else if(type.equals("location"))location(player,p);else if(type.equals("media"))media(player,p);
         }catch(IllegalArgumentException|IllegalStateException e){notice(player,e.getMessage()==null?"消息格式不正确":e.getMessage());}
     }
     private void hello(Player player){
         Peer peer=peers.computeIfAbsent(player.getUniqueId(),id->new Peer());long now=System.currentTimeMillis();if(now-peer.lastHello<10000)return;peer.lastHello=now;
-        JsonObject hello=new JsonObject();hello.addProperty("type","hello");hello.addProperty("serverId",config.get().nodeId());deliver(player,hello);
+        JsonObject hello=new JsonObject();hello.addProperty("type","hello");hello.addProperty("serverId",config.get().nodeId());deliver(player,hello);titles.hello(player);
         UUID id=player.getUniqueId();JsonObject request=new JsonObject();request.addProperty("playerUuid",id.toString());
         execute(()->{try{JsonObject session=post("/bridge/v1/game-chat/session",request);session.addProperty("type","session");session.addProperty("apiBase",apiBase().toString());game.run(()->{Player current=Bukkit.getPlayer(id);if(current!=null&&peers.get(id)==peer)deliver(current,session);});}
             catch(Exception e){game.run(()->{Player current=Bukkit.getPlayer(id);if(current!=null&&peers.get(id)==peer){JsonObject unavailable=new JsonObject();unavailable.addProperty("type","session-unavailable");unavailable.addProperty("message","云端媒体暂不可用，请确认 App 已绑定游戏账号");deliver(current,unavailable);}});}});
@@ -123,7 +125,8 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
         var actor=new JsonObject();actor.addProperty("playerRef",sender.toString());actor.addProperty("gameId",name);m.add("sender",actor);return m;
     }
     private void playerMessage(Player player,JsonObject m){if(supports(player))deliver(player,m);else{
-        String name=Json.string(m.getAsJsonObject("sender"),"gameId"),channel=Json.string(m,"channel");player.sendMessage(Component.text(name+" 封弊者 "+(channel.equals("team")?"团队":"附近")+"\n"+Json.string(m,"content")));}}
+        String name=Json.string(m.getAsJsonObject("sender"),"gameId"),channel=Json.string(m,"channel");
+        player.sendMessage(Component.text(name+" ").append(titles.title(UUID.fromString(Json.string(m.getAsJsonObject("sender"),"playerRef")))).append(Component.text(" "+(channel.equals("team")?"团队":"附近")+"\n"+Json.string(m,"content"))));}}
     private void notice(Player p,String text){JsonObject m=new JsonObject();m.addProperty("type","notice");m.addProperty("message",text);deliver(p,m);}
     private void deliver(Player player,JsonObject p){byte[] bytes=Json.GSON.toJson(p).getBytes(StandardCharsets.UTF_8);if(bytes.length<=28000&&player.isOnline())player.sendPluginMessage(plugin,CHANNEL,bytes);}
     private URI apiBase(){URI uri=config.get().bridge().uri();String scheme=uri.getScheme().equals("wss")?"https":"http";return URI.create(scheme+"://"+uri.getRawAuthority()+"/");}
@@ -135,5 +138,5 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
         if(bytes.length>32768||response.statusCode()!=200)throw new IllegalStateException("Chat service unavailable");return Json.object(new String(bytes,StandardCharsets.UTF_8),32768).getAsJsonObject("data");
     }
     private void execute(Runnable task){try{io.execute(task);}catch(RejectedExecutionException ignored){plugin.getLogger().warning("游戏聊天队列繁忙，请稍后重试。");}}
-    @Override public void close(){shareTask.cancel();shares.clear();peers.clear();io.shutdownNow();http.shutdownNow();Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin,CHANNEL);HandlerList.unregisterAll(this);}
+    @Override public void close(){titles.close();shareTask.cancel();shares.clear();peers.clear();io.shutdownNow();http.shutdownNow();Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin,CHANNEL);HandlerList.unregisterAll(this);}
 }

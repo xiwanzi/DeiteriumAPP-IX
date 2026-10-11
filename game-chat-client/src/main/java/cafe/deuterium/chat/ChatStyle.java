@@ -48,10 +48,28 @@ final class ChatStyle {
         l.style(st->st.background((g,mx,my,x,y,w,h,tick)->{outside.draw(g,mx,my,x-2/3f,y-2/3f,w+4/3f,h+4/3f,tick);inside.draw(g,mx,my,x,y,w,h,tick);}));return l;
     }
     static Component body(Component c) { return c.copy().withStyle(s->s.withFont(DeuteriumChat.id("harmony_regular"))); }
+    static Component systemBody(Component component){
+        var result=Component.empty();
+        component.visit((style,text)->{
+            var color=style.getColor();
+            if(color!=null){
+                int rgb=color.getValue(),r=(rgb>>16)&255,g=(rgb>>8)&255,b=rgb&255;
+                // Keep bright semantic colors; lift only low-contrast segments against the notice surface.
+                double luminance=.2126*linear(r)+.7152*linear(g)+.0722*linear(b);
+                if(luminance<.24){
+                    for(int step=1;step<=20;step++){double mix=step/20.0;int nr=(int)Math.round(r+(255-r)*mix),ng=(int)Math.round(g+(255-g)*mix),nb=(int)Math.round(b+(255-b)*mix);
+                        if(.2126*linear(nr)+.7152*linear(ng)+.0722*linear(nb)>=.35){style=style.withColor((nr<<16)|(ng<<8)|nb);break;}}
+                }
+            }
+            result.append(Component.literal(text).setStyle(style));return java.util.Optional.empty();
+        },net.minecraft.network.chat.Style.EMPTY);
+        return body(result);
+    }
+    private static double linear(int channel){double c=channel/255.0;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);}
     static Component playerName(ChatMessage m) {
         return Component.literal(m.name).withStyle(s->s.withColor(ChatPresentation.ID_COLOR).withFont(DeuteriumChat.id("gilroy")));
     }
     static Component title() {
-        return Component.literal("[封弊者]").withStyle(s->s.withColor(0xA9B3B8).withFont(DeuteriumChat.id("harmony_regular")));
+        return Component.literal("[溯行者]").withStyle(s->s.withColor(0xA9B3B8).withFont(DeuteriumChat.id("harmony_regular")));
     }
 }

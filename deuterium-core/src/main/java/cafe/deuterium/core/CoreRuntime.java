@@ -76,7 +76,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         commands = new CommandDispatcher(settings::get, () -> mailbox, game, sessions, players, journal, economy);
         bridge = new BridgeClient(settings::get, outbox, this, workers, plugin.getLogger());
         initialized.add(bridge);
-        gameChat = new cafe.deuterium.core.game.GameChatChannel(plugin, settings::get, game, chat);
+        gameChat = new cafe.deuterium.core.game.GameChatChannel(plugin, settings::get, game, chat, sessions);
         chat.bindGameChat(gameChat); initialized.add(gameChat);
         timer = Executors.newSingleThreadScheduledExecutor(task -> { Thread thread = new Thread(task, "DeuteriumCore-Timer"); thread.setDaemon(true); return thread; });
         initialized.add(timer::shutdownNow);

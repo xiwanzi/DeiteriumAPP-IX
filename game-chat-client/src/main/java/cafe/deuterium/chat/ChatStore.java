@@ -18,6 +18,7 @@ public final class ChatStore {
         if(messages.containsKey(m.id))return;
         messages.put(m.id,m);
         while(messages.size()>1000)messages.remove(messages.keySet().iterator().next());
+        ChatSounds.received(m);
         changed();
     }
     public void replace(String id,ChatMessage m) { if(id.equals(m.id)&&messages.containsKey(id)){messages.put(id,m);changed();return;}boolean removed=messages.remove(id)!=null;if(messages.containsKey(m.id)){if(removed)changed();}else add(m); }

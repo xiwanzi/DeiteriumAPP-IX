@@ -5,7 +5,7 @@ import java.util.Locale;
 /** Shared header policy; location is metadata, never embedded in message content. */
 public final class ChatPresentation {
     public static final int ID_COLOR = 0xE5B3D9;
-    public static final String TITLE = "封弊者";
+    public static final String TITLE = "溯行者";
     public static final double NEARBY_RADIUS = 50;
     private ChatPresentation() {}
     public static String suffix(String channel, String server) {

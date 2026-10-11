@@ -18,7 +18,7 @@ final class ChatView implements AutoCloseable {
     private final UIElement tools=new UIElement(),divider=new UIElement();
     private final BrandMark brand=new BrandMark();
     private Button close,audio,back,pinCurrent;private Label esc;
-    private final Label privateTitle=ChatStyle.label("[封弊者]",13/3f,0xFFA9B3B8);
+    private final Label privateTitle=ChatStyle.label("[溯行者]",13/3f,0xFFA9B3B8);
     private final Button send=ChatStyle.button("发送",this::send);
     private final AutoCloseable subscription;
     private String scope=ChatStore.INSTANCE.current;
@@ -95,7 +95,7 @@ final class ChatView implements AutoCloseable {
         float x=WebPixels.contentX(),w=WebPixels.contentWidth(),top=WebPixels.topbar(),h=WebPixels.headingHeight();float y=top+(h-5-(WebPixels.wide()?11.2f:10))/2;
         ChatStyle.rect(heading,x+(priv?46:2)/3f,y,w-(priv?90:4)/3f,WebPixels.wide()?11.2f:10);
         back.setDisplay(priv);pinCurrent.setDisplay(priv);privateTitle.setDisplay(priv);
-        if(priv){ChatStyle.rect(back,x,top+1,32/3f,32/3f);ChatStyle.rect(pinCurrent,x+w-40/3f,top,40/3f,40/3f);float nameWidth=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(text).withStyle(st->st.withFont(DeuteriumChat.id("gilroy"))))*23/27f;ChatStyle.rect(privateTitle,x+56/3f+Math.min(nameWidth,w-70),y+3,30,6);pinCurrent.getChildren().getLast().style(st->st.background(new MaskTexture("icons/pin.png",ChatStore.INSTANCE.pinned.contains(scope)?ChatStyle.YELLOW:0xFFA6AFAD)));}
+        if(priv){privateTitle.setText(ChatTitles.title("",text));privateTitle.textStyle(st->st.adaptiveWidth(false).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.HIDE));privateTitle.getStyle().tooltips(ChatTitles.title("",text));ChatStyle.rect(back,x,top+1,32/3f,32/3f);ChatStyle.rect(pinCurrent,x+w-40/3f,top,40/3f,40/3f);float nameWidth=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(text).withStyle(st->st.withFont(DeuteriumChat.id("gilroy"))))*23/27f;ChatStyle.rect(privateTitle,x+56/3f+Math.min(nameWidth,w-70),y+3,Math.max(0,w-40/3f-56/3f-Math.min(nameWidth,w-70)-8/3f),6);pinCurrent.getChildren().getLast().style(st->st.background(new MaskTexture("icons/pin.png",ChatStore.INSTANCE.pinned.contains(scope)?ChatStyle.YELLOW:0xFFA6AFAD)));}
     }
     private static IGuiTexture channelIcon(String id,boolean selected){String art=switch(id){case "team"->"chat-native/icon_sns_chat_11.png";case "inbox"->"chat-native/sns_icon_chat.png";default->"icons/"+id+".png";};return new MaskTexture(art,selected?ChatStyle.YELLOW:0xFFBDC5C2);}
 
@@ -115,7 +115,7 @@ final class ChatView implements AutoCloseable {
         if(ChatClient.INSTANCE.send(value)){input.setText("");timeline.followLatest();ChatSounds.play("send");}
     }
     private void refreshContacts() {
-        long revision=31L*ChatStore.INSTANCE.contacts.hashCode()+ChatStore.INSTANCE.pinned.hashCode();for(var c:ChatStore.INSTANCE.contacts.values()){var list=ChatStore.INSTANCE.inScope(c.id());if(!list.isEmpty())revision=31*revision+list.getLast().id.hashCode();}if(contactsRevision==revision)return;contactsRevision=revision;
+        long revision=ChatTitles.revision+31L*ChatStore.INSTANCE.contacts.hashCode()+ChatStore.INSTANCE.pinned.hashCode();for(var c:ChatStore.INSTANCE.contacts.values()){var list=ChatStore.INSTANCE.inScope(c.id());if(!list.isEmpty())revision=31*revision+list.getLast().id.hashCode();}if(contactsRevision==revision)return;contactsRevision=revision;updateHeading();
         if(ChatPanels.state(root).equals("inbox"))ChatPanels.inbox(root,this::switchScope);
         contacts.clearAllScrollViewChildren();contactButtons.clear();int i=0;
         var ordered=ChatStore.INSTANCE.orderedContacts();
