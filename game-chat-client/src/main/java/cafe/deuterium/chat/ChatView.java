@@ -121,8 +121,7 @@ final class ChatView implements AutoCloseable {
         for(var c:ordered) {
             if(!ChatStore.INSTANCE.pinned.contains(c.id()))continue;
             var b=ChatStyle.button("",()->switchScope(c.id()));b.noText();contactButtons.put(c.id(),b);
-            var info=Minecraft.getInstance().getConnection()==null?null:Minecraft.getInstance().getConnection().getPlayerInfo(c.name());var skin=info==null?net.minecraft.client.resources.DefaultPlayerSkin.getDefaultTexture():info.getSkin().texture();
-            b.addChild(ChatStyle.rect(new UIElement().style(s->s.background(SpriteTexture.of(skin).setSprite(8,8,8,8))),(WebPixels.wide()?25:22)/3f,(WebPixels.wide()?13:9)/3f,10,10));
+            b.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new SkinFaceTexture(c.name()))),(WebPixels.wide()?25:22)/3f,(WebPixels.wide()?13:9)/3f,10,10));
             var name=ChatStyle.label(c.name(),11/3f,0xFFE5B3D9);name.textStyle(st->st.font(DeuteriumChat.id("gilroy")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));
             b.addChild(ChatStyle.rect(name,0,(WebPixels.wide()?49:45)/3f,(WebPixels.wide()?80:74)/3f,5));
             if(c.unread()>0)b.addChild(ChatStyle.rect(ChatStyle.unread(c.unread()),(WebPixels.wide()?75:69)/3f-ChatStyle.unreadWidth(c.unread()),5/3f,ChatStyle.unreadWidth(c.unread()),17/3f));

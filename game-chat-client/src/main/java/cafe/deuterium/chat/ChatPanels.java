@@ -91,7 +91,7 @@ final class ChatPanels {
             Runnable chooseRow=()->{if(selected==null)choose.accept(c.id());else{if(!selected.remove(c.id()))selected.add(c.id());inbox(root,choose,selected);}};
             var open=ChatStyle.button("",chooseRow);open.setId("private-open-"+c.name());open.noText();open.buttonStyle(st->st.hoverTexture(new RoundTexture(2/3f,0x19D9E1D5,1/3f,0x59BDC9BE)));
             if(selected!=null&&selected.contains(c.id()))open.buttonStyle(st->st.baseTexture(new RoundTexture(2/3f,0x10E5EA72,1/3f,0x60E4EB80)));row.addChild(ChatStyle.rect(open,0,0,rw-18,28));
-            var info=mc.getConnection()==null?null:mc.getConnection().getPlayerInfo(c.name());var skin=info==null?net.minecraft.client.resources.DefaultPlayerSkin.getDefaultTexture():info.getSkin().texture();open.addChild(ChatStyle.rect(new UIElement().style(st->st.background(SpriteTexture.of(skin).setSprite(8,8,8,8))),6,20/3f,44/3f,44/3f));
+            open.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new SkinFaceTexture(c.name()))),6,20/3f,44/3f,44/3f));
             var name=ChatStyle.label(c.name(),5,0xFFE5B3D9);name.textStyle(st->st.font(DeuteriumChat.id("gilroy")));open.addChild(ChatStyle.rect(name,26,16/3f,rw-65,7));
             float nameW=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(c.name()).withStyle(st->st.withFont(DeuteriumChat.id("gilroy"))))*5/9f;
             open.addChild(ChatStyle.rect(ChatStyle.label("[封弊者]",11/3f,0xFFA9B3B8),26+Math.min(nameW,rw-95)+7/3f,18/3f,25,6));
