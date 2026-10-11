@@ -39,6 +39,7 @@ public final class ChatUiScenario implements UIScenario {
             ChatStore.INSTANCE.add(new ChatMessage("private_preview_b","","L1ghT_","private","","fixture-b",Component.empty(),fixture.media.get("cloud"),Instant.now(),true,false,""));
         }).frames(8).screenshot("background").openScreen("full chat",ctx->new ChatScreenFull()).awaitScreen(ChatScreenFull.class)
           .waitUntil("media decoded and uploaded",ctx->ChatClient.INSTANCE.media.ready("cloud")&&ChatClient.INSTANCE.media.ready("sticker")&&ChatClient.INSTANCE.media.ready("motion"))
+          .check("IMBlocker exempts only the full chat screen",ctx->{try{var c=Class.forName("io.github.reserveword.imblocker.common.IMBlockerConfig");var config=c.getField("INSTANCE").get(null);var method=c.getMethod("isScreenInWhitelist",Object.class);return Boolean.TRUE.equals(method.invoke(config,net.minecraft.client.Minecraft.getInstance().screen))&&!Boolean.TRUE.equals(method.invoke(config,new Object()));}catch(ClassNotFoundException absent){return true;}catch(Exception failure){throw new RuntimeException(failure);}})
           .waitUntil("offline avatar loaded from server",ctx->ChatAvatars.get("xiwanzi",null).portrait!=null)
           .check("offline face retains observed skin",ctx->{var skin=net.minecraft.resources.ResourceLocation.parse("minecraft:textures/entity/player/wide/steve.png");ChatAvatars.get("OfflineFixture",skin);return ChatAvatars.get("OfflineFixture",null).observed.equals(skin);})
           .frames(80).screenshot("full-chat")
