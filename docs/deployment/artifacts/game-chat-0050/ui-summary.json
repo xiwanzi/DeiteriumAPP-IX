@@ -1,0 +1,38 @@
+{
+  "runId": "34856_53425450",
+  "status": "PASS",
+  "totals": {
+    "scenarios": 1,
+    "passed": 1,
+    "failed": 0,
+    "errored": 0,
+    "skipped": 0,
+    "steps": 30,
+    "checks": 6,
+    "checksFailed": 0,
+    "captures": 3
+  },
+  "environment": {
+    "minecraft": "1.21.1",
+    "neoforge": "21.1.248",
+    "java": "21.0.10",
+    "os": "Windows 11 10.0",
+    "mods": [
+      "deuterium_chat@0.1.6",
+      "imblocker@5.5.4",
+      "ldlib2@2.2.39",
+      "minecraft@1.21.1",
+      "modernui@3.13.0.1",
+      "neoforge@21.1.248",
+      "xaerolib@1.7.1",
+      "xaerominimap@26.4.2"
+    ],
+    "guiScale": 3,
+    "windowWidth": 480,
+    "windowHeight": 300,
+    "framebufferWidth": 1440,
+    "framebufferHeight": 900,
+    "inputMode": "SYNTHETIC",
+    "headless": false
+  }
+}
