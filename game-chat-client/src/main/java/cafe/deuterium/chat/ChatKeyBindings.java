@@ -11,7 +11,7 @@ final class ChatKeyBindings {
     private static boolean checked;
     static void migrate(){
         var mc=Minecraft.getInstance();if(checked||mc.options==null)return;checked=true;
-        var marker=mc.gameDirectory.toPath().resolve("config/deuterium-chat/keybindings-v2");
+        var marker=mc.gameDirectory.toPath().resolve("config/deuterium-chat/keybindings-v3");
         if(Files.exists(marker))return;
         var key=InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_T);
         mc.options.keyChat.setKeyModifierAndCode(KeyModifier.NONE,key);

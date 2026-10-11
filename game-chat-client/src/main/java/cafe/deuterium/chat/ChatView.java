@@ -74,10 +74,10 @@ final class ChatView implements AutoCloseable {
         float composerY=h-bottom-WebPixels.composer();
         ChatStyle.rect(timeline,start,top+head+14/3f,content-14/3f,composerY-16/3f-top-head-14/3f);
         ChatStyle.rect(tools,start,composerY+9.5f/3f,100,12);
-        float draftH=(wide?54:49)/3f;input.textFieldStyle(st->st.fontSize((wide?16:15)/3f));
+        float draftH=(wide?54:49)/3f;input.textFieldStyle(st->st.fontSize(18/3f));
         ChatStyle.rect(input,start,h-bottom-draftH,content-179/3f,draftH);ChatStyle.rect(send,start+content-164/3f,h-bottom-draftH/2-22/3f,164/3f,44/3f);
         contactsRevision=-1;refreshContacts();updateHeading();
-        for(int i=0;i<4;i++){String id=new String[]{"world","nearby","team","inbox"}[i];ChatStyle.rect(nav.get(id),0,i*step,railW,step-2);ChatStyle.rect(navIcons.get(id),(railW-8)/2,(step-2-16.6f)/2,8,8);ChatStyle.rect(navLabels.get(id),0,(step-2-16.6f)/2+10.66f,railW,6);}
+        for(int i=0;i<4;i++){String id=new String[]{"world","nearby","team","inbox"}[i];ChatStyle.rect(nav.get(id),0,i*step,railW,step-2);float iw=(id.equals("team")?38:28)/3f,ih=id.equals("team")?iw*70/123:28/3f;float iconY=(step-2-18)/2;ChatStyle.rect(navIcons.get(id),(railW-iw)/2,iconY+(28/3f-ih)/2,iw,ih);ChatStyle.rect(navLabels.get(id),0,iconY+12,railW,6);navLabels.get(id).textStyle(st->st.fontSize(14/3f));}
 
     }
     void switchScope(String id) {
@@ -97,7 +97,8 @@ final class ChatView implements AutoCloseable {
         back.setDisplay(priv);pinCurrent.setDisplay(priv);privateTitle.setDisplay(priv);
         if(priv){ChatStyle.rect(back,x,top+1,32/3f,32/3f);ChatStyle.rect(pinCurrent,x+w-40/3f,top,40/3f,40/3f);float nameWidth=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(text).withStyle(st->st.withFont(DeuteriumChat.id("gilroy"))))*23/27f;ChatStyle.rect(privateTitle,x+56/3f+Math.min(nameWidth,w-70),y+3,30,6);pinCurrent.getChildren().getLast().style(st->st.background(new MaskTexture("icons/pin.png",ChatStore.INSTANCE.pinned.contains(scope)?ChatStyle.YELLOW:0xFFA6AFAD)));}
     }
-    private static SpriteTexture channelIcon(String id,boolean selected){String art=switch(id){case "team"->"chat-native/icon_sns_chat_11.png";case "inbox"->"chat-native/sns_icon_chat.png";default->"icons/"+id+".png";};return SpriteTexture.of(DeuteriumChat.id("textures/"+art)).setColor(selected?ChatStyle.YELLOW:0xFFA8AEAC);}
+    private static IGuiTexture channelIcon(String id,boolean selected){String art=switch(id){case "team"->"chat-native/icon_sns_chat_11.png";case "inbox"->"chat-native/sns_icon_chat.png";default->"icons/"+id+".png";};return new MaskTexture(art,selected?ChatStyle.YELLOW:0xFFBDC5C2);}
+
     private void highlight(){String active=scope.startsWith("private:")?"":scope;for(var entry:nav.entrySet()){boolean selected=entry.getKey().equals(active);entry.getValue().buttonStyle(s->s.baseTexture(selected?new ChannelSelectionTexture():IGuiTexture.EMPTY));entry.getValue().style(s->s.overlay(IGuiTexture.EMPTY));navIcons.get(entry.getKey()).style(s->s.background(channelIcon(entry.getKey(),selected)));navLabels.get(entry.getKey()).textStyle(s->s.textColor(selected?ChatStyle.YELLOW:ChatStyle.MUTED));}for(var entry:contactButtons.entrySet())entry.getValue().buttonStyle(st->st.baseTexture(entry.getKey().equals(scope)?new ChannelSelectionTexture():IGuiTexture.EMPTY));}
     private void updateSend(){boolean enabled=!input.getValue().isBlank();send.setActive(enabled);send.textStyle(s->s.textColor(enabled?0xFF242721:0xFF929B98));send.buttonStyle(s->s.baseTexture(new NativeButtonTexture(false,enabled?0xFFF7F7F7:0xFF454545)));}
     void refreshPanelTools(){
