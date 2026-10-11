@@ -87,9 +87,11 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer s.Hub.LeaveNode(node.ID)
+	richChat := r.Header.Get("X-Deuterium-Game-Chat") == "1"
 	s.Core.Connect(node.ID, func(sendCtx context.Context, kind string, payload any) error {
 		return sendSocket(sendCtx, c, kind, "", payload)
 	})
+	s.Core.SetGameChat(node.ID, richChat)
 	defer func() {
 		s.Core.Disconnect(node.ID)
 		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -136,7 +138,7 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 				_ = sendSocket(ctx, c, "core.event.result", e.RequestID, map[string]any{"eventId": e.EventID, "status": "rejected", "error": map[string]string{"code": "INVALID_EVENT", "message": "事件格式或能力权限不符。"}})
 				continue
 			}
-			seq, replay, err := s.Store.CoreEvent(ctx, node.ID, e.EventID, e.Type, payload, chat, item)
+			seq, replay, err := s.Store.CoreEvent(ctx, node.ID, e.EventID, e.Type, payload, chat, item, s.Config.ChatNodes()...)
 			if err != nil {
 				status, code := "unknown", "SERVICE_UNAVAILABLE"
 				if errors.Is(err, store.ErrConflict) {
@@ -187,7 +189,17 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for _, m := range pending {
-			if sendSocket(ctx, c, "chat.app.delivery", "", map[string]any{"messageId": m.ID, "senderUuid": m.ServerUUID, "gameId": m.Sender.GameID, "content": m.Content, "origin": "app", "expiresAt": m.SentAt.Add(10 * time.Minute), "suppressRebroadcast": true}) != nil {
+			if !richChat && m.Origin == "game" {
+				_ = s.Store.AckChat(ctx, node.ID, m.ID)
+				continue
+			}
+			delivery := map[string]any{"messageId": m.ID, "senderUuid": m.ServerUUID, "gameId": m.Sender.GameID, "content": m.Content, "origin": m.Origin, "expiresAt": m.SentAt.Add(10 * time.Minute), "suppressRebroadcast": true}
+			if richChat {
+				delivery["media"] = m.Media
+				delivery["serverId"] = m.ServerID
+				delivery["sentAt"] = m.SentAt
+			}
+			if sendSocket(ctx, c, "chat.app.delivery", "", delivery) != nil {
 				return
 			}
 		}
@@ -328,6 +340,13 @@ func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte)
 	v, err := s.Store.Session(ctx, tokenHash)
 	if err != nil {
 		return failed("UNAUTHORIZED", "会话已失效。")
+	}
+	if v.Kind == "gamechat" {
+		p, e := s.Core.Player("", v.User.ServerUUID)
+		if e != nil || !p.Online || p.ServerID != v.CSRF {
+			return failed("UNAUTHORIZED", "游戏会话已失效。")
+		}
+		v.User.GameChatNode = v.CSRF
 	}
 	id, err := s.Store.ExistingAppChatV2(ctx, v.User.ID, in.ClientMessageID, content, in.ReplyToMessageID, in.MentionedPlayerRefs, in.Media)
 	if err == nil {

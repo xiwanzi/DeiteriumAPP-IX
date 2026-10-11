@@ -9,6 +9,7 @@ import (
 )
 
 type User struct {
+	GameChatNode   string   `json:"-"`
 	ID             string   `json:"userId"`
 	PlayerRef      string   `json:"playerRef"`
 	GameID         string   `json:"gameId"`

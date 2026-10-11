@@ -96,7 +96,7 @@ func chatMediaAllowed(ctx context.Context, q interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, userID, id string) (bool, error) {
 	var ok bool
-	err := q.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM chat_stickers WHERE user_id=? AND media_id=?) OR EXISTS(SELECT 1 FROM chat_media_uploads WHERE user_id=? AND media_id=? AND expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM public_chat_media p JOIN chat_messages_next m ON m.message_id=p.message_id WHERE p.media_id=? AND p.expires_at>UTC_TIMESTAMP(6))`, userID, id, userID, id, id).Scan(&ok)
+	err := q.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM chat_stickers WHERE user_id=? AND media_id=?) OR EXISTS(SELECT 1 FROM chat_media_uploads WHERE user_id=? AND media_id=? AND expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM public_chat_media p JOIN chat_messages_next m ON m.message_id=p.message_id WHERE p.media_id=? AND p.expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM direct_chat_media p JOIN social_messages_v2 m ON m.message_id=p.message_id JOIN social_members_v2 r ON r.conversation_id=m.conversation_id AND r.user_id=? WHERE p.media_id=? AND p.expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM game_chat_media p JOIN game_chat_recipients r ON r.message_id=p.message_id JOIN identities i ON i.server_uuid=r.player_uuid AND i.id=? WHERE p.media_id=? AND p.expires_at>UTC_TIMESTAMP(6))`, userID, id, userID, id, id, userID, id, userID, id).Scan(&ok)
 	return ok, err
 }
 
@@ -356,7 +356,7 @@ func (s *Store) ChatMediaAccess(ctx context.Context, userID, id, messageID strin
 	deadline := time.Now().UTC().Add(15 * time.Minute)
 	if messageID != "" {
 		var expires time.Time
-		err = s.DB.QueryRowContext(ctx, `SELECT p.expires_at FROM public_chat_media p JOIN chat_messages_next m ON m.message_id=p.message_id WHERE p.media_id=? AND p.message_id=? AND m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY)`, id, messageID).Scan(&expires)
+		err = s.DB.QueryRowContext(ctx, `SELECT p.expires_at FROM public_chat_media p JOIN chat_messages_next m ON m.message_id=p.message_id WHERE p.media_id=? AND p.message_id=? AND m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) UNION ALL SELECT p.expires_at FROM direct_chat_media p JOIN social_messages_v2 m ON m.message_id=p.message_id JOIN social_members_v2 r ON r.conversation_id=m.conversation_id AND r.user_id=? WHERE p.media_id=? AND p.message_id=? UNION ALL SELECT p.expires_at FROM game_chat_media p JOIN game_chat_recipients r ON r.message_id=p.message_id JOIN identities i ON i.server_uuid=r.player_uuid AND i.id=? WHERE p.media_id=? AND p.message_id=? LIMIT 1`, id, messageID, userID, id, messageID, userID, id, messageID).Scan(&expires)
 		if err != nil {
 			return m, deadline, socialMissing(err)
 		}
@@ -400,7 +400,7 @@ func ChatMediaKey(prefix, id string, thumbnail bool) string {
 // Mark before I/O; a committed DELETING row cannot acquire new references. Each
 // object generation uses a fresh key, so retries never delete replacement bytes.
 func (s *Store) RunChatMediaGC(ctx context.Context, objects ChatMediaObjects, prefix string, limit int) (int, error) {
-	rows, err := s.DB.QueryContext(ctx, `SELECT media_id FROM chat_media_objects o WHERE state='DELETING' OR (state IN ('READY','UPLOADING') AND created_at<=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 72 HOUR) AND NOT EXISTS(SELECT 1 FROM chat_stickers s WHERE s.media_id=o.media_id) AND NOT EXISTS(SELECT 1 FROM chat_media_uploads u WHERE u.media_id=o.media_id AND u.expires_at>UTC_TIMESTAMP(6)) AND NOT EXISTS(SELECT 1 FROM public_chat_media p WHERE p.media_id=o.media_id AND p.expires_at>UTC_TIMESTAMP(6))) ORDER BY created_at LIMIT ?`, limit)
+	rows, err := s.DB.QueryContext(ctx, `SELECT media_id FROM chat_media_objects o WHERE state='DELETING' OR (state IN ('READY','UPLOADING') AND created_at<=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 72 HOUR) AND NOT EXISTS(SELECT 1 FROM chat_stickers s WHERE s.media_id=o.media_id) AND NOT EXISTS(SELECT 1 FROM chat_media_uploads u WHERE u.media_id=o.media_id AND u.expires_at>UTC_TIMESTAMP(6)) AND NOT EXISTS(SELECT 1 FROM public_chat_media p WHERE p.media_id=o.media_id AND p.expires_at>UTC_TIMESTAMP(6)) AND NOT EXISTS(SELECT 1 FROM direct_chat_media p WHERE p.media_id=o.media_id AND p.expires_at>UTC_TIMESTAMP(6)) AND NOT EXISTS(SELECT 1 FROM game_chat_media p WHERE p.media_id=o.media_id AND p.expires_at>UTC_TIMESTAMP(6))) ORDER BY created_at LIMIT ?`, limit)
 	if err != nil {
 		return 0, err
 	}
@@ -432,7 +432,7 @@ func (s *Store) RunChatMediaGC(ctx context.Context, objects ChatMediaObjects, pr
 		}
 		if state != "DELETING" {
 			var used bool
-			e = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM chat_stickers WHERE media_id=?) OR EXISTS(SELECT 1 FROM chat_media_uploads WHERE media_id=? AND expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM public_chat_media WHERE media_id=? AND expires_at>UTC_TIMESTAMP(6))`, id, id, id).Scan(&used)
+			e = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM chat_stickers WHERE media_id=?) OR EXISTS(SELECT 1 FROM chat_media_uploads WHERE media_id=? AND expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM public_chat_media WHERE media_id=? AND expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM direct_chat_media WHERE media_id=? AND expires_at>UTC_TIMESTAMP(6)) OR EXISTS(SELECT 1 FROM game_chat_media WHERE media_id=? AND expires_at>UTC_TIMESTAMP(6))`, id, id, id, id, id).Scan(&used)
 			if e != nil {
 				tx.Rollback()
 				return count, e

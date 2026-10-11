@@ -1,0 +1,419 @@
+{
+  "date": "2026-10-11",
+  "game_root": "C:/Program Files/Hypergryph Launcher/games/Arknights Endfield/Endfield_Data",
+  "vfs_extractions": [
+    "output/chat-source/extraction.json",
+    "output/chat-source/panel-extraction.json"
+  ],
+  "logical_paths": [
+    "output/chat-source/assets.json",
+    "output/chat-source/sns-assets.json"
+  ],
+  "sprite_crop": "Unity logical rect + border; original Texture2D retained in output/chat-source",
+  "evidence": "output/chat-source/send-structure.txt",
+  "limits": "Authored prefab states and resources verified; browser adaptations are not evidence of frame-perfect in-game parity.",
+  "assets": [
+    {
+      "file": "btn_common_hover_bg_short.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\panel-images\\Texture2D\\btn_common_hover_bg_short_pC0B1ED58AA029CBD.png",
+      "pathId": -3817130445469803331,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 68.0,
+        "height": 56.0
+      },
+      "border": [
+        33.0,
+        0.0,
+        33.0,
+        0.0
+      ],
+      "sha256": "d7c526c2d9e1ddf1f66233b13b848b29a73a7cf2d0d3f2908497218911e5d7cd"
+    },
+    {
+      "file": "btn_common_hover_bg.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\panel-images\\Texture2D\\btn_common_hover_bg_pC427B1A24B42818E.png",
+      "pathId": -1877471609721093746,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 92.0,
+        "height": 80.0
+      },
+      "border": [
+        45.0,
+        0.0,
+        45.0,
+        0.0
+      ],
+      "sha256": "d01a5914bf2618c65344d7770347dab8da541669dd9bcbab1d85648d33c3e8f7"
+    },
+    {
+      "file": "bg_snscontenttextorpic_chat_04.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\bg_snscontenttextorpic_chat_04_p1FED34E028F19188.png",
+      "pathId": 2099818449619095944,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 94.0,
+        "height": 75.0
+      },
+      "border": [
+        41.0,
+        30.0,
+        39.0,
+        33.0
+      ],
+      "sha256": "efed21d495384b0e91ea442b1f60eaa4aecefcf45fed33f2e8cd313cef20b8a6"
+    },
+    {
+      "file": "bg_snscontenttextorpic_chat_03.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\bg_snscontenttextorpic_chat_03_pB11342DF62C05705.png",
+      "pathId": 7779019601447180037,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 82.0,
+        "height": 76.0
+      },
+      "border": [
+        38.0,
+        38.0,
+        31.0,
+        31.0
+      ],
+      "sha256": "107b852d9b4515b8f0056598cd0b52cb5142988184e788ac0a6d485eef8a9946"
+    },
+    {
+      "file": "icon_sns_chat_emoticon.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\icon_sns_chat_emoticon_pAFC009395F36F5EE.png",
+      "pathId": -2703550222469433874,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 34.0,
+        "height": 34.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "0c03c08ab3e6ee4978e3a9a20aeab8acaa220b0a1ef7630df3e9397e3a6d297f"
+    },
+    {
+      "file": "sns_icon_chat.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_icon_chat_pC14DFA670E1A15A6.png",
+      "pathId": 8023233522869802406,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 94.0,
+        "height": 94.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "0c35202cbf0e5c970f95715b8cdfc86532f4dba39a12f0212f506385508af461"
+    },
+    {
+      "file": "icon_sns_chat_11.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\icon_sns_chat_11_p8234DD84D8430861.png",
+      "pathId": -3036715811047667615,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 123.0,
+        "height": 70.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "5791127b36368b642cc7540288bca9993401ad02bdd464368de637390250b14b"
+    },
+    {
+      "file": "sns_emojichangeicon.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_emojichangeicon_p5F821CAE7848BC1A.png",
+      "pathId": 8663097699763731482,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 46.0,
+        "height": 46.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "b8954312ce322ef0dff905d351e0a3eb01243626b7197f581a27a8717f3064e8"
+    },
+    {
+      "file": "sns_sticker_001.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_001_pBEF2ABCCE7460697.png",
+      "pathId": -3524457083757459817,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "edc91581facfb1d4ebd2a7784f25aaf6e1e6f3b846d2e6d0864e234f86b792f6"
+    },
+    {
+      "file": "sns_sticker_002.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_002_pF05F3491B4A7B57C.png",
+      "pathId": 8810383856439244156,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "68705ad4f38b8bd392adca98a2f99291fe5446f109201d436e0e2bea2a5de6ec"
+    },
+    {
+      "file": "sns_sticker_003.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_003_p6DCF4D6EB2D0BABA.png",
+      "pathId": 5739097736530868922,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "5726b31fafe14e83f65096fec7ed594bcd6dcfb03523b50be1228124e65f1eec"
+    },
+    {
+      "file": "sns_sticker_004.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_004_pC659BC5EC7DD702F.png",
+      "pathId": 5862277999693557807,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "0495a1544fdb345045895c59a5d3e7af00ad0382975b75ea91ef91fff403bf06"
+    },
+    {
+      "file": "sns_sticker_005.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_005_p437D12925A7AB5E2.png",
+      "pathId": 7092679429026657762,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "8c79baf68d29edf221210ada8caab194a92d5a07664bd38ab0fb2fb9bc2ec66b"
+    },
+    {
+      "file": "sns_sticker_006.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_006_pDBBA23FAE1019B78.png",
+      "pathId": 1732494381463083896,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "83d7adca8050a0518afa8350a5cd9e7e89fcb96d7f2db75843b0ae7609993929"
+    },
+    {
+      "file": "sns_sticker_007.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_007_p863A334C0B26F5C5.png",
+      "pathId": -5522021224968161851,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "c93cddc6e5449dcca16c006eed88da4e30278594312243e48c2675079a15c59b"
+    },
+    {
+      "file": "sns_sticker_008.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_008_pC2A0C08B15E00DA2.png",
+      "pathId": -8727397821131518558,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "4e590a2be2c67ffbff45b811b1c303e8138229250dd630eb8590f2b10c47bb58"
+    },
+    {
+      "file": "sns_sticker_009.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_009_p3789172D2C9A9E22.png",
+      "pathId": -9210588195476955614,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "278e8ba8c75f311eb9624129400e8531628af5b439c676013a67db7a19c61e3f"
+    },
+    {
+      "file": "sns_sticker_010.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_010_p62AE1316AEE38AD1.png",
+      "pathId": -649284441558447407,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "4868588392ee04cc9f7db53cacfd9ca0875aaed834a51163318cc8ee626783b3"
+    },
+    {
+      "file": "sns_sticker_011.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_011_pB1921E12A9D30E9A.png",
+      "pathId": -2793203798693769574,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "6fd99fa62b722ba1de63f20d032e46c9470d5f49ec04682fe379a0e0411e72dd"
+    },
+    {
+      "file": "sns_sticker_012.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_012_p0473CA4810669419.png",
+      "pathId": -4913692908784872423,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "599c2cf20e00117c316b620bcf58a1c1b0f11db15bbf681408c243fe68951042"
+    },
+    {
+      "file": "sns_sticker_013.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_013_p83E7013A4795A686.png",
+      "pathId": 7508754686897006214,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "c549a0a68c682f60671c8f0cef2c50c12dd2f0752bc0286edc2169584cf539b1"
+    },
+    {
+      "file": "sns_sticker_014.png",
+      "source": "modernchat-web-preview\\output\\chat-source\\images\\Texture2D\\sns_sticker_014_p6BE86DD090C95215.png",
+      "pathId": -5227802600071540203,
+      "rect": {
+        "x": 1.0,
+        "y": 1.0,
+        "width": 160.0,
+        "height": 160.0
+      },
+      "border": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sha256": "88c6efdf996d2d608df629ce84fdf2e16a18c8796d0f5b673569443286dbf669"
+    },
+    {
+      "file": "focus-arrow.png",
+      "source": "C:/DeuteriumAPP/modernchat-desktop-preview/assets/endfield/arrow.png",
+      "original": "resources_231_hg_icon_arror.png",
+      "sha256": "ec5b9035c1fd7855863b1ae0fe6bf6516eec355d2fe348d9bc35c9fbf9d9fd60"
+    }
+  ]
+}

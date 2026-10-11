@@ -1,0 +1,39 @@
+plugins {
+ id 'java-library'
+ id 'net.neoforged.moddev' version '2.0.141'
+}
+group='cafe.deuterium'
+version='0.1.0'
+base.archivesName='deuterium-chat-neoforge-1.21.1'
+java { toolchain.languageVersion=JavaLanguageVersion.of(21); withSourcesJar() }
+neoForge {
+ version='21.1.248'
+ mods { deuterium_chat { sourceSet(sourceSets.main) } }
+ runs { client {
+  client(); gameDirectory=file('run')
+  if (project.hasProperty('ldTest')) {
+   systemProperty 'ldlib2.uitest.run', project.property('ldTest')
+   systemProperty 'ldlib2.uitest.out', file('build/ldlib2-uitest').absolutePath
+   systemProperty 'ldlib2.uitest.window', project.findProperty('window') ?: '1440x900'
+   systemProperty 'deuterium.chat.test.window', project.findProperty('window') ?: '1440x900'
+   systemProperty 'ldlib2.uitest.guiScale', project.findProperty('guiScale') ?: '3'
+   systemProperty 'deuterium.chat.test.guiScale', project.findProperty('guiScale') ?: '3'
+   if (project.property('ldTest').toString().contains('network')) {
+    systemProperty 'javax.net.ssl.trustStore', file('../output/game-harness/truststore.p12').absolutePath
+    systemProperty 'javax.net.ssl.trustStorePassword', 'local-game-chat-test'
+    systemProperty 'deuterium.chat.test.output', file('../output/game-harness/client-result.json').absolutePath
+   }
+  }
+ } }
+}
+repositories { mavenCentral(); maven { url='https://maven.firstdark.dev/snapshots' } }
+dependencies {
+ implementation 'com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1:2.2.39:all'
+ testImplementation platform('org.junit:junit-bom:5.11.4')
+ testImplementation 'org.junit.jupiter:junit-jupiter'
+ testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8' }
+tasks.withType(Test).configureEach { useJUnitPlatform() }
+
+tasks.named("jar") { exclude "**/ui-test/**", "**/ChatUiScenario*", "**/ChatUiFixture*", "**/ChatNetworkScenario*" }

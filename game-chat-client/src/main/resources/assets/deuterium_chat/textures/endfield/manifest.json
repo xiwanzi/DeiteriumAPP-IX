@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-11",
+  "assets": [
+    {
+      "source": "C:\\Users\\34545\\.codex\\visualizations\\2026\\10\\07\\01a114bd-850c-7012-9a63-837eda6d021d\\endfield-assets\\audio\\mail-match\\mail-sounds\\03_点击邮件卡片.wav",
+      "file": "click.wav",
+      "bytes": 13692,
+      "sha256": "671f323696880216a05428ca35ade55a7e7bbd2d91f5607097dc6cd25f0c771a"
+    },
+    {
+      "source": "C:\\Program Files\\Hypergryph Launcher\\games\\Arknights Endfield\\Endfield_Data\\resources.assets",
+      "file": "DefaultFont-CN.ttf",
+      "bytes": 8227312,
+      "sha256": "6ed1553edccddc48eb27ff25d134a4a715cf54211238d4840b3038576cba1944",
+      "unityPathId": 354,
+      "unityName": "DefaultFont_CN"
+    },
+    {
+      "source": "C:\\Program Files\\Hypergryph Launcher\\games\\Arknights Endfield\\Endfield_Data\\resources.assets",
+      "file": "SourceCodePro-Regular.otf",
+      "bytes": 90056,
+      "sha256": "0a42f6706d3752445644d2f751d0fa684f22da1516d71391ac6626250a79c7a0",
+      "unityPathId": 357,
+      "unityName": "SourceCodePro-Regular"
+    },
+    {
+      "source": "C:\\Program Files\\Hypergryph Launcher\\games\\Arknights Endfield\\Endfield_Data\\resources.assets",
+      "file": "Orbitron-Medium.otf",
+      "bytes": 19256,
+      "sha256": "6d466e1c0478e93cbe24d3f069c61c654ebb3d7d384581379cadac2c77794104",
+      "unityPathId": 360,
+      "unityName": "Orbitron Medium"
+    }
+  ]
+}

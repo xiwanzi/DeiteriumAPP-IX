@@ -70,6 +70,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerReleasesV2(mux)
 	s.registerAssetsV2(mux)
 	s.registerChatMedia(mux)
+	s.registerGameChat(mux)
 	s.registerSocialV2(mux)
 	s.registerCatalogV2(mux)
 	s.registerCommerceV2(mux)
@@ -254,6 +255,19 @@ func (s *Server) authenticate(r *http.Request) (v store.Session, err error) {
 	v, err = s.Store.Session(r.Context(), store.Digest([]byte(token)))
 	if err != nil {
 		return
+	}
+	if v.Kind == "gamechat" && kind == "app" {
+		if !v.User.GameVerified {
+			return v, store.ErrUnauthorized
+		}
+		if !gameChatRoute(r) {
+			return v, ErrForbidden
+		}
+		player, e := s.Core.Player("", v.User.ServerUUID)
+		if e != nil || !player.Online || player.ServerID != v.CSRF {
+			return v, store.ErrUnauthorized
+		}
+		return v, nil
 	}
 	if v.Kind != kind {
 		return v, store.ErrUnauthorized

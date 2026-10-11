@@ -71,7 +71,7 @@ public final class BridgeClient implements AutoCloseable {
         connecting = true; state = "CONNECTING"; connectedAt = System.currentTimeMillis();
         long epoch = generation.incrementAndGet();
         http.newWebSocketBuilder().connectTimeout(Duration.ofSeconds(8))
-                .header("Authorization", "Bearer " + c.bridge().token()).header("X-Deuterium-Node-ID", c.nodeId())
+                .header("Authorization", "Bearer " + c.bridge().token()).header("X-Deuterium-Node-ID", c.nodeId()).header("X-Deuterium-Game-Chat", "1")
                 .buildAsync(c.bridge().uri(), new Incoming(epoch)).whenComplete((ws,error) -> { if (error != null && epoch == generation.get()) disconnect("CONNECT_FAILED"); });
     }
     private void send(String type, String request, JsonObject payload) throws Exception { write(envelope(type, request, payload)); }
@@ -103,6 +103,7 @@ public final class BridgeClient implements AutoCloseable {
                     outbox.rejected(id, code.length() <= 64 ? code : "REJECTED");
                 }
             }
+            case "game.chat.delivery" -> endpoint.gameChat(payload);
             case "chat.app.delivery" -> {
                 endpoint.appChat(payload);
                 JsonObject ack = new JsonObject(); ack.addProperty("messageId", Json.string(payload, "messageId"));
