@@ -31,7 +31,7 @@ public final class ChatMessage {
         JsonObject sender=o.has("sender")?o.getAsJsonObject("sender"):new JsonObject();
         Instant at; try { at=Instant.parse(str(o,"sentAt")); } catch(Exception e) { at=Instant.now(); }
         return new ChatMessage(str(o,"messageId"),str(sender,"playerRef"),str(sender,"gameId"),channel,
-                str(o,"serverId"),conversation,Component.literal(str(o,"content")),
+                str(o,"serverId"),conversation,Component.literal(ChatLegacy.localize(str(o,"content"))),
                 o.has("media")&&!o.get("media").isJsonNull()?o.getAsJsonObject("media"):null,at,historical,false,
                 o.has("reply")&&o.get("reply").isJsonObject()?str(o.getAsJsonObject("reply"),"content"):"");
     }

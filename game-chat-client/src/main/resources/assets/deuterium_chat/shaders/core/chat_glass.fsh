@@ -21,13 +21,14 @@ void main() {
     if(FullPanel<0.0){fragColor=vec4(c,1.0);return;}
     float x=texCoord0.x;
     float blurMask=1.0,shade=.65;
-    vec3 tint=vec3(14,20,29)/255.0;
-    if(abs(FullPanel-2.0)<.1){shade=.78;tint=vec3(22,29,32)/255.0;}
+    vec3 tint=vec3(15,15,16)/255.0;
+    if(abs(FullPanel-2.0)<.1){shade=.78;tint=vec3(24,24,25)/255.0;}
     if(FullPanel>2.5)shade=0.0;
     if(abs(FullPanel-1.0)<.1){
-        blurMask=x<.24?1.0:x<.42?mix(1.0,.733,(x-.24)/.18):x<.58?mix(.733,.267,(x-.42)/.16):x<.76?mix(.267,0.0,(x-.58)/.18):0.0;
-        shade=x<.18?mix(.988,.957,x/.18):x<.34?mix(.957,.910,(x-.18)/.16):x<.48?mix(.910,.733,(x-.34)/.14):x<.61?mix(.733,.408,(x-.48)/.13):x<.75?mix(.408,.110,(x-.61)/.14):x<.90?mix(.110,0.0,(x-.75)/.15):0.0;
-        vec3 a0=vec3(16,20,23)/255.0,a1=vec3(17,22,25)/255.0,a2=vec3(19,25,27)/255.0,a3=vec3(20,26,29)/255.0;
+        c=mix(c,vec3(dot(c,vec3(.2126,.7152,.0722))),(1.0-smoothstep(.30,.88,x))*.9);
+        blurMask=1.0-smoothstep(.26,.80,x);
+        shade=.99*(1.0-smoothstep(.22,.92,x));
+        vec3 a0=vec3(12,12,13)/255.0,a1=vec3(14,14,15)/255.0,a2=vec3(16,16,17)/255.0,a3=vec3(18,18,19)/255.0;
         tint=x<.18?mix(a0,a1,x/.18):x<.34?mix(a1,a2,(x-.18)/.16):x<.48?a2:x<.61?mix(a2,a3,(x-.48)/.13):a3;
     }
     // Blur and shade masks compose independently, as backdrop-filter + shade do in Web.

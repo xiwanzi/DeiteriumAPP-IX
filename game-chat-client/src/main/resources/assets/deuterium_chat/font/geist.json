@@ -1,1 +1,1 @@
-{"providers": [{"type": "ttf", "file": "deuterium_chat:geist.ttf", "shift": [0, 0], "size": 9, "oversample": 4}, {"type": "reference", "id": "minecraft:default"}]}
+{"providers": [{"type": "ttf", "file": "deuterium_chat:geist.ttf", "shift": [0, 0], "size": 9, "oversample": 8}, {"type": "reference", "id": "minecraft:default"}]}
