@@ -1,5 +1,5 @@
 name: DeuteriumCore
-version: '1.0.3'
+version: '1.0.4'
 main: cafe.deuterium.core.DeuteriumCorePlugin
 api-version: '1.21'
 authors: [Deuterium]
@@ -7,7 +7,7 @@ description: Item library, cluster bridge and controlled game integration for De
 softdepend: [DeuteriumMail, TrChat, Vault, XConomy]
 commands:
   dc:
-    description: Deuterium Core 物品库与管理
+    description: Deuterium Core 鐗╁搧搴撲笌绠＄悊
     usage: /dc help
 permissions:
   deuterium.core.admin:
