@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 /** Implementations run on a bounded Core worker, never on the HTTP selector. */
 public interface BridgeEndpoint {
     void appChat(JsonObject payload) throws Exception;
+    default void gameChat(JsonObject payload) throws Exception { throw new UnsupportedOperationException("Game chat unavailable"); }
     JsonObject command(JsonObject payload) throws Exception;
     JsonObject status();
     JsonObject presence();

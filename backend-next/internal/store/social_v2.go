@@ -45,6 +45,7 @@ type SocialReply struct {
 	Availability string `json:"availability"`
 }
 type SocialMessage struct {
+	Media           *ChatMedia   `json:"media,omitempty"`
 	MessageID       string       `json:"messageId"`
 	Sender          Player       `json:"sender"`
 	Content         string       `json:"content"`
@@ -478,7 +479,7 @@ type socialQuery interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
-const socialMessageColumns = `x.sequence_id,x.message_id,x.conversation_id,x.client_message_id,x.content,x.reply_json,x.forwarded_json,x.sent_at,i.player_ref,i.game_id`
+const socialMessageColumns = `x.sequence_id,x.message_id,x.conversation_id,x.client_message_id,x.content,x.reply_json,x.forwarded_json,x.sent_at,i.player_ref,i.game_id,x.media_json`
 
 func socialMessages(ctx context.Context, q socialQuery, userID, conversation string, before int64, limit int) ([]SocialMessage, error) {
 	rows, err := q.QueryContext(ctx, `SELECT `+socialMessageColumns+` FROM social_messages_v2 x JOIN identities i ON i.id=x.sender_id JOIN social_members_v2 m ON m.conversation_id=x.conversation_id AND m.user_id=? WHERE x.conversation_id=? AND x.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) AND (?=0 OR x.sequence_id<?) ORDER BY x.sequence_id DESC LIMIT ?`, userID, conversation, before, before, limit)
@@ -489,9 +490,14 @@ func socialMessages(ctx context.Context, q socialQuery, userID, conversation str
 	result := []SocialMessage{}
 	for rows.Next() {
 		var m SocialMessage
-		var reply, forward sql.NullString
-		if err = rows.Scan(&m.Sequence, &m.MessageID, &m.ConversationID, &m.ClientMessageID, &m.Content, &reply, &forward, &m.SentAt, &m.Sender.PlayerRef, &m.Sender.GameID); err != nil {
+		var reply, forward, media sql.NullString
+		if err = rows.Scan(&m.Sequence, &m.MessageID, &m.ConversationID, &m.ClientMessageID, &m.Content, &reply, &forward, &m.SentAt, &m.Sender.PlayerRef, &m.Sender.GameID, &media); err != nil {
 			return nil, err
+		}
+		if media.Valid {
+			if err = json.Unmarshal([]byte(media.String), &m.Media); err != nil {
+				return nil, err
+			}
 		}
 		m.Kind = "private_chat"
 		m.Sender.Registered = true
@@ -608,7 +614,10 @@ func AddNotificationWithPushV206(ctx context.Context, tx *sql.Tx, userID, eventK
 }
 func (s *Store) SendDirectV2(ctx context.Context, u User, conversation string, input SocialSendRequest, forward *SocialForwardRequest) (json.RawMessage, error) {
 	if input.Media != nil {
-		return nil, ErrSocialInvalid
+		if !input.Media.Valid() || forward != nil {
+			return nil, ErrSocialInvalid
+		}
+		input.Content = input.Media.Summary()
 	}
 	if !ValidSocialID(conversation) || !ValidSocialID(input.ClientMessageID) || len(input.MentionedPlayerRefs) > 20 {
 		return nil, ErrSocialInvalid
@@ -646,7 +655,18 @@ func (s *Store) SendDirectV2(ctx context.Context, u User, conversation string, i
 			return nil, err
 		}
 		m := SocialMessage{MessageID: ID("msg_"), ConversationID: conversation, ClientMessageID: input.ClientMessageID, Content: input.Content, Kind: "private_chat", Sender: Player{PlayerRef: u.PlayerRef, GameID: u.GameID, Registered: true, Source: "game_id"}, SentAt: time.Now().UTC()}
-		var replyJSON, forwardJSON any
+		var replyJSON, forwardJSON, mediaJSON any
+		if input.Media != nil {
+			media, e := chatMediaForSend(ctx, tx, u.ID, input.Media)
+			if e != nil {
+				return nil, e
+			}
+			m.Media = &media
+			mediaJSON, e = json.Marshal(media)
+			if e != nil {
+				return nil, e
+			}
+		}
 		if input.ReplyToMessageID != "" {
 			m.Reply, err = socialReplyAt(ctx, tx, u.ID, conversation, input.ReplyToMessageID)
 			if err != nil {
@@ -671,12 +691,17 @@ func (s *Store) SendDirectV2(ctx context.Context, u User, conversation string, i
 				return nil, err
 			}
 		}
-		result, err := tx.ExecContext(ctx, `INSERT INTO social_messages_v2(message_id,conversation_id,sender_id,client_message_id,content,reply_json,forwarded_json,sent_at) VALUES(?,?,?,?,?,?,?,?)`, m.MessageID, conversation, u.ID, input.ClientMessageID, m.Content, replyJSON, forwardJSON, m.SentAt)
+		result, err := tx.ExecContext(ctx, `INSERT INTO social_messages_v2(message_id,conversation_id,sender_id,client_message_id,content,reply_json,forwarded_json,sent_at,media_json) VALUES(?,?,?,?,?,?,?,?,?)`, m.MessageID, conversation, u.ID, input.ClientMessageID, m.Content, replyJSON, forwardJSON, m.SentAt, mediaJSON)
 		if err != nil {
 			if duplicate(err) {
 				return nil, ErrConflict
 			}
 			return nil, err
+		}
+		if m.Media != nil {
+			if _, err = tx.ExecContext(ctx, `INSERT INTO direct_chat_media(message_id,media_id,expires_at) VALUES(?,?,?)`, m.MessageID, m.Media.ID, m.Media.ExpiresAt); err != nil {
+				return nil, err
+			}
 		}
 		m.Sequence, err = result.LastInsertId()
 		if err != nil {

@@ -42,7 +42,9 @@ public final class ChatEvents implements Listener {
                     if (!kind.invoke(event).toString().equals("COMMON") || !config.get().publicChannels().contains(channelId.invoke(channel.invoke(event)).toString())) return;
                     Player sender = (Player) player.invoke(event);
                     if ((boolean) shadow.invoke(playerData.invoke(null, sender))) return;
-                    enqueue(sender.getUniqueId(), sender.getName(), (String) plain.invoke(component.invoke(event)));
+                    String formatted=(String) plain.invoke(component.invoke(event));
+                    String body=ForwardedChatBody.fromTrChat(formatted,sender.getName());
+                    enqueue(sender.getUniqueId(), sender.getName(), body, formatted);
                 } catch (Exception failure) { warning(); }
             }, plugin, true);
             mode = "TrChat final-public API";
@@ -52,9 +54,12 @@ public final class ChatEvents implements Listener {
         }
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onChat(AsyncPlayerChatEvent event) { enqueue(event.getPlayer().getUniqueId(), event.getPlayer().getName(), event.getMessage()); }
-    private void enqueue(UUID id, String name, String content) {
-        workers.submit(() -> { chat.captured(id, name, content); return null; }).exceptionally(error -> { warning(); return null; });
+    public void onChat(AsyncPlayerChatEvent event) {
+        event.getRecipients().removeIf(chat::gameClient);
+        enqueue(event.getPlayer().getUniqueId(), event.getPlayer().getName(), event.getMessage(), "");
+    }
+    private void enqueue(UUID id, String name, String content, String legacy) {
+        workers.submit(() -> { chat.captured(id, name, content, legacy); return null; }).exceptionally(error -> { warning(); return null; });
     }
     private void warning() {
         long now = System.currentTimeMillis(), last = lastWarning.get();

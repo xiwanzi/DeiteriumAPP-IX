@@ -1,3 +1,9 @@
+## 2026-10-11 游戏聊天本机候选（未部署）
+
+独立工作区 `C:/DeiteriumAPP-IX/.worktrees/game-chat-ldlib` 新增 NeoForge 1.21.1 / LDLib2 聊天客户端及配套 Core/Go：完整聊天、HUD、附近50米、现有团队路由、私聊、S3图片/贴纸。按 Web V12 与用户后续要求修正尺寸、材质、字体、抗锯齿及音效。未推送/部署，不改变下方生产版本记录。
+
+入口：[模块说明](../game-chat-client/README.md)、[实施边界](plans/game-chat-ldlib-20261011.md)、[本机验收](qa/game-chat-ldlib-20261011.md)。交付包在本工作区 `output/deuterium-game-chat-candidate-20261011.zip`。
+
 2026-10-10：**App 2.0.25（22500）、Web 2.0.34 已于 01:55 上线**（PR #91，源码 `984ceee1163dd`）。输入栏与表情贴纸面板独立适配浅深色、提高可读性，App 支持分别调节材质；顶部圆角与贴底布局保留。58 账号、44 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，三常驻节点在线、MEK 停止。维护 `.worktrees/chat-media` / `xiwanzi/release-v225-live`，见[上线记录](deployment/deuterium-2.0.25-live.md)。下方候选及旧发布为历史状态。
 
 2026-10-10：**聊天玻璃独立参数调校已完成本机候选，未发布**。输入栏/表情面板分别保存浅深色材质，并可在“材质细节”独立调整、还原；提高可读性、降低反光，保留顶部圆角与贴底布局。维护 `.worktrees/chat-media` / `xiwanzi/chat-glass-tuning`，见[验收与默认值](qa/chat-glass-materials-20261010.md)。线上仍为下方 2.0.24 / Web 2.0.33。

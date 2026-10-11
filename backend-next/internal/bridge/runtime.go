@@ -12,6 +12,7 @@ import (
 var ErrNodeOffline = errors.New("core node offline")
 
 type Runtime struct {
+	gameChat map[string]bool
 	mu       sync.RWMutex
 	links    map[string]func(context.Context, string, any) error
 	status   map[string]json.RawMessage
@@ -46,7 +47,7 @@ func (r *Runtime) Player(name, uuid string) (p store.CorePlayerIdentity, err err
 }
 
 func NewRuntime() *Runtime {
-	return &Runtime{links: map[string]func(context.Context, string, any) error{}, status: map[string]json.RawMessage{}, presence: map[string]json.RawMessage{}, waiters: map[string]map[chan struct{}]struct{}{}}
+	return &Runtime{gameChat: map[string]bool{}, links: map[string]func(context.Context, string, any) error{}, status: map[string]json.RawMessage{}, presence: map[string]json.RawMessage{}, waiters: map[string]map[chan struct{}]struct{}{}}
 }
 func (r *Runtime) Connect(node string, send func(context.Context, string, any) error) {
 	r.mu.Lock()
@@ -56,6 +57,7 @@ func (r *Runtime) Connect(node string, send func(context.Context, string, any) e
 func (r *Runtime) Disconnect(node string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	delete(r.gameChat, node)
 	delete(r.links, node)
 	delete(r.status, node)
 	delete(r.presence, node)
@@ -73,6 +75,22 @@ func (r *Runtime) Online(node string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.links[node] != nil
+}
+
+func (r *Runtime) SetGameChat(node string, enabled bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.gameChat[node] = enabled
+}
+
+func (r *Runtime) SendGameChat(ctx context.Context, node string, payload any) error {
+	r.mu.RLock()
+	send, enabled := r.links[node], r.gameChat[node]
+	r.mu.RUnlock()
+	if send == nil || !enabled {
+		return ErrNodeOffline
+	}
+	return send(ctx, "game.chat.delivery", payload)
 }
 func (r *Runtime) Status(node string) json.RawMessage {
 	r.mu.RLock()

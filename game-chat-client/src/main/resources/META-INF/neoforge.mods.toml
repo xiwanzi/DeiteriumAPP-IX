@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+[[mods]]
+modId="deuterium_chat"
+version="0.1.0"
+displayName="Deuterium Chat"
+[[dependencies.deuterium_chat]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.218,)"
+side="CLIENT"
+[[dependencies.deuterium_chat]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1]"
+side="CLIENT"
+[[dependencies.deuterium_chat]]
+modId="ldlib2"
+type="required"
+versionRange="[2.2.39,)"
+side="CLIENT"
+
+[[mixins]]
+config="deuterium_chat.mixins.json"

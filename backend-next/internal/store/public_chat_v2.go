@@ -124,7 +124,7 @@ func (s *Store) PublishAppChatV2(ctx context.Context, u User, clientID, content,
 			return "", false, e
 		}
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO public_chat_metadata_v2(message_id,reply_json,mentioned_refs_json,media_json) VALUES(?,?,?,?)`, messageID, replyJSON, mentionsJSON, mediaJSON); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO public_chat_metadata_v2(message_id,reply_json,mentioned_refs_json,media_json,source_server_id) VALUES(?,?,?,?,?)`, messageID, replyJSON, mentionsJSON, mediaJSON, u.GameChatNode); err != nil {
 		return "", false, err
 	}
 	seq, err := result.LastInsertId()

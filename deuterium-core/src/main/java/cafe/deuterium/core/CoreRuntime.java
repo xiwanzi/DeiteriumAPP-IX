@@ -40,6 +40,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
     private final PlayerStore players;
     private final PlayerEvents playerEvents;
     private final ChatAccess chat;
+    private final cafe.deuterium.core.game.GameChatChannel gameChat;
     private final ChatEvents chatEvents;
     private final EconomyAccess economy = new EconomyAccess();
     private final CommandDispatcher commands;
@@ -75,6 +76,8 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         commands = new CommandDispatcher(settings::get, () -> mailbox, game, sessions, players, journal, economy);
         bridge = new BridgeClient(settings::get, outbox, this, workers, plugin.getLogger());
         initialized.add(bridge);
+        gameChat = new cafe.deuterium.core.game.GameChatChannel(plugin, settings::get, game, chat);
+        chat.bindGameChat(gameChat); initialized.add(gameChat);
         timer = Executors.newSingleThreadScheduledExecutor(task -> { Thread thread = new Thread(task, "DeuteriumCore-Timer"); thread.setDaemon(true); return thread; });
         initialized.add(timer::shutdownNow);
         timer.scheduleWithFixedDelay(this::tick, 0, 1, TimeUnit.SECONDS);
@@ -122,6 +125,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         settings.set(next); chatEvents.register(); bridge.reconnect();
     }
     @Override public void appChat(JsonObject payload) throws Exception { ensureOpen(); chat.incoming(payload); }
+    @Override public void gameChat(JsonObject payload) { ensureOpen(); gameChat.receiveTeam(payload); }
     @Override public JsonObject command(JsonObject payload) { ensureOpen(); return commands.execute(payload); }
     @Override public JsonObject presence() { return Json.tree(Map.of("players", sessions.snapshot())); }
     @Override public JsonObject status() {
@@ -149,7 +153,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
     public void ensureOpen() { if (closing.get()) throw new CoreFailure("CORE_STOPPED", "Core 已停用。"); }
     @Override public void close() {
         if (!closing.compareAndSet(false, true)) return;
-        bridge.close(); timer.shutdownNow(); game.close(); localData.disable(); mailbox.close();
+        gameChat.close(); bridge.close(); timer.shutdownNow(); game.close(); localData.disable(); mailbox.close();
         HandlerList.unregisterAll(plugin);
         Bukkit.getServicesManager().unregisterAll(plugin); workers.close(); sessions.clear();
         try { players.offline(); } catch (Exception ignored) { } lease.close(); database.close();

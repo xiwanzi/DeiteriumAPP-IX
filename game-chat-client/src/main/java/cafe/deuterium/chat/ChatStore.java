@@ -1,0 +1,35 @@
+package cafe.deuterium.chat;
+
+import java.util.*;
+
+/** Render-thread owned retained model. Neither networking nor image decoding runs here. */
+public final class ChatStore {
+    public static final ChatStore INSTANCE = new ChatStore();
+    private final LinkedHashMap<String,ChatMessage> messages=new LinkedHashMap<>();
+    private final List<Runnable> listeners=new ArrayList<>();
+    public final Map<String,String> drafts=new HashMap<>();
+    public final Map<String,Float> scrolls=new HashMap<>();
+    public final LinkedHashMap<String,Contact> contacts=new LinkedHashMap<>();
+    public final Set<String> pinned=new LinkedHashSet<>();
+    public String current="world", selfRef="", server="", status="正在连接游戏聊天…";
+    public long revision;
+    public record Contact(String id,String name,String ref,boolean online,int unread) {}
+    public void add(ChatMessage m) {
+        if(messages.containsKey(m.id))return;
+        messages.put(m.id,m);
+        while(messages.size()>1000)messages.remove(messages.keySet().iterator().next());
+        changed();
+    }
+    public void replace(String id,ChatMessage m) { boolean removed=messages.remove(id)!=null;if(messages.containsKey(m.id)){if(removed)changed();}else add(m); }
+    public net.minecraft.network.chat.Component takeLegacy(String plain) {
+        ChatMessage found=null;long now=System.nanoTime()/1_000_000;
+        for(var m:messages.values())if(m.system&&now-m.receivedAt<2000&&m.content.getString().equals(plain))found=m;
+        if(found!=null){messages.remove(found.id);return found.content;}return null;
+    }
+    public void changed() { revision++;for(var listener:List.copyOf(listeners))listener.run(); }
+    public List<ChatMessage> inScope(String scope) { return messages.values().stream().filter(m->m.scope().equals(scope)).toList(); }
+    public List<ChatMessage> hud() { return List.copyOf(messages.values()); }
+    public AutoCloseable listen(Runnable listener) { listeners.add(listener);return ()->listeners.remove(listener); }
+    public List<Contact> orderedContacts() {return contacts.values().stream().sorted(Comparator.<Contact,Boolean>comparing(c->!pinned.contains(c.id())).thenComparing(Comparator.comparingLong((Contact c)->inScope(c.id()).stream().mapToLong(m->m.sentMillis).max().orElse(0)).reversed())).toList();}
+    public void clear() { messages.clear();contacts.clear();drafts.clear();scrolls.clear();pinned.clear();selfRef="";server="";current="world";changed(); }
+}

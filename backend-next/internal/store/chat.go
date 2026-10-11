@@ -19,6 +19,8 @@ type Player struct {
 }
 
 type ChatMessage struct {
+	Origin              string       `json:"-"`
+	ServerID            string       `json:"serverId,omitempty"`
 	Media               *ChatMedia   `json:"media,omitempty"`
 	ID                  string       `json:"messageId"`
 	Sender              Player       `json:"sender"`
@@ -60,7 +62,7 @@ func ID(prefix string) string {
 	return prefix + hex.EncodeToString(b)
 }
 
-func (s *Store) CoreEvent(ctx context.Context, node, eventID, eventType string, payload []byte, chat *CoreChat, item *ItemVersion) (sequence int64, replayed bool, err error) {
+func (s *Store) CoreEvent(ctx context.Context, node, eventID, eventType string, payload []byte, chat *CoreChat, item *ItemVersion, deliveryNodes ...string) (sequence int64, replayed bool, err error) {
 	fingerprint := Digest(append([]byte(eventType+":"), payload...))
 	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
@@ -101,7 +103,21 @@ func (s *Store) CoreEvent(ctx context.Context, node, eventID, eventType string, 
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			return
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO chat_messages_next (message_id,source_id,client_message_id,fingerprint,sender_uuid,sender_name,sender_ref,registered,content,kind,sent_at) VALUES (?,?,?,?,?,?,?,?,?,'public_chat',UTC_TIMESTAMP(6))`, ID("msg_"), "core:"+node, eventID, fingerprint, chat.PlayerUUID, chat.GameID, ref, registered, chat.Content)
+		chatResult, insertErr := tx.ExecContext(ctx, `INSERT INTO chat_messages_next (message_id,source_id,client_message_id,fingerprint,sender_uuid,sender_name,sender_ref,registered,content,kind,sent_at) VALUES (?,?,?,?,?,?,?,?,?,'public_chat',UTC_TIMESTAMP(6))`, "msg_"+Digest([]byte(node + ":" + eventID))[:32], "core:"+node, eventID, fingerprint, chat.PlayerUUID, chat.GameID, ref, registered, chat.Content)
+		err = insertErr
+		if err == nil {
+			chatSeq, e := chatResult.LastInsertId()
+			if e != nil {
+				return sequence, false, e
+			}
+			for _, target := range deliveryNodes {
+				if target != node {
+					if _, e = tx.ExecContext(ctx, `INSERT INTO core_chat_deliveries(node_id,message_sequence,expires_at) VALUES(?,?,DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 10 MINUTE))`, target, chatSeq); e != nil {
+						return sequence, false, e
+					}
+				}
+			}
+		}
 		if err != nil {
 			return
 		}
@@ -157,7 +173,7 @@ func (s *Store) PublishAppChat(ctx context.Context, u User, clientID, content st
 	return
 }
 
-const chatColumns = "m.sequence_id,m.message_id,m.sender_uuid,m.sender_name,m.sender_ref,m.registered,m.content,m.kind,m.sent_at,m.client_message_id,p.reply_json,p.mentioned_refs_json,p.media_json"
+const chatColumns = "m.sequence_id,m.message_id,m.sender_uuid,m.sender_name,m.sender_ref,m.registered,m.content,m.kind,m.sent_at,m.client_message_id,p.reply_json,p.mentioned_refs_json,p.media_json,CASE WHEN m.source_id LIKE 'core:%' THEN SUBSTRING(m.source_id,6) ELSE COALESCE(p.source_server_id,'') END,CASE WHEN m.source_id LIKE 'core:%' THEN 'game' ELSE 'app' END"
 
 func scanMessages(rows *sql.Rows) ([]ChatMessage, error) {
 	defer rows.Close()
@@ -165,7 +181,7 @@ func scanMessages(rows *sql.Rows) ([]ChatMessage, error) {
 	for rows.Next() {
 		var m ChatMessage
 		var reply, mentions, media sql.NullString
-		if err := rows.Scan(&m.Sequence, &m.ID, &m.ServerUUID, &m.Sender.GameID, &m.Sender.PlayerRef, &m.Sender.Registered, &m.Content, &m.Kind, &m.SentAt, &m.ClientMessageID, &reply, &mentions, &media); err != nil {
+		if err := rows.Scan(&m.Sequence, &m.ID, &m.ServerUUID, &m.Sender.GameID, &m.Sender.PlayerRef, &m.Sender.Registered, &m.Content, &m.Kind, &m.SentAt, &m.ClientMessageID, &reply, &mentions, &media, &m.ServerID, &m.Origin); err != nil {
 			return nil, err
 		}
 		m.Sender.Source = "game_id"
@@ -287,12 +303,22 @@ func (s *Store) ExistingAppChat(ctx context.Context, userID, clientID, content s
 }
 
 func (s *Store) ReserveChat(ctx context.Context, userID string) error {
+	return s.reserveChatBudget(ctx, userID, "chat:"+userID)
+}
+
+// Core already authenticated the live game UUID; unregistered players are not
+// turned into App identities merely to share their existing FTB team chat.
+func (s *Store) ReserveGameChat(ctx context.Context, uuid string) error {
+	return s.reserveChatBudget(ctx, "", "game-chat:"+uuid)
+}
+
+func (s *Store) reserveChatBudget(ctx context.Context, userID, budget string) error {
 	tx, err := s.beginAccountTx(ctx, userID)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	key := Digest([]byte("chat:" + userID))
+	key := Digest([]byte(budget))
 	_, err = tx.ExecContext(ctx, `INSERT INTO auth_budgets VALUES (?,1,DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 1 MINUTE)) ON DUPLICATE KEY UPDATE attempts=IF(expires_at<=UTC_TIMESTAMP(6),1,attempts+1),expires_at=IF(expires_at<=UTC_TIMESTAMP(6),DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 1 MINUTE),expires_at)`, key)
 	if err != nil {
 		return err

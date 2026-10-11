@@ -1,0 +1,11 @@
+name: DeuteriumChatProbe
+version: '0.1.0'
+main: cafe.deuterium.probe.ChatProbe
+api-version: '1.21'
+depend: [DeuteriumCore]
+commands:
+  chatprobe:
+    permission: deuterium.chat.probe
+permissions:
+  deuterium.chat.probe:
+    default: op

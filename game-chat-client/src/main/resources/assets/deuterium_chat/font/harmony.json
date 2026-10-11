@@ -1,0 +1,1 @@
+{"providers": [{"type": "reference", "id": "deuterium_chat:emoji"}, {"type": "ttf", "file": "deuterium_chat:harmony.ttf", "shift": [0, 0], "size": 9, "oversample": 4}, {"type": "reference", "id": "minecraft:default"}]}
