@@ -51,7 +51,7 @@ final class ChatClient {
                     }
                     if(original!=null)m=ChatLegacy.merge(m,legacy,original);
                     else if(!legacy.isEmpty()){lateRich.add(new PendingRich(legacy,m,System.currentTimeMillis()+5000));while(lateRich.size()>128)lateRich.removeFirst();}
-                    ChatStore.INSTANCE.add(m);
+                    if(original!=null)ChatStore.INSTANCE.replace(m.id,m);else ChatStore.INSTANCE.add(m);
                 }
                 case "location-result" -> sendTo(ChatMessage.str(p,"content"),ChatMessage.str(p,"scope"));
                 case "notice" -> notice(ChatMessage.str(p,"message"));
