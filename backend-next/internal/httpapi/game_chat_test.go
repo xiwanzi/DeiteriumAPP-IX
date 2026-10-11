@@ -10,6 +10,7 @@ func TestGameChatTokenCannotEscapeChatScope(t *testing.T) {
 		method, path string
 		allowed      bool
 	}{
+		{"GET", "/api/v1/chat/avatars/Bob", true}, {"POST", "/api/v1/chat/avatars/Bob", false},
 		{"GET", "/api/v1/chat/messages", true}, {"POST", "/api/v1/chat/messages", true},
 		{"POST", "/api/v1/chat/media/uploads/a/complete", true}, {"GET", "/api/v1/chat/media/files/a/access", true},
 		{"POST", "/api/v1/chat/conversations/a/messages", true}, {"GET", "/api/v1/chat/ws", false},

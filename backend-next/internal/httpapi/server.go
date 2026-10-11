@@ -24,20 +24,21 @@ import (
 var ErrForbidden = errors.New("forbidden")
 
 type Server struct {
-	AdmissionResolver func(context.Context, string) (store.AdmissionProfile, error)
-	Store             *store.Store
-	Config            config.Config
-	Identity          *identity.Service
-	Hub               *bridge.Hub
-	Core              *bridge.Runtime
-	CommerceCore      CommerceExecutorV2
-	ctx               context.Context
-	cancel            context.CancelFunc
-	capacity          *requestCapacity
-	chatReads         sharedChatReads
-	ai                *aiGatewayV2
-	desktop           *desktopRuntime
-	ysm               *ysmBridge
+	GameAvatarResolver func(context.Context, string) ([]byte, error)
+	AdmissionResolver  func(context.Context, string) (store.AdmissionProfile, error)
+	Store              *store.Store
+	Config             config.Config
+	Identity           *identity.Service
+	Hub                *bridge.Hub
+	Core               *bridge.Runtime
+	CommerceCore       CommerceExecutorV2
+	ctx                context.Context
+	cancel             context.CancelFunc
+	capacity           *requestCapacity
+	chatReads          sharedChatReads
+	ai                 *aiGatewayV2
+	desktop            *desktopRuntime
+	ysm                *ysmBridge
 }
 
 func New(s *store.Store, c config.Config) *Server {
