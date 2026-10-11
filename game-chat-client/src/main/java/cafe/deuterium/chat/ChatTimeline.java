@@ -136,11 +136,7 @@ final class ChatTimeline extends UIElement {
         if(m.pending||!m.failure.isEmpty())drawText(g,ChatStyle.body(Component.literal(m.pending?"发送中…":m.failure)),textX,y+r.height-4,.42f,0xFFD7B6BA);
     }
     private void drawAvatar(GuiGraphics g,ChatMessage m,float x,float y,int alpha) {
-        var mc=Minecraft.getInstance();var connection=mc.getConnection();
-        var info=connection==null?null:connection.getPlayerInfo(m.name);
-        var skin=info==null?net.minecraft.client.resources.DefaultPlayerSkin.getDefaultTexture():info.getSkin().texture();
-        com.mojang.blaze3d.systems.RenderSystem.enableBlend();g.setColor(1,1,1,alpha/255f);
-        float size=hud?5.4f:(WebPixels.wide()?35:32)/3f;g.pose().pushPose();g.pose().translate(x,y,0);g.pose().scale(size,size,1);g.blit(skin,0,0,1,1,8,8,8,8,64,64);g.pose().popPose();g.setColor(1,1,1,1);
+        SkinFaceTexture.draw(g,m.name,x,y,hud?5.4f:(WebPixels.wide()?35:32)/3f,alpha);
     }
     static void drawText(GuiGraphics g,Component c,float x,float y,float scale,int color) {
         g.pose().pushPose();g.pose().translate(x,y,0);g.pose().scale(scale,scale,1);LDLibFonts.drawText(g,LDLibFonts.font(),c,0,0,color,false);g.pose().popPose();

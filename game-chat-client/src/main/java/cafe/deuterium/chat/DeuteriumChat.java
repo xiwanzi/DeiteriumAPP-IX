@@ -54,6 +54,6 @@ public final class DeuteriumChat {
     private void hideVanilla(RenderGuiLayerEvent.Pre e) {
         if(e.getName().equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CHAT))e.setCanceled(true);
     }
-    private void tick(ClientTickEvent.Post e) { ChatClient.INSTANCE.tick(); }
+    private void tick(ClientTickEvent.Post e) { ChatKeyBindings.migrate();ChatClient.INSTANCE.tick(); }
     private void logout(ClientPlayerNetworkEvent.LoggingOut e) { ChatClient.INSTANCE.reset();hud=null; }
 }

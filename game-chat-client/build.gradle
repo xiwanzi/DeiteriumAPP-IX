@@ -3,7 +3,7 @@ plugins {
  id 'net.neoforged.moddev' version '2.0.141'
 }
 group='cafe.deuterium'
-version='0.1.0'
+version='0.1.1'
 base.archivesName='deuterium-chat-neoforge-1.21.1'
 java { toolchain.languageVersion=JavaLanguageVersion.of(21); withSourcesJar() }
 neoForge {
