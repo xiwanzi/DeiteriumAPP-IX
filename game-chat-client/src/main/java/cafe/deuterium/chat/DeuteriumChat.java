@@ -29,6 +29,7 @@ public final class DeuteriumChat {
         NeoForge.EVENT_BUS.addListener(this::hideVanilla);
         NeoForge.EVENT_BUS.addListener(this::tick);
         NeoForge.EVENT_BUS.addListener(this::logout);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,VanillaMusicGuard::filter);
     }
     private void network(RegisterPayloadHandlersEvent e) {
         e.registrar("1").optional().playBidirectional(ChatPayload.TYPE,ChatPayload.CODEC,
@@ -54,6 +55,6 @@ public final class DeuteriumChat {
     private void hideVanilla(RenderGuiLayerEvent.Pre e) {
         if(e.getName().equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CHAT))e.setCanceled(true);
     }
-    private void tick(ClientTickEvent.Post e) { ChatKeyBindings.migrate();ChatClient.INSTANCE.tick(); }
+    private void tick(ClientTickEvent.Post e) { ChatKeyBindings.migrate();MinimapPlacement.migrate();ChatClient.INSTANCE.tick(); }
     private void logout(ClientPlayerNetworkEvent.LoggingOut e) { ChatClient.INSTANCE.reset();hud=null; }
 }
