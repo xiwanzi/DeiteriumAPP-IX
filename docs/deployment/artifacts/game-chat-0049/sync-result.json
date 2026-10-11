@@ -1,0 +1,12 @@
+{
+  "version": "0.0.49-dev",
+  "sync": {
+    "id": "ls_b3152c32bcf93c59afbc682c7af0ccbf",
+    "state": "SUCCEEDED",
+    "message": "最新更新已同步到 OSS，索引与文件完整性检查通过。",
+    "createdAt": "2026-10-11T16:25:10.677393Z",
+    "updatedAt": "2026-10-11T16:25:13.989409Z"
+  },
+  "public_index_matches_native": true,
+  "index_sha256": "7397b7517435cee397d509b82a4836b890434d6070289651886b8111159ad4c5"
+}
