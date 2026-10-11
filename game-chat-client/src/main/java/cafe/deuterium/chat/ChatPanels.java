@@ -14,7 +14,7 @@ final class ChatPanels {
     private static final Map<UIElement,String> STATES=new WeakHashMap<>();
     static String state(UIElement root){return STATES.getOrDefault(root,"");}
     static void close(UIElement root){UIElement panel=OPEN.remove(root);STATES.remove(root);if(panel!=null)root.removeChild(panel);}
-    static void restore(UIElement root,String state,Consumer<String> choose){switch(state){case "stickers"->stickers(root,false,false);case "personal"->stickers(root,true,false);case "manage"->stickers(root,true,true);case "inbox"->inbox(root,choose);case "more"->more(root);case "common"->stickerPage(root,2,false);case "adventure"->stickerPage(root,3,false);case "location-live"->positionPreview(root,true);case "location-beacon"->positionPreview(root,false);}}
+    static void restore(UIElement root,String state,Consumer<String> choose){switch(state){case "stickers"->stickers(root,false,false);case "personal"->stickers(root,true,false);case "manage"->stickers(root,true,true);case "inbox"->inbox(root,choose);case "more"->more(root);case "common"->stickerPage(root,2,false);case "adventure"->stickerPage(root,3,false);case "location"->positionPreview(root);}}
     private static UIElement panel(UIElement root,String title,int width,int height,String state){
         close(root);var p=new PopupSurface();p.lss("position","absolute");p.getLayout().left(WebPixels.contentX()).bottom(WebPixels.bottom()+WebPixels.composer()+8/3f).width(width).height(height).paddingAll(6);
         p.style(s->s.zIndex(50));
@@ -60,24 +60,29 @@ final class ChatPanels {
     }
     private static ChatMessage builtin(int index){var media=new JsonObject();media.addProperty("builtin",index);media.addProperty("mediaId","builtin_"+index);media.addProperty("width",256);media.addProperty("height",256);media.addProperty("type","sticker");return new ChatMessage("builtin_"+index,"","","world","","",Component.empty(),media,java.time.Instant.now(),true,false,"");}
     static void more(UIElement root){
-        var p=panel(root,"分享",118,70,"more");p.getChildren().getLast().style(st->st.background(new ColorRectTexture(0xFFB9C7BC)));
-        p.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new ColorRectTexture(0x24C9D3D2))),7,61/3f,104,1/3f));
-        for(int i=0;i<2;i++){boolean live=i==0;var tile=ChatStyle.button("",()->positionPreview(root,live));tile.setId(live?"share-live":"share-beacon");tile.noText();ChatStyle.sound(tile,"card");tile.buttonStyle(st->st.hoverTexture(IGuiTexture.EMPTY));
-            var art=new UIElement().style(st->st.background(new RoundTexture(8/3f,0x18829B90,1/3f,0x3BB3C8BA)));tile.addChild(ChatStyle.rect(art,42.25f/3,7/3f,65/3f,65/3f));
-            tile.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_ENTER,e->{art.transform(t->t.translate(0,-2/3f));art.style(st->st.background(new RoundTexture(8/3f,0x23B3C5B9,1/3f,0x78D7E2D7)));});
-            tile.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_LEAVE,e->{art.transform(t->t.translate(0,0));art.style(st->st.background(new RoundTexture(8/3f,0x18829B90,1/3f,0x3BB3C8BA)));});
-            float size=(live?28:42)/3f;art.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new MaskTexture(live?"icons/location.png":"chat-native/icon_map_beacon.png",live?0xFFBDCFC8:0xFFC4D0C5))),(65/3f-size)/2,(65/3f-size)/2,size,size));
-            var caption=ChatStyle.label(live?"实时位置":"地点信标",13/3f,0xFFC0CEC6);caption.textStyle(st->st.textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));tile.addChild(ChatStyle.rect(caption,0,82/3f,149.5f/3,6));p.addChild(ChatStyle.rect(tile,7+i*162.5f/3,79/3f,149.5f/3,36));
+        var p=panel(root,"分享",118,72,"more");
+        p.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new ColorRectTexture(0x24D0D0D2))),7,61/3f,104,1/3f));
+        for(int i=0;i<2;i++){boolean location=i==0;boolean available=location||ChatStore.INSTANCE.current.equals("world");
+            var tile=ChatStyle.button("",()->{if(location)positionPreview(root);else if(ChatClient.INSTANCE.shareItem()){ChatSounds.play("send");close(root);}});
+            tile.setId(location?"share-location":"share-item");tile.noText();tile.setActive(available);ChatStyle.sound(tile,"card");tile.buttonStyle(st->st.hoverTexture(IGuiTexture.EMPTY));
+            var art=new UIElement().style(st->st.background(new RoundTexture(8/3f,0x18A0A0A2,1/3f,0x3BC9C9CD)));tile.addChild(ChatStyle.rect(art,42.25f/3,7/3f,65/3f,65/3f));
+            tile.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_ENTER,e->art.style(st->st.background(new RoundTexture(8/3f,0x23C7C7CB,1/3f,0x78DEDEE0))));
+            tile.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.MOUSE_LEAVE,e->art.style(st->st.background(new RoundTexture(8/3f,0x18A0A0A2,1/3f,0x3BC9C9CD))));
+            float size=32/3f;IGuiTexture icon;
+            if(location)icon=new MaskTexture("icons/location.png",0xFFD0D0D2);
+            else{var player=Minecraft.getInstance().player;var held=player==null?net.minecraft.world.item.ItemStack.EMPTY:player.getMainHandItem();icon=new ItemStackTexture(held.isEmpty()?net.minecraft.world.item.Items.CHEST.getDefaultInstance():held.copy());}
+            var texture=icon;art.addChild(ChatStyle.rect(new UIElement().style(st->st.background(texture)),(65/3f-size)/2,(65/3f-size)/2,size,size));
+            var caption=ChatStyle.label(location?"当前位置":"当前物品",14/3f,available?0xFFD0D0D2:0xFF929294);caption.textStyle(st->st.textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));tile.addChild(ChatStyle.rect(caption,0,82/3f,149.5f/3,6));p.addChild(ChatStyle.rect(tile,7+i*162.5f/3,79/3f,149.5f/3,36));
         }
-        if(ChatClient.INSTANCE.sharingLocation){var stop=ChatStyle.button("停止实时共享",()->{ChatClient.INSTANCE.shareLocation(true);close(root);});stop.textStyle(st->st.fontSize(4));p.addChild(ChatStyle.rect(stop,7,61,70,8));}
+        if(!ChatStore.INSTANCE.current.equals("world"))p.addChild(ChatStyle.rect(ChatStyle.label("当前物品仅支持世界频道",11/3f,0xFFAAAAAE),7,64,104,6));
     }
-    private static void positionPreview(UIElement root,boolean live){
-        var p=panel(root,live?"实时位置":"地点信标",127,116,live?"location-live":"location-beacon");var player=Minecraft.getInstance().player;
+    private static void positionPreview(UIElement root){
+        var p=panel(root,"当前位置",127,116,"location");var player=Minecraft.getInstance().player;
         String world=Minecraft.getInstance().level==null?"":switch(Minecraft.getInstance().level.dimension().location().getPath()){case "overworld"->"主世界";case "the_nether"->"下界";case "the_end"->"末地";default->Minecraft.getInstance().level.dimension().location().getPath();};
-        var map=new UIElement().style(st->st.background(new RoundTexture(0,0xFF323E3D,1/3f,0x36A8B7B4)));p.addChild(ChatStyle.rect(map,7,24,113,94/3f));map.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new MaskTexture("icons/location.png",0xFFD3E0DD))),32,10,32/3f,32/3f));map.addChild(ChatStyle.rect(ChatStyle.label(world,14/3f,0xFFD3E0DD),48,12,55,7));
-        String coords=player==null?"正在读取位置…":"X "+player.getBlockX()+"   Y "+player.getBlockY()+"   Z "+player.getBlockZ();p.addChild(ChatStyle.rect(ChatStyle.label(coords,4,0xFFC1D0CE),7,62,113,9));
-        p.addChild(ChatStyle.rect(ChatStyle.label(live?"每5秒更新，5分钟后自动停止。":"发送时以服务器确认的位置为准。",11/3f,0xFFA0AFAB),7,77,113,8));
-        var back=ChatStyle.button("返回",()->more(root));back.textStyle(st->st.fontSize(4));p.addChild(ChatStyle.rect(back,7,96,22,13));var send=ChatStyle.button("发送",()->{ChatClient.INSTANCE.shareLocation(live);ChatSounds.play("send");close(root);});ChatStyle.sound(send,"");send.textStyle(st->st.textColor(0xFF242721));send.buttonStyle(st->st.baseTexture(new NativeButtonTexture(false)).hoverTexture(new NativeButtonTexture(true)));p.addChild(ChatStyle.rect(send,65,96,164/3f,44/3f));
+        var map=new UIElement().style(st->st.background(new RoundTexture(0,0xFF303032,1/3f,0x36BABABC)));p.addChild(ChatStyle.rect(map,7,24,113,94/3f));map.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new MaskTexture("icons/location.png",0xFFDDDDDF))),32,10,32/3f,32/3f));map.addChild(ChatStyle.rect(ChatStyle.label(world,14/3f,0xFFDDDDDF),48,12,55,7));
+        String coords=player==null?"正在读取位置…":"X "+player.getBlockX()+"   Y "+player.getBlockY()+"   Z "+player.getBlockZ();p.addChild(ChatStyle.rect(ChatStyle.label(coords,4,0xFFD0D0D2),7,62,113,9));
+        p.addChild(ChatStyle.rect(ChatStyle.label("发送一次，以服务器确认的位置为准。",11/3f,0xFFAAAAAE),7,77,113,8));
+        var back=ChatStyle.button("返回",()->more(root));back.textStyle(st->st.fontSize(4));p.addChild(ChatStyle.rect(back,7,96,22,13));var send=ChatStyle.button("发送",()->{ChatClient.INSTANCE.shareLocation();ChatSounds.play("send");close(root);});ChatStyle.sound(send,"");send.textStyle(st->st.textColor(0xFF242426));send.buttonStyle(st->st.baseTexture(new NativeButtonTexture(false)).hoverTexture(new NativeButtonTexture(true)));p.addChild(ChatStyle.rect(send,65,96,164/3f,44/3f));
     }
     static void inbox(UIElement root,Consumer<String> choose){inbox(root,choose,null);}
     private static void inbox(UIElement root,Consumer<String> choose,Set<String> selected){

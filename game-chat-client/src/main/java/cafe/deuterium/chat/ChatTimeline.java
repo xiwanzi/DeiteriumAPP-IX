@@ -27,7 +27,7 @@ final class ChatTimeline extends UIElement {
     private RoundTexture bubble=new RoundTexture(3.6f,0);
     private static final Component TITLE=ChatStyle.title();
     private static final Component JUST_NOW=ChatStyle.body(Component.literal("刚刚"));
-    private record Row(Component header,Component suffix,Component time,List<FormattedCharSequence> lines,float height,float mediaW,float mediaH,float bodyWidth,float bodyHeight,boolean emoji,List<ChatTextLine> paint){}
+    private record Row(ChatMessage source,Component header,Component suffix,Component time,List<FormattedCharSequence> lines,float height,float mediaW,float mediaH,float bodyWidth,float bodyHeight,boolean emoji,List<ChatTextLine> paint){}
     private static boolean emojiOnly(ChatMessage m){String text=m.content.getString();return !m.system&&m.media==null&&!text.isBlank()&&text.codePoints().allMatch(c->Character.isWhitespace(c)||c==0xFE0F||c==0x200D||Character.getType(c)==Character.OTHER_SYMBOL||Character.getType(c)==Character.MODIFIER_SYMBOL);}
     private float density(){return hud?(float)Minecraft.getInstance().getWindow().getGuiScale():3;}
     private float px(float value){return value/density();}
@@ -97,6 +97,7 @@ final class ChatTimeline extends UIElement {
         var local=getLocalMouse(ctx.mouseX,ctx.mouseY);hover(ctx.graphics,(int)local.x,(int)local.y);
     }
     private Row row(ChatMessage m,int width) {
+        var existing=cache.get(m.id);if(existing!=null&&existing.source()!=m)cache.remove(m.id);
         return cache.computeIfAbsent(m.id,id->{
             var font=LDLibFonts.font();var body=ChatStyle.body(m.content);boolean emoji=!hud&&emojiOnly(m);
             float scale=emoji?px(32)/9:bodyScale(),line=emoji?px(40):lineHeight();
@@ -110,7 +111,7 @@ final class ChatTimeline extends UIElement {
             float textHeight=visible.size()*line,bodyWidth=mw;for(var item:visible)bodyWidth=Math.max(bodyWidth,font.width(item)*scale);
             float padding=m.system||emoji||visible.isEmpty()?0:px(12),gap=textHeight>0&&mh>0?px(8):0,bodyHeight=textHeight+padding+mh+gap;
             var suffix=ChatStyle.body(Component.literal(ChatPresentation.suffix(m.channel,m.server)));
-            return new Row(ChatStyle.playerName(m),suffix,Component.literal(m.time).withStyle(st->st.withFont(DeuteriumChat.id("numbers"))),visible,
+            return new Row(m,ChatStyle.playerName(m),suffix,Component.literal(m.time).withStyle(st->st.withFont(DeuteriumChat.id("numbers"))),visible,
                 (m.system?0:headerHeight())+bodyHeight+px(WebPixels.compact()?14:12)+(m.reply.isEmpty()?0:px(22)),mw,mh,bodyWidth,bodyHeight,emoji,visible.stream().map(ChatTextLine::new).toList());
         });
     }

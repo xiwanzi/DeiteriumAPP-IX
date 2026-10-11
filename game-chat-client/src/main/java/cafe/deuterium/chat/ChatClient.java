@@ -17,12 +17,13 @@ final class ChatClient {
     volatile ChatApi api;
     private long nextHello,nextPoll;
     private boolean polling,loaded;
-    boolean sharingLocation;
     private final Map<String,String> readThrough=new HashMap<>();
     long epoch;
     private Object connection;
     private String node="";
     private final LinkedList<ChatMessage> nativePending=new LinkedList<>();
+    private record PendingRich(String legacy,ChatMessage message,long expires){}
+    private final LinkedList<PendingRich> lateRich=new LinkedList<>();
     private final ConcurrentMap<String,CompletableFuture<JsonObject>> mediaRequests=new ConcurrentHashMap<>();
 
     void tick() {
@@ -30,7 +31,8 @@ final class ChatClient {
         var mc=Minecraft.getInstance();var c=mc.getConnection();if(mc.level==null||c==null)return;
         if(connection!=c){reset();connection=c;}
         long now=System.currentTimeMillis();
-        while(!nativePending.isEmpty()&&System.nanoTime()/1_000_000-nativePending.getFirst().receivedAt>=100)ChatStore.INSTANCE.add(nativePending.removeFirst());
+        while(!nativePending.isEmpty()&&System.nanoTime()/1_000_000-nativePending.getFirst().receivedAt>=(ChatLegacy.hasItem(nativePending.getFirst().content)?600:100))ChatStore.INSTANCE.add(nativePending.removeFirst());
+        lateRich.removeIf(p->p.expires()<now);
         if((api==null||!api.valid())&&now>=nextHello){nextHello=now+15000;packet("hello",new JsonObject());}
         if(api!=null&&api.valid()&&!polling&&now>=nextPoll){nextPoll=now+1500;poll();}
     }
@@ -42,20 +44,16 @@ final class ChatClient {
                 case "media-result" -> {var future=mediaRequests.remove(ChatMessage.str(p,"requestId"));if(future!=null){if(p.has("error"))future.completeExceptionally(new java.io.IOException(ChatMessage.str(p,"error")));else future.complete(p.getAsJsonObject("message"));}}
                 case "message" -> {
                     var m=ChatMessage.fromJson(p,false,ChatMessage.str(p,"channel"),ChatMessage.str(p,"conversationId"));
-                    String legacy=ChatMessage.str(p,"legacyPlain");Component original=null;
+                    String legacy=ChatLegacy.localize(ChatMessage.str(p,"legacyPlain"));Component original=null;
                     if(!legacy.isEmpty()){
                         for(var it=nativePending.iterator();it.hasNext();){var n=it.next();if(n.content.getString().equals(legacy)){original=n.content;it.remove();break;}}
                         if(original==null)original=ChatStore.INSTANCE.takeLegacy(legacy);
                     }
-                    if(original!=null&&legacy.endsWith(m.content.getString())){
-                        int skip=legacy.length()-m.content.getString().length();int[] at={0};var body=Component.empty();
-                        original.visit((style,text)->{int from=Math.max(0,skip-at[0]);at[0]+=text.length();if(from<text.length())body.append(Component.literal(text.substring(from)).setStyle(style));return Optional.empty();},Style.EMPTY);
-                        m=new ChatMessage(m.id,m.senderId,m.name,m.channel,m.server,m.conversation,body,m.media,Instant.now(),false,false,m.reply);
-                    }
+                    if(original!=null)m=ChatLegacy.merge(m,legacy,original);
+                    else if(!legacy.isEmpty()){lateRich.add(new PendingRich(legacy,m,System.currentTimeMillis()+5000));while(lateRich.size()>128)lateRich.removeFirst();}
                     ChatStore.INSTANCE.add(m);
                 }
                 case "location-result" -> sendTo(ChatMessage.str(p,"content"),ChatMessage.str(p,"scope"));
-                case "location-state" -> sharingLocation=p.get("active").getAsBoolean();
                 case "notice" -> notice(ChatMessage.str(p,"message"));
                 case "session-unavailable" -> {ChatStore.INSTANCE.status=ChatMessage.str(p,"message");ChatStore.INSTANCE.changed();}
                 case "hello" -> {node=ChatMessage.str(p,"serverId");ChatStore.INSTANCE.server=node;}
@@ -70,10 +68,12 @@ final class ChatClient {
             var info=Minecraft.getInstance().getConnection().getPlayerInfo(e.getSender());name=info==null?p.getBoundChatType().name().getString():info.getProfile().getName();
             text=p.getPlayerChatMessage().decoratedContent();
         }
+        for(var it=lateRich.iterator();it.hasNext();){var pending=it.next();if(pending.expires()>=System.currentTimeMillis()&&pending.legacy().equals(text.getString())){it.remove();ChatStore.INSTANCE.replace(pending.message().id,ChatLegacy.merge(pending.message(),pending.legacy(),text));return;}}
         var m=new ChatMessage("native_"+UUID.randomUUID(),sender,name,"world",node,"",text,null,Instant.now(),false,system,"");
         if(system){nativePending.add(m);while(nativePending.size()>128)ChatStore.INSTANCE.add(nativePending.removeFirst());}else ChatStore.INSTANCE.add(m);
     }
-    void shareLocation(boolean live){String scope=ChatStore.INSTANCE.current;if(scope.equals("private")){notice("请先选择一位玩家");return;}var p=new JsonObject();p.addProperty("scope",scope);p.addProperty("live",live);p.addProperty("stop",live&&sharingLocation);packet("location",p);}
+    void shareLocation(){String scope=ChatStore.INSTANCE.current;if(scope.equals("private")||scope.equals("inbox")){notice("请先选择一位玩家");return;}var p=new JsonObject();p.addProperty("scope",scope);p.addProperty("live",false);packet("location",p);}
+    boolean shareItem(){var mc=Minecraft.getInstance();if(!ChatStore.INSTANCE.current.equals("world")){notice("当前物品暂仅支持世界频道");return false;}if(mc.player==null||mc.player.getMainHandItem().isEmpty()){notice("主手没有可分享的物品");return false;}return sendTo("[item]","world");}
     boolean send(String text) {return sendTo(text,ChatStore.INSTANCE.current);}
     private boolean sendTo(String text,String scope) {
         var mc=Minecraft.getInstance();if(mc.getConnection()==null)return false;
@@ -136,5 +136,5 @@ final class ChatClient {
         }
         return mc.screen!=null&&mc.screen.handleComponentClicked(style);
     }
-    void reset(){readThrough.clear();sharingLocation=false;epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
+    void reset(){readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
 }

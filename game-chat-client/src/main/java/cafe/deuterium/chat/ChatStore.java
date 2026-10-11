@@ -20,11 +20,11 @@ public final class ChatStore {
         while(messages.size()>1000)messages.remove(messages.keySet().iterator().next());
         changed();
     }
-    public void replace(String id,ChatMessage m) { boolean removed=messages.remove(id)!=null;if(messages.containsKey(m.id)){if(removed)changed();}else add(m); }
+    public void replace(String id,ChatMessage m) { if(id.equals(m.id)&&messages.containsKey(id)){messages.put(id,m);changed();return;}boolean removed=messages.remove(id)!=null;if(messages.containsKey(m.id)){if(removed)changed();}else add(m); }
     public net.minecraft.network.chat.Component takeLegacy(String plain) {
         ChatMessage found=null;long now=System.nanoTime()/1_000_000;
-        for(var m:messages.values())if(m.system&&now-m.receivedAt<2000&&m.content.getString().equals(plain))found=m;
-        if(found!=null){messages.remove(found.id);return found.content;}return null;
+        for(var m:messages.values())if(m.system&&now-m.receivedAt<5000&&m.content.getString().equals(plain))found=m;
+        if(found!=null){messages.remove(found.id);changed();return found.content;}return null;
     }
     public void changed() { revision++;for(var listener:List.copyOf(listeners))listener.run(); }
     public List<ChatMessage> inScope(String scope) { return messages.values().stream().filter(m->m.scope().equals(scope)).toList(); }

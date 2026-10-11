@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-10-12T00:02:34.601885+08:00",
+  "version": "0.0.48-dev",
+  "publicHttpsFullHashVerified": true,
+  "publicRangeMetadataVerified": true,
+  "tarSha256": "5532c309b8240e020b05bde5cd226edfa11757776a68f8dad894a9b1d0c592e7",
+  "tarBytes": 18901504,
+  "clientOtherModsUnchanged": true,
+  "configurationUnchanged": true,
+  "counts": {
+    "accounts": "61",
+    "orders": "47",
+    "commissions": "5",
+    "products": "3085",
+    "tickets": "12",
+    "deletions": "2"
+  },
+  "webVersion": "2.0.35",
+  "oldClientEntriesPreserved": 62
+}
