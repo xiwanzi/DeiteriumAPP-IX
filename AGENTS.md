@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-12：**资源0.0.53-dev、聊天0.1.8与客户端MMO0.1.9已于19:50发布**（主PR #112、MMO PR #3）。支持Ctrl+V图片预览后确认发送，采用用户选定的message_pop提示音；公屏显示佩戴铭牌，修复T历史混入和快速移鼠点击。服务端MMO0.1.8/Core1.0.6与原数据配置保留，无服务器重启；三常驻节点在线，MEK停止。见[上线记录](docs/deployment/chat-polish-0.0.53-live.md)。
+
 2026-10-12：**Core 1.0.6、TAB 佩戴称号与邮箱 UI 0.7.19 已发布**。资源 0.0.52-dev 于17:45发布，18:01完成 Amiya 重启及 TAB 切换（PR #110）。新增 `%deuterium_title%` / `%deuterium_title_prefix%`，列表及头顶共用当前佩戴称号；邮箱字体更新为 HarmonyOS Sans SC Medium，服务端邮箱已是0.7.3并保留。三常驻节点在线，MEK停止；旧数据与配置保留。见[上线记录](docs/deployment/titles-tab-mail-0.0.52-live.md)。
 
 2026-10-12：**头衔与铭牌系统、聊天修复已于04:36发布，04:39完成公网验收**。游戏资源0.0.51-dev、聊天0.1.7、MMO0.1.8、Core1.0.5、Web2.0.36与配套Go上线（主PR #108、MMO PR #1）。头衔介绍/公开属性、LP授权与到期回退、原生铭牌及接收提示音已接通；61账号、47订单、5委托、3,085在售商品、12工单、2注销记录及原配置保留。三常驻节点在线，MEK保持停止，App仍2.0.25。见[上线记录](docs/deployment/nameplates-0.0.51-live.md)。
