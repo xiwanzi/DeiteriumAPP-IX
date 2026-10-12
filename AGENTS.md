@@ -1,5 +1,8 @@
 # Deuterium IX 工程约定
 
+2026-10-12：**Web 2.0.38 图片审核设置已上线**（PR #117，源码 `f1545b7f81051`）。图片审核新增设置子页，可修改阈值和提示词、恢复默认；后续任务热加载，历史保留原阈值，规则版本隔离缓存。原启用时间及仅新静态聊天图片范围保持，只更新独立审核服务，主 Go/游戏服未重启。维护 `.worktrees/image-review` / `xiwanzi/image-review-settings`，见[上线记录](docs/deployment/image-review-settings-2.0.38-live.md)。
+
+
 2026-10-12：**Web 2.0.37 图片审核已于 20:30 上线**（PR #114、#115，源码 `2cc6c7dab151`）。仅审启用后新上传的静态聊天图片；旧图、业务图片和动图跳过，DeepSeek V4.1 Flash 超过 50 分留存证据，后台可查看及删除审核记录。独立服务/数据库，主 Go 与游戏服未重启，既有业务 ID 保留。维护 `.worktrees/image-review` / `xiwanzi/image-review`，见[上线记录](docs/deployment/image-review-2.0.37-live.md)。
 
 
