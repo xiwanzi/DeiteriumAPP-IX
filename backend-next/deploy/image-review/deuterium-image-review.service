@@ -1,0 +1,26 @@
+[Unit]
+Description=Deuterium independent image review
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deuterium-review
+Group=deuterium-review
+EnvironmentFile=/etc/deuterium/image-review.env
+ExecStart=/opt/deuterium-image-review/current/deuterium-image-review
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+MemoryLimit=256M
+CPUQuota=50%
+Nice=10
+LimitNOFILE=4096
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
