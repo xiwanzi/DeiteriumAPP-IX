@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS image_review_events (
 
 CREATE TABLE IF NOT EXISTS image_review_runtime (
  id INT PRIMARY KEY,
+ started_at DATETIME(6) NULL,
  last_scan_at DATETIME(6) NULL,
  last_work_at DATETIME(6) NULL,
  scan_error VARCHAR(64) NOT NULL DEFAULT ''

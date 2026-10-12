@@ -19,7 +19,7 @@ func (s *Service) Scan(ctx context.Context) error {
 	if s.cursors == nil {
 		s.cursors = map[string]string{}
 	}
-	for _, kind := range []string{"CHAT", "ASSET"} {
+	for _, kind := range []string{"CHAT"} {
 		for batch := 0; batch < 4; batch++ {
 			rows, e := s.Source.Batch(ctx, kind, s.cursors[kind], 200)
 			if e != nil {

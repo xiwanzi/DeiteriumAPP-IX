@@ -92,7 +92,14 @@ func run() error {
 	if e = c.Validate(); e != nil {
 		return e
 	}
-	origin := &imagereview.Source{DB: source.DB, Prefix: objects.Config.Prefix}
+	if _, e = audit.DB.ExecContext(ctx, "UPDATE image_review_runtime SET started_at=COALESCE(started_at,UTC_TIMESTAMP(6)) WHERE id=1"); e != nil {
+		return e
+	}
+	var startedAt time.Time
+	if e = audit.DB.QueryRowContext(ctx, "SELECT started_at FROM image_review_runtime WHERE id=1").Scan(&startedAt); e != nil {
+		return e
+	}
+	origin := &imagereview.Source{DB: source.DB, Prefix: objects.Config.Prefix, StartAt: startedAt}
 	if e = origin.Detect(ctx); e != nil {
 		return errors.New("source schema unavailable")
 	}
