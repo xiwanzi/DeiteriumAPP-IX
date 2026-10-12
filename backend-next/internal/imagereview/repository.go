@@ -24,7 +24,8 @@ func (r *Repository) Migrate(ctx context.Context) error {
 			return err
 		}
 	}
-	return nil
+	_, err := r.DB.ExecContext(ctx, "INSERT IGNORE INTO image_review_settings(id,threshold,prompt,version) VALUES(1,?,?,1)", Threshold, reviewPrompt)
+	return err
 }
 
 func (r *Repository) Discover(ctx context.Context, c Candidate) error {
@@ -40,11 +41,11 @@ func (r *Repository) Discover(ctx context.Context, c Candidate) error {
 	return err
 }
 
-const itemColumns = `id,source_kind,source_id,media_id,source_key,sha256,verified,content_type,size_bytes,animated,uploader_id,player_ref,game_id,display_name,purpose,uploaded_at,expires_at,source_state,state,score,result_json,policy_version,model,evidence_key,evidence_etag,error_code,attempts,reviewed_at,next_attempt_at`
+const itemColumns = `id,source_kind,source_id,media_id,source_key,sha256,verified,content_type,size_bytes,animated,uploader_id,player_ref,game_id,display_name,purpose,uploaded_at,expires_at,source_state,state,score,threshold_used,result_json,policy_version,model,evidence_key,evidence_etag,error_code,attempts,reviewed_at,next_attempt_at`
 
 func scanItem(row interface{ Scan(...any) error }) (i Item, err error) {
 	var raw []byte
-	err = row.Scan(&i.ID, &i.SourceKind, &i.SourceID, &i.MediaID, &i.SourceKey, &i.SHA256, &i.Verified, &i.ContentType, &i.SizeBytes, &i.Animated, &i.UploaderID, &i.PlayerRef, &i.GameID, &i.DisplayName, &i.Purpose, &i.UploadedAt, &i.ExpiresAt, &i.SourceState, &i.State, &i.Score, &raw, &i.PolicyVersion, &i.Model, &i.EvidenceKey, &i.EvidenceETag, &i.ErrorCode, &i.Attempts, &i.ReviewedAt, &i.NextAttemptAt)
+	err = row.Scan(&i.ID, &i.SourceKind, &i.SourceID, &i.MediaID, &i.SourceKey, &i.SHA256, &i.Verified, &i.ContentType, &i.SizeBytes, &i.Animated, &i.UploaderID, &i.PlayerRef, &i.GameID, &i.DisplayName, &i.Purpose, &i.UploadedAt, &i.ExpiresAt, &i.SourceState, &i.State, &i.Score, &i.ThresholdUsed, &raw, &i.PolicyVersion, &i.Model, &i.EvidenceKey, &i.EvidenceETag, &i.ErrorCode, &i.Attempts, &i.ReviewedAt, &i.NextAttemptAt)
 	if err == nil && len(raw) > 0 {
 		var v Result
 		if err = json.Unmarshal(raw, &v); err == nil {
@@ -68,7 +69,7 @@ func (r *Repository) Cached(ctx context.Context, i Item) (*Result, error) {
 		return nil, nil
 	}
 	var raw []byte
-	err := r.DB.QueryRowContext(ctx, `SELECT result_json FROM image_review_items WHERE sha256=? AND verified=TRUE AND policy_version=? AND state IN ('CLEAR','FLAGGED') AND id<>? AND result_json IS NOT NULL ORDER BY reviewed_at DESC LIMIT 1`, i.SHA256, PolicyVersion, i.ID).Scan(&raw)
+	err := r.DB.QueryRowContext(ctx, `SELECT result_json FROM image_review_items WHERE sha256=? AND verified=TRUE AND policy_version=? AND state IN ('CLEAR','FLAGGED') AND id<>? AND result_json IS NOT NULL ORDER BY reviewed_at DESC LIMIT 1`, i.SHA256, activePolicyVersion(ctx), i.ID).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -87,7 +88,7 @@ func (r *Repository) Finish(ctx context.Context, id, state string) error {
 }
 func (r *Repository) Scored(ctx context.Context, i Item, result Result, key, etag string) error {
 	state := "CLEAR"
-	if result.Scores.Total() > Threshold {
+	if result.Scores.Total() > activeSettings(ctx).Threshold {
 		state = "RETAINING"
 	}
 	// Clear results retain category numbers only; discard any extracted content.
@@ -96,7 +97,7 @@ func (r *Repository) Scored(ctx context.Context, i Item, result Result, key, eta
 		saved.Summary = "未超过标记阈值"
 		saved.Reasons = []string{"三类风险未达到人工复核阈值"}
 	}
-	_, err := r.DB.ExecContext(ctx, `UPDATE image_review_items SET state=?,score=?,result_json=?,policy_version=?,model=?,evidence_key=?,evidence_etag=?,error_code='',reviewed_at=UTC_TIMESTAMP(6),next_attempt_at=UTC_TIMESTAMP(6),updated_at=UTC_TIMESTAMP(6) WHERE id=? AND state IN ('PENDING','RETRY')`, state, result.Scores.Total(), resultJSON(saved), PolicyVersion, Model, key, etag, i.ID)
+	_, err := r.DB.ExecContext(ctx, `UPDATE image_review_items SET state=?,score=?,threshold_used=?,result_json=?,policy_version=?,model=?,evidence_key=?,evidence_etag=?,error_code='',reviewed_at=UTC_TIMESTAMP(6),next_attempt_at=UTC_TIMESTAMP(6),updated_at=UTC_TIMESTAMP(6) WHERE id=? AND state IN ('PENDING','RETRY')`, state, result.Scores.Total(), activeSettings(ctx).Threshold, resultJSON(saved), activePolicyVersion(ctx), Model, key, etag, i.ID)
 	return err
 }
 func (r *Repository) Retry(ctx context.Context, i Item, err error) error {
@@ -215,6 +216,11 @@ func (r *Repository) EventWork(ctx context.Context) ([]Item, error) {
 }
 func (r *Repository) Summary(ctx context.Context) (Summary, error) {
 	s := Summary{Model: Model, ModelLabel: "DeepSeek V4.1 Flash", Threshold: Threshold}
+	settings, settingsErr := r.Settings(ctx)
+	if settingsErr != nil {
+		return s, settingsErr
+	}
+	s.Threshold = settings.Threshold
 	rows, e := r.DB.QueryContext(ctx, "SELECT state,COUNT(*) FROM image_review_items GROUP BY state")
 	if e != nil {
 		return s, e

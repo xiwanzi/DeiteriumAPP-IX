@@ -88,6 +88,7 @@ func ValidID(id string) bool {
 type Item struct {
 	Candidate
 	State           string     `json:"state"`
+	ThresholdUsed   int        `json:"thresholdUsed"`
 	Score           *int       `json:"score"`
 	Result          *Result    `json:"result,omitempty"`
 	PolicyVersion   string     `json:"policyVersion"`

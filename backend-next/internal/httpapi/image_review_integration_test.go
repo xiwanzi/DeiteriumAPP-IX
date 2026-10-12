@@ -87,10 +87,34 @@ func TestImageReviewWebPermissionsCSRFAndEvidenceAccess(t *testing.T) {
 		return w
 	}
 	path := "/api/v1/admin/image-review/" + id
-	for _, p := range []string{"/api/v1/admin/image-review", path, path + "/image"} {
+	for _, p := range []string{"/api/v1/admin/image-review", "/api/v1/admin/image-review/settings", path, path + "/image"} {
 		call("", "GET", p, "", "", 401)
 		call("player", "GET", p, "", "", 403)
 		call("support", "GET", p, "", "", 403)
+	}
+	putSettings := func(user, origin, csrf, raw string, want int) {
+		r := httptest.NewRequest("PUT", "/api/v1/admin/image-review/settings", strings.NewReader(raw))
+		r.AddCookie(&http.Cookie{Name: "deuterium_dev_session", Value: tokens[user]})
+		r.Header.Set("Origin", origin)
+		r.Header.Set("X-CSRF-Token", csrf)
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if w.Code != want {
+			t.Fatalf("settings save got %d want %d: %s", w.Code, want, w.Body.String())
+		}
+	}
+	payload := `{"threshold":70,"prompt":"自定义的图片评分标准","expectedVersion":1}`
+	putSettings("support", "https://admin.example", "csrf-test", payload, 403)
+	putSettings("admin", "https://evil.example", "csrf-test", payload, 403)
+	putSettings("admin", "https://admin.example", "bad", payload, 403)
+	putSettings("admin", "https://admin.example", "csrf-test", `{"prompt":"缺少阈值","expectedVersion":1}`, 400)
+	putSettings("admin", "https://admin.example", "csrf-test", payload, 200)
+	putSettings("admin", "https://admin.example", "csrf-test", payload, 200)
+	putSettings("admin", "https://admin.example", "csrf-test", strings.Replace(payload, "70", "60", 1), 409)
+	settings, e := repo.Settings(ctx)
+	if e != nil || settings.Threshold != 70 || settings.Prompt != "自定义的图片评分标准" || settings.Version != 2 {
+		t.Fatal(settings, e)
 	}
 	listing := call("admin", "GET", "/api/v1/admin/image-review", "", "", 200)
 	for _, secret := range []string{"sourceKey", "evidenceKey", "original/", "signature="} {

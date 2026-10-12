@@ -58,3 +58,13 @@ CREATE TABLE IF NOT EXISTS image_review_runtime (
  scan_error VARCHAR(64) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB;
 INSERT IGNORE INTO image_review_runtime(id) VALUES(1);
+
+CREATE TABLE IF NOT EXISTS image_review_settings (
+ id INT PRIMARY KEY,
+ threshold INT NOT NULL,
+ prompt TEXT NOT NULL,
+ version BIGINT NOT NULL DEFAULT 1,
+ updated_at DATETIME(6) NULL,
+ updated_by VARCHAR(64) NOT NULL DEFAULT ''
+) ENGINE=InnoDB;
+ALTER TABLE image_review_items ADD COLUMN IF NOT EXISTS threshold_used INT NOT NULL DEFAULT 50;

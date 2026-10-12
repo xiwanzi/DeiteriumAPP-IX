@@ -40,6 +40,7 @@ func TestReviewModelOutputRejectsIncompleteOrUnboundedResults(t *testing.T) {
 func TestReviewDeepSeekRequestAndRedactedFailures(t *testing.T) {
 	status := 200
 	finish := "stop"
+	ctx := withSettings(context.Background(), Settings{Prompt: "自定义评分标准", Threshold: 70, Version: 2})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test-private-key" {
 			t.Error("missing auth")
@@ -52,6 +53,9 @@ func TestReviewDeepSeekRequestAndRedactedFailures(t *testing.T) {
 			t.Error("incorrect model or stream")
 		}
 		encoded, _ := json.Marshal(in)
+		if !strings.Contains(string(encoded), "自定义评分标准") {
+			t.Error("custom prompt not sent")
+		}
 		if !strings.Contains(string(encoded), "https://objects.example/image?signature=private") || !strings.Contains(string(encoded), "json_object") {
 			t.Error("image URL/JSON mode not provided")
 		}
@@ -68,12 +72,12 @@ func TestReviewDeepSeekRequestAndRedactedFailures(t *testing.T) {
 		t.Fatal(e)
 	}
 	client.endpoint = server.URL
-	if _, e = client.Review(context.Background(), "https://objects.example/image?signature=private"); e != nil {
+	if _, e = client.Review(ctx, "https://objects.example/image?signature=private"); e != nil {
 		t.Fatal(e)
 	}
 	for _, code := range []int{401, 402, 429, 500} {
 		status = code
-		_, e = client.Review(context.Background(), "https://objects.example/image?signature=private")
+		_, e = client.Review(ctx, "https://objects.example/image?signature=private")
 		var re *ReviewError
 		if !errors.As(e, &re) || strings.Contains(e.Error(), "secret") || strings.Contains(e.Error(), "signature") {
 			t.Fatalf("unredacted failure %v", e)
@@ -81,7 +85,7 @@ func TestReviewDeepSeekRequestAndRedactedFailures(t *testing.T) {
 	}
 	status = 200
 	finish = "length"
-	if _, e = client.Review(context.Background(), "https://objects.example/image?signature=private"); e == nil {
+	if _, e = client.Review(ctx, "https://objects.example/image?signature=private"); e == nil {
 		t.Fatal("truncated output accepted")
 	}
 }
