@@ -30,6 +30,7 @@ public final class ChatStore {
     public void changed() { revision++;for(var listener:List.copyOf(listeners))listener.run(); }
     public List<ChatMessage> inScope(String scope) { return messages.values().stream().filter(m->m.scope().equals(scope)).toList(); }
     public List<ChatMessage> hud() { return List.copyOf(messages.values()); }
+    public List<ChatMessage> liveHud() { return messages.values().stream().filter(m->m.receivedAt>0).toList(); }
     public AutoCloseable listen(Runnable listener) { listeners.add(listener);return ()->listeners.remove(listener); }
     public List<Contact> orderedContacts() {return contacts.values().stream().sorted(Comparator.<Contact,Boolean>comparing(c->!pinned.contains(c.id())).thenComparing(Comparator.comparingLong((Contact c)->inScope(c.id()).stream().mapToLong(m->m.sentMillis).max().orElse(0)).reversed())).toList();}
     public void clear() { messages.clear();contacts.clear();drafts.clear();scrolls.clear();pinned.clear();selfRef="";server="";current="world";changed(); }

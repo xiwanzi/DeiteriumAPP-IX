@@ -69,7 +69,7 @@ final class ChatTimeline extends UIElement {
             if(!sameScope&&!hud)scroll=targetScroll=store.scrolls.getOrDefault(store.current,0f);
             if(wrapWidth!=available)cache.clear();
             revision=store.revision;scope=store.current;wrapWidth=available;
-            source=hud?store.hud():store.inScope(scope);
+            source=hud?store.liveHud():store.inScope(scope);
             var live=new HashSet<String>();totalHeight=0;
             for(var m:source){live.add(m.id);totalHeight+=row(m,available).height;}
             if(sameScope&&targetScroll>.1f){targetScroll+=totalHeight-oldHeight;scroll+=totalHeight-oldHeight;}
@@ -109,7 +109,8 @@ final class ChatTimeline extends UIElement {
             var visible=onlyMedia?List.<FormattedCharSequence>of():lines.subList(0,Math.min(8,lines.size()));
             float textHeight=visible.size()*line,bodyWidth=mw;for(var item:visible)bodyWidth=Math.max(bodyWidth,font.width(item)*scale);
             float padding=emoji||visible.isEmpty()?0:px(12),gap=textHeight>0&&mh>0?px(8):0,bodyHeight=textHeight+padding+mh+gap;
-            var suffix=ChatStyle.body(Component.literal(ChatPresentation.suffix(m.channel,m.server)));
+            String suffixText=ChatPresentation.suffix(m.channel,m.server);
+            var suffix=ChatStyle.body(Component.literal(hud&&m.channel.equals("world")&&!suffixText.isEmpty()?"["+suffixText+"]":suffixText));
             return new Row(m,ChatStyle.playerName(m),suffix,Component.literal(m.time).withStyle(st->st.withFont(DeuteriumChat.id("numbers"))),visible,
                 (m.system?0:headerHeight())+bodyHeight+px(WebPixels.compact()?14:12)+(m.reply.isEmpty()?0:px(22)),mw,mh,bodyWidth,bodyHeight,emoji,visible.stream().map(ChatTextLine::new).toList());
         });
@@ -122,7 +123,7 @@ final class ChatTimeline extends UIElement {
             drawText(g,r.header,textX,y,nameScale,alpha<<24|0xFFFFFF,hud);
             float next=textX+LDLibFonts.font().width(r.header)*nameScale+px(8),right=x+width;
             Component TITLE=ChatTitles.title(m);
-            if(!hud&&!WebPixels.compact()&&next+LDLibFonts.font().width(TITLE)*detailScale+px(8)<right){drawText(g,TITLE,next,y+px(2),detailScale,alpha<<24|0xB4BEBC,hud);next+=LDLibFonts.font().width(TITLE)*detailScale+px(8);}
+            if(next+LDLibFonts.font().width(TITLE)*detailScale+px(8)<right){drawText(g,TITLE,next,y+px(2),detailScale,alpha<<24|0xB4BEBC,hud);next+=LDLibFonts.font().width(TITLE)*detailScale+px(8);}
             if(!r.suffix.getString().isEmpty()&&next+LDLibFonts.font().width(r.suffix)*detailScale+px(8)<right){drawText(g,r.suffix,next,y+px(2),detailScale,alpha<<24|0xB4BEBC,hud);next+=LDLibFonts.font().width(r.suffix)*detailScale+px(10);}
             Component time=m.receivedAt!=0&&System.nanoTime()/1_000_000-m.receivedAt<60000?JUST_NOW:r.time;
             if(next+LDLibFonts.font().width(time)*detailScale<=right)drawText(g,time,next,y+px(2),detailScale,alpha<<24|0xADB7B8,hud);
