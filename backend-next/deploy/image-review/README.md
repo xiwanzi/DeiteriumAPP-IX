@@ -7,7 +7,7 @@
 3. 创建单独数据库 `deuterium_image_review`，执行 `internal/imagereview/schema.sql`。也可对该库执行新二进制 `--migrate-only`；它拒绝非 `deuterium_image_review*` 名称。无需修改业务 schema 或迁移清单。
 4. 创建源库只读账号，仅读取身份会话、权限、图片上传/对象及消息归属所需列；审核库账号仅 SELECT/INSERT/UPDATE/DELETE。运行账号不持有 root 数据库权限，也不持有主服务 EnvironmentFile。
 5. 以独立系统用户 `deuterium-review` 运行所附 systemd unit。服务专用环境文件仅 root/运行用户可读，密钥不写入命令参数、代码或构建物。监听 127.0.0.1:8086。
-6. 启动独立服务，确认本机 `/health/ready`、扫描心跳、队列。首次会补查既有仍存在图片；新上传优先，已删除原图标记不可用，动态图片跳过。
+6. 启动独立服务，确认本机 `/health/ready`、扫描心跳、队列。首次启动持久化启用时间；旧图全部跳过，仅扫描此后新上传的聊天图片，动态图片跳过。后续重启沿用原启用时间。
 7. 在现有社区 HTTPS vhost 添加所附两个 location；原样保留现有代理头与其他路由。先 `nginx -t`，再原子切换 Web 链接和 **reload** Nginx，不能 restart 游戏或现有 Go 服务。
 8. 验证管理员访问、匿名/普通账号/客服拒绝、CSRF、图片跳转与删除；核对主 Go PID/启动时间/二进制及业务 ID 快照。高分未出现不等于审核没运行，应检查统计与最近扫描时间。
 

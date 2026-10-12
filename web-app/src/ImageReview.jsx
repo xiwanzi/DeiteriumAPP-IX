@@ -60,7 +60,7 @@ export default function ImageReview({ client }) {
   const askDelete = item => { setRemove(item); setDeleteError(""); };
   const stale = summary && (!summary.lastScanAt || Date.now() - new Date(summary.lastScanAt).getTime() > 300000 || !summary.lastWorkAt || Date.now() - new Date(summary.lastWorkAt).getTime() > 300000);
   return <section className="image-review-page">
-    <PageHead title="图片审核" subtitle="静态图片自动评分，超过 50 分保留证据，供管理员复核。">
+    <PageHead title="图片审核" subtitle="仅审核启用后新上传的静态聊天图片，超过 50 分保留证据。">
       <Button secondary disabled={refreshing || deleting} onClick={() => { setNotice(""); load(); }}><RefreshCw size={16} />{refreshing ? "刷新中…" : "刷新"}</Button>
     </PageHead>
     {error && <p role="alert" className="form-error">{error}</p>}

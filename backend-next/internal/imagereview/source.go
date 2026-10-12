@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 // Source is opened with a SELECT-only database account in production.
 type Source struct {
-	DB     *sql.DB
-	Prefix string
-	Scoped bool
+	DB      *sql.DB
+	Prefix  string
+	Scoped  bool
+	StartAt time.Time
 }
 
 func (s *Source) Detect(ctx context.Context) error {
@@ -30,14 +32,18 @@ func (s *Source) Batch(ctx context.Context, kind, after string, limit int) ([]Ca
 	switch kind {
 	case "CHAT":
 		query = `SELECT u.upload_id,u.media_id,COALESCE(o.sha256,''),COALESCE(o.state,''),COALESCE(o.size_bytes,0),COALESCE(o.animated,FALSE),u.user_id,COALESCE(i.player_ref,''),COALESCE(i.game_id,''),COALESCE(i.display_name,i.game_id,''),u.created_at,u.expires_at
-   FROM chat_media_uploads u LEFT JOIN chat_media_objects o ON o.media_id=u.media_id LEFT JOIN identities i ON i.id=u.user_id WHERE u.upload_id>? ORDER BY u.upload_id LIMIT ?`
+   FROM chat_media_uploads u LEFT JOIN chat_media_objects o ON o.media_id=u.media_id LEFT JOIN identities i ON i.id=u.user_id WHERE u.upload_id>? AND u.created_at>=? ORDER BY u.upload_id LIMIT ?`
 	case "ASSET":
 		query = `SELECT a.upload_id,a.asset_id,a.object_key,COALESCE(a.sha256,''),a.status,a.content_type,a.size_bytes,a.user_id,COALESCE(i.player_ref,''),COALESCE(i.game_id,''),COALESCE(i.display_name,i.game_id,''),a.purpose,a.created_at,a.expires_at
    FROM asset_uploads_v2 a LEFT JOIN identities i ON i.id=a.user_id WHERE a.upload_id>? ORDER BY a.upload_id LIMIT ?`
 	default:
 		return nil, fmt.Errorf("invalid source kind")
 	}
-	rows, err := s.DB.QueryContext(ctx, query, after, limit)
+	args := []any{after, limit}
+	if kind == "CHAT" {
+		args = []any{after, s.StartAt, limit}
+	}
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

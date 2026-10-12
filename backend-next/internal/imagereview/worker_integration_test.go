@@ -44,6 +44,12 @@ func TestImageReviewUploadAndMessageAttributionAreSeparate(t *testing.T) {
 	if rows[0].GameID != "Uploader" || !rows[0].Verified || rows[0].SourceKey != "deuterium-test/chat-media/media_one/image.webp" {
 		t.Fatal(rows[0])
 	}
+	source.StartAt = time.Now().UTC().Add(time.Hour)
+	skipped, skipErr := source.Batch(ctx, "CHAT", "", 100)
+	if skipErr != nil || len(skipped) != 0 {
+		t.Fatal("old uploads not excluded", skipped, skipErr)
+	}
+	source.StartAt = time.Time{}
 	events, e := source.Events(ctx, "media_one")
 	if e != nil || len(events) != 1 {
 		t.Fatal(events, e)
