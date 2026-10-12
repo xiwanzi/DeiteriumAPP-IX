@@ -27,7 +27,9 @@ public final class GameTitles implements AutoCloseable, org.bukkit.plugin.messag
     private final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).followRedirects(HttpClient.Redirect.NEVER).build();
     private final org.bukkit.scheduler.BukkitTask task;
     private JsonObject catalog;
-    private final Map<UUID,JsonObject> profiles=new HashMap<>();
+    // TAB-Bridge can request placeholders asynchronously. Published snapshots are never mutated.
+    private final Map<UUID,JsonObject> profiles=new ConcurrentHashMap<>();
+    private Runnable unregisterPlaceholders=()->{};
     private final Set<UUID> pending=new HashSet<>();
     private boolean polling;
     private volatile boolean closed;
@@ -37,6 +39,8 @@ public final class GameTitles implements AutoCloseable, org.bukkit.plugin.messag
         Bukkit.getMessenger().registerIncomingPluginChannel(plugin,CHANNEL,this);
         Bukkit.getMessenger().registerOutgoingPluginChannel(plugin,CHANNEL);
         task=Bukkit.getScheduler().runTaskTimer(plugin,this::poll,20,40);
+        if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI"))
+            unregisterPlaceholders=TitlePlaceholders.register(plugin,this::title);
     }
     @Override public void onPluginMessageReceived(String channel,Player player,byte[] bytes){
         if(!channel.equals(CHANNEL)||bytes.length>4096)return;
@@ -116,5 +120,5 @@ public final class GameTitles implements AutoCloseable, org.bukkit.plugin.messag
         if(response.statusCode()!=200||bytes.length>1048576)throw new IllegalStateException("Title service unavailable");
         return Json.object(new String(bytes,StandardCharsets.UTF_8),1048576).getAsJsonObject("data");
     }
-    @Override public void close(){closed=true;Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin,CHANNEL);rates.clear();task.cancel();io.shutdownNow();http.shutdownNow();profiles.clear();pending.clear();}
+    @Override public void close(){closed=true;unregisterPlaceholders.run();Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin,CHANNEL);rates.clear();task.cancel();io.shutdownNow();http.shutdownNow();profiles.clear();pending.clear();}
 }

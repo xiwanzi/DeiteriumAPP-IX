@@ -2,11 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>cafe.deuterium</groupId><artifactId>deuterium-core</artifactId><version>1.0.5</version>
+  <groupId>cafe.deuterium</groupId><artifactId>deuterium-core</artifactId><version>1.0.6</version>
   <name>Deuterium Core</name>
   <properties><maven.compiler.release>21</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
-  <repositories><repository><id>papermc</id><url>https://repo.papermc.io/repository/maven-public/</url></repository><repository><id>jitpack</id><url>https://jitpack.io</url></repository></repositories>
+  <repositories><repository><id>placeholderapi</id><url>https://repo.extendedclip.com/releases/</url></repository><repository><id>papermc</id><url>https://repo.papermc.io/repository/maven-public/</url></repository><repository><id>jitpack</id><url>https://jitpack.io</url></repository></repositories>
   <dependencies>
+    <dependency><groupId>me.clip</groupId><artifactId>placeholderapi</artifactId><version>2.12.3</version><scope>provided</scope></dependency>
     <dependency><groupId>net.luckperms</groupId><artifactId>api</artifactId><version>5.4</version><scope>provided</scope></dependency>
     <dependency><groupId>io.papermc.paper</groupId><artifactId>paper-api</artifactId><version>1.21.1-R0.1-SNAPSHOT</version><scope>provided</scope></dependency>
     <dependency><groupId>cafe.deuterium</groupId><artifactId>deuterium-mail</artifactId><version>0.6.2</version><scope>provided</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
