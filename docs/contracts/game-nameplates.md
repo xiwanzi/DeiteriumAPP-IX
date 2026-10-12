@@ -2,6 +2,14 @@
 
 已按用户授权于 2026-10-12 上线，见[发布记录](../deployment/nameplates-0.0.51-live.md)。
 
+## TAB 变量（Core 1.0.6）
+
+Core 内置 PlaceholderAPI 扩展 `deuterium`：`%deuterium_title%` 返回当前佩戴头衔的彩色文字，`%deuterium_title_prefix%` 返回灰色方括号包围的彩色头衔。输出使用标准 legacy RGB 并以 reset 结束，避免染色玩家 ID；无玩家上下文返回空字符串，未知变量不解析。
+
+只读复用聊天与铭牌的权威佩戴投影，不查询数据库、不写 LP 前缀、不改变授权或选择历史；未获得投影时为“溯行者”，停用/撤权/失联沿既有同步回退。并发快照供 TAB-Bridge 异步读取，PAPI reload 保留扩展，Core 关闭或重载时注销旧扩展。
+
+代理 TAB 的 `tabprefix` 保留服务器标识，称号部分与 `tagprefix` 统一读取 `%deuterium_title_prefix%`，刷新间隔 1000 ms。子服安装 PlaceholderAPI 和 TAB-Bridge；不向客户端安装新的渲染模组。以下为既有头衔契约。
+
 - 头衔使用稳定 ID；不可修改、不可复用的内部 ID 组成 `deuterium.title.<internalId>`。管理员修改显示名后，佩戴记录仍引用同一 ID，游戏动态取最新定义。
 - 每个头衔增加 `description`（介绍及获取方式，最多 1000 字，支持换行）与 `public`（公开展示）。已拥有列表仅按权限显示，允许私有头衔；全部列表只显示公开且已发布的头衔，即使佩戴者本人拥有私有头衔也不在全部列表中展示。公开不等于授予权限，修改这两项不改变头衔 ID 或发布顺序。
 - 显示名支持内联 `#RRGGBB`，颜色持续至下一个色码；纯文本默认为 `#A9B3B8`。最多 32 个可见字符，不接受控制符或其他富文本指令。
