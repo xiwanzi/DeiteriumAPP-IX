@@ -122,6 +122,82 @@ type fakeReviewer struct {
 	err          error
 }
 
+func TestImageReviewSettingsApplyToNewJobsAndInvalidateCache(t *testing.T) {
+	ctx := context.Background()
+	db := testdb.New(t)
+	repo := &Repository{DB: db.DB}
+	if e := repo.Migrate(ctx); e != nil {
+		t.Fatal(e)
+	}
+	settings, e := repo.Settings(ctx)
+	if e != nil || settings.Threshold != 50 || settings.Prompt != reviewPrompt {
+		t.Fatal(settings, e)
+	}
+	settings.Threshold = 80
+	settings.Prompt = "按照自定义社区标准进行评分。"
+	saved, e := repo.SaveSettings(ctx, "admin", settings)
+	if e != nil || saved.Version != 2 {
+		t.Fatal(saved, e)
+	}
+	retry, e := repo.SaveSettings(ctx, "admin", settings)
+	if e != nil || retry.Version != 2 {
+		t.Fatal("save retry changed version", retry, e)
+	}
+	stale := settings
+	stale.Threshold = 60
+	if _, e = repo.SaveSettings(ctx, "admin", stale); !errors.Is(e, ErrSettingsConflict) {
+		t.Fatal("stale edit accepted", e)
+	}
+	bad := saved
+	bad.Threshold = 101
+	if _, e = repo.SaveSettings(ctx, "admin", bad); !errors.Is(e, ErrSettingsInvalid) {
+		t.Fatal("invalid threshold accepted", e)
+	}
+	objects := &fakeReviewObjects{}
+	model := &fakeReviewer{score: 70}
+	service := &Service{Repo: repo, Objects: objects, Reviewer: model}
+	makeItem := func(id string) Item {
+		c := Candidate{ID: ReviewID("ASSET", id), SourceKind: "ASSET", SourceID: id, SourceKey: "image/" + id, SizeBytes: 100, SHA256: strings.Repeat("e", 64), Verified: true, UploadedAt: time.Now(), ExpiresAt: time.Now().Add(time.Hour)}
+		if e := repo.Discover(ctx, c); e != nil {
+			t.Fatal(e)
+		}
+		i, e := repo.Item(ctx, c.ID)
+		if e != nil {
+			t.Fatal(e)
+		}
+		return i
+	}
+	one := makeItem("first")
+	if e = service.Process(ctx, one); e != nil {
+		t.Fatal(e)
+	}
+	one, _ = repo.Item(ctx, one.ID)
+	if one.State != "CLEAR" || one.ThresholdUsed != 80 {
+		t.Fatal("dynamic threshold not applied", one)
+	}
+	saved.Threshold = 60
+	saved.Prompt = "更新后的社区评分标准。"
+	saved, e = repo.SaveSettings(ctx, "admin", saved)
+	if e != nil {
+		t.Fatal(e)
+	}
+	two := makeItem("second")
+	if e = service.Process(ctx, two); e != nil {
+		t.Fatal(e)
+	}
+	two, _ = repo.Item(ctx, two.ID)
+	if two.State != "FLAGGED" || two.ThresholdUsed != 60 || model.calls != 2 {
+		t.Fatal("old rule cache reused", two, model.calls)
+	}
+	one, _ = repo.Item(ctx, one.ID)
+	if one.State != "CLEAR" || one.ThresholdUsed != 80 {
+		t.Fatal("history changed retroactively")
+	}
+	if activeSettings(withSettings(ctx, saved)).Prompt != saved.Prompt {
+		t.Fatal("prompt snapshot not passed")
+	}
+}
+
 func (f *fakeReviewer) Review(context.Context, string) (Result, error) {
 	f.calls++
 	return Result{Scores: Scores{Promotion: f.score}, Summary: "审核结果", Reasons: []string{"测试依据"}}, f.err

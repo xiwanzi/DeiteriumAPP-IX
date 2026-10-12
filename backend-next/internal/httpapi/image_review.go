@@ -34,6 +34,51 @@ func ImageReviewHandler(source *store.Store, c config.Config, review *imagerevie
 		}
 		failure(w, r, 503, "REVIEW_UNAVAILABLE", "图片审核暂不可用，请稍后重试。")
 	}
+	mux.HandleFunc("GET "+prefix+"/settings", func(w http.ResponseWriter, r *http.Request) {
+		if !auth(w, r) {
+			return
+		}
+		settings, e := review.Repo.Settings(r.Context())
+		if e != nil {
+			fail(w, r, e)
+			return
+		}
+		v2Success(w, r, map[string]any{"settings": settings, "defaults": imagereview.DefaultSettings()})
+	})
+	mux.HandleFunc("PUT "+prefix+"/settings", func(w http.ResponseWriter, r *http.Request) {
+		u, e := s.admin(r, "platform.admin")
+		if e != nil {
+			failError(w, r, e)
+			return
+		}
+		var in struct {
+			Threshold       *int   `json:"threshold"`
+			Prompt          string `json:"prompt"`
+			ExpectedVersion int64  `json:"expectedVersion"`
+		}
+		if e = socialBodyV2(w, r, &in, 65536); e != nil {
+			failure(w, r, 400, "REVIEW_SETTINGS_INVALID", "设置内容格式不正确。")
+			return
+		}
+		if in.Threshold == nil {
+			failure(w, r, 400, "REVIEW_SETTINGS_INVALID", "请填写 0–100 的整数阈值。")
+			return
+		}
+		settings, e := review.Repo.SaveSettings(r.Context(), u.ID, imagereview.Settings{Threshold: *in.Threshold, Prompt: in.Prompt, Version: in.ExpectedVersion})
+		if errors.Is(e, imagereview.ErrSettingsInvalid) {
+			failure(w, r, 400, "REVIEW_SETTINGS_INVALID", "阈值须为 0–100 的整数，提示词不能为空且最多 12,000 字。")
+			return
+		}
+		if errors.Is(e, imagereview.ErrSettingsConflict) {
+			failure(w, r, 409, "REVIEW_SETTINGS_CONFLICT", "设置已被更新，请重新载入后再保存。")
+			return
+		}
+		if e != nil {
+			fail(w, r, e)
+			return
+		}
+		v2Success(w, r, map[string]any{"settings": settings})
+	})
 	mux.HandleFunc("GET "+prefix, func(w http.ResponseWriter, r *http.Request) {
 		if !auth(w, r) {
 			return

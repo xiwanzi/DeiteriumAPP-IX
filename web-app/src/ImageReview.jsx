@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, ScanEye, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, ScanEye, Trash2, Settings2 } from "lucide-react";
 import { Button, Empty, Modal, PageHead } from "./components.jsx";
 import "./image-review.css";
+import ImageReviewSettings from "./ImageReviewSettings.jsx";
 
 const endpoint = "/api/v1/admin/image-review";
 const time = value => value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "暂无";
@@ -14,10 +15,14 @@ function Evidence({ item, large = false }) {
   return failed ? <div className="review-image-missing"><AlertTriangle size={24} /><span>图片读取失败，请刷新重试</span></div> : <img className={large ? "review-image-large" : "review-image"} src={`${endpoint}/${item.id}/image`} alt="待复核图片" loading={large ? "eager" : "lazy"} referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
 }
 function Scores({ item }) {
-  return <div className="review-scores">{[["r18", "R18"], ["politics", "政治内容"], ["promotion", "宣传导流"]].map(([key, label]) => <span key={key}><span>{label}</span><strong className={item.result?.scores[key] > 50 ? "review-score-high" : ""}>{item.result?.scores[key] ?? "—"}</strong></span>)}</div>;
+  return <div className="review-scores">{[["r18", "R18"], ["politics", "政治内容"], ["promotion", "宣传导流"]].map(([key, label]) => <span key={key}><span>{label}</span><strong className={item.result?.scores[key] > (item.thresholdUsed ?? 50) ? "review-score-high" : ""}>{item.result?.scores[key] ?? "—"}</strong></span>)}</div>;
 }
 
-export default function ImageReview({ client }) {
+export default function ImageReview({ client, navigate, search = "" }) {
+  const settings = new URLSearchParams(search).get("view") === "settings";
+  return settings ? <ImageReviewSettings client={client} onBack={() => navigate("/admin?section=image-review")} /> : <ImageReviewList client={client} onSettings={() => navigate("/admin?section=image-review&view=settings")} />;
+}
+function ImageReviewList({ client, onSettings }) {
   const [items, setItems] = useState([]), [summary, setSummary] = useState(null), [page, setPage] = useState(0), [more, setMore] = useState(false);
   const [loading, setLoading] = useState(true), [refreshing, setRefreshing] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
   const [detail, setDetail] = useState(null), [detailLoading, setDetailLoading] = useState(false), [detailError, setDetailError] = useState("");
@@ -60,7 +65,8 @@ export default function ImageReview({ client }) {
   const askDelete = item => { setRemove(item); setDeleteError(""); };
   const stale = summary && (!summary.lastScanAt || Date.now() - new Date(summary.lastScanAt).getTime() > 300000 || !summary.lastWorkAt || Date.now() - new Date(summary.lastWorkAt).getTime() > 300000);
   return <section className="image-review-page">
-    <PageHead title="图片审核" subtitle="仅审核启用后新上传的静态聊天图片，超过 50 分保留证据。">
+    <PageHead title="图片审核" subtitle={`仅审核启用后新上传的静态聊天图片，当前阈值 ${summary?.threshold ?? 50} 分。`}>
+      <Button secondary onClick={onSettings}><Settings2 size={16} />设置</Button>
       <Button secondary disabled={refreshing || deleting} onClick={() => { setNotice(""); load(); }}><RefreshCw size={16} />{refreshing ? "刷新中…" : "刷新"}</Button>
     </PageHead>
     {error && <p role="alert" className="form-error">{error}</p>}
@@ -75,7 +81,7 @@ export default function ImageReview({ client }) {
       <div className="review-service"><span><ScanEye size={16} />{summary.modelLabel}</span><span>最近扫描：{time(summary.lastScanAt)}</span>{summary.deleting > 0 && <span>{summary.deleting} 份证据清理中</span>}</div>
       {(stale || summary.scanError || summary.retrying > 0) && <p className="review-warning" role="status"><AlertTriangle size={17} />{summary.scanError || stale ? "审核服务暂未正常更新，已有记录可继续查看。" : "部分图片正在重试或保存证据，尚未计入低风险结果。"}</p>}
     </>}
-    {loading ? <p className="review-loading" role="status">正在读取审核记录…</p> : items.length === 0 ? <Empty title={error ? "暂未读取到审核记录" : "暂无需要复核的图片"} text={error ? "请刷新重试。" : "超过 50 分且证据保存成功的图片会出现在这里。"} /> : <div className="review-grid">
+    {loading ? <p className="review-loading" role="status">正在读取审核记录…</p> : items.length === 0 ? <Empty title={error ? "暂未读取到审核记录" : "暂无需要复核的图片"} text={error ? "请刷新重试。" : `超过 ${summary?.threshold ?? 50} 分且证据保存成功的图片会出现在这里。`} /> : <div className="review-grid">
       {items.map(item => <article className="review-card" key={item.id}>
         <button className="review-preview" onClick={() => open(item)} aria-label={`查看 ${person(item)} 的图片审核详情`}><Evidence item={item} /><span className="review-risk">{item.score}<small> / 100</small></span></button>
         <div className="review-card-body"><Scores item={item} /><p className="review-summary">{item.result?.summary}</p><div className="review-uploader"><strong>{person(item)}</strong>{item.gameId && item.gameId !== person(item) && <span>{item.gameId}</span>}</div><p className="review-meta">上传于 {time(item.uploadedAt)}</p><p className="review-meta">{purposes[item.purpose] || "业务图片"}</p><div className="review-card-actions"><Button secondary onClick={() => open(item)}>查看详情</Button><Button danger onClick={() => askDelete(item)}><Trash2 size={15} />删除记录</Button></div></div>
@@ -84,7 +90,7 @@ export default function ImageReview({ client }) {
     {(page > 0 || more) && <div className="review-pagination"><Button secondary disabled={page === 0 || refreshing} onClick={() => setPage(page - 1)}><ChevronLeft size={16} />上一页</Button><span>第 {page + 1} 页</span><Button secondary disabled={!more || refreshing} onClick={() => setPage(page + 1)}>下一页<ChevronRight size={16} /></Button></div>}
     {detail && <Modal title={`图片审核 · ${detail.score} 分`} close={closeDetail}>
       <div className="review-detail"><Evidence key={detail.id} item={detail} large /><Scores item={detail} /><p>{detail.result?.summary}</p><ul className="review-reasons">{detail.result?.reasons.map((reason, n) => <li key={n}>{reason}</li>)}</ul>
-        <dl className="review-facts"><dt>上传账号</dt><dd>{person(detail)}{detail.gameId && ` · ${detail.gameId}`}</dd><dt>账号标识</dt><dd>{detail.playerRef || detail.uploaderId || "已不可用"}</dd><dt>上传时间</dt><dd>{time(detail.uploadedAt)}</dd><dt>图片来源</dt><dd>{purposes[detail.purpose] || detail.purpose}</dd><dt>审核时间</dt><dd>{time(detail.reviewedAt)}</dd></dl>
+        <dl className="review-facts"><dt>上传账号</dt><dd>{person(detail)}{detail.gameId && ` · ${detail.gameId}`}</dd><dt>账号标识</dt><dd>{detail.playerRef || detail.uploaderId || "已不可用"}</dd><dt>上传时间</dt><dd>{time(detail.uploadedAt)}</dd><dt>图片来源</dt><dd>{purposes[detail.purpose] || detail.purpose}</dd><dt>当时阈值</dt><dd>{detail.thresholdUsed ?? 50} 分</dd><dt>审核时间</dt><dd>{time(detail.reviewedAt)}</dd></dl>
         <h3>发送记录</h3>{detailLoading ? <p role="status">正在读取发送记录…</p> : detailError ? <p role="alert" className="form-error">{detailError}<Button secondary onClick={() => open(detail)}>重试</Button></p> : detail.events?.length ? <div className="review-events">{detail.events.map(event => <div key={event.id}><strong>{person(event)}</strong><span>{channels[event.channel] || event.channel}</span><time>{time(event.sentAt)}</time></div>)}{detail.eventsTruncated && <p className="review-meta">此处展示最近 100 条发送记录。</p>}</div> : <p className="review-meta">暂未发现关联聊天发送记录；上传不代表已发送。</p>}
         <p className="review-footnote">分数用于人工复核，不代表系统已对玩家作出处罚。</p><div className="button-row"><Button secondary onClick={closeDetail}>关闭</Button><Button danger onClick={() => askDelete(detail)}>删除记录</Button></div>
       </div>

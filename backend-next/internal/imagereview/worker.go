@@ -47,6 +47,11 @@ func (s *Service) Process(ctx context.Context, i Item) error {
 	if i.State == "RETAINING" {
 		return s.retain(ctx, i)
 	}
+	settings, settingsErr := s.Repo.Settings(ctx)
+	if settingsErr != nil {
+		return settingsErr
+	}
+	ctx = withSettings(ctx, settings)
 	if i.Animated {
 		return s.Repo.Finish(ctx, i.ID, "SKIPPED")
 	}
@@ -85,7 +90,7 @@ func (s *Service) Process(ctx context.Context, i Item) error {
 		result = &value
 	}
 	key := ""
-	if result.Scores.Total() > Threshold {
+	if result.Scores.Total() > settings.Threshold {
 		key = s.Objects.EvidenceKey(i.ID)
 	}
 	if e = s.Repo.Scored(ctx, i, *result, key, info.ETag); e != nil {
