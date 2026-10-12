@@ -11,11 +11,17 @@ import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.*;
 
 @Mixin(ChatScreen.class)
-public abstract class ChatScreenMixin {
+public abstract class ChatScreenMixin implements QuickChatHooks.DraftSource {
     @Shadow CommandSuggestions commandSuggestions;
+    @Shadow protected net.minecraft.client.gui.components.EditBox input;
+    @Override public net.minecraft.client.gui.screens.Screen deuteriumDraftReturn(){return new ChatScreen(input.getValue());}
     @org.spongepowered.asm.mixin.Unique private boolean deuteriumSoundOpened;
     @Inject(method="init",at=@At("TAIL"))
     private void openSound(CallbackInfo ci){if(!deuteriumSoundOpened){deuteriumSoundOpened=true;QuickChatHooks.sound("click");}}
+    @Inject(method="keyPressed",at=@At("HEAD"),cancellable=true)
+    private void pasteImage(int key,int scan,int mods,CallbackInfoReturnable<Boolean> ci){
+        if(net.minecraft.client.gui.screens.Screen.isPaste(key)&&QuickChatHooks.pasteImage())ci.setReturnValue(true);
+    }
     @Inject(method="removed",at=@At("HEAD"))
     private void closeSound(CallbackInfo ci){QuickChatHooks.sound("close");}
     @Redirect(method="render",at=@At(value="INVOKE",target="Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V"))

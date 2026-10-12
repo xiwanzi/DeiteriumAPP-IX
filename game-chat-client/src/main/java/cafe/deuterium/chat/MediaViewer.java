@@ -18,7 +18,7 @@ final class MediaViewer extends ModularUIScreen {
     MediaViewer(ChatMessage message,Screen previous,Runnable confirm,Runnable dismiss){this(message,previous,new UIElement(),confirm,dismiss);}
     private MediaViewer(ChatMessage message,Screen previous,UIElement root,Runnable confirm,Runnable dismiss){
         super(ModularUI.of(UI.of(root.layout(l->l.widthPercent(100).heightPercent(100)),size->WebPixels.size())),Component.literal("图片"));
-        ChatSounds.play("card");WebPixels.apply(root);this.message=message;this.previous=previous;this.root=root;this.confirm=confirm;this.dismiss=dismiss;previousPanel=previous instanceof ChatScreenFull full?ChatPanels.state(full.view.root):"";
+        ChatSounds.play("card");WebPixels.apply(root);this.message=message;this.previous=QuickChatHooks.returnTo(previous);this.root=root;this.confirm=confirm;this.dismiss=dismiss;previousPanel=previous instanceof ChatScreenFull full?ChatPanels.state(full.view.root):"";
         minus=ChatStyle.button("−",()->setZoom(zoom/1.3f));plus=ChatStyle.button("+",()->setZoom(zoom*1.3f));
         fit=ChatStyle.button("适应窗口",()->{setZoom(1);panX=panY=0;});collect=ChatStyle.button(confirm==null?"收藏为贴纸":"发送",()->{if(confirm==null)ChatClient.INSTANCE.media.collect(message.media);else{submitted=true;confirm.run();onClose();}});close=ChatStyle.iconButton("close",this::onClose);
         ChatStyle.sound(minus,"");ChatStyle.sound(plus,"");ChatStyle.sound(fit,"");ChatStyle.sound(close,"");ChatStyle.sound(collect,confirm==null?"card":"send");minus.textStyle(st->st.fontSize(19/3f));plus.textStyle(st->st.fontSize(19/3f));fit.textStyle(st->st.fontSize(11/3f));
@@ -50,7 +50,7 @@ final class MediaViewer extends ModularUIScreen {
         float unit=(float)Minecraft.getInstance().getWindow().getGuiScale()/3;if(y*unit<68/3f||y*unit>=WebPixels.height()-20)return super.mouseClicked(x,y,button);
         if(button==0){long now=System.currentTimeMillis();if(now-clickAt<280){setZoom(zoom>1?1:2);panX=panY=0;}clickAt=now;return true;}return false;
     }
-    @Override public boolean keyPressed(int key,int scan,int mods){if(key==GLFW.GLFW_KEY_ESCAPE){ChatSounds.play("close");Minecraft.getInstance().setScreen(null);return true;}return super.keyPressed(key,scan,mods);}
+    @Override public boolean keyPressed(int key,int scan,int mods){if(key==GLFW.GLFW_KEY_ESCAPE){ChatSounds.play("close");onClose();return true;}return super.keyPressed(key,scan,mods);}
     @Override public void onClose(){if(previous instanceof ChatScreenFull){var full=new ChatScreenFull(false);Minecraft.getInstance().setScreen(full);ChatPanels.restore(full.view.root,previousPanel,full.view::switchScope);}else Minecraft.getInstance().setScreen(previous);}
     @Override public void removed(){if(!disposed){disposed=true;if(dismiss!=null&&!submitted)dismiss.run();}super.removed();}
 }

@@ -27,6 +27,7 @@ final class ChatMediaClient {
     private final ConcurrentLinkedQueue<Runnable> completed=new ConcurrentLinkedQueue<>();
     private JsonArray stickers=new JsonArray();
     private long resident;
+    private String previewRequest="";
     private static final long MEMORY_LIMIT=64L<<20,DISK_LIMIT=500L<<20;
     private record Pixels(int width,int height,NativeImage image,long bytes){}
     private static final class ImageEntry {
@@ -46,20 +47,30 @@ final class ChatMediaClient {
     }
     void pick(Path path,boolean importing){start(path,importing,importing);}
     void preview(Path path){
+        preview(target->{try(var in=Files.newInputStream(path)){Files.write(target,ChatApi.read(in,20<<20));}});
+    }
+    boolean pasteImage(){
+        try{var source=ClipboardImage.capture();if(source==null)return false;preview(source);}
+        catch(Exception e){client.notice(e instanceof IllegalStateException?"剪贴板正忙，请稍后再粘贴":e.getMessage()==null?"无法读取剪贴板图片":e.getMessage());}
+        return true;
+    }
+    private void preview(ClipboardImage.Source source){
+        if(!previewRequest.isEmpty()){client.notice("正在准备上一张图片，请稍候");return;}
         ChatApi api=client.api;if(api==null||!api.valid()){client.notice("云端聊天尚未连接");return;}
         String scope=ChatStore.INSTANCE.current;if(scope.equals("inbox")){client.notice("请先选择一位玩家");return;}
         if(jobs.size()>=4){client.notice("请等待当前图片处理完成");return;}
         String id=UUID.randomUUID().toString();Job job=new Job(id,cache(api).resolve("pending").resolve(id),api,client.epoch,scope,false,false);
+        var previous=Minecraft.getInstance().screen;previewRequest=id;
         client.notice("正在准备图片预览…");
-        queue(()->{try{
-            Files.createDirectories(job.dir);try(var in=Files.newInputStream(path)){Files.write(job.dir.resolve("source"),ChatApi.read(in,20<<20));}
+        if(!queue(()->{try{
+            Files.createDirectories(job.dir);source.writeTo(job.dir.resolve("source"));
             var result=ChatImageCompressor.prepare(job.dir.resolve("source"),false);Files.write(job.dir.resolve("image.webp"),result.image());Files.write(job.dir.resolve("thumbnail.webp"),result.thumbnail());
             saveCache(api,hash(result.image()),result.image());saveCache(api,hash(result.thumbnail()),result.thumbnail());
             JsonObject media=new JsonObject();media.addProperty("mediaId",id);media.addProperty("sha256",hash(result.image()));media.addProperty("thumbnailSha256",hash(result.thumbnail()));media.addProperty("width",result.width());media.addProperty("height",result.height());media.addProperty("type","image");media.addProperty("animated",result.animated());
-            completed.add(()->{if(job.epoch!=client.epoch){discard(job);return;}var message=new ChatMessage(id,api.owner,Minecraft.getInstance().getUser().getName(),scope.startsWith("private:")?"private":scope,api.server,scope.startsWith("private:")?scope.substring(8):"",Component.literal("[图片]"),media,Instant.now(),false,false,"");
+            completed.add(()->{if(previewRequest.equals(id))previewRequest="";if(job.epoch!=client.epoch||Minecraft.getInstance().screen!=previous||!scope.equals(ChatStore.INSTANCE.current)){discard(job);return;}var message=new ChatMessage(id,api.owner,Minecraft.getInstance().getUser().getName(),scope.startsWith("private:")?"private":scope,api.server,scope.startsWith("private:")?scope.substring(8):"",Component.literal("[图片]"),media,Instant.now(),false,false,"");
                 Minecraft.getInstance().setScreen(new MediaViewer(message,Minecraft.getInstance().screen,()->{if(job.epoch!=client.epoch){client.notice("游戏会话已切换，请重新选择图片");discard(job);return;}jobs.put(id,job);message.pending=true;ChatStore.INSTANCE.add(message);queue(()->{try{writeJob(job);process(job);}catch(Exception e){failed(job,e);}});},()->discard(job)));
             });
-        }catch(Exception e){discard(job);completed.add(()->{if(job.epoch==client.epoch)client.notice(e.getMessage());});}});
+        }catch(Exception e){discard(job);completed.add(()->{if(previewRequest.equals(id))previewRequest="";if(job.epoch==client.epoch)client.notice(e.getMessage());});}}))previewRequest="";
     }
     private void writeJob(Job job)throws IOException{var meta=new JsonObject();meta.addProperty("id",job.id);meta.addProperty("scope",job.scope);meta.addProperty("importing",job.importing);meta.addProperty("sticker",job.sticker);meta.addProperty("server",job.api.server);Files.writeString(job.dir.resolve("job.json"),meta.toString());}
     private void discard(Job job){queue(()->{try{for(String name:List.of("source","image.webp","thumbnail.webp","job.json"))Files.deleteIfExists(job.dir.resolve(name));Files.deleteIfExists(job.dir);}catch(IOException ignored){}});}
@@ -177,9 +188,9 @@ final class ChatMediaClient {
     private static void disposePixels(Pixels p){p.image.close();}
     private void release(ImageEntry e){e.disposed=true;if(e.texture!=null)Minecraft.getInstance().getTextureManager().release(e.texture);if(e.pixels!=null){resident-=e.pixels.bytes;disposePixels(e.pixels);e.pixels=null;}}
     private void evict(){var it=images.entrySet().iterator();while((resident>MEMORY_LIMIT||images.size()>48)&&it.hasNext()){var entry=it.next().getValue();if(entry.busy)continue;release(entry);it.remove();}}
-    void clear(){worker.getQueue().clear();for(Runnable r;(r=completed.poll())!=null;)r.run();for(var e:images.values())release(e);images.clear();jobs.clear();stickers=new JsonArray();resident=0;}
+    void clear(){previewRequest="";worker.getQueue().clear();for(Runnable r;(r=completed.poll())!=null;)r.run();for(var e:images.values())release(e);images.clear();jobs.clear();stickers=new JsonArray();resident=0;}
     void clearCachedMedia(){ChatApi api=client.api;for(var e:images.values())release(e);images.clear();resident=0;if(api==null)return;queue(()->{try{Path dir=cache(api).resolve("media");if(Files.isDirectory(dir))try(var files=Files.list(dir)){for(Path p:files.filter(Files::isRegularFile).toList())if(p.getFileName().toString().matches("[0-9a-f]{64}"))Files.deleteIfExists(p);}completed.add(()->client.notice("本机图片缓存已清理，待发送内容已保留"));}catch(IOException e){completed.add(()->client.notice("缓存未能完全清理，请稍后重试"));}});}
-    private void queue(Runnable task){try{worker.execute(task);}catch(RejectedExecutionException e){Minecraft.getInstance().execute(()->client.notice("图片正在处理中，请稍后重试"));}}
+    private boolean queue(Runnable task){try{worker.execute(task);return true;}catch(RejectedExecutionException e){Minecraft.getInstance().execute(()->client.notice("图片正在处理中，请稍后重试"));return false;}}
     private static Path cache(ChatApi api){return Minecraft.getInstance().gameDirectory.toPath().resolve("deuterium-chat").resolve(hash((api.base+"|"+api.owner).getBytes(java.nio.charset.StandardCharsets.UTF_8)).substring(0,32));}
     private static void saveCache(ChatApi api,String hash,byte[] bytes)throws IOException{Path dir=cache(api).resolve("media");Files.createDirectories(dir);Path file=dir.resolve(hash);if(!Files.exists(file)){Path temp=Files.createTempFile(dir,"incoming-",".tmp");Files.write(temp,bytes);Files.move(temp,file,StandardCopyOption.REPLACE_EXISTING);}
         try(var paths=Files.list(dir)){var list=paths.filter(Files::isRegularFile).sorted(Comparator.comparingLong(p->{try{return Files.getLastModifiedTime(p).toMillis();}catch(IOException e){return 0;}})).toList();long size=0;for(Path p:list)size+=Files.size(p);for(Path p:list){if(size<=DISK_LIMIT)break;long n=Files.size(p);Files.deleteIfExists(p);size-=n;}}}

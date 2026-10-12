@@ -20,6 +20,7 @@ public final class ChatScreenFull extends ModularUIScreen {
         super.render(g,x,y,tick);
     }
     @Override public boolean keyPressed(int key,int scan,int mods) {
+        if(isPaste(key)&&(modularUI.getFocusedElement()==null||modularUI.getFocusedElement()==view.input)&&ChatClient.INSTANCE.media.pasteImage())return true;
         if(key==GLFW.GLFW_KEY_ESCAPE) { onClose();return true; }
         if(key==GLFW.GLFW_KEY_ENTER||key==GLFW.GLFW_KEY_KP_ENTER) { view.send();return true; }
         return super.keyPressed(key,scan,mods);
