@@ -95,7 +95,7 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
             LazyColumn(state = list, modifier = Modifier.fillMaxSize(), reverseLayout = true,
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = topInset + 12.dp, bottom = dockInset+8.dp), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Bottom)) {
                 if(state.chatReplyPending) item(key = "typing") { TypingStatus("正在发送…") }
-                state.chatMedia?.let{service->items(service.pending.filter{!it.importing&&state.chat.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}}
+                state.chatMedia?.let{service->items(service.pending.filter{!it.importing&&it.target==null&&state.chat.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}}
                 items(state.chat.asReversed(), key = { it.id }, contentType = { "message" }) { line ->
                     Row(Modifier.fillMaxWidth().then(if(motion) Modifier.animateItem() else Modifier), horizontalArrangement = if(line.mine) Arrangement.End else Arrangement.Start) {
                         if(!line.mine) {

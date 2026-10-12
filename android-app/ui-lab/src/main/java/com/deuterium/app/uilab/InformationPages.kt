@@ -91,6 +91,7 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
     val messages=remember(name){state.conversation(name)}
     var draft by rememberSaveable(name,stateSaver=TextFieldValue.Saver){mutableStateOf(TextFieldValue(state.pendingDirectDraft(name)))}
     val list=rememberLazyListState()
+    var mediaViewer by remember(name){mutableStateOf<ChatViewerRequest?>(null)}
     var selectedMessage by remember(name){mutableStateOf<ChatLine?>(null)}
     var forwarding by remember(name){mutableStateOf<ChatLine?>(null)}
     var aiOptions by remember{mutableStateOf(false)}
@@ -112,10 +113,17 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
         LazyColumn(Modifier.fillMaxSize(),state=list,reverseLayout=true,contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset+18.dp,bottom=dockInset+16.dp),verticalArrangement=Arrangement.spacedBy(10.dp,Alignment.Bottom)) {
             if(state.directPending[name]==true)item{Text(if(name=="AI 助手")state.ai?.statusText ?: "正在生成回复…" else "正在发送…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             state.directErrors[name]?.let{error->item{Text(error,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error)}}
+            state.chatMedia?.let{service->
+                val peerRef=Players.find{it.name==name}?.playerRef
+                items(service.pending.filter{!it.importing&&it.target!=null&&it.target.playerRef==peerRef&&messages.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}
+            }
             items(messages.asReversed(),key={it.id}) { line -> Row(Modifier.fillMaxWidth(),horizontalArrangement=if(line.mine)Arrangement.End else Arrangement.Start) {
                 if(!line.mine){if(name=="AI 助手")Image(painterResource(R.drawable.xiaoxiang_avatar),"小祥菜单",Modifier.size(42.dp).clip(CircleShape).clickable{aiOptions=true}) else PlayerAvatar(name,Modifier.clickable{onProfile(name)});Spacer(Modifier.width(9.dp))}
                 Column(Modifier.widthIn(max=270.dp),horizontalAlignment=if(line.mine)Alignment.End else Alignment.Start) {
-                    Surface(modifier=Modifier.combinedClickable(onClick={},onLongClick={selectedMessage=line}),shape=RoundedCornerShape(topStart=19.dp,topEnd=19.dp,bottomStart=if(line.mine)19.dp else 6.dp,bottomEnd=if(line.mine)6.dp else 19.dp),color=if(line.mine)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                    if(line.media!=null&&state.chatMedia!=null){
+                        line.reply?.let{QuotedMessage(it,false,Modifier.padding(bottom=7.dp))}
+                        ChatMediaTile(state.chatMedia,line.media,line.remoteId,playRequested=!list.isScrollInProgress,onOpen={mediaViewer=it},onLong={selectedMessage=line})
+                    }else Surface(modifier=Modifier.combinedClickable(onClick={},onLongClick={selectedMessage=line}),shape=RoundedCornerShape(topStart=19.dp,topEnd=19.dp,bottomStart=if(line.mine)19.dp else 6.dp,bottomEnd=if(line.mine)6.dp else 19.dp),color=if(line.mine)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                         contentColor=if(line.mine)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface){Column(Modifier.padding(horizontal=13.dp,vertical=9.dp)){line.forwarded?.let{Text("转发自 ${it.name}",style=MaterialTheme.typography.labelSmall,color=if(line.mine)MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary);Spacer(Modifier.height(5.dp))};line.reply?.let{QuotedMessage(it,line.mine,Modifier.padding(bottom=7.dp))};if(name=="AI 助手"&&!line.mine)MarkdownBody(line.text,onLongClick={selectedMessage=line}) else Text(line.text,style=MaterialTheme.typography.bodyLarge.copy(fontSize=16.sp,lineHeight=23.sp))}}
                     if(line.mine&&line.id==messages.lastOrNull{it.mine}?.id)Text("已发送",Modifier.padding(4.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     if(name=="AI 助手"&&!line.mine){
@@ -132,9 +140,12 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
         if(name=="AI 助手"&&messages.isEmpty())Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             listOf("给我一些建筑建议","怎样使用市场").forEach{AssistChoice({scope.launch{state.sendDirect(name,it)}},label={Text(it)})}
         }
-        MessageComposer(draft,{draft=it.copy(text=it.text.take(if(name=="AI 助手")2000 else 256))},{send()},if(name=="AI 助手")"向 AI 提问" else "发送消息",focus,replying,{replyId=null})
+        if(name!="AI 助手"&&state.chatMedia!=null)key(name){
+            ChatMediaComposer(state,focus,draft,{draft=it},{send()},replying,{replyId=null},recipient=name){mediaViewer=it}
+        }else MessageComposer(draft,{draft=it.copy(text=it.text.take(if(name=="AI 助手")2000 else 256))},{send()},if(name=="AI 助手")"向 AI 提问" else "发送消息",focus,replying,{replyId=null})
     }})
-    selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward=if(name!="AI 助手")({forwarding=line})else null){replyId=line.id;scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
+    selectedMessage?.let{line->MessageActionSheet(line,{selectedMessage=null},onForward=if(name!="AI 助手"&&line.media==null)({forwarding=line})else null,onCollect=if(line.media!=null)({scope.launch{runCatching{state.chatMedia?.collect(line.media,line.remoteId)}.onFailure{state.storageMessage=it.message}}})else null){replyId=line.id;scope.launch{delay(220);focus.requestFocus();withFrameNanos{};keyboard?.show()}}}
+    mediaViewer?.let{request->state.chatMedia?.let{ChatMediaViewer(it,request){mediaViewer=null}}}
     forwarding?.let{ForwardMessageSheet(state,it,name){forwarding=null}}
     if(aiOptions)state.ai?.let{AiOptionsSheet(it,{aiOptions=false},{aiOptions=false;onPlans()}){draft=TextFieldValue("");replyId=null;aiOptions=false}}
 }
