@@ -117,7 +117,7 @@ object ChatMediaCheck {
             cache.putFile(media.thumbnailSha,prepared.thumbnail)
             val record=JSONObject().put("messageId","cached_40_days").put("sentAt",Instant.now().minusSeconds(40L*86400).toString()).put("content","[图片]").put("sender",JSONObject().put("gameId","Alice").put("playerRef","alice")).put("media",media.json())
             cache.save("public",record);check(cache.read("public").size==1)
-            val service=BackendChatMedia(api,scope){}
+            val service=BackendChatMedia(api,scope){_,_->}
             val requestsBefore=server.requestCount;check(runBlocking{service.file(media,"cached_40_days")}.isFile);check(server.requestCount==requestsBefore){"Local expired image triggered a server read"}
             val owner=ChatCache.hash("${api.financialScope().origin}:${api.financialScope().owner}".toByteArray());val oldest=File(context.filesDir,"chat-cache/media/$owner/${"0".repeat(64)}.webp").apply{parentFile!!.mkdirs()}
             RandomAccessFile(oldest,"rw").use{it.setLength(ChatCache.LIMIT)};oldest.setLastModified(1)
@@ -127,7 +127,7 @@ object ChatMediaCheck {
             runBlocking{AppStorage.clear(context,CacheSelection.ChatAll,null)};check(cache.read("public").isEmpty()&&pendingSentinel.exists());pendingSentinel.delete()
             result.putString("cache","PASS local reads after server expiry, 500MiB eviction, two clear modes, pending isolation")
             val transport=OkHttpClient.Builder().addInterceptor{chain->check(chain.request().header("Authorization")==null);val buffer=Buffer();chain.request().body!!.writeTo(buffer);objectBytes[chain.request().url.encodedPath]=buffer.readByteArray();puts.incrementAndGet();Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK").body(ByteArray(0).toResponseBody("application/octet-stream".toMediaType())).build()}.build()
-            val accepted=mutableListOf<JSONObject>();val sender=BackendChatMedia(api,scope,transport){accepted+=it}
+            val accepted=mutableListOf<JSONObject>();val sender=BackendChatMedia(api,scope,transport){message,_->accepted+=message}
             runBlocking{withContext(Dispatchers.Main){sender.enqueue(Uri.fromFile(source).toString(),null)}}
             fun waitFor(label:String,condition:()->Boolean){val end=System.currentTimeMillis()+30000;while(!condition()&&System.currentTimeMillis()<end)Thread.sleep(80);check(condition()){label}}
             waitFor("uncertain send retained"){sender.pending.firstOrNull()?.status=="failed"}

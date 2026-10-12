@@ -37,6 +37,7 @@ class LiveBackendInstrumentation : Instrumentation() {
         if(options.getString("installerHandoff")=="true"){InstallerHandoffCheck.run(this);return}
         if(options.getString("releaseV204")=="true"){ReleaseV204Check.run(this);return}
         if(options.getString("releaseV203")=="true"){ReleaseV203Check.run(this);return}
+        if(options.getString("privateChatMedia")=="true"){PrivateChatMediaCheck.run(this,options.getString("theme")?.toIntOrNull() ?: 1);return}
         if(options.getString("chatMedia")=="true"){ChatMediaCheck.run(this,options.getString("theme")?.toIntOrNull() ?: 1,options.getString("chatGlass")=="true",options.getString("overlayGlass")!="false");return}
         if(options.getString("paymentTiming")=="true"){PaymentTimingCheck.run(this);return}
         if(options.getString("contactsLayout")=="true"){ContactsLayoutCheck.run(this);return}

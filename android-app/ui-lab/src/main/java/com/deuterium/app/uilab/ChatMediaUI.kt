@@ -166,8 +166,20 @@ private fun ChatAnimationImage(file:File,playing:Boolean,modifier:Modifier=Modif
 }
 
 @Composable
-internal fun ChatMediaComposer(state:LabState,focus:androidx.compose.ui.focus.FocusRequester,onView:(ChatViewerRequest)->Unit){
+internal fun ChatMediaComposer(
+    state:LabState,focus:androidx.compose.ui.focus.FocusRequester,
+    value:androidx.compose.ui.text.input.TextFieldValue=state.chatDraft,
+    onValue:(androidx.compose.ui.text.input.TextFieldValue)->Unit={state.chatDraft=it},
+    onSend:()->Unit=state::sendChat,reply:ChatReply?=state.chatReplyTo,
+    onCancelReply:()->Unit={state.chatReplyTo=null},recipient:String?=null,
+    onView:(ChatViewerRequest)->Unit
+){
     val service=state.chatMedia ?: return
+    suspend fun enqueue(uri:String?,sticker:ChatMedia?=null,importing:Boolean=false){
+        val target=if(importing||recipient==null)null else state.directMediaTarget(recipient)
+        service.enqueue(uri,if(importing)null else reply,sticker,importing,target)
+        if(!importing)onCancelReply()
+    }
     val scope=rememberCoroutineScope()
     val keyboard=LocalSoftwareKeyboardController.current
     val focusManager=LocalFocusManager.current
@@ -214,7 +226,7 @@ internal fun ChatMediaComposer(state:LabState,focus:androidx.compose.ui.focus.Fo
     }
     BackHandler(panel){panel=false;switchingToKeyboard=false}
     Column {
-        MessageComposer(state.chatDraft,{if(it.text.length<=256)state.chatDraft=it},state::sendChat,"输入消息",focus,state.chatReplyTo,{state.chatReplyTo=null},onEmoji=::toggle,onImage={choose(false)},onFocus={if(panel)showKeyboard()},emojiOpen=panel)
+        MessageComposer(value,{if(it.text.length<=256)onValue(it)},onSend,"输入消息",focus,reply,onCancelReply,onEmoji=::toggle,onImage={choose(false)},onFocus={if(panel)showKeyboard()},emojiOpen=panel)
         // Navigation padding belongs inside the panel material, so it reaches the screen edge.
         // With the panel closed, this same space keeps the input clear of system gestures.
         val reserved=(max(dock.value,navigation.toFloat())-ime).coerceAtLeast(0f)
@@ -224,7 +236,7 @@ internal fun ChatMediaComposer(state:LabState,focus:androidx.compose.ui.focus.Fo
             panelState.SaveableStateProvider("expressions"){
                 Box(Modifier.fillMaxWidth().wrapContentHeight(Alignment.Top,unbounded=true).requiredHeight(with(density){panelHeight.toDp()}),contentAlignment=Alignment.TopStart){
                     ChatGlassSurface(Modifier.fillMaxSize().semantics{contentDescription="表情面板"}.pointerInput(Unit){detectTapGestures{}},panel=true){
-                        Box(Modifier.fillMaxSize().navigationBarsPadding()){ChatExpressionPanel(state,{choose(true)},onView)}
+                        Box(Modifier.fillMaxSize().navigationBarsPadding()){ChatExpressionPanel(state,{choose(true)},onView,value,onValue){enqueue(null,it)}}
                     }
                 }
             }
@@ -232,7 +244,7 @@ internal fun ChatMediaComposer(state:LabState,focus:androidx.compose.ui.focus.Fo
     }
     selection?.let{uri->ChatAttachmentPreview(uri,importing,selectionBusy,selectionError,onChooseAgain={choose(importing)},onSend={
         scope.launch{selectionBusy=true;selectionError=null
-            try{service.enqueue(uri,state.chatReplyTo,importing=importing);if(!importing)state.chatReplyTo=null;selection=null}
+            try{enqueue(uri,importing=importing);selection=null}
             catch(e:CancellationException){throw e}catch(e:Exception){selectionError=e.message ?: "图片暂时无法处理，请重试"}
             finally{selectionBusy=false}
         }

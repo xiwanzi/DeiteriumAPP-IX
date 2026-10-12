@@ -1,5 +1,13 @@
 # Deuterium IX 工程约定
 
+2026-10-12：**App 2.0.26（22600）私聊表情与媒体已于 23:50 上线**（PR #119，源码 `01cdac40bbc4`）。私聊与公屏共用 Emoji、图片/GIF、个人贴纸及预览/收藏/重试；队列按会话隔离，重启恢复保持原收件人。61 账号、47 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，三常驻节点在线、MEK 停止。Web 2.0.38、主 Go 程序、图片审核及游戏插件保持。维护 `.worktrees/chat-media` / `xiwanzi/release-v226-live`，见[上线记录](docs/deployment/deuterium-2.0.26-live.md)。
+
+2026-10-12：**Web 2.0.38 图片审核设置已上线**（PR #117，源码 `f1545b7f81051`）。图片审核新增设置子页，可修改阈值和提示词、恢复默认；后续任务热加载，历史保留原阈值，规则版本隔离缓存。原启用时间及仅新静态聊天图片范围保持，只更新独立审核服务，主 Go/游戏服未重启。维护 `.worktrees/image-review` / `xiwanzi/image-review-settings`，见[上线记录](docs/deployment/image-review-settings-2.0.38-live.md)。
+
+
+2026-10-12：**Web 2.0.37 图片审核已于 20:30 上线**（PR #114、#115，源码 `2cc6c7dab151`）。仅审启用后新上传的静态聊天图片；旧图、业务图片和动图跳过，DeepSeek V4.1 Flash 超过 50 分留存证据，后台可查看及删除审核记录。独立服务/数据库，主 Go 与游戏服未重启，既有业务 ID 保留。维护 `.worktrees/image-review` / `xiwanzi/image-review`，见[上线记录](docs/deployment/image-review-2.0.37-live.md)。
+
+
 2026-10-12：**资源0.0.53-dev、聊天0.1.8与客户端MMO0.1.9已于19:50发布**（主PR #112、MMO PR #3）。支持Ctrl+V图片预览后确认发送，采用用户选定的message_pop提示音；公屏显示佩戴铭牌，修复T历史混入和快速移鼠点击。服务端MMO0.1.8/Core1.0.6与原数据配置保留，无服务器重启；三常驻节点在线，MEK停止。见[上线记录](docs/deployment/chat-polish-0.0.53-live.md)。
 
 2026-10-12：**Core 1.0.6、TAB 佩戴称号与邮箱 UI 0.7.19 已发布**。资源 0.0.52-dev 于17:45发布，18:01完成 Amiya 重启及 TAB 切换（PR #110）。新增 `%deuterium_title%` / `%deuterium_title_prefix%`，列表及头顶共用当前佩戴称号；邮箱字体更新为 HarmonyOS Sans SC Medium，服务端邮箱已是0.7.3并保留。三常驻节点在线，MEK停止；旧数据与配置保留。见[上线记录](docs/deployment/titles-tab-mail-0.0.52-live.md)。

@@ -27,7 +27,13 @@ data class ChatMedia(val id:String,val sha:String,val thumbnailSha:String,val by
     companion object {fun parse(v:JSONObject)=ChatMedia(v.getString("mediaId"),v.getString("sha256"),v.getString("thumbnailSha256"),v.getLong("sizeBytes"),v.getLong("thumbnailBytes"),v.getInt("width"),v.getInt("height"),v.optBoolean("animated"),v.optString("type","image"),v.optString("expiresAt").takeIf{it.isNotBlank()&&it!="null"})}
 }
 
-internal class PendingChatMedia(val id:String,val directory:File,val createdAt:Long,val importing:Boolean,val reply:ChatReply?,initialMedia:ChatMedia?=null){
+internal data class DirectMediaTarget(val conversationId:String,val playerRef:String,val name:String){
+    init { require(conversationId.matches(Regex("[A-Za-z0-9_-]{1,128}"))&&playerRef.isNotBlank()&&name.isNotBlank()) }
+    fun json()=JSONObject().put("conversationId",conversationId).put("playerRef",playerRef).put("name",name)
+    companion object {fun parse(value:JSONObject)=DirectMediaTarget(value.getString("conversationId"),value.getString("playerRef"),value.getString("name"))}
+}
+
+internal class PendingChatMedia(val id:String,val directory:File,val createdAt:Long,val importing:Boolean,val reply:ChatReply?,initialMedia:ChatMedia?=null,val target:DirectMediaTarget?=null){
     var media by mutableStateOf(initialMedia)
     var status by mutableStateOf("queued")
     var error by mutableStateOf<String?>(null)
@@ -42,11 +48,11 @@ internal class PendingChatMedia(val id:String,val directory:File,val createdAt:L
     val localFile get()=if(prepared)image else source
     val type get()=if(importing||media?.type=="sticker")"sticker" else "image"
     fun json()=JSONObject().put("id",id).put("createdAt",createdAt).put("importing",importing).put("prepared",prepared).put("attempted",attempted).put("width",width).put("height",height).put("animated",animated).apply{
-        media?.let{put("media",it.json())};reply?.let{put("reply",JSONObject().put("id",it.messageId).put("name",it.name).put("text",it.text).put("remoteId",it.remoteId))}
+        target?.let{put("target",it.json())};media?.let{put("media",it.json())};reply?.let{put("reply",JSONObject().put("id",it.messageId).put("name",it.name).put("text",it.text).put("remoteId",it.remoteId))}
     }
 }
 
-internal class BackendChatMedia(private val api:BackendApi,private val scope:CoroutineScope,objectClient:OkHttpClient?=null,private val accepted:(JSONObject)->Unit){
+internal class BackendChatMedia(private val api:BackendApi,private val scope:CoroutineScope,objectClient:OkHttpClient?=null,private val accepted:(JSONObject,DirectMediaTarget?)->Unit){
     private val identity=api.financialScope()
     val cache=ChatCache(api.context,identity)
     private val outbox=File(api.context.filesDir,"chat-outbox/${ChatCache.hash("${identity.origin}:${identity.owner}".toByteArray())}")
@@ -65,7 +71,7 @@ internal class BackendChatMedia(private val api:BackendApi,private val scope:Cor
         if(started)return;started=true
         val jobs=withContext(Dispatchers.IO){outbox.listFiles().orEmpty().filter{it.isDirectory&&it.name.matches(Regex("[a-f0-9-]{36}"))}.mapNotNull{folder->runCatching{
             val value=JSONObject(AtomicFile(File(folder,"pending.json")).readFully().toString(Charsets.UTF_8));val reply=value.optJSONObject("reply")?.let{ChatReply(it.getLong("id"),it.getString("name"),it.getString("text"),it.getString("remoteId"))}
-            PendingChatMedia(value.getString("id"),folder,value.getLong("createdAt"),value.optBoolean("importing"),reply,value.optJSONObject("media")?.let(ChatMedia::parse)).apply{require(id==folder.name);prepared=value.optBoolean("prepared");attempted=value.optBoolean("attempted");width=value.optInt("width",240);height=value.optInt("height",180);animated=value.optBoolean("animated")}
+            PendingChatMedia(value.getString("id"),folder,value.getLong("createdAt"),value.optBoolean("importing"),reply,value.optJSONObject("media")?.let(ChatMedia::parse),if(value.has("target"))DirectMediaTarget.parse(value.getJSONObject("target"))else null).apply{require(id==folder.name);prepared=value.optBoolean("prepared");attempted=value.optBoolean("attempted");width=value.optInt("width",240);height=value.optInt("height",180);animated=value.optBoolean("animated")}
         }.getOrNull()}.sortedBy{it.createdAt}}
         current();pending.addAll(jobs);scope.launch{ChatCache.cleared.collect{cacheEpoch=ChatCache.epoch}}
         scope.launch{while(isActive){expireUnsentFiles();delay(3600000)}}
@@ -86,12 +92,12 @@ internal class BackendChatMedia(private val api:BackendApi,private val scope:Cor
         catch(e:CancellationException){throw e}catch(e:Exception){stickerError=e.message ?: "贴纸暂时无法同步"}
     }
     private suspend fun save(job:PendingChatMedia){val json=job.json().toString();withContext(Dispatchers.IO){current();job.directory.mkdirs();val atomic=AtomicFile(File(job.directory,"pending.json"));val stream=atomic.startWrite();try{stream.write(json.toByteArray());atomic.finishWrite(stream)}catch(e:Exception){atomic.failWrite(stream);throw e}}}
-    suspend fun enqueue(uri:String?,reply:ChatReply?,sticker:ChatMedia?=null,importing:Boolean=false){
-        scope.async{enqueueInScope(uri,reply,sticker,importing)}.await()
+    suspend fun enqueue(uri:String?,reply:ChatReply?,sticker:ChatMedia?=null,importing:Boolean=false,target:DirectMediaTarget?=null){
+        scope.async{enqueueInScope(uri,reply,sticker,importing,target)}.await()
     }
-    private suspend fun enqueueInScope(uri:String?,reply:ChatReply?,sticker:ChatMedia?,importing:Boolean)=enqueueLock.withLock{
+    private suspend fun enqueueInScope(uri:String?,reply:ChatReply?,sticker:ChatMedia?,importing:Boolean,target:DirectMediaTarget?)=enqueueLock.withLock{
         current();require(pending.size<10){"待发送图片较多，请稍后再试"};require(!importing||stickers.size<10){"贴纸已满（10/10），删除已有贴纸后可继续添加"}
-        val id=UUID.randomUUID().toString();val job=PendingChatMedia(id,File(outbox,id),System.currentTimeMillis(),importing,reply,sticker)
+        val id=UUID.randomUUID().toString();val job=PendingChatMedia(id,File(outbox,id),System.currentTimeMillis(),importing,reply,sticker,if(importing)null else target)
         try{if(uri!=null)withContext(Dispatchers.IO){
             job.directory.mkdirs();api.context.contentResolver.openInputStream(Uri.parse(uri))?.use{input->job.source.outputStream().use{output->val b=ByteArray(8192);var count=0L;while(true){val n=input.read(b);if(n<0)break;count+=n;require(count<=20L*1024*1024){"请选择 20MB 以内的图片"};output.write(b,0,n)}}} ?: error("无法读取图片")
             val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true};BitmapFactory.decodeFile(job.source.path,bounds)
@@ -108,7 +114,12 @@ internal class BackendChatMedia(private val api:BackendApi,private val scope:Cor
     private fun drain(){scope.launch{sending.withLock{while(true){val job=pending.firstOrNull{it.status=="queued"} ?: break;job.status="sending"
         try{
             current();var result:JSONObject?=null
-            if(job.attempted&&!job.importing){val known=api.request("GET","/chat/sends/${job.id}");if(known.optString("status")=="accepted")result=known}
+            if(job.attempted&&!job.importing){
+                // Within the queue lifetime the private endpoint replays its durable response.
+                // Once expired, only read history: a permanent sticker must not become a new send.
+                if(job.target!=null)result=if(System.currentTimeMillis()-job.createdAt>3*86400000L)recoverPrivate(job) else send(job)
+                else{val known=api.request("GET","/chat/sends/${job.id}");if(known.optString("status")=="accepted")result=known}
+            }
             if(result==null){
                 if(System.currentTimeMillis()-job.createdAt>3*86400000L){withContext(Dispatchers.IO){job.source.delete();job.image.delete();job.thumbnail.delete()};throw IOException("待发送图片已超过 3 天，请重新选择")}
                 if(job.media==null){
@@ -118,16 +129,47 @@ internal class BackendChatMedia(private val api:BackendApi,private val scope:Cor
                 if(job.importing){api.request("POST","/chat/stickers",JSONObject().put("mediaId",job.media!!.id));refreshStickers()}
                 else{
                     job.attempted=true;save(job)
-                    result=api.request("POST","/chat/messages",JSONObject().put("clientMessageId",job.id).put("content",if(job.type=="sticker")"[贴纸]" else "[图片]").put("media",JSONObject().put("mediaId",job.media!!.id).put("type",job.type)).apply{job.reply?.remoteId?.takeIf{it.isNotBlank()}?.let{put("replyToMessageId",it)}})
-                    if(result.optString("status")!="accepted"){val error=result.optJSONObject("error");throw IOException(if(error?.optString("code")=="RESULT_UNKNOWN")"发送结果待确认，点击重试" else error?.optString("message") ?: "发送结果暂未确认，请重试")}
+                    result=send(job)
                 }
             }
             current()
             // Only committed messages/collections enter the non-expiring cache.
             if(job.prepared)try{withContext(Dispatchers.IO){if(job.image.isFile&&job.thumbnail.isFile){val m=job.media!!;cache.putFile(m.sha,job.image.readBytes());cache.putFile(m.thumbnailSha,job.thumbnail.readBytes())}}}catch(e:CancellationException){throw e}catch(_:Exception){}
-            result?.optJSONObject("message")?.let(accepted);withContext(Dispatchers.IO){StorageFiles.clearChildren(job.directory);job.directory.delete()};pending.remove(job)
+            result?.optJSONObject("message")?.let{accepted(it,job.target)};withContext(Dispatchers.IO){StorageFiles.clearChildren(job.directory);job.directory.delete()};pending.remove(job)
         }catch(e:CancellationException){job.status="queued";throw e}catch(e:Exception){job.status="failed";job.error=when((e as? ApiFailure)?.code){"STORAGE_UNAVAILABLE","INVALID_MEDIA"->"图片未能发送，请稍后重试或重新选择";else->e.message ?: "图片发送失败，请重试"};if(job.importing)stickerError=job.error}
     }}}}
+    private suspend fun recoverPrivate(job:PendingChatMedia):JSONObject {
+        val destination=job.target!!;var cursor:String?=null;val seen=mutableSetOf<String>()
+        do{
+            val query=cursor?.let{"&cursor=${java.net.URLEncoder.encode(it,"UTF-8")}"}.orEmpty()
+            val page=api.request("GET","/chat/conversations/${destination.conversationId}/messages?limit=100$query")
+            val items=page.getJSONArray("items")
+            repeat(items.length()){index->
+                val message=items.getJSONObject(index)
+                if(message.optString("clientMessageId")==job.id&&message.optString("conversationId")==destination.conversationId&&message.optJSONObject("sender")?.optString("playerRef")==api.playerRef)
+                    return JSONObject().put("status","accepted").put("message",message)
+            }
+            val pagination=page.optJSONObject("_page")
+            if(pagination?.optBoolean("hasMore")!=true)break
+            cursor=pagination.optString("nextCursor").takeIf{it.isNotBlank()&&it!="null"}
+            check(cursor!=null&&seen.add(cursor)){"消息结果暂时无法核对，请稍后重试"}
+        }while(true)
+        throw IOException("待发送图片已超过 3 天，请核对私聊记录后重新选择")
+    }
+    private suspend fun send(job:PendingChatMedia):JSONObject {
+        val request=JSONObject().put("clientMessageId",job.id).put("content",if(job.type=="sticker")"[贴纸]" else "[图片]")
+            .put("media",JSONObject().put("mediaId",job.media!!.id).put("type",job.type))
+            .apply{job.reply?.remoteId?.takeIf{it.isNotBlank()}?.let{put("replyToMessageId",it)}}
+        val destination=job.target
+        if(destination!=null){
+            val message=api.request("POST","/chat/conversations/${destination.conversationId}/messages",request)
+            require(message.optString("messageId").isNotBlank()&&message.optString("clientMessageId")==job.id&&message.optString("conversationId")==destination.conversationId){"发送结果待确认，点击重试"}
+            return JSONObject().put("status","accepted").put("message",message)
+        }
+        val result=api.request("POST","/chat/messages",request)
+        if(result.optString("status")!="accepted"){val error=result.optJSONObject("error");throw IOException(if(error?.optString("code")=="RESULT_UNKNOWN")"发送结果待确认，点击重试" else error?.optString("message") ?: "发送结果暂未确认，请重试")}
+        return result
+    }
     private suspend fun put(auth:JSONObject,bytes:ByteArray,md5:String)=withContext(Dispatchers.IO){
         current();val url=java.net.URI(auth.getString("uploadUrl"));val headers=auth.getJSONObject("signedHeaders");val lower=headers.keys().asSequence().associate{it.lowercase() to headers.getString(it)}
         require(url.scheme=="https"&&url.rawUserInfo==null&&url.host.endsWith(".rains3.com")&&auth.getString("method")=="PUT"&&auth.getLong("sizeBytes")==bytes.size.toLong()&&lower["content-type"]=="image/webp"&&lower["content-md5"]==md5&&lower["if-none-match"]=="*"&&lower.keys.all{it in setOf("content-type","content-md5","if-none-match")}){"图片发送暂不可用"}
