@@ -3,9 +3,13 @@ plugins {
  id 'net.neoforged.moddev' version '2.0.141'
 }
 group='cafe.deuterium'
-version='0.1.7'
+version='0.1.8'
 base.archivesName='deuterium-chat-neoforge-1.21.1'
 java { toolchain.languageVersion=JavaLanguageVersion.of(21); withSourcesJar() }
+sourceSets.test {
+ compileClasspath += sourceSets.main.compileClasspath
+ runtimeClasspath += sourceSets.main.runtimeClasspath
+}
 neoForge {
  version='21.1.248'
  mods { deuterium_chat { sourceSet(sourceSets.main) } }
@@ -34,6 +38,7 @@ dependencies {
  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8' }
-tasks.withType(Test).configureEach { useJUnitPlatform() }
+configurations { chatTestModRuntime { canBeConsumed=false; canBeResolved=true; extendsFrom modDevRuntimeDependencies } }
+tasks.withType(Test).configureEach { useJUnitPlatform(); classpath += configurations.chatTestModRuntime }
 
 tasks.named("jar") { exclude "**/ui-test/**", "**/ChatUiScenario*", "**/ChatUiFixture*", "**/ChatNetworkScenario*" }
