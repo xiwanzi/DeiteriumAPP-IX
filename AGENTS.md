@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-12：**App 2.0.26（22600）私聊表情与媒体已于 23:50 上线**（PR #119，源码 `01cdac40bbc4`）。私聊与公屏共用 Emoji、图片/GIF、个人贴纸及预览/收藏/重试；队列按会话隔离，重启恢复保持原收件人。61 账号、47 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，三常驻节点在线、MEK 停止。Web 2.0.38、主 Go 程序、图片审核及游戏插件保持。维护 `.worktrees/chat-media` / `xiwanzi/release-v226-live`，见[上线记录](docs/deployment/deuterium-2.0.26-live.md)。
+
 2026-10-12：**Web 2.0.38 图片审核设置已上线**（PR #117，源码 `f1545b7f81051`）。图片审核新增设置子页，可修改阈值和提示词、恢复默认；后续任务热加载，历史保留原阈值，规则版本隔离缓存。原启用时间及仅新静态聊天图片范围保持，只更新独立审核服务，主 Go/游戏服未重启。维护 `.worktrees/image-review` / `xiwanzi/image-review-settings`，见[上线记录](docs/deployment/image-review-settings-2.0.38-live.md)。
 
 
