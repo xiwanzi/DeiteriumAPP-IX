@@ -1,0 +1,37 @@
+{
+  "deployedAt": "2026-10-12T23:50:14.752038+08:00",
+  "sourceCommit": "01cdac40bbc468fe15d9c889ca72b7c8f75cd042",
+  "mergeCommit": "4a8aaedd53e9e70579e33acffa48475c5484fddc",
+  "pr": 119,
+  "appVersion": "2.0.26",
+  "versionCode": 22600,
+  "webVersion": "2.0.38",
+  "before": {
+    "accounts": 61,
+    "orders": 47,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "after": {
+    "accounts": 61,
+    "orders": 47,
+    "commissions": 5,
+    "products": 3085,
+    "tickets": 12,
+    "deletions": 2
+  },
+  "existingRecordIdsPreserved": true,
+  "schemaAndConfigurationUnchanged": true,
+  "backendBinaryUnchanged": true,
+  "webAndImageReviewUnchanged": true,
+  "officialAndHelpUnchanged": true,
+  "oldReleaseEntriesPreserved": 26,
+  "backup": "/var/backups/deuterium/private-media-v226-22600-01cdac40bbc4",
+  "current": {
+    "go": "/opt/deuterium/releases/nameplates-610ca57",
+    "web": "/var/www/deuterium/releases/web-2.0.38-f1545b7f8105/dist"
+  },
+  "ready": true
+}

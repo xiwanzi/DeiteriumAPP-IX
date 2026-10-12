@@ -1,6 +1,6 @@
 # App 私聊表情与媒体验收
 
-2026-10-12。用户要求私聊与公屏一致，完成后直接发布。基于 `origin/main 416f8d1`，维护 `.worktrees/chat-media` / `xiwanzi/private-chat-media`。本记录为发布前验证，实际上线状态见部署记录。
+2026-10-12。用户要求私聊与公屏一致，完成后直接发布。基于 `origin/main 416f8d1`，维护 `.worktrees/chat-media` / `xiwanzi/private-chat-media`。本轮已于 23:50 随 App 2.0.26 上线，见[部署记录](../deployment/deuterium-2.0.26-live.md)。
 
 ## 实现
 
