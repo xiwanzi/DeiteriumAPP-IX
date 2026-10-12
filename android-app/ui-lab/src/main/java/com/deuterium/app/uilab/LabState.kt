@@ -102,7 +102,13 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     private var closed = false
     private var preferencesSyncedAt=0L
     private var uncertainMessage: Triple<String, String, String?>? = null
-    internal val chatMedia=api?.let{BackendChatMedia(it,scope){message->addMessage(message,false)}}
+    internal val chatMedia=api?.let{BackendChatMedia(it,scope){message,target->
+        if(target==null)addMessage(message,false)
+        else if(!isErasedPlayer(target.playerRef)){
+            val name=Players.find{player->player.playerRef==target.playerRef}?.name ?: target.name
+            rememberConversation(name,target.conversationId);addMessage(message,false,name)
+        }
+    }}
     private var cacheRestored=false
     val interventions=api?.let{BackendInterventions(it,this)}
     val ai=api?.let{BackendAI(it,this)}
@@ -508,6 +514,18 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         directHistoryLoading[name]=true
         runCatching{api!!.request("GET","/chat/conversations/$id/messages?limit=100&cursor=${URLEncoder.encode(before,"UTF-8")}")}.onSuccess{response->response.getJSONArray("items").objects().asReversed().forEach{addMessage(it,false,name)};directHistoryCursors[name]=cursor(response)}.onFailure{directErrors[name]=it.message ?: "历史消息读取失败"}
         directHistoryLoading[name]=false
+    }
+    internal suspend fun directMediaTarget(name:String):DirectMediaTarget {
+        require(name!="AI 助手"){"会话不可用"}
+        val service=api ?: error("消息连接暂不可用")
+        val identity=service.financialScope()
+        val other=Players.find{it.name==name&&it.playerRef.isNotBlank()&&!isErasedPlayer(it.playerRef)} ?: error("请先查询并确认玩家身份")
+        val id=service.request("POST","/chat/conversations",JSONObject()
+            .put("clientRequestId",UUID.nameUUIDFromBytes("${service.playerRef}:${other.playerRef}".toByteArray()).toString()).put("otherPlayerRef",other.playerRef)).getString("conversationId")
+        identity.verifyCurrent(service.financialScope())
+        val currentName=Players.find{it.playerRef==other.playerRef}?.name ?: other.name
+        rememberConversation(currentName,id)
+        return DirectMediaTarget(id,other.playerRef,currentName)
     }
     suspend fun sendDirect(name: String, text: String, replyTo: ChatReply? = null):Boolean {
         if(name=="AI 助手")return ai?.send(text,replyTo) ?: false

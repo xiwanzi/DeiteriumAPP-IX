@@ -37,7 +37,8 @@ private val emojiGroups=listOf(
 )
 
 @Composable
-internal fun ChatExpressionPanel(state:LabState,onChoose:()->Unit,onView:(ChatViewerRequest)->Unit){
+internal fun ChatExpressionPanel(state:LabState,onChoose:()->Unit,onView:(ChatViewerRequest)->Unit,
+    value:TextFieldValue,onValue:(TextFieldValue)->Unit,onSendSticker:suspend (ChatMedia)->Unit){
     val service=state.chatMedia ?: return
     val colors=MaterialTheme.colorScheme
     val ink=colors.onSurface.copy(alpha=.82f)
@@ -50,17 +51,17 @@ internal fun ChatExpressionPanel(state:LabState,onChoose:()->Unit,onView:(ChatVi
     var category by rememberSaveable{mutableIntStateOf(0)}
     var managing by rememberSaveable{mutableStateOf(false)}
     fun insert(emoji:String){
-        val value=state.chatDraft;val start=min(value.selection.start,value.selection.end);val end=max(value.selection.start,value.selection.end)
+        val start=min(value.selection.start,value.selection.end);val end=max(value.selection.start,value.selection.end)
         val text=value.text.replaceRange(start,end,emoji)
         if(text.length>256)return
-        state.chatDraft=TextFieldValue(text,TextRange(start+emoji.length))
+        onValue(TextFieldValue(text,TextRange(start+emoji.length)))
         recent=(listOf(emoji)+recent.filter{it!=emoji}).take(24)
         prefs.edit().putString("recent",recent.joinToString("|")).apply()
     }
     fun backspace(){
-        val value=state.chatDraft;val start=min(value.selection.start,value.selection.end);val end=max(value.selection.start,value.selection.end)
-        if(start!=end)state.chatDraft=TextFieldValue(value.text.removeRange(start,end),TextRange(start))
-        else if(start>0){val breaker=android.icu.text.BreakIterator.getCharacterInstance();breaker.setText(value.text);val before=breaker.preceding(start).coerceAtLeast(0);state.chatDraft=TextFieldValue(value.text.removeRange(before,start),TextRange(before))}
+        val start=min(value.selection.start,value.selection.end);val end=max(value.selection.start,value.selection.end)
+        if(start!=end)onValue(TextFieldValue(value.text.removeRange(start,end),TextRange(start)))
+        else if(start>0){val breaker=android.icu.text.BreakIterator.getCharacterInstance();breaker.setText(value.text);val before=breaker.preceding(start).coerceAtLeast(0);onValue(TextFieldValue(value.text.removeRange(before,start),TextRange(before)))}
     }
     Column(Modifier.fillMaxSize()){
         AnimatedContent(tab,Modifier.weight(1f),transitionSpec={
@@ -96,7 +97,7 @@ internal fun ChatExpressionPanel(state:LabState,onChoose:()->Unit,onView:(ChatVi
                 LazyVerticalGrid(GridCells.Adaptive(72.dp),Modifier.weight(1f).fillMaxWidth(),contentPadding=PaddingValues(horizontal=8.dp,vertical=2.dp),verticalArrangement=Arrangement.spacedBy(2.dp)){
                     items(service.stickers,key={it.id}){media->Box(Modifier.height(80.dp),contentAlignment=Alignment.Center){
                         ChatMediaTile(service,media,panel=true,onOpen={request->if(managing)onView(request)else scope.launch{
-                            runCatching{service.enqueue(null,state.chatReplyTo,media);state.chatReplyTo=null}.onFailure{state.storageMessage=it.message}
+                            runCatching{onSendSticker(media)}.onFailure{state.storageMessage=it.message}
                         }},onLong={onView(ChatViewerRequest(media,null,null){null})})
                         if(managing)IconButton({scope.launch{runCatching{service.deleteSticker(media)}.onFailure{state.storageMessage=it.message}}},Modifier.align(Alignment.TopEnd).size(36.dp)){
                             Icon(Icons.Outlined.Close,"删除贴纸",Modifier.size(22.dp).background(colors.surface.copy(alpha=.68f),CircleShape),tint=colors.error)
