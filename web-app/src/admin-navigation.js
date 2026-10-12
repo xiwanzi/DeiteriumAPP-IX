@@ -1,10 +1,11 @@
-import { Store, Gavel, Megaphone, ChartNoAxesCombined, Mail, Server, Sparkles, Users, Smartphone, Ticket, Monitor, ShieldCheck, Boxes } from "lucide-react";
+import { Store, Gavel, Megaphone, ChartNoAxesCombined, Mail, Server, Sparkles, Users, Smartphone, Ticket, Monitor, ShieldCheck, Boxes, ScanEye } from "lucide-react";
 
 export function adminNavigation(permissions = []) {
   const all = permissions.includes("platform.admin");
   if (!all && permissions.includes("support.manage")) return [["/admin?section=support", "工单系统", Ticket]];
   return [
     ...(all ? [["/admin?section=support", "工单系统", Ticket]] : []),
+    ...(all ? [["/admin?section=image-review", "图片审核", ScanEye]] : []),
     ["/merchant", "商店管理", Store],
     ...(all ? [["/admin?section=coupons", "优惠券", Ticket], ["/admin?section=desktop-launcher", "启动器", Monitor]] : []),
     ...(all || permissions.includes("intervention.manage") ? [["/admin?section=interventions", "平台介入", Gavel]] : []),
