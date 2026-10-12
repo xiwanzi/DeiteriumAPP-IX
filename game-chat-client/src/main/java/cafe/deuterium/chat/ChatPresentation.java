@@ -7,6 +7,7 @@ public final class ChatPresentation {
     public static final int ID_COLOR = 0xE5B3D9;
     public static final String TITLE = "溯行者";
     public static final double NEARBY_RADIUS = 50;
+    public static final int BODY_PX=20,NAME_PX=18,DETAIL_PX=16,LINE_PX=28,HEADER_PX=28;
     private ChatPresentation() {}
     public static String suffix(String channel, String server) {
         return switch (channel) {
