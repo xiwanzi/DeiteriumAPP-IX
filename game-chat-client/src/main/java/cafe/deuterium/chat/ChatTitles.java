@@ -17,7 +17,7 @@ final class ChatTitles {
     static Component title(ChatMessage message){return title(message.senderId,message.name);}
     static Component title(String id,String name){return render(names.getOrDefault(id,names.getOrDefault("name:"+name.toLowerCase(Locale.ROOT),"溯行者")));}
     static Component render(String display){
-        var result=Component.literal("[").withStyle(s->s.withColor(0xA9B3B8).withFont(DeuteriumChat.id("harmony_regular")));
+        var result=Component.literal("[").withStyle(s->s.withColor(0xA9B3B8).withFont(DeuteriumChat.id("harmony")));
         var matcher=COLOR.matcher(display);int start=0,color=0xA9B3B8;
         while(matcher.find()){
             if(matcher.start()>start)result.append(Component.literal(display.substring(start,matcher.start())).withColor(color));

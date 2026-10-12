@@ -40,14 +40,24 @@ final class ChatStyle {
         if(name.equals("share")){b.addChild(rect(new UIElement().style(st->st.background(new RoundTexture(4,0xFFE5E7E2))),2,2,8,8));w=h=14/3f;}
         var icon=new UIElement().style(st->st.background(texture));icon.setId("tool-art-"+name);b.addChild(rect(icon,(12-w)/2,(12-h)/2,w,h));return b;
     }
-    static float unreadWidth(int count){var c=Component.literal(Integer.toString(count)).withStyle(st->st.withFont(DeuteriumChat.id("numbers")));return Math.max(17/3f,com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(c)*10/27f+8/3f);}
+    static float unreadWidth(int count){var c=Component.literal(Integer.toString(count)).withStyle(st->st.withFont(DeuteriumChat.id("harmony")));return Math.max(17/3f,com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(c)*10/27f+8/3f);}
     static Label unread(int count){
         var l=label(Integer.toString(count),10/3f,0xFF242826);
-        l.textStyle(st->st.font(DeuteriumChat.id("numbers")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER).textAlignVertical(com.lowdragmc.lowdraglib2.gui.ui.data.Vertical.CENTER));
+        l.textStyle(st->st.font(DeuteriumChat.id("harmony")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER).textAlignVertical(com.lowdragmc.lowdraglib2.gui.ui.data.Vertical.CENTER));
         var outside=new RoundTexture(12/3f,0xFF171D20);var inside=new RoundTexture(10/3f,YELLOW);
         l.style(st->st.background((g,mx,my,x,y,w,h,tick)->{outside.draw(g,mx,my,x-2/3f,y-2/3f,w+4/3f,h+4/3f,tick);inside.draw(g,mx,my,x,y,w,h,tick);}));return l;
     }
-    static Component body(Component c) { return c.copy().withStyle(s->s.withFont(DeuteriumChat.id("harmony_regular"))); }
+    static Component body(Component c) {
+        var out=Component.empty().withStyle(s->s.withFont(DeuteriumChat.id("harmony")));
+        c.visit((style,text)->{
+            var font=style.getFont();
+            if(font.equals(net.minecraft.network.chat.Style.DEFAULT_FONT)||font.equals(DeuteriumChat.id("harmony_regular"))||font.equals(DeuteriumChat.id("gilroy")))
+                style=style.withFont(DeuteriumChat.id("harmony"));
+            out.append(Component.literal(text).setStyle(style));
+            return java.util.Optional.empty();
+        },net.minecraft.network.chat.Style.EMPTY);
+        return out;
+    }
     static Component systemBody(Component component){
         var result=Component.empty();
         component.visit((style,text)->{
@@ -67,9 +77,9 @@ final class ChatStyle {
     }
     private static double linear(int channel){double c=channel/255.0;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);}
     static Component playerName(ChatMessage m) {
-        return Component.literal(m.name).withStyle(s->s.withColor(ChatPresentation.ID_COLOR).withFont(DeuteriumChat.id("gilroy")));
+        return Component.literal(m.name).withStyle(s->s.withColor(ChatPresentation.ID_COLOR).withFont(DeuteriumChat.id("harmony")));
     }
     static Component title() {
-        return Component.literal("[溯行者]").withStyle(s->s.withColor(0xA9B3B8).withFont(DeuteriumChat.id("harmony_regular")));
+        return Component.literal("[溯行者]").withStyle(s->s.withColor(0xA9B3B8).withFont(DeuteriumChat.id("harmony")));
     }
 }

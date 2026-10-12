@@ -3,7 +3,7 @@ loaderVersion="[1,)"
 license="All Rights Reserved"
 [[mods]]
 modId="deuterium_chat"
-version="0.1.7"
+version="${version}"
 displayName="Deuterium Chat"
 [[dependencies.deuterium_chat]]
 modId="neoforge"

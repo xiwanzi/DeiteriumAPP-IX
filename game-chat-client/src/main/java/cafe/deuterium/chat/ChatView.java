@@ -17,12 +17,13 @@ final class ChatView implements AutoCloseable {
     private final ScrollerView contacts=new ScrollerView();
     private final UIElement tools=new UIElement(),divider=new UIElement();
     private final BrandMark brand=new BrandMark();
-    private Button close,audio,back,pinCurrent;private Label esc;
-    private final Label privateTitle=ChatStyle.label("[溯行者]",13/3f,0xFFA9B3B8);
+    private Button close,textSize,back,pinCurrent;private Label esc;
+    private final Label textSizeLabel=ChatStyle.label(ChatTextSize.label(),12/3f,ChatStyle.MUTED);
+    private final Label privateTitle=ChatStyle.label("[溯行者]",ChatPresentation.DETAIL_PX/3f,0xFFA9B3B8);
     private final Button send=ChatStyle.button("发送",this::send);
     private final AutoCloseable subscription;
     private String scope=ChatStore.INSTANCE.current;
-    private int width=-1,height=-1;
+    private int width=-1,height=-1,textSizeLevel=-1;
     private long contactsRevision=-1;
     private final Map<String,Button> nav=new HashMap<>(),toolButtons=new HashMap<>(),contactButtons=new HashMap<>();
     private String lastPanel="initial";
@@ -34,11 +35,12 @@ final class ChatView implements AutoCloseable {
         root.addChild(ChatStyle.rect(brand,(WebPixels.wide()?40:32)/3f,WebPixels.topbar()/2-3.5f,135/3f,7));
         close=ChatStyle.button("",()->{ChatSounds.play("close");Minecraft.getInstance().setScreen(null);});ChatStyle.sound(close,"");close.noText();
         close.lss("position","absolute");close.getLayout().right(12).top(WebPixels.topbar()/2-6.5f).width(13).height(13);close.addChild(ChatStyle.rect(new UIElement().style(st->st.background(SpriteTexture.of(DeuteriumChat.id("textures/controls/window-close.png")))),0,0,13,13));root.addChild(close);
-        esc=ChatStyle.label("Esc",11/3f,0xFFF2F2ED);esc.textStyle(st->st.font(DeuteriumChat.id("gilroy")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER).textAlignVertical(com.lowdragmc.lowdraglib2.gui.ui.data.Vertical.CENTER));esc.style(st->st.background(new RoundTexture(1,0x60171A1B,1/3f,0x66DDDDDD)));esc.lss("position","absolute");esc.getLayout().right(86/3f).top(WebPixels.topbar()/2-23/6f).width(32/3f).height(23/3f);root.addChild(esc);
+        esc=ChatStyle.label("Esc",11/3f,0xFFF2F2ED);esc.textStyle(st->st.font(DeuteriumChat.id("harmony")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER).textAlignVertical(com.lowdragmc.lowdraglib2.gui.ui.data.Vertical.CENTER));esc.style(st->st.background(new RoundTexture(1,0x60171A1B,1/3f,0x66DDDDDD)));esc.lss("position","absolute");esc.getLayout().right(86/3f).top(WebPixels.topbar()/2-23/6f).width(32/3f).height(23/3f);root.addChild(esc);
         contacts.viewPort(v->{v.getLayout().paddingAll(0);v.style(st->st.background(IGuiTexture.EMPTY));});
         root.addChildren(rail,contacts,heading,line,timeline,input,tools,send);
         divider.style(st->st.background(new ColorRectTexture(0x24C9D3D2)));root.addChild(divider);
-        audio=ChatStyle.iconButton("volume",()->{ChatSounds.enabled=!ChatSounds.enabled;audio.getChildren().getLast().style(st->st.background(new MaskTexture("icons/"+(ChatSounds.enabled?"volume":"muted")+".png",0xFF858F8F)));ChatSounds.play("click");});ChatStyle.sound(audio,"");audio.lss("position","absolute");audio.getLayout().left(11).bottom(32/3f).width(44/3f).height(44/3f);root.addChild(audio);
+        textSize=ChatStyle.iconButton("settings",()->{ChatTextSize.cycle();resize(WebPixels.width(),WebPixels.height());});textSize.setId("chat-text-size");textSize.lss("position","absolute");textSize.getLayout().left(11).bottom(32/3f).width(44/3f).height(44/3f);
+        textSizeLabel.setId("chat-text-size-label");textSizeLabel.lss("position","absolute");textSizeLabel.textStyle(st->st.textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));root.addChildren(textSize,textSizeLabel);
         back=ChatStyle.iconButton("back",()->switchScope("inbox"));back.setId("private-back");pinCurrent=ChatStyle.iconButton("pin",()->{if(!ChatStore.INSTANCE.pinned.remove(scope))ChatStore.INSTANCE.pinned.add(scope);ChatStore.INSTANCE.changed();ChatClient.INSTANCE.savePins();updateHeading();});root.addChildren(back,privateTitle,pinCurrent);
         line.style(s->s.background(new PixelRuleTexture(0x707D8C87)));
         String[] names={"世界","附近","团队","私聊"},ids={"world","nearby","team","inbox"};
@@ -63,9 +65,11 @@ final class ChatView implements AutoCloseable {
         updateHeading();if(scope.equals("inbox"))switchScope("inbox");
     }
     void resize(int w,int h) {
-        if(w==width&&h==height)return;width=w;height=h;
+        if(w==width&&h==height&&textSizeLevel==ChatTextSize.level())return;width=w;height=h;textSizeLevel=ChatTextSize.level();
         float start=WebPixels.contentX(),content=WebPixels.contentWidth(),top=WebPixels.topbar(),head=WebPixels.headingHeight(),bottom=WebPixels.bottom();boolean wide=WebPixels.wide();
-        ChatStyle.rect(brand,(wide?40:32)/3f,top/2-3.5f,45,7);close.getLayout().top(top/2-6.5f);esc.getLayout().top(top/2-23/6f);audio.getLayout().left((wide?42:33)/3f).bottom(bottom);
+        ChatStyle.rect(brand,(wide?40:32)/3f,top/2-3.5f,45,7);close.getLayout().top(top/2-6.5f);esc.getLayout().top(top/2-23/6f);textSize.getLayout().left((wide?42:33)/3f).bottom(bottom);
+        textSizeLabel.setText(Component.literal(ChatTextSize.label()));textSizeLabel.getLayout().left((wide?42:33)/3f).bottom(Math.max(2,bottom-7)).width(44/3f).height(5);
+        textSize.getStyle().tooltips(ChatStyle.body(Component.literal("文字大小")));
         ChatStyle.rect(divider,(wide?38:32)/3f,top+(wide?365:329)/3f,(wide?52:46)/3f,1/3f);
         float railX=(wide?24:18)/3f,railW=(wide?80:74)/3f,step=(wide?88:79)/3f,contactsY=top+(wide?378:342)/3f;
         ChatStyle.rect(rail,railX,top,railW,step*4-2);ChatStyle.rect(contacts,railX,contactsY,railW,h-bottom-56/3f-contactsY);
@@ -74,7 +78,7 @@ final class ChatView implements AutoCloseable {
         float composerY=h-bottom-WebPixels.composer();
         ChatStyle.rect(timeline,start,top+head+14/3f,content-14/3f,composerY-16/3f-top-head-14/3f);
         ChatStyle.rect(tools,start,composerY+9.5f/3f,100,12);
-        float draftH=(wide?54:49)/3f;input.textFieldStyle(st->st.fontSize(18/3f));
+        float draftH=(wide?54:49)/3f;input.textFieldStyle(st->st.fontSize(ChatTextSize.pixels(ChatPresentation.BODY_PX)/3f));
         ChatStyle.rect(input,start,h-bottom-draftH,content-179/3f,draftH);ChatStyle.rect(send,start+content-164/3f,h-bottom-draftH/2-22/3f,164/3f,44/3f);
         contactsRevision=-1;refreshContacts();updateHeading();
         for(int i=0;i<4;i++){String id=new String[]{"world","nearby","team","inbox"}[i];ChatStyle.rect(nav.get(id),0,i*step,railW,step-2);float iw=(id.equals("team")?38:28)/3f,ih=id.equals("team")?iw*70/123:28/3f;float iconY=(step-2-18)/2;ChatStyle.rect(navIcons.get(id),(railW-iw)/2,iconY+(28/3f-ih)/2,iw,ih);ChatStyle.rect(navLabels.get(id),0,iconY+12,railW,6);navLabels.get(id).textStyle(st->st.fontSize(14/3f));}
@@ -91,11 +95,11 @@ final class ChatView implements AutoCloseable {
     }
     private void updateHeading(){
         boolean priv=scope.startsWith("private:");String text=switch(scope){case "world"->"世界";case "nearby"->"附近";case "team"->"团队";case "inbox"->"私聊";default->ChatStore.INSTANCE.contacts.getOrDefault(scope,new ChatStore.Contact(scope,"私聊","",false,0)).name();};
-        heading.setText(Component.literal(text));heading.textStyle(st->st.font(DeuteriumChat.id(priv?"gilroy":"harmony")).fontSize((priv?23:WebPixels.wide()?28:25)/3f).textColor(priv?0xFFE5B3D9:ChatStyle.TEXT));
+        heading.setText(Component.literal(text));heading.textStyle(st->st.font(DeuteriumChat.id("harmony")).fontSize((priv?23:WebPixels.wide()?28:25)/3f).textColor(priv?0xFFE5B3D9:ChatStyle.TEXT));
         float x=WebPixels.contentX(),w=WebPixels.contentWidth(),top=WebPixels.topbar(),h=WebPixels.headingHeight();float y=top+(h-5-(WebPixels.wide()?11.2f:10))/2;
         ChatStyle.rect(heading,x+(priv?46:2)/3f,y,w-(priv?90:4)/3f,WebPixels.wide()?11.2f:10);
         back.setDisplay(priv);pinCurrent.setDisplay(priv);privateTitle.setDisplay(priv);
-        if(priv){privateTitle.setText(ChatTitles.title("",text));privateTitle.textStyle(st->st.adaptiveWidth(false).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.HIDE));privateTitle.getStyle().tooltips(ChatTitles.title("",text));ChatStyle.rect(back,x,top+1,32/3f,32/3f);ChatStyle.rect(pinCurrent,x+w-40/3f,top,40/3f,40/3f);float nameWidth=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(text).withStyle(st->st.withFont(DeuteriumChat.id("gilroy"))))*23/27f;ChatStyle.rect(privateTitle,x+56/3f+Math.min(nameWidth,w-70),y+3,Math.max(0,w-40/3f-56/3f-Math.min(nameWidth,w-70)-8/3f),6);pinCurrent.getChildren().getLast().style(st->st.background(new MaskTexture("icons/pin.png",ChatStore.INSTANCE.pinned.contains(scope)?ChatStyle.YELLOW:0xFFA6AFAD)));}
+        if(priv){privateTitle.setText(ChatTitles.title("",text));privateTitle.textStyle(st->st.adaptiveWidth(false).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.HIDE));privateTitle.getStyle().tooltips(ChatTitles.title("",text));ChatStyle.rect(back,x,top+1,32/3f,32/3f);ChatStyle.rect(pinCurrent,x+w-40/3f,top,40/3f,40/3f);float nameWidth=com.lowdragmc.lowdraglib2.gui.LDLibFonts.font().width(Component.literal(text).withStyle(st->st.withFont(DeuteriumChat.id("harmony"))))*23/27f;ChatStyle.rect(privateTitle,x+56/3f+Math.min(nameWidth,w-70),y+3,Math.max(0,w-40/3f-56/3f-Math.min(nameWidth,w-70)-8/3f),6);pinCurrent.getChildren().getLast().style(st->st.background(new MaskTexture("icons/pin.png",ChatStore.INSTANCE.pinned.contains(scope)?ChatStyle.YELLOW:0xFFA6AFAD)));}
     }
     private static IGuiTexture channelIcon(String id,boolean selected){String art=switch(id){case "team"->"chat-native/icon_sns_chat_11.png";case "inbox"->"chat-native/sns_icon_chat.png";default->"icons/"+id+".png";};return new MaskTexture(art,selected?ChatStyle.YELLOW:0xFFBDC5C2);}
 
@@ -123,7 +127,7 @@ final class ChatView implements AutoCloseable {
             if(!ChatStore.INSTANCE.pinned.contains(c.id()))continue;
             var b=ChatStyle.button("",()->switchScope(c.id()));b.noText();contactButtons.put(c.id(),b);
             b.addChild(ChatStyle.rect(new UIElement().style(st->st.background(new SkinFaceTexture(c.name()))),(WebPixels.wide()?25:22)/3f,(WebPixels.wide()?13:9)/3f,10,10));
-            var name=ChatStyle.label(c.name(),11/3f,0xFFE5B3D9);name.textStyle(st->st.font(DeuteriumChat.id("gilroy")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));
+            var name=ChatStyle.label(c.name(),11/3f,0xFFE5B3D9);name.textStyle(st->st.font(DeuteriumChat.id("harmony")).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));
             b.addChild(ChatStyle.rect(name,0,(WebPixels.wide()?49:45)/3f,(WebPixels.wide()?80:74)/3f,5));
             if(c.unread()>0)b.addChild(ChatStyle.rect(ChatStyle.unread(c.unread()),(WebPixels.wide()?75:69)/3f-ChatStyle.unreadWidth(c.unread()),5/3f,ChatStyle.unreadWidth(c.unread()),17/3f));
             b.getLayout().width((WebPixels.wide()?80:74)/3f).height((WebPixels.wide()?76:68)/3f).flexShrink(0);contacts.addScrollViewChild(b);i++;

@@ -30,16 +30,17 @@ final class ChatTimeline extends UIElement {
     private static boolean emojiOnly(ChatMessage m){String text=m.content.getString();return !m.system&&m.media==null&&!text.isBlank()&&text.codePoints().allMatch(c->Character.isWhitespace(c)||c==0xFE0F||c==0x200D||Character.getType(c)==Character.OTHER_SYMBOL||Character.getType(c)==Character.MODIFIER_SYMBOL);}
     private float density(){return hud?(float)Minecraft.getInstance().getWindow().getGuiScale():3;}
     private float px(float value){return value/density();}
-    private float inset(ChatMessage m){return px(hud?10:12);}
-    private float bodyScale(){return px(18)/9;}
-    private float lineHeight(){return px(26);}
+    private float textPx(int value){return px(ChatTextSize.pixels(value));}
+    private float inset(ChatMessage m){return textPx(hud?10:12);}
+    private float bodyScale(){return textPx(ChatPresentation.BODY_PX)/9;}
+    private float lineHeight(){return textPx(ChatPresentation.LINE_PX);}
     private float fullIndent(){return px(hud?36:48);}
-    private float headerHeight(){return px(25);}
-    private float vertical(ChatMessage m,Row row){return row.emoji?0:px(6);}
-    private float rowLine(Row row){return row.emoji?px(40):lineHeight();}
-    private float rowScale(Row row){return row.emoji?px(32)/9:bodyScale();}
+    private float headerHeight(){return textPx(ChatPresentation.HEADER_PX);}
+    private float vertical(ChatMessage m,Row row){return row.emoji?0:textPx(6);}
+    private float rowLine(Row row){return row.emoji?textPx(40):lineHeight();}
+    private float rowScale(Row row){return row.emoji?textPx(32)/9:bodyScale();}
     private float leading(Row row){return (rowLine(row)-9*rowScale(row))/2;}
-    private float bodyTop(Hit h){return h.y+(h.message.system?0:headerHeight())+(h.message.reply.isEmpty()?0:px(22));}
+    private float bodyTop(Hit h){return h.y+(h.message.system?0:headerHeight())+(h.message.reply.isEmpty()?0:textPx(22));}
     private float textTop(Hit h){return bodyTop(h)+vertical(h.message,h.row)+leading(h.row);}
     private int densityStamp=-1;
 
@@ -61,7 +62,7 @@ final class ChatTimeline extends UIElement {
         if(height<=0||width<=0)return;
         float bottom=hud?mc.getWindow().getGuiScaledHeight()-px(quick?Math.max(48,(float)mc.getWindow().getGuiScale()*16+12):48):y+height;
         int available=(int)((width-fullIndent())/bodyScale());
-        int nextDensity=Math.round(density()*100)+(WebPixels.compact()?10000:0);
+        int nextDensity=Math.round(density()*100)+(WebPixels.compact()?10000:0)+ChatTextSize.level()*100000;
         if(nextDensity!=densityStamp){densityStamp=nextDensity;bubble=new RoundTexture(px(10),0);cache.clear();revision=-1;}
         var store=ChatStore.INSTANCE;
         if(revision!=store.revision||!scope.equals(store.current)||wrapWidth!=available) {
@@ -99,7 +100,7 @@ final class ChatTimeline extends UIElement {
         var existing=cache.get(m.id);if(existing!=null&&existing.source()!=m)cache.remove(m.id);
         return cache.computeIfAbsent(m.id,id->{
             var font=LDLibFonts.font();var body=m.system?ChatStyle.systemBody(m.content):ChatStyle.body(m.content);boolean emoji=!hud&&emojiOnly(m);
-            float scale=emoji?px(32)/9:bodyScale(),line=emoji?px(40):lineHeight();
+            float scale=emoji?textPx(32)/9:bodyScale(),line=emoji?textPx(40):lineHeight();
             var lines=font.split(body,Math.max(20,(int)((width*bodyScale()-(emoji?0:inset(m)*2))/scale)));
             float mw=0,mh=0;
             if(m.media!=null){boolean sticker=ChatMessage.str(m.media,"type").equals("sticker");mw=Math.min(px(sticker?72:hud?180:216),width*bodyScale());
@@ -108,18 +109,18 @@ final class ChatTimeline extends UIElement {
             boolean onlyMedia=m.media!=null&&(m.content.getString().equals("[图片]")||m.content.getString().equals("[贴纸]"));
             var visible=onlyMedia?List.<FormattedCharSequence>of():lines.subList(0,Math.min(8,lines.size()));
             float textHeight=visible.size()*line,bodyWidth=mw;for(var item:visible)bodyWidth=Math.max(bodyWidth,font.width(item)*scale);
-            float padding=emoji||visible.isEmpty()?0:px(12),gap=textHeight>0&&mh>0?px(8):0,bodyHeight=textHeight+padding+mh+gap;
+            float padding=emoji||visible.isEmpty()?0:2*textPx(6),gap=textHeight>0&&mh>0?px(8):0,bodyHeight=textHeight+padding+mh+gap;
             String suffixText=ChatPresentation.suffix(m.channel,m.server);
             var suffix=ChatStyle.body(Component.literal(hud&&m.channel.equals("world")&&!suffixText.isEmpty()?"["+suffixText+"]":suffixText));
-            return new Row(m,ChatStyle.playerName(m),suffix,Component.literal(m.time).withStyle(st->st.withFont(DeuteriumChat.id("numbers"))),visible,
-                (m.system?0:headerHeight())+bodyHeight+px(WebPixels.compact()?14:12)+(m.reply.isEmpty()?0:px(22)),mw,mh,bodyWidth,bodyHeight,emoji,visible.stream().map(ChatTextLine::new).toList());
+            return new Row(m,ChatStyle.playerName(m),suffix,ChatStyle.body(Component.literal(m.time)),visible,
+                (m.system?0:headerHeight())+bodyHeight+textPx(WebPixels.compact()?14:12)+(m.reply.isEmpty()?0:textPx(22)),mw,mh,bodyWidth,bodyHeight,emoji,visible.stream().map(ChatTextLine::new).toList());
         });
     }
     private void drawRow(GuiGraphics g,ChatMessage m,Row r,float x,float y,float width,int alpha) {
         float textX=x+(m.system?0:fullIndent()),cursor=y;
         if(!m.system){
             SkinFaceTexture.draw(g,m.name,x,y,px(hud?26:36),alpha);
-            float nameScale=px(16)/9,detailScale=px(13)/9;
+            float nameScale=textPx(ChatPresentation.NAME_PX)/9,detailScale=textPx(ChatPresentation.DETAIL_PX)/9;
             drawText(g,r.header,textX,y,nameScale,alpha<<24|0xFFFFFF,hud);
             float next=textX+LDLibFonts.font().width(r.header)*nameScale+px(8),right=x+width;
             Component TITLE=ChatTitles.title(m);
@@ -129,7 +130,7 @@ final class ChatTimeline extends UIElement {
             if(next+LDLibFonts.font().width(time)*detailScale<=right)drawText(g,time,next,y+px(2),detailScale,alpha<<24|0xADB7B8,hud);
             cursor+=headerHeight();
         }
-        if(!m.reply.isEmpty()){drawText(g,ChatStyle.body(Component.literal("│ "+m.reply)),textX,cursor,px(14)/9,alpha<<24|0xA9B3B1);cursor+=px(22);}
+        if(!m.reply.isEmpty()){drawText(g,ChatStyle.body(Component.literal("│ "+m.reply)),textX,cursor,textPx(14)/9,alpha<<24|0xA9B3B1);cursor+=textPx(22);}
         float pad=r.emoji?0:inset(m),v=vertical(m,r),scale=rowScale(r),line=rowLine(r),textHeight=r.lines.size()*line;
         if(!r.lines.isEmpty()){
             float textWidth=0;for(var item:r.lines)textWidth=Math.max(textWidth,LDLibFonts.font().width(item)*scale);
