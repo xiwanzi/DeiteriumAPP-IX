@@ -1,4 +1,4 @@
-2026-10-13：**聊天时效、排序与 App 实时恢复已完成本机候选，未发布**。附近消息自发送起五分钟消失，游戏私聊按发送时间合并；App 补充私聊推送、连接保活与重连、前台/网络恢复及历史补齐。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`；见[本轮验收](qa/chat-delivery-recovery-20261013.md)。
+2026-10-13：**App 2.0.27（22700）与 Go 于16:23上线，聊天0.1.10/资源0.0.58-dev于16:29发布**（PR #123）。修复附近五分钟过期、游戏私聊排序和 App 实时恢复；关闭世界内路标显示，保留地图与石碑联动。原业务记录、配置和游戏服PID保留，三常驻节点在线、MEK停止。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`；见[上线记录](deployment/chat-recovery-2.0.27-live.md)。
 
 2026-10-12：**App 2.0.26（22600）私聊表情与媒体已于 23:50 上线**（PR #119，源码 `01cdac40bbc4`）。私聊与公屏共用 Emoji、图片/GIF、个人贴纸及预览/收藏/重试；队列按会话隔离，重启恢复保持原收件人。61 账号、47 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，三常驻节点在线、MEK 停止。Web 2.0.38、主 Go 程序、图片审核及游戏插件保持。维护 `.worktrees/chat-media` / `xiwanzi/release-v226-live`，见[上线记录](deployment/deuterium-2.0.26-live.md)。
 

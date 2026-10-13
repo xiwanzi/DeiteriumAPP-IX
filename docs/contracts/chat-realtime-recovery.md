@@ -1,6 +1,6 @@
 # 聊天实时推送与历史恢复
 
-2026-10-13 本机候选，尚未发布。对应[计划](../plans/chat-delivery-recovery-20261013.md)。
+2026-10-13 已随 App 2.0.27、聊天0.1.10/资源0.0.58-dev与Go发布，见[上线记录](../deployment/chat-recovery-2.0.27-live.md)。对应[计划](../plans/chat-delivery-recovery-20261013.md)。
 
 ## 现有接口的兼容扩展
 

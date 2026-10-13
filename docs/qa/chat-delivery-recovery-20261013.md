@@ -1,6 +1,6 @@
 # 聊天时效、排序与 App 消息恢复验收
 
-2026-10-13，本机候选，未提交、推送或部署。工作区 `.worktrees/game-chat-ldlib`，分支 `xiwanzi/chat-expiry-order`；基于游戏聊天 0.1.9 与 App 2.0.26 源码。对应[计划](../plans/chat-delivery-recovery-20261013.md)及[契约](../contracts/chat-realtime-recovery.md)。
+2026-10-13，本轮候选验证记录。后续已按用户授权发布 App 2.0.27、聊天0.1.10/资源0.0.58-dev及Go，见[上线记录](../deployment/chat-recovery-2.0.27-live.md)。工作区 `.worktrees/game-chat-ldlib`，分支 `xiwanzi/chat-expiry-order`；以下为基于游戏聊天0.1.9与App2.0.26实施修复时的测试，发布构建另见上线记录。对应[计划](../plans/chat-delivery-recovery-20261013.md)及[契约](../contracts/chat-realtime-recovery.md)。
 
 ## 原因与修复
 
@@ -27,4 +27,4 @@
 
 ## 限制与发布范围
 
-本轮没有发布 APK、游戏资源或 Go，没有重启游戏服、修改生产数据库或向玩家发送消息。正式落地需要配套发布游戏聊天客户端、App 与 Go；Core 协议及程序无需为本轮调整。模拟器与回环测试证明恢复逻辑，不代表真机运营商网络的固定延迟承诺。真实 Wi-Fi/蜂窝切换和线上多设备体验尚待部署后的实测。
+上述本机测试阶段没有发布 APK、游戏资源或 Go，也没有操作生产业务数据或向玩家发送消息；随后发布见上线记录。Core 协议及程序无需为本轮调整。模拟器与回环测试证明恢复逻辑，不代表真机运营商网络的固定延迟承诺。真实 Wi-Fi/蜂窝切换和线上多设备体验仍以实际设备验证为准。
