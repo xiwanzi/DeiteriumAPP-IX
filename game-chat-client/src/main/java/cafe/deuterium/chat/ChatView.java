@@ -11,7 +11,7 @@ final class ChatView implements AutoCloseable {
     final UIElement root=new UIElement();
     final ModularUI ui=ModularUI.of(UI.of(root,size->WebPixels.size())).shouldCloseOnEsc(false).shouldCloseOnKeyInventory(false);
     final TextField input=new TextField(){@Override public net.minecraft.client.gui.Font getFont(){return ChatTextLine.hasColor(getValue())?Minecraft.getInstance().font:com.lowdragmc.lowdraglib2.gui.LDLibFonts.font();}@Override protected void onBlur(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent event){/* Keep the selection while a composer tool owns focus. */}};
-    private final ChatTimeline timeline=new ChatTimeline(false);
+    final ChatTimeline timeline=new ChatTimeline(false);
     private final Label heading=ChatStyle.label("世界",25/3f,ChatStyle.TEXT);
     private final UIElement rail=new UIElement(),line=new UIElement();
     private final ScrollerView contacts=new ScrollerView();
@@ -21,6 +21,8 @@ final class ChatView implements AutoCloseable {
     private final Label textSizeLabel=ChatStyle.label(ChatTextSize.label(),12/3f,ChatStyle.MUTED);
     private final Label privateTitle=ChatStyle.label("[溯行者]",ChatPresentation.DETAIL_PX/3f,0xFFA9B3B8);
     private final Button send=ChatStyle.button("发送",this::send);
+    private final ShaderTexture latestArrow=new ShaderTexture(DeuteriumChat.id("latest_arrow")).setColor(ChatStyle.MUTED);
+    final Button latest=ChatStyle.button("",()->{timeline.jumpToLatest();input.focus();});
     private final AutoCloseable subscription;
     private String scope=ChatStore.INSTANCE.current;
     private int width=-1,height=-1,textSizeLevel=-1;
@@ -57,6 +59,10 @@ final class ChatView implements AutoCloseable {
         input.setTextResponder(s->{ChatStore.INSTANCE.drafts.put(scope,s);updateSend();});
         String[] toolNames={"emoji","image","share"};Runnable[] actions={()->ChatPanels.personal(root),()->ChatClient.INSTANCE.media.choose(false),()->ChatPanels.more(root)};
         for(int i=0;i<toolNames.length;i++){var tool=ChatStyle.toolButton(toolNames[i],actions[i]);toolButtons.put(toolNames[i],tool);tools.addChild(ChatStyle.rect(tool,i*16,0,12,12));}
+        latest.noText();latest.setId("chat-jump-latest");latest.setDisplay(false);
+        latest.buttonStyle(st->st.baseTexture(IGuiTexture.EMPTY).hoverTexture(new RoundTexture(6,0x16E7EBDE,1/3f,0x48EDF0DC)).pressedTexture(new RoundTexture(6,0x26E7EBDE)));
+        latest.addChild(ChatStyle.rect(new UIElement().style(st->st.background(latestArrow)),2,2,8,8));
+        tools.addChild(ChatStyle.rect(latest,48,0,12,12));
         send.setId("chat-send");input.setId("chat-draft");ChatStyle.sound(send,"");
         send.buttonStyle(s->s.baseTexture(new NativeButtonTexture(false)).hoverTexture(new NativeButtonTexture(true)).pressedTexture(new NativeButtonTexture(false,0xFFC7C7C7)));
         send.textStyle(s->s.textColor(0xFF202624).fontSize(5));
@@ -106,6 +112,8 @@ final class ChatView implements AutoCloseable {
     private void highlight(){String active=scope.startsWith("private:")?"":scope;for(var entry:nav.entrySet()){boolean selected=entry.getKey().equals(active);entry.getValue().buttonStyle(s->s.baseTexture(selected?new ChannelSelectionTexture():IGuiTexture.EMPTY));entry.getValue().style(s->s.overlay(IGuiTexture.EMPTY));navIcons.get(entry.getKey()).style(s->s.background(channelIcon(entry.getKey(),selected)));navLabels.get(entry.getKey()).textStyle(s->s.textColor(selected?ChatStyle.YELLOW:ChatStyle.MUTED));}for(var entry:contactButtons.entrySet())entry.getValue().buttonStyle(st->st.baseTexture(entry.getKey().equals(scope)?new ChannelSelectionTexture():IGuiTexture.EMPTY));}
     private void updateSend(){boolean enabled=!input.getValue().isBlank();send.setActive(enabled);send.textStyle(s->s.textColor(enabled?0xFF242721:0xFF929B98));send.buttonStyle(s->s.baseTexture(new NativeButtonTexture(false,enabled?0xFFF7F7F7:0xFF454545)));}
     void refreshPanelTools(){
+        boolean showLatest=!scope.equals("inbox")&&timeline.awayFromLatest();if(latest.isDisplayed()!=showLatest)latest.setDisplay(showLatest);
+        latestArrow.setColor(latest.getState()==Button.State.DEFAULT?0xFFABB5B1:ChatStyle.TEXT);
         String panel=ChatPanels.state(root);if(panel.equals(lastPanel))return;lastPanel=panel;
         for(var e:toolButtons.entrySet()){boolean active=e.getKey().equals("emoji")&&(panel.equals("personal")||panel.equals("manage")||panel.equals("stickers")||panel.equals("common")||panel.equals("adventure"))||e.getKey().equals("share")&&panel.equals("more");
             e.getValue().buttonStyle(st->st.baseTexture(active?new RoundTexture(6,0x12E9EA64,1/3f,0x70FFF100):IGuiTexture.EMPTY));
@@ -117,6 +125,11 @@ final class ChatView implements AutoCloseable {
     void send() {
         String value=input.getValue().strip();if(value.isEmpty())return;
         if(ChatClient.INSTANCE.send(value)){input.setText("");timeline.followLatest();ChatSounds.play("send");}
+    }
+    boolean enter(){
+        if(!input.isDisplayed()||!input.isActive())return false;
+        if(!input.isFocused())input.focus();else send();
+        return true;
     }
     private void refreshContacts() {
         long revision=ChatTitles.revision+31L*ChatStore.INSTANCE.contacts.hashCode()+ChatStore.INSTANCE.pinned.hashCode();for(var c:ChatStore.INSTANCE.contacts.values()){var list=ChatStore.INSTANCE.inScope(c.id());if(!list.isEmpty())revision=31*revision+list.getLast().id.hashCode();}if(contactsRevision==revision)return;contactsRevision=revision;updateHeading();
@@ -134,5 +147,5 @@ final class ChatView implements AutoCloseable {
         }
         highlight();
     }
-    @Override public void close() { timeline.saveScroll();try {subscription.close();}catch(Exception ignored){} }
+    @Override public void close() { timeline.saveScroll();latestArrow.close();try {subscription.close();}catch(Exception ignored){} }
 }
