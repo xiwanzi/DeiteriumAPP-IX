@@ -13,6 +13,44 @@ import (
 	"testing"
 )
 
+func TestNearbyHistoryExpiresFiveMinutesAfterSend(t *testing.T) {
+	f := newSocialFixtureV2(t)
+	ctx := context.Background()
+	a, b, c := f.users["Alice"], f.users["Bob"], f.users["Carol"]
+	media := chatMediaFixture(t, f, "Alice", 503).Media
+	in := store.GameChatMediaRequest{PlayerUUID: a.ServerUUID, ClientMessageID: "nearby-ttl", Channel: "nearby", Media: store.ChatMediaSend{ID: media.ID, Type: "image"}, Members: []string{a.ServerUUID, b.ServerUUID}}
+	m, err := f.store.GameChatMedia(ctx, "amiya", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	check := func(uuid, channel string, want int) {
+		t.Helper()
+		list, err := f.store.GameChatMessages(ctx, uuid, channel)
+		if err != nil || len(list) != want {
+			t.Fatalf("%s history: got %d, want %d, err %v", channel, len(list), want, err)
+		}
+	}
+	check(b.ServerUUID, "nearby", 1)
+	check(c.ServerUUID, "nearby", 0)
+	if _, err = f.store.DB.Exec(`UPDATE game_chat_messages SET sent_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 290 SECOND) WHERE message_id=?`, m.ID); err != nil {
+		t.Fatal(err)
+	}
+	check(b.ServerUUID, "nearby", 1)
+	if _, err = f.store.DB.Exec(`UPDATE game_chat_messages SET sent_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 300 SECOND) WHERE message_id=?`, m.ID); err != nil {
+		t.Fatal(err)
+	}
+	check(b.ServerUUID, "nearby", 0)
+	// Retrying the original send cannot renew the history window.
+	if retry, err := f.store.GameChatMedia(ctx, "amiya", in); err != nil || retry.ID != m.ID {
+		t.Fatal("retry failed", err)
+	}
+	check(b.ServerUUID, "nearby", 0)
+	if _, err = f.store.DB.Exec(`UPDATE game_chat_messages SET channel='team' WHERE message_id=?`, m.ID); err != nil {
+		t.Fatal(err)
+	}
+	check(b.ServerUUID, "team", 1)
+}
+
 func TestGameChatSessionIsScopedAndBoundToLiveNode(t *testing.T) {
 	f := newSocialFixtureV2(t)
 	ctx := context.Background()

@@ -1,0 +1,9 @@
+{
+  "path": "config/xaero/minimap/profiles/default.cfg",
+  "settings": {
+    "waypoints_in_world": false,
+    "waypoints_on_minimap": true,
+    "discovered_waystone_waypoints": true,
+    "other_waystone_waypoints": true
+  }
+}

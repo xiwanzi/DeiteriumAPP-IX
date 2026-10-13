@@ -54,8 +54,29 @@ class BackendChatTest {
             val request = server.takeRequest(5, TimeUnit.SECONDS)!!
             assertEquals("/api/v1/chat/ws", request.path)
             assertEquals("Bearer session-private", request.getHeader("Authorization"))
+            assertEquals("1",request.getHeader("X-Deuterium-Private-Chat"))
             assertNull(request.getHeader("X-Deuterium-Launcher-Icon"))
         } finally { client.close(); server.close() }
+    }
+
+    @Test fun duplicateConnectDoesNotOpenAnotherSocketAndClosedSocketIgnoresLateMessages() {
+        val server=MockWebServer();val opened=CountDownLatch(1)
+        val remote=java.util.concurrent.atomic.AtomicReference<WebSocket>()
+        val messages=java.util.concurrent.atomic.AtomicInteger()
+        server.enqueue(MockResponse().withWebSocketUpgrade(object:WebSocketListener(){
+            override fun onOpen(webSocket:WebSocket,response:Response){remote.set(webSocket)}
+        }))
+        server.start()
+        val client=BackendChat(OkHttpClient(),server.url("/").toString(),"test-session",{messages.incrementAndGet()},{_,_->},{opened.countDown()})
+        try {
+            client.connect();client.connect();assertTrue(opened.await(5,TimeUnit.SECONDS))
+            assertEquals(1,server.requestCount)
+            client.close()
+            client.onMessage(remote.get(),JSONObject().put("type","chat.message").put("payload",JSONObject().put("message",JSONObject().put("messageId","late"))).toString())
+            client.connect()
+            assertFalse(client.connected);assertFalse(client.connecting)
+            assertEquals(0,messages.get());assertEquals(1,server.requestCount)
+        } finally {client.close();server.close()}
     }
 
     @Test fun serverRejectionIsNotAReceivedMessage() = runBlocking {

@@ -225,6 +225,17 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 		failError(w, r, err)
 		return
 	}
+	// Existing clients may treat every chat.message as public. Private delivery
+	// is explicitly enabled and always scoped to the authenticated account.
+	privateUpdates := r.Header.Get("X-Deuterium-Private-Chat") == "1"
+	var privateCursor int64
+	if privateUpdates {
+		privateCursor, err = s.Store.LatestDirectChatSequence(r.Context(), session.User.ID)
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+	}
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: s.Config.PublicOrigins()})
 	if err != nil {
 		return
@@ -308,6 +319,24 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 			select {
 			case wake <- struct{}{}:
 			default:
+			}
+		}
+		if privateUpdates {
+			direct, err := s.Store.DirectChatAfter(ctx, session.User.ID, privateCursor)
+			if err != nil {
+				return
+			}
+			for _, m := range direct {
+				if sendSocket(ctx, c, "chat.message", "", map[string]any{"message": m}) != nil {
+					return
+				}
+				privateCursor = m.Sequence
+			}
+			if len(direct) == 50 {
+				select {
+				case wake <- struct{}{}:
+				default:
+				}
 			}
 		}
 	}

@@ -12,6 +12,7 @@ public final class ChatMessage {
     public final Component content;
     public final JsonObject media;
     public final long receivedAt, sentMillis;
+    public final Instant sentAt;
     public final boolean system;
     public final String reply;
     public String failure = "";
@@ -22,7 +23,7 @@ public final class ChatMessage {
                        boolean historical, boolean system, String reply) {
         this.id=id; this.senderId=senderId; this.name=name; this.channel=channel; this.server=server;
         this.conversation=conversation; this.content=content; this.media=media; this.system=system;
-        this.reply=reply; this.time=CLOCK.format(sentAt);this.sentMillis=sentAt.toEpochMilli();
+        this.reply=reply; this.sentAt=sentAt;this.time=CLOCK.format(sentAt);this.sentMillis=sentAt.toEpochMilli();
         this.receivedAt=historical?0:System.nanoTime()/1_000_000;
     }
     public String scope() { return channel.equals("private")?"private:"+conversation:channel; }

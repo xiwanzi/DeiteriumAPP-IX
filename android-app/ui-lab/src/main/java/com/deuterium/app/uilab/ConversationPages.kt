@@ -56,6 +56,7 @@ fun PlayerAvatar(name: String, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer: (String) -> Unit) {
+    LaunchedEffect(state){while(true){state.refreshPublicChat();kotlinx.coroutines.delay(5000)}}
     var mediaViewer by remember{mutableStateOf<ChatViewerRequest?>(null)}
     val motion = LocalMotion.current
     val list = rememberLazyListState()
