@@ -1,4 +1,4 @@
-import { usePlayerNameRefresh } from "./use-player-names.js";
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, RefreshCw, WalletCards, Check, Search } from "lucide-react";
 import { PageHead, SectionHead, Button, Empty, Badge, Modal, Field, Avatar } from "./components.jsx";
@@ -14,11 +14,10 @@ function readJournal(user) {
 }
 
 export default function ConnectedWallet({ client, user }) {
-  const [balance, setBalance] = useState(null), [records, setRecords] = useState([]),
+  const [balance, setBalance] = useState(null), [records, setRecords] = usePlayerNameState(client, []),
     [cursor, setCursor] = useState(null), [error, setError] = useState(""), [recordError, setRecordError] = useState(""),
     [busy, setBusy] = useState(false), [transferOpen, setTransferOpen] = useState(false),
-    [journal, setJournal] = useState(() => readJournal(user.userId));
-  usePlayerNameRefresh(client, setRecords, setJournal);
+    [journal, setJournal] = usePlayerNameState(client, () => readJournal(user.userId));
   const generation = useRef(0);
   const load = async (refresh = false) => {
     const current = ++generation.current;
@@ -71,11 +70,10 @@ export default function ConnectedWallet({ client, user }) {
 }
 
 function TransferForm({ client, user, journal, saveJournal, onSuccess }) {
-  const [query, setQuery] = useState(""), [candidates, setCandidates] = useState([]), [searched, setSearched] = useState(false),
-    [recipient, setRecipient] = useState(journal?.recipient || null), [amount, setAmount] = useState(""), [note, setNote] = useState(""),
-    [confirmation, setConfirmation] = useState(null), [result, setResult] = useState(journal?.result || null),
+  const [query, setQuery] = useState(""), [candidates, setCandidates] = usePlayerNameState(client, []), [searched, setSearched] = useState(false),
+    [recipient, setRecipient] = usePlayerNameState(client, journal?.recipient || null), [amount, setAmount] = useState(""), [note, setNote] = useState(""),
+    [confirmation, setConfirmation] = usePlayerNameState(client, null), [result, setResult] = usePlayerNameState(client, journal?.result || null),
     [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  usePlayerNameRefresh(client, setCandidates, setRecipient, setConfirmation, setResult);
   const submitting = useRef(false);
   const search = async (event) => {
     event.preventDefault(); if (busy || !query.trim()) return;

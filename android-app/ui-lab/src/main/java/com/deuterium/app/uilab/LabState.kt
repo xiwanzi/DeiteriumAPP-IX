@@ -28,9 +28,11 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     var userName by mutableStateOf(userName);private set
     var playerNameRevision by mutableLongStateOf(0);private set
     private var initialNamesApplied=false
+    private val eventRefresh=EventRefresh(scope){closed}
     private val conversationPeers=mutableMapOf<String,String>()
     fun playerKey(name:String)=if(name==userName)api?.playerRef?.takeIf{it.isNotBlank()} ?: name else Players.find{it.name==name}?.playerRef?.takeIf{it.isNotBlank()} ?: name
     fun routeGameID(key:String):String { playerNameRevision;return if(key==api?.playerRef)userName else Players.find{it.playerRef==key}?.name ?: api?.playerNames()?.get(key)?.gameId ?: key }
+    fun currentPlayerName(ref:String,fallback:String):String {playerNameRevision;return api?.playerNames()?.get(ref)?.gameId ?: fallback}
     fun stablePlayerRoute(route:String):String {val kind=route.substringBefore(':');return if(kind in setOf("dm","player"))"$kind:${playerKey(route.substringAfter(':'))}" else route}
     var restoring by mutableStateOf(false)
     var storageMessage by mutableStateOf<String?>(null)
@@ -160,7 +162,6 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             }
             refresh()
             scope.launch{loadAnnouncements()}
-            scope.launch { while(!closed){if(foreground)loadConversations();delay(4000)} }
             scope.launch { loadDirectory();refreshPresence() }
             scope.launch { commerce.network?.refreshCart(hydrate=false) }
             scope.launch { commerce.network?.refreshMarket() }
@@ -200,7 +201,20 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
                     reconnect?.cancel();val wait=reconnectDelay;reconnectDelay=(reconnectDelay*2).coerceAtMost(15000)
                     reconnect = scope.launch { delay(wait); if(service.signedIn && service.gameVerified && !closed) openChat() }
                 }
-            } }, { scope.launch { if(!closed&&generation==chatGeneration){loadChat()} };scope.launch{if(!closed&&generation==chatGeneration){loadConversations();activeConversation?.let{refreshDirect(it)}}};launcherIcons?.requestSync() },launcherIcons?.let{icons->{icons.requestSync()}}).also { it.connect() }
+            } }, { scope.launch { if(!closed&&generation==chatGeneration){loadChat();requestIdentityRefresh()} };scope.launch{if(!closed&&generation==chatGeneration){loadConversations();activeConversation?.let{refreshDirect(it)}}};launcherIcons?.requestSync() },launcherIcons?.let{icons->{icons.requestSync()}}, { type,payload->scope.launch{
+                if(closed||generation!=chatGeneration)return@launch
+                if(type=="chat.conversation.changed"){
+                    val id=payload.optString("conversationId")
+                    if(id.isNotBlank())eventRefresh.request("conversation:$id"){refreshConversation(id)}
+                }else{
+                    val topics=payload.optJSONArray("topics") ?: return@launch
+                    for(i in 0 until topics.length())when(topics.optString(i)){
+                        "players.names"->eventRefresh.request("names"){syncPlayerNames()}
+                        "accounts.changed"->eventRefresh.request("accounts"){syncAccountDeletions()}
+                        "notices.changed"->eventRefresh.request("notices"){syncNotices();loadAnnouncements()}
+                    }
+                }
+            }}).also { it.connect() }
     }
     fun resumeChat() {
         if(closed||chatSocket==null||api?.signedIn!=true||api.gameVerified!=true)return
@@ -441,6 +455,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     fun conversation(name: String): SnapshotStateList<ChatLine> = directChats.getOrPut(name) { mutableStateListOf() }
     fun pendingDirectDraft(name:String):String = if(name=="AI 助手")ai?.recoveredDraft.orEmpty() else Players.find{it.name==name}?.let { api?.pendingDirect(it.playerRef)?.optString("content") }.orEmpty()
     private fun rememberPlayer(value:JSONObject) {
+        applyCurrentPlayerNames(value,api?.playerNames().orEmpty())
         if(value.optBoolean("deleted")||isErasedPlayer(value.optString("playerRef")))return
         val name=value.optString("gameId");if(name.isBlank()||name==userName)return
         unavailableAccounts.remove(name)
@@ -464,8 +479,6 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             if(closed)return
             contactsRefreshing=true
             val account=service.financialScope()
-            syncAccountDeletions()
-            syncPlayerNames()
             val knownBefore=conversationIds.toMap()
             val values=service.listAll("/chat/conversations")
             account.verifyCurrent(service.financialScope())
@@ -480,6 +493,28 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         finally{contactsRefreshing=false;contactRefreshLock.unlock()}
     }
     suspend fun refreshContacts()=loadConversations()
+    private fun requestIdentityRefresh(){
+        eventRefresh.request("names"){syncPlayerNames()}
+        eventRefresh.request("accounts"){syncAccountDeletions()}
+    }
+    private suspend fun refreshConversation(id:String){
+        val service=api ?: return
+        contactRefreshLock.lock()
+        try{
+            val account=service.financialScope()
+            val value=try{service.request("GET","/chat/conversations/$id")}catch(e:ApiFailure){
+                if(e.status==404){conversationIds.entries.find{it.value==id}?.key?.let(::forgetConversation);return};throw e
+            }
+            account.verifyCurrent(service.financialScope())
+            val other=value.getJSONObject("otherPlayer")
+            if(isErasedPlayer(other.optString("playerRef")))return
+            rememberPlayer(other)
+            val name=other.getString("gameId")
+            rememberConversation(name,id,other.getString("playerRef"))
+            value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)}
+            conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[id])0 else value.optInt("unreadCount").coerceAtLeast(0)
+        }finally{contactRefreshLock.unlock()}
+    }
     private fun rememberConversation(name:String,id:String,peerRef:String=""){
         peerRef.ifBlank{conversationPeers[id].orEmpty()}.ifBlank{Players.find{it.name==name}?.playerRef.orEmpty()}.takeIf{it.isNotBlank()}?.let{conversationPeers[id]=it}
         if(conversationIds[name]?.let{it!=id}==true)forgetConversation(name)
@@ -493,17 +528,17 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     private suspend fun syncPlayerNames(){
         val service=api ?: return
         val account=service.financialScope()
-        try {
-            var changed=false
-            do {
-                val response=service.request("GET","/chat/player-names?after=${service.playerNameCursor()}")
-                account.verifyCurrent(service.financialScope())
-                val entries=response.getJSONArray("items").objects().map(PlayerNameChange::parse)
-                changed=changed||entries.any{(service.playerNames()[it.playerRef]?.sequence ?: -1)<it.sequence}
-                service.rememberPlayerNames(entries,response.getLong("cursor"))
-            } while(response.optBoolean("hasMore"))
-            if(changed||!initialNamesApplied){initialNamesApplied=true;applyPlayerNames(service.playerNames())}
-        } catch(e:CancellationException){throw e} catch(_:Exception){/* Name synchronization retries without interrupting conversations. */}
+        val pending=mutableListOf<PlayerNameChange>()
+        var cursor=service.playerNameCursor()
+        do {
+            val response=service.request("GET","/chat/player-names?after=$cursor")
+            account.verifyCurrent(service.financialScope())
+            val entries=response.getJSONArray("items").objects().map(PlayerNameChange::parse)
+            pending.addAll(entries);cursor=response.getLong("cursor")
+        } while(response.optBoolean("hasMore"))
+        val changed=pending.any{(service.playerNames()[it.playerRef]?.sequence ?: -1)<it.sequence}
+        service.rememberPlayerNames(pending,cursor)
+        if(changed||!initialNamesApplied){initialNamesApplied=true;applyPlayerNames(service.playerNames())}
     }
     private fun remapConversationKeys(moves:Map<String,String>){
         if(moves.isEmpty())return
@@ -692,6 +727,6 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         }.getOrElse{error->if(error is ApiFailure&&error.status in listOf(400,401,403,404,422,501))service.savePendingForward(other.playerRef,null);report(error);false}
     }
     fun reset() { cart.clear(); refresh(); loadAnnouncements() }
-    fun close() { closed = true; reconnect?.cancel(); chatSocket?.close() }
+    fun close() { closed = true; eventRefresh.close(); reconnect?.cancel(); chatSocket?.close() }
     private fun report(error: Throwable) { storageMessage = error.message ?: "服务连接失败，请稍后重试" }
 }

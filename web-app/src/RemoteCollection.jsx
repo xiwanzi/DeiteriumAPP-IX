@@ -1,4 +1,4 @@
-import { usePlayerNameRefresh } from "./use-player-names.js";
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { RefreshCw, Search, Package, Plus } from "lucide-react";
 import { PageHead, Button, Empty, Badge, Modal } from "./components.jsx";
@@ -33,9 +33,8 @@ export function ContentBlocks({ blocks = [], media = [] }) {
 
 export default function RemoteCollection({ client, path, user, onNotificationTarget, navigate }) {
   const config = collections[path] || collections["/"],
-    [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(true),
-    [error, setError] = useState(""), [query, setQuery] = useState(""), [serverQuery, setServerQuery] = useState(""), [selected, setSelected] = useState(null), [mine, setMine] = useState(false), [editor, setEditor] = useState(null), [unlist, setUnlist] = useState(null), [purchase, setPurchase] = useState(null), [quantity, setQuantity] = useState(1), [bagMessage, setBagMessage] = useState("");
-  usePlayerNameRefresh(client, setItems, setSelected, setPurchase);
+    [items, setItems] = usePlayerNameState(client, []), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(true),
+    [error, setError] = useState(""), [query, setQuery] = useState(""), [serverQuery, setServerQuery] = useState(""), [selected, setSelected] = usePlayerNameState(client, null), [mine, setMine] = useState(false), [editor, setEditor] = useState(null), [unlist, setUnlist] = useState(null), [purchase, setPurchase] = usePlayerNameState(client, null), [quantity, setQuantity] = useState(1), [bagMessage, setBagMessage] = useState("");
   const actionKeys = useRef({});
   const generation = useRef(0);
   const loading = useRef(false), sentinel = useRef(null);

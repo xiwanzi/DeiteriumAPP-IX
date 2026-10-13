@@ -17,3 +17,10 @@ test("late deltas cannot roll back a name and reused spelling never redirects an
   assert.deepEqual(applyPlayerNames(values,names),[{playerRef:"player_a",gameId:"NewName"},{playerRef:"player_b",gameId:"OldName"}]);
   assert.equal(redactErasedAccounts(applyPlayerNames(values[0],names),new Set(["player_a"])).gameId,"已注销用户");
 });
+
+test("view projection retains unchanged references and ignores arbitrary payload fields", () => {
+  const names=new Map();rememberPlayerNames(names,[{sequence:1,uuid:"uuid-a",playerRef:"player_a",gameId:"NewName"}]);
+  const value={playerRef:"player_b",gameId:"Other",payload:{playerRef:"player_a",gameId:"OldName"},configuration:{owner:{playerRef:"player_a",gameId:"OldName"}}};
+  assert.equal(applyPlayerNames(value,names),value);
+  const current={playerRef:"player_a",gameId:"NewName"};assert.equal(applyPlayerNames(current,names),current);
+});

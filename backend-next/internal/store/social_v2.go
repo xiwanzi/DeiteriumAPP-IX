@@ -486,8 +486,12 @@ func socialMessages(ctx context.Context, q socialQuery, userID, conversation str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	return scanSocialMessages(rows)
+	messages, err := scanSocialMessages(rows)
+	rows.Close()
+	if err == nil {
+		err = refreshDirectNames(ctx, q, messages)
+	}
+	return messages, err
 }
 
 // DirectChatAfter only reads conversations the authenticated user belongs to.
@@ -496,8 +500,12 @@ func (s *Store) DirectChatAfter(ctx context.Context, userID string, after int64)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	return scanSocialMessages(rows)
+	messages, err := scanSocialMessages(rows)
+	rows.Close()
+	if err == nil {
+		err = refreshDirectNames(ctx, s.DB, messages)
+	}
+	return messages, err
 }
 
 func (s *Store) LatestDirectChatSequence(ctx context.Context, userID string) (int64, error) {

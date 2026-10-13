@@ -248,6 +248,9 @@ func (s *Store) commerceViewV204(ctx context.Context, viewer, id string, public,
 		return nil, e
 	}
 	out := commerceBaseViewV2(d, viewer, refund, active, time.Now().UTC())
+	if out, e = projectPartyViews(ctx, tx, out); e != nil {
+		return nil, e
+	}
 	if e = redactDeletedPartiesTx(ctx, tx, out); e != nil {
 		return nil, e
 	}

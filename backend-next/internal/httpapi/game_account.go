@@ -174,7 +174,7 @@ func (s *Server) resetGamePassword(w http.ResponseWriter, r *http.Request) {
 			failError(w, r, err)
 			return
 		}
-		s.Hub.Wake()
+		s.Hub.Wake("accounts.changed")
 		success(w, r, map[string]bool{"passwordReset": true})
 		return
 	}
@@ -191,6 +191,6 @@ func (s *Server) resetGamePassword(w http.ResponseWriter, r *http.Request) {
 		failError(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.Hub.Wake("accounts.changed")
 	success(w, r, map[string]bool{"passwordReset": true})
 }

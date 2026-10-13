@@ -22,6 +22,7 @@ class BackendChat(
     private val onState: (Boolean, String?) -> Unit,
     private val onOpen: () -> Unit,
     private val onLauncherIconChanged: (() -> Unit)? = null,
+    private val onEvent: ((String,JSONObject)->Unit)? = null,
 ) : WebSocketListener() {
     private var socket: WebSocket? = null
     private val pending = ConcurrentHashMap<String, CompletableDeferred<JSONObject>>()
@@ -33,7 +34,7 @@ class BackendChat(
         connecting=true
         socket = http.newBuilder().pingInterval(10,TimeUnit.SECONDS).build()
             .newWebSocket(Request.Builder().url("${baseUrl.trimEnd('/')}/api/v1/chat/ws")
-            .header("Authorization", "Bearer $token").header("X-Deuterium-Private-Chat","1")
+            .header("Authorization", "Bearer $token").header("X-Deuterium-Private-Chat","1").header("X-Deuterium-Sync","1")
             .apply{if(onLauncherIconChanged!=null)header("X-Deuterium-Launcher-Icon","1")}.build(), this)
     }
     @Synchronized override fun onOpen(webSocket: WebSocket, response: Response) {
@@ -46,6 +47,7 @@ class BackendChat(
         val payload = frame.optJSONObject("payload") ?: return
         when(frame.optString("type")) {
             "app.launcher-icon.changed" -> onLauncherIconChanged?.invoke()
+            "sync.changed", "chat.conversation.changed" -> onEvent?.invoke(frame.getString("type"),payload)
             "chat.message" -> payload.optJSONObject("message")?.let(onMessage)
             "chat.send.result", "error" -> pending.remove(frame.optString("requestId"))?.complete(payload)
         }

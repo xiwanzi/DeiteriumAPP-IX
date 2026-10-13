@@ -94,11 +94,7 @@ func (s *Server) coreSpecial(ctx context.Context, node config.Node, c *websocket
 		return true, nil
 	case "core.presence.snapshot":
 		var snapshot struct {
-			Players []struct {
-				PlayerUUID   string `json:"playerUuid"`
-				GameID       string `json:"gameId"`
-				SessionEpoch string `json:"sessionEpoch"`
-			} `json:"players"`
+			Players []store.CorePlayerIdentity `json:"players"`
 		}
 		if bridge.Decode(e.Payload, &snapshot) != nil || len(snapshot.Players) > 200 {
 			return true, bridge.ErrProtocol
@@ -107,11 +103,13 @@ func (s *Server) coreSpecial(ctx context.Context, node config.Node, c *websocket
 			if !identity.ValidUUID(p.PlayerUUID) || !identity.ValidGameID(p.GameID) || !identity.ValidUUID(p.SessionEpoch) {
 				return true, bridge.ErrProtocol
 			}
-			if _, err := s.Store.RememberCorePlayer(ctx, store.CorePlayerIdentity{PlayerUUID: p.PlayerUUID, GameID: p.GameID, ServerID: node.ID, Online: true}); err != nil {
-				return true, err
-			}
+		}
+		changed, affected := s.Core.PresenceChanges(node.ID, snapshot.Players)
+		if err := s.Store.RememberCorePlayers(ctx, changed); err != nil {
+			return true, err
 		}
 		s.Core.SetPresence(node.ID, e.Payload)
+		s.observePlayerNames(affected)
 		return true, nil
 	case "core.command.result":
 		var result struct {

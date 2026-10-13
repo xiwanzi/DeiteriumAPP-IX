@@ -114,7 +114,7 @@ func (s *Server) changeAccountPassword(w http.ResponseWriter, r *http.Request) {
 	if session.Kind == "web" {
 		s.setCookie(w, "", time.Unix(1, 0))
 	}
-	s.Hub.Wake()
+	s.Hub.Wake("user:" + session.User.ID)
 	success(w, r, map[string]bool{"passwordChanged": true})
 }
 func (s *Server) emailRegistrationCode(w http.ResponseWriter, r *http.Request) {

@@ -16,7 +16,7 @@ internal data class PlayerNameChange(val sequence:Long,val uuid:String,val playe
 internal fun mergePlayerNames(previous:Map<String,PlayerNameChange>,changes:List<PlayerNameChange>):Map<String,PlayerNameChange> = previous.toMutableMap().apply {
     changes.forEach { change -> if((get(change.playerRef)?.sequence ?: -1)<change.sequence){put(change.playerRef,change);put(change.uuid,change)} }
 }
-private val archivedNameFields=setOf("snapshot","snapshotJson","raw","signedPayload","body","content","settings","configuration")
+private val playerViewChildren=listOf("user","player","otherPlayer","sender","reply","forwarded","message","lastMessage","messages","buyer","seller","owner","worker","counterparty")
 internal fun applyCurrentPlayerNames(value:Any?,names:Map<String,PlayerNameChange>) {
     if(names.isEmpty())return
     when(value){
@@ -29,7 +29,7 @@ internal fun applyCurrentPlayerNames(value:Any?,names:Map<String,PlayerNameChang
                 }
             }
             names[value.optString("_cachePeerRef")]?.let{value.put("_cachePeerName",it.gameId)}
-            value.keys().asSequence().toList().filterNot{it in archivedNameFields}.forEach{applyCurrentPlayerNames(value.opt(it),names)}
+            playerViewChildren.forEach{applyCurrentPlayerNames(value.opt(it),names)}
         }
         is JSONArray -> for(i in 0 until value.length())applyCurrentPlayerNames(value.opt(i),names)
     }

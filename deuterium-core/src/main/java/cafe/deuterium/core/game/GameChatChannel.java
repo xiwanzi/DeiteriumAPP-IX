@@ -29,37 +29,21 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
     private final ExecutorService io=new ThreadPoolExecutor(1,2,20,TimeUnit.SECONDS,new ArrayBlockingQueue<>(64),r->{Thread t=new Thread(r,"Deuterium-GameChat-IO");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
     private final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).followRedirects(HttpClient.Redirect.NEVER).build();
     private final Map<UUID,LocationShare> shares=new HashMap<>();
-    private final cafe.deuterium.core.storage.PlayerStore players;
-    private final java.util.concurrent.atomic.AtomicBoolean namesBusy=new java.util.concurrent.atomic.AtomicBoolean();
-    private final org.bukkit.scheduler.BukkitTask nameTask;
+    private final PlayerNameSync nameSync;
     private final org.bukkit.scheduler.BukkitTask shareTask;
     private record LocationShare(String scope,long expires){}
     private static final class Peer { long lastHello,lastSend;final LinkedHashSet<String> requests=new LinkedHashSet<>(); }
-    public GameChatChannel(JavaPlugin plugin,Supplier<CoreConfig> config,GameThread game,ChatAccess chat,cafe.deuterium.core.runtime.Sessions sessions,cafe.deuterium.core.storage.PlayerStore players){this.plugin=plugin;this.config=config;this.game=game;this.chat=chat;this.players=players;
+    public GameChatChannel(JavaPlugin plugin,Supplier<CoreConfig> config,GameThread game,ChatAccess chat,cafe.deuterium.core.runtime.Sessions sessions,cafe.deuterium.core.storage.PlayerStore players){this.plugin=plugin;this.config=config;this.game=game;this.chat=chat;
         Bukkit.getMessenger().registerIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().registerOutgoingPluginChannel(plugin,CHANNEL);Bukkit.getPluginManager().registerEvents(this,plugin);
         titles=new GameTitles(plugin,config,sessions,(player,packet)->{if(supports(player))deliver(player,packet);});
-        nameTask=Bukkit.getScheduler().runTaskTimer(plugin,this::syncNames,40,200);
+        nameSync=new PlayerNameSync(players,after->{var request=new JsonObject();request.addProperty("after",after);return post("/bridge/v1/game-chat/player-names",request);},this::publishNames,PlayerNameSync::applyTeam,plugin.getLogger());
         shareTask=Bukkit.getScheduler().runTaskTimer(plugin,()->{for(var entry:new ArrayList<>(shares.entrySet())){Player player=Bukkit.getPlayer(entry.getKey());if(player==null||System.currentTimeMillis()>entry.getValue().expires()){shares.remove(entry.getKey());if(player!=null)locationState(player,false);continue;}publishLocation(player,entry.getValue().scope());}},100,100);
     }
-    private void syncNames(){
-        if(!config.get().bridge().enabled()||!namesBusy.compareAndSet(false,true))return;
-        try{io.execute(()->{try{
-            var request=new JsonObject();request.addProperty("after",players.nameCursor());
-            var result=post("/bridge/v1/game-chat/player-names",request);
-            var entries=result.getAsJsonArray("items");
-            for(var raw:entries){var value=raw.getAsJsonObject();UUID uuid=UUID.fromString(Json.string(value,"uuid"));String name=Json.string(value,"gameId");long sequence=value.get("sequence").getAsLong();
-                players.canonicalName(uuid,name,sequence);
-                syncTeamName(uuid,name,sequence);
-            }
-            if(!entries.isEmpty()){var packet=new JsonObject();packet.addProperty("type","player-names");packet.add("items",entries.deepCopy());game.run(()->{for(Player player:Bukkit.getOnlinePlayers())if(supports(player))deliver(player,packet);});}
-            players.nameCursor(result.get("cursor").getAsLong());
-        }catch(Exception ignored){/* Replay the same persisted cursor after outages; never interrupt chat. */}finally{namesBusy.set(false);}});}catch(RejectedExecutionException ignored){namesBusy.set(false);}
-    }
-    private void syncTeamName(UUID uuid,String name,long sequence)throws Exception{
-        Class<?> gateway;try{gateway=Class.forName("com.deuteriumix.teams.Gateway");}catch(ClassNotFoundException absent){return;}
-        Object runtime=gateway.getMethod("runtime").invoke(null);if(runtime==null)throw new IllegalStateException("Team runtime pending");
-        Object result=runtime.getClass().getMethod("syncVerifiedName",UUID.class,String.class,long.class).invoke(runtime,uuid,name,sequence);
-        if(result instanceof java.util.concurrent.CompletableFuture<?> future){try{future.get(3,TimeUnit.SECONDS);}catch(Exception error){future.cancel(false);throw error;}}
+    public void refreshNames(){if(config.get().bridge().enabled())nameSync.refresh();}
+    private void publishNames(JsonArray entries){
+        var packets=new ArrayList<JsonObject>();
+        for(int start=0;start<entries.size();start+=32){var batch=new JsonArray();for(int i=start;i<Math.min(start+32,entries.size());i++)batch.add(entries.get(i));var packet=new JsonObject();packet.addProperty("type","player-names");packet.add("items",batch);packets.add(packet);}
+        game.call(System.currentTimeMillis()+5000,()->{for(Player player:Bukkit.getOnlinePlayers())if(supports(player))for(var packet:packets)deliver(player,packet);return null;}).join();
     }
     public boolean supports(Player player){return peers.containsKey(player.getUniqueId());}
     @EventHandler public void quit(PlayerQuitEvent e){peers.remove(e.getPlayer().getUniqueId());shares.remove(e.getPlayer().getUniqueId());}
@@ -162,5 +146,5 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
         if(bytes.length>32768||response.statusCode()!=200)throw new IllegalStateException("Chat service unavailable");return Json.object(new String(bytes,StandardCharsets.UTF_8),32768).getAsJsonObject("data");
     }
     private void execute(Runnable task){try{io.execute(task);}catch(RejectedExecutionException ignored){plugin.getLogger().warning("游戏聊天队列繁忙，请稍后重试。");}}
-    @Override public void close(){nameTask.cancel();titles.close();shareTask.cancel();shares.clear();peers.clear();io.shutdownNow();http.shutdownNow();Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin,CHANNEL);HandlerList.unregisterAll(this);}
+    @Override public void close(){nameSync.close();titles.close();shareTask.cancel();shares.clear();peers.clear();io.shutdownNow();http.shutdownNow();Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin,CHANNEL);HandlerList.unregisterAll(this);}
 }

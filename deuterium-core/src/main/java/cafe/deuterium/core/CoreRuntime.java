@@ -75,6 +75,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         initialized.add(mailbox);
         commands = new CommandDispatcher(settings::get, () -> mailbox, game, sessions, players, journal, economy);
         bridge = new BridgeClient(settings::get, outbox, this, workers, plugin.getLogger());
+        playerEvents.onChange(bridge::presenceChanged);
         initialized.add(bridge);
         gameChat = new cafe.deuterium.core.game.GameChatChannel(plugin, settings::get, game, chat, sessions, players);
         chat.bindGameChat(gameChat); initialized.add(gameChat);
@@ -126,6 +127,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
     }
     @Override public void appChat(JsonObject payload) throws Exception { ensureOpen(); chat.incoming(payload); }
     @Override public void gameChat(JsonObject payload) { ensureOpen(); gameChat.receiveTeam(payload); }
+    @Override public void playerNamesChanged() { if(gameChat!=null)gameChat.refreshNames(); }
     @Override public JsonObject command(JsonObject payload) { ensureOpen(); return commands.execute(payload); }
     @Override public JsonObject presence() { return Json.tree(Map.of("players", sessions.snapshot())); }
     @Override public JsonObject status() {

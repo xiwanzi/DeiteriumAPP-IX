@@ -16,7 +16,7 @@ final class ChatClient {
     final ChatMediaClient media=new ChatMediaClient(this);
     volatile ChatApi api;
     private long nextHello,nextPoll,nameCursor;
-    private boolean polling,loaded;
+    private boolean polling,loaded,namesPending=true;
     private final Map<String,String> readThrough=new HashMap<>();
     long epoch;
     private Object connection;
@@ -43,7 +43,7 @@ final class ChatClient {
             switch(ChatMessage.str(p,"type")) {
                 case "player-title" -> ChatTitles.receive(p);
                 case "player-names" -> {if(ChatStore.INSTANCE.applyNames(p.getAsJsonArray("items")))ChatAvatars.clear();}
-                case "session" -> {api=new ChatApi(p);node=api.server;ChatStore.INSTANCE.server=node;ChatStore.INSTANCE.selfRef=api.owner;ChatStore.INSTANCE.status="";nextPoll=0;media.refreshStickers();loadPins();}
+                case "session" -> {api=new ChatApi(p);node=api.server;ChatStore.INSTANCE.server=node;ChatStore.INSTANCE.selfRef=api.owner;ChatStore.INSTANCE.status="";nextPoll=0;namesPending=true;media.refreshStickers();loadPins();}
                 case "media-result" -> {var future=mediaRequests.remove(ChatMessage.str(p,"requestId"));if(future!=null){if(p.has("error"))future.completeExceptionally(new java.io.IOException(ChatMessage.str(p,"error")));else future.complete(p.getAsJsonObject("message"));}}
                 case "message" -> {
                     var m=ChatMessage.fromJson(p,false,ChatMessage.str(p,"channel"),ChatMessage.str(p,"conversationId"));
@@ -116,10 +116,10 @@ final class ChatClient {
             catch(Exception e){Minecraft.getInstance().execute(()->{if(epoch==generation){polling=false;notice(e.getMessage());}});}});}catch(RejectedExecutionException busy){polling=false;notice("聊天正在处理中，请稍后重试");}
     }
     private void poll() {
-        polling=true;boolean historical=!loaded;
-        submit(a->{var o=new JsonObject();try{o.add("names",a.request("GET","/api/v1/chat/player-names?after="+nameCursor,null));}catch(Exception ignored){}o.add("messages",a.request("GET","/api/v1/chat/messages?limit=100",null));o.add("conversations",a.request("GET","/api/v1/chat/conversations",null));return o;},raw->{
+        polling=true;boolean historical=!loaded,fetchNames=namesPending;
+        submit(a->{var o=new JsonObject();if(fetchNames)try{o.add("names",a.request("GET","/api/v1/chat/player-names?after="+nameCursor,null));}catch(Exception ignored){}o.add("messages",a.request("GET","/api/v1/chat/messages?limit=100",null));o.add("conversations",a.request("GET","/api/v1/chat/conversations",null));return o;},raw->{
             polling=false;loaded=true;var o=raw.getAsJsonObject();
-            if(o.has("names")){var names=o.getAsJsonObject("names");if(ChatStore.INSTANCE.applyNames(array(names)))ChatAvatars.clear();if(names.has("cursor"))nameCursor=names.get("cursor").getAsLong();if(names.has("hasMore")&&names.get("hasMore").getAsBoolean())nextPoll=0;}
+            if(o.has("names")){var names=o.getAsJsonObject("names");if(ChatStore.INSTANCE.applyNames(array(names)))ChatAvatars.clear();if(names.has("cursor"))nameCursor=names.get("cursor").getAsLong();namesPending=names.has("hasMore")&&names.get("hasMore").getAsBoolean();if(namesPending)nextPoll=0;}
             var list=array(o.get("messages"));
             for(int i=list.size()-1;i>=0;i--)ChatStore.INSTANCE.add(ChatMessage.fromJson(list.get(i).getAsJsonObject(),historical,"world",""));
             for(var e:array(o.get("conversations"))){var c=e.getAsJsonObject();String id=ChatMessage.str(c,"conversationId");

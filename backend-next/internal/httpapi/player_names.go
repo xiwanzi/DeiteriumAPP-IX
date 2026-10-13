@@ -6,26 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/bridge"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
-type nameProjectionKey struct{}
-
-func projectedNames(r *http.Request, data any) any {
-	if source, ok := r.Context().Value(nameProjectionKey{}).(*store.Store); ok {
-		if out, e := source.ProjectPlayerNames(r.Context(), data); e == nil {
-			return out
-		}
-	}
-	return data
-}
 func (s *Server) registerPlayerNames(mux *http.ServeMux) {
 	mux.HandleFunc("POST /bridge/v1/game-chat/player-names", func(w http.ResponseWriter, r *http.Request) {
 		node, ok := s.Config.AuthenticateNode(r.Header.Get("X-Deuterium-Node-ID"), strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
@@ -144,63 +134,7 @@ func (s *Server) syncOfficialNameObserved(ctx context.Context, p store.Admission
 	}
 	changes, e := s.Store.SyncVerifiedNamesObserved(ctx, profiles, observedAt)
 	if e == nil && len(changes) > 0 {
-		s.Hub.Wake()
+		s.Hub.Wake(bridge.TopicNames)
 	}
 	return e
-}
-func (s *Server) playerNameWorker() {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-	cooldown := map[string]time.Time{}
-	for {
-		select {
-		case <-s.ctx.Done():
-			return
-		case <-ticker.C:
-		}
-		if s.Config.Development && s.AdmissionResolver == nil {
-			continue
-		}
-		nodes := []string{}
-		for _, n := range s.Config.Nodes {
-			nodes = append(nodes, n.ID)
-		}
-		players, _ := s.Core.Presence(nodes)
-		for _, p := range players {
-			if s.ctx.Err() != nil {
-				return
-			}
-			if !identity.ValidUUID(p.PlayerUUID) || !identity.ValidGameID(p.GameID) || time.Now().Before(cooldown[p.PlayerUUID]) {
-				continue
-			}
-			live, liveErr := s.Core.Player("", p.PlayerUUID)
-			if liveErr != nil || !live.Online || live.ServerID != p.ServerID || live.GameID != p.GameID {
-				continue
-			}
-			previous, e := s.Store.KnownPlayerName(s.ctx, p.PlayerUUID)
-			if e != nil && !errors.Is(e, sql.ErrNoRows) {
-				continue
-			}
-			if previous == p.GameID {
-				continue
-			}
-			cooldown[p.PlayerUUID] = time.Now().Add(time.Minute)
-			ctx, cancel := context.WithTimeout(s.ctx, 8*time.Second)
-			observedAt := time.Now().UTC()
-			canonical, e := s.resolveAdmissionProfile(ctx, p.GameID)
-			if e == nil && canonical.UUID == p.PlayerUUID {
-				if syncErr := s.syncOfficialNameObserved(ctx, canonical, observedAt); syncErr != nil {
-					slog.Warn("official player name sync deferred", "uuid", p.PlayerUUID, "error", syncErr)
-				}
-			}
-			cancel()
-		}
-		if len(cooldown) > 1000 {
-			for uuid, until := range cooldown {
-				if time.Now().After(until) {
-					delete(cooldown, uuid)
-				}
-			}
-		}
-	}
 }

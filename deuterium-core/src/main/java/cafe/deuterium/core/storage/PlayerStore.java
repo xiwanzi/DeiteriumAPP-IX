@@ -20,10 +20,17 @@ public final class PlayerStore {
     }
     public void left(PlayerSession session) { if (session != null) db.read(c -> Sql.update(c, "UPDATE dc_players SET online=false,last_seen=? WHERE player_uuid=? AND node_id=? AND session_epoch=?", System.currentTimeMillis(), session.playerUuid().toString(), node, session.sessionEpoch())); }
     public void offline() { db.read(c -> Sql.update(c, "UPDATE dc_players SET online=false WHERE node_id=?", node)); }
+    public void heartbeat() { db.read(c -> Sql.update(c,"UPDATE dc_players SET last_seen=? WHERE node_id=? AND online=true",System.currentTimeMillis(),node)); }
     public long nameCursor(){return db.read(c->Sql.count(c,"SELECT COALESCE(MAX(cursor_value),0) FROM dc_player_name_cursors WHERE node_id=?",node));}
     public void nameCursor(long value){if(value<0)throw CoreFailure.invalid("名称游标无效");db.read(c->Sql.update(c,db.shared()?
         "INSERT INTO dc_player_name_cursors VALUES(?,?) ON DUPLICATE KEY UPDATE cursor_value=GREATEST(cursor_value,VALUES(cursor_value))":
         "INSERT INTO dc_player_name_cursors VALUES(?,?) ON CONFLICT(node_id) DO UPDATE SET cursor_value=MAX(cursor_value,excluded.cursor_value)",node,value));}
+    public long nameCursor(String consumer){return db.read(c->Sql.count(c,"SELECT COALESCE(MAX(cursor_value),0) FROM dc_player_name_consumers WHERE node_id=? AND consumer=?",node,consumer));}
+    public void nameCursor(String consumer,long value){if(value<0)throw CoreFailure.invalid("名称游标无效");db.read(c->Sql.update(c,db.shared()?
+        "INSERT INTO dc_player_name_consumers VALUES(?,?,?) ON DUPLICATE KEY UPDATE cursor_value=GREATEST(cursor_value,VALUES(cursor_value))":
+        "INSERT INTO dc_player_name_consumers VALUES(?,?,?) ON CONFLICT(node_id,consumer) DO UPDATE SET cursor_value=MAX(cursor_value,excluded.cursor_value)",node,consumer,value));}
+    public record NameChange(UUID uuid,String name,long sequence){}
+    public List<NameChange> pendingNames(long after){return db.read(c->{var result=new ArrayList<NameChange>();try(var s=Sql.statement(c,"SELECT player_uuid,game_id,sequence_id FROM dc_player_names WHERE sequence_id>? ORDER BY sequence_id LIMIT 100",after);var rows=s.executeQuery()){while(rows.next())result.add(new NameChange(UUID.fromString(rows.getString(1)),rows.getString(2),rows.getLong(3)));}return result;});}
     public void canonicalName(UUID uuid,String name,long sequence){
         if(sequence<1||!name.matches("[A-Za-z0-9_]{1,32}"))throw CoreFailure.invalid("名称更新无效");
         db.transaction(c->{

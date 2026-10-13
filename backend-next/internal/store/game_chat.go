@@ -53,6 +53,9 @@ func (s *Store) GameChatMedia(ctx context.Context, node string, in GameChatMedia
 		}
 		var message GameChatMessage
 		err = json.Unmarshal(old, &message)
+		if err == nil {
+			err = refreshPlayers(ctx, tx, &message.Sender)
+		}
 		return message, err
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
@@ -105,5 +108,14 @@ func (s *Store) GameChatMessages(ctx context.Context, uuid, channel string) ([]G
 		}
 		out = append(out, m)
 	}
-	return out, rows.Err()
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	players := make([]*Player, 0, len(out))
+	for i := range out {
+		players = append(players, &out[i].Sender)
+	}
+	return out, refreshPlayers(ctx, s.DB, players...)
 }

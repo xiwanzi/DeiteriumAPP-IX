@@ -1,23 +1,25 @@
-const archived = new Set(["snapshot", "snapshotJson", "raw", "signedPayload", "content", "body", "settings", "configuration"]);
+const viewChildren = ["user", "player", "profile", "otherPlayer", "sender", "senderProfile", "reply", "forwarded", "message", "lastMessage", "messages", "records", "items", "data", "buyer", "seller", "owner", "worker", "applicant", "respondent", "counterparty", "recipient", "author"];
 
 // Only stable identity references select a name. Never replace free text or use
 // an old spelling to guess who owns a conversation or financial record.
 export function applyPlayerNames(value, names) {
   if (!value || typeof value !== "object" || !names.size) return value;
-  if (Array.isArray(value)) return value.map(item => applyPlayerNames(item, names));
-  const result = Object.fromEntries(Object.entries(value).map(([key, item]) => [key, archived.has(key) ? item : applyPlayerNames(item, names)]));
+  if (Array.isArray(value)) { const next = value.map(item => applyPlayerNames(item, names)); return next.some((item,index) => item !== value[index]) ? next : value; }
+  let result = value;
+  const set = (key, item) => { if (result[key] === item) return; if (result === value) result = { ...value }; result[key] = item; };
+  for (const key of viewChildren) if (value[key] && typeof value[key] === "object") set(key, applyPlayerNames(value[key], names));
   const ref = [value.playerRef, value.playerUuid, value.serverUuid, value.profileUuid, value.uuid, value.senderRef, typeof value.sender === "string" ? value.sender : null, value.id].find(ref => typeof ref === "string" && names.has(ref));
   const name = names.get(ref)?.gameId;
   if (name && !value.deleted) {
-    for (const key of ["gameId", "senderName", "playerName"]) if (key in result) result[key] = name;
-    if (value.id === ref && "name" in result) result.name = name;
-    if (value.kind === "PLAYER") { result.gameId = name; if ("displayName" in result) result.displayName = name; }
+    for (const key of ["gameId", "senderName", "playerName"]) if (key in result) set(key, name);
+    if (value.id === ref && "name" in result) set("name", name);
+    if (value.kind === "PLAYER") { set("gameId", name); if ("displayName" in result) set("displayName", name); }
   }
   for (const role of ["buyer", "seller", "owner", "worker", "author", "recipient"]) {
     const current = names.get(value[`${role}Ref`])?.gameId;
     if (!current) continue;
-    if (typeof result[`${role}Name`] === "string") result[`${role}Name`] = current;
-    if (typeof result[role] === "string") result[role] = current;
+    if (typeof result[`${role}Name`] === "string") set(`${role}Name`, current);
+    if (typeof result[role] === "string") set(role, current);
   }
   return result;
 }

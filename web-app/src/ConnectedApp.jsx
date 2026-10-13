@@ -68,10 +68,9 @@ export default function ConnectedApp() {
   const client = clientRef.current;
   useEffect(() => {
     if (!session?.user.userId || session.user.gameVerified === false) return;
-    const sync = () => { if (!document.hidden) Promise.allSettled([client.syncAccountDeletions(), client.syncPlayerNames()]); };
-    sync(); const timer = setInterval(sync, 4000);
+    const stop = client.openRealtime();
     const unsubscribe = client.onAccountDeletions((refs) => setModal((old) => old?.type === "player" && refs.has(old.player.id) ? null : old));
-    return () => { clearInterval(timer); unsubscribe(); };
+    return () => { stop(); unsubscribe(); };
   }, [client, session?.user.userId, session?.user.gameVerified]);
   const [ownProfile, setOwnProfile] = useState(null);
   useEffect(() => client.onPlayerNames(names => {

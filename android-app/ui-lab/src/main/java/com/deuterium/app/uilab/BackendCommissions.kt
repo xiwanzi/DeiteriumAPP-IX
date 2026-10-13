@@ -19,6 +19,7 @@ class BackendCommissions(private val api:BackendApi,private val state:LabState) 
     private fun date(value:JSONObject,key:String):LocalDateTime?=value.optString(key).takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).atZone(ZoneId.systemDefault()).toLocalDateTime()}
     private fun epoch(value:JSONObject,key:String):Long?=value.optString(key).takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).toEpochMilli()}
     private fun put(value:JSONObject):String{
+        applyCurrentPlayerNames(value,api.playerNames())
         if(value.optBoolean("hiddenFromHistory")){val id=value.getString("commissionId");state.commissions.entries.removeAll{it.id==id};return id}
         val c=value.getJSONObject("content");val refund=value.optJSONObject("refund")
         val actions=value.getJSONArray("availableActions");val set=(0 until actions.length()).map{actions.getString(it)}.toSet()

@@ -139,7 +139,7 @@ func TestPlayerNameSyncPreservesAccountSessionsNicknameAndSnapshots(t *testing.T
 	}
 	body := map[string]any{"buyer": map[string]any{"kind": "PLAYER", "playerRef": u.PlayerRef, "displayName": "Alice"}, "amount": "9007199254740993.25", "content": "Alice wrote this text", "snapshot": map[string]any{"buyer": map[string]any{"playerRef": u.PlayerRef, "gameId": "Alice"}}, "profile": map[string]any{"playerRef": u.PlayerRef, "gameId": "Alice", "displayName": "保留的中文昵称"}}
 	before, _ := json.Marshal(body)
-	projected, e := f.store.ProjectPlayerNames(ctx, body)
+	projected, e := f.store.ProjectPartyViews(ctx, body)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -147,8 +147,8 @@ func TestPlayerNameSyncPreservesAccountSessionsNicknameAndSnapshots(t *testing.T
 	if string(before) != string(after) {
 		t.Fatal("source snapshot mutated")
 	}
-	out := projected.(map[string]any)
-	if out["buyer"].(map[string]any)["displayName"] != "NewAlice" || out["amount"] != "9007199254740993.25" || out["content"] != "Alice wrote this text" || out["snapshot"].(map[string]any)["buyer"].(map[string]any)["gameId"] != "Alice" || out["profile"].(map[string]any)["displayName"] != "保留的中文昵称" {
+	out := projected
+	if out["buyer"].(store.CatalogObjectV2)["displayName"] != "NewAlice" || out["amount"] != "9007199254740993.25" || out["content"] != "Alice wrote this text" || out["snapshot"].(map[string]any)["buyer"].(map[string]any)["gameId"] != "Alice" || out["profile"].(map[string]any)["displayName"] != "保留的中文昵称" {
 		t.Fatal(out)
 	}
 	journal, cursor, more, e := f.store.PlayerNameChanges(ctx, 0)

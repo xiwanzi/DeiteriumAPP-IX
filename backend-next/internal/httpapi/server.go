@@ -40,6 +40,7 @@ type Server struct {
 	ai                   *aiGatewayV2
 	desktop              *desktopRuntime
 	ysm                  *ysmBridge
+	nameQueue            playerNameQueue
 }
 
 func New(s *store.Store, c config.Config) *Server {
@@ -60,6 +61,8 @@ func New(s *store.Store, c config.Config) *Server {
 		return p, nil
 	}
 	server.Identity.SyncGameName = server.syncOfficialNameObserved
+	server.nameQueue.pending = map[string]nameRetry{}
+	server.nameQueue.wake = make(chan struct{}, 1)
 	go server.playerNameWorker()
 	nodes := make([]string, 0, len(c.Nodes))
 	for _, node := range c.Nodes {
@@ -138,9 +141,6 @@ func (s *Server) Handler() http.Handler {
 	limited := s.capacity.wrap(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(context.WithValue(r.Context(), requestIDKey{}, store.ID("req_")))
-		if strings.HasPrefix(r.URL.Path, "/api/v1/") && r.URL.Path != "/api/v1/chat/player-names" {
-			r = r.WithContext(context.WithValue(r.Context(), nameProjectionKey{}, s.Store))
-		}
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
@@ -150,7 +150,7 @@ func (s *Server) Handler() http.Handler {
 
 func requestID(r *http.Request) string { v, _ := r.Context().Value(requestIDKey{}).(string); return v }
 func success(w http.ResponseWriter, r *http.Request, data any) {
-	writeJSON(w, 200, map[string]any{"requestId": requestID(r), "data": projectedNames(r, data)})
+	writeJSON(w, 200, map[string]any{"requestId": requestID(r), "data": data})
 }
 func failure(w http.ResponseWriter, r *http.Request, status int, code, message string) {
 	writeJSON(w, status, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": code, "message": message, "details": map[string]string{}}})
@@ -426,7 +426,7 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	if v.Kind == "web" {
 		s.setCookie(w, "", time.Unix(1, 0))
 	}
-	s.Hub.Wake()
+	s.Hub.Wake(bridge.UserTopic(v.User.ID))
 	success(w, r, map[string]bool{"loggedOut": true})
 }
 

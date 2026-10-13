@@ -1,4 +1,4 @@
-import { usePlayerNameRefresh } from "./use-player-names.js";
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, RefreshCw, Search, X } from "lucide-react";
 import { Badge, Button, Empty, Field, Modal, PageHead, Tabs } from "./components.jsx";
@@ -13,8 +13,7 @@ const date = (value) => value ? new Date(value).toLocaleString("zh-CN", { hour12
 const channel = (value) => value === "OFFICIAL_STORE" ? "官方商城" : "玩家市场";
 
 export default function TradeAudit({ client }) {
-  const [tab, setTab] = useState(tabs[0]), [player, setPlayer] = useState(null), [detail, setDetail] = useState(null);
-  usePlayerNameRefresh(client, setPlayer);
+  const [tab, setTab] = useState(tabs[0]), [player, setPlayer] = usePlayerNameState(client, null), [detail, setDetail] = useState(null);
   const select = (value, next = "资金流水") => { setPlayer(value); setTab(next); };
   return <>
     <PageHead eyebrow="PLATFORM AUDIT" title="交易与玩家审计" subtitle="查询全服玩家收支，追溯订单与商品的完整记录。" />
@@ -26,8 +25,7 @@ export default function TradeAudit({ client }) {
 }
 
 function PlayerBrowser({ client, onSelect }) {
-  const [query, setQuery] = useState(""), [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState("");
-  usePlayerNameRefresh(client, setItems);
+  const [query, setQuery] = useState(""), [items, setItems] = usePlayerNameState(client, []), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const generation = useRef(0);
   const load = async (more = false) => { const current = ++generation.current; setBusy(true); setError(""); try { const r = await client.request(`/api/v1/admin/players?${more && cursor ? `cursor=${encodeURIComponent(cursor)}` : `q=${encodeURIComponent(query.trim())}`}`); if (current !== generation.current) return; setItems((old) => more ? [...old, ...r.data] : r.data); setCursor(r.page?.nextCursor); } catch (e) { if (current === generation.current) setError(e.message); } finally { if (current === generation.current) setBusy(false); } };
   useEffect(() => { load(); return () => { generation.current++; }; }, []);
@@ -41,8 +39,7 @@ function PlayerBrowser({ client, onSelect }) {
 
 function AuditCollection({ client, tab, player, onDetail }) {
   const ledger = tab === "资金流水", orders = tab === "订单审计", collection = ledger ? "transactions" : orders ? "orders" : "products";
-  const [filters, setFilters] = useState({ q: "", direction: "", businessType: "", channel: "", kind: "", status: "", from: "", to: "" }), [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState("");
-  usePlayerNameRefresh(client, setItems);
+  const [filters, setFilters] = useState({ q: "", direction: "", businessType: "", channel: "", kind: "", status: "", from: "", to: "" }), [items, setItems] = usePlayerNameState(client, []), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const generation = useRef(0);
   const set = (key) => (e) => setFilters((old) => ({ ...old, [key]: e.target.value }));
   const load = async (more = false) => {
@@ -77,8 +74,7 @@ function AuditCollection({ client, tab, player, onDetail }) {
 }
 
 function AuditDetail({ client, collection, id }) {
-  const [value, setValue] = useState(null), [error, setError] = useState("");
-  usePlayerNameRefresh(client, setValue);
+  const [value, setValue] = usePlayerNameState(client, null), [error, setError] = useState("");
   useEffect(() => { let alive = true; client.request(`/api/v1/admin/${collection}/${encodeURIComponent(id)}`).then((r) => { if (alive) setValue(r.data); }).catch((e) => { if (alive) setError(e.message); }); return () => { alive = false; }; }, [id, collection]);
   if (error) return <p className="notice-box" role="alert">{error}</p>; if (!value) return <p role="status">正在读取详情…</p>;
   const product = value.draft || value, images = value.draftImages || value.photos || value.images || [];
