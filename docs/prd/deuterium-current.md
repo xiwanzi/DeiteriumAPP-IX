@@ -1,5 +1,7 @@
 # Deuterium IX 当前产品基线
 
+2026-10-13：**资源0.0.59-dev于17:03发布，17:04公网核验通过**（DeLauncher PR #6）。修复进服设置页关闭后重新黑屏渐出的遗漏流程，正常首次过渡保留；仅更新主开屏JAR及显示版本。App2.0.27、聊天0.1.10、路标配置和服务器程序/PID保持。见[上线记录](../deployment/opening-menu-0.0.59-live.md)。
+
 2026-10-13：**App 2.0.27（22700）与Go于16:23上线，聊天0.1.10/资源0.0.58-dev于16:29发布**（PR #123，源码 `669c8f7a782c`）。附近消息五分钟过期、游戏私聊排序与App实时恢复已修复；世界内路标关闭，地图与石碑联动保留。原业务数据与游戏服PID保留，三常驻节点在线、MEK停止。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`，见[上线记录](../deployment/chat-recovery-2.0.27-live.md)。
 
 2026-10-08：**App 2.0.19（21900）、Web 2.0.28 与配套 Go 已于 14:31 上线**（PR #79，源码 `42ea3dcd05a1`）。修复不限库存误判售罄、商城全量加载与离页红错，增加分页及图片预取；56 条账号、38 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，四节点在线。维护 `.worktrees/catalog-scale` / `xiwanzi/catalog-scale`，见[上线记录](../deployment/deuterium-2.0.19-live.md)。下方为较早记录。
