@@ -26,7 +26,7 @@ data class CommerceOrder(val id:String,val key:String,val channel:OrderChannel,v
     val pausedMillis:Long?=null,val refundAttempts:Int=0,val refundRequestedAt:LocalDateTime?=null,val refundResolvedAt:LocalDateTime?=null,val automatic:Boolean=false,
     val completedAt:LocalDateTime?=null,val rejectionReason:String="",val intervention:InterventionCase?=null,
     val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null,val canHideRecord:Boolean=false,val isSaki:Boolean=false,val sellerAvatarUri:String?=null,val aiExpiresAt:LocalDateTime?=null,
-    val paidAmount:Long?=null,val originalAmount:Long?=null,val productDiscount:Long=0,val couponDiscount:Long=0,val couponName:String?=null) {
+    val paidAmount:Long?=null,val originalAmount:Long?=null,val productDiscount:Long=0,val couponDiscount:Long=0,val couponName:String?=null,val buyerRef:String="",val sellerRef:String="") {
     val platformPending:Boolean get()=fundsStatus=="INTERVENTION_HOLD"||intervention?.pending==true
     val canIntervene:Boolean get()=pendingOperationId==null&&(serverActions?.contains("REQUEST_INTERVENTION") ?: (channel==OrderChannel.Market&&refund==RefundState.Rejected&&intervention==null))
     val amount:Long get()=paidAmount ?: lines.sumOf{it.total}
@@ -53,7 +53,7 @@ data class CommerceOrder(val id:String,val key:String,val channel:OrderChannel,v
 }
 
 /** Local transaction model; production authorization and durable settlement belong to the server. */
-class CommerceBook(val userName:String,initialListings:List<MarketListing>,private val balance:()->Long,private val bookCash:(Long,String,String)->Unit,
+class CommerceBook(var userName:String,initialListings:List<MarketListing>,private val balance:()->Long,private val bookCash:(Long,String,String)->Unit,
     private val clock:Clock=Clock.systemDefaultZone(),val remoteOnly:Boolean=false,private val onNotice:(TradeNotice)->Unit={}) {
     val listings=mutableStateListOf<MarketListing>().apply{addAll(initialListings)}
     private val seedListings=initialListings.toList()

@@ -1,3 +1,4 @@
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { Search, RefreshCw, ShieldCheck, Users, Pencil } from "lucide-react";
 import { Avatar, Badge, Button, Empty, Field, Modal, PageHead } from "./components.jsx";
@@ -7,7 +8,7 @@ import { useUnsavedChanges } from "./unsaved-changes.js";
 const actions = { "grant-admin": "授予超级管理员", "revoke-admin": "撤销超级管理员", "grant-support": "授予管理员", "revoke-support": "撤销管理员", ban: "封禁账号", unban: "解封账号", delete: "永久注销" };
 export default function AccountManagement({ client, user }) {
   const [query, setQuery] = useState(""), [filter, setFilter] = useState(""), [search, setSearch] = useState(""), [offset, setOffset] = useState(0);
-  const [data, setData] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [change, setChange] = useState(null), [reason, setReason] = useState(""), [saving, setSaving] = useState(false), [feedback, setFeedback] = useState("");
+  const [data, setData] = usePlayerNameState(client, null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [change, setChange] = useState(null), [reason, setReason] = useState(""), [saving, setSaving] = useState(false), [feedback, setFeedback] = useState("");
   const generation = useRef(0), pending = useRef(null);
   const [editing, setEditing] = useState(null);
   const [password, setPassword] = useState("");

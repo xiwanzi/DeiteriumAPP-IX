@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-data class ChatReply(val messageId:Long,val name:String,val text:String,val remoteId:String="")
+data class ChatReply(val messageId:Long,val name:String,val text:String,val remoteId:String="",val playerRef:String="")
 
 @Composable
 fun QuotedMessage(reply:ChatReply,mine:Boolean=false,modifier:Modifier=Modifier) {

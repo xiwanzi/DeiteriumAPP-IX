@@ -26,6 +26,7 @@ final class ChatUiFixture implements AutoCloseable {
                 if(path.endsWith("/access")){String id=path.split("/")[6];var access=new JsonObject();access.addProperty("url",base()+"/"+id);access.addProperty("thumbnailUrl",base()+"/"+id+"-thumb");access.add("media",media.get(id));data=access;}
                 else if(path.startsWith("/api/v1/chat/avatars/")){var face=new java.awt.image.BufferedImage(8,8,java.awt.image.BufferedImage.TYPE_INT_ARGB);for(int y=0;y<8;y++)for(int x=0;x<8;x++)face.setRGB(x,y,y<3?0xFF8AC9C3:0xFFF5DDC1);var output=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(face,"png",output);var avatar=new JsonObject();avatar.addProperty("png",java.util.Base64.getEncoder().encodeToString(output.toByteArray()));data=avatar;}
                 else if(path.endsWith("/stickers")){var library=new JsonArray();library.add(media.get("sticker"));library.add(media.get("motion"));data=library;}
+                else if(path.endsWith("/player-names")){var names=new JsonObject();names.add("items",new JsonArray());names.addProperty("cursor",0);names.addProperty("hasMore",false);data=names;}
                 var root=new JsonObject();root.add("data",data);bytes=root.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);exchange.getResponseHeaders().set("Content-Type","application/json");
             }
             exchange.sendResponseHeaders(200,bytes.length);try(var out=exchange.getResponseBody()){out.write(bytes);}

@@ -128,7 +128,7 @@ func (s *Store) CommerceCaseViewV2(ctx context.Context, viewer, caseID string, a
 	if entries == nil {
 		entries = []CatalogObjectV2{}
 	}
-	return map[string]any{
+	return s.ProjectPartyViews(ctx, map[string]any{
 		"caseId": c.ID, "transactionKind": transaction.Kind, "transactionId": c.ResourceID,
 		"applicant": c.Body["applicant"], "respondent": c.Body["respondent"], "status": c.State,
 		"description": c.Body["description"], "desiredResolution": c.Body["desiredResolution"], "requestedRefundAmount": c.DesiredRefundAmount,
@@ -136,7 +136,7 @@ func (s *Store) CommerceCaseViewV2(ctx context.Context, viewer, caseID string, a
 		"snapshot": c.Snapshot, "snapshotAssets": snapshotAssets, "fundsHeldForReview": c.FundsHeld, "assignedAdminRef": assigned,
 		"resolution": c.Resolution, "decision": commerceOptionalString(c.Decision), "pendingOperationId": commerceOptionalString(transaction.PendingOperationID),
 		"createdAt": c.CreatedAt, "updatedAt": c.UpdatedAt, "version": c.Version,
-	}, nil
+	})
 }
 
 func (s *Store) CommerceCaseListV2(ctx context.Context, viewer string, filter CommerceCaseFilterV2) ([]CommerceCaseV2, error) {

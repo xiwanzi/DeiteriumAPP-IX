@@ -93,15 +93,19 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 	})
 	s.Core.SetGameChat(node.ID, richChat)
 	defer func() {
+		departed, affected := s.Core.PresenceChanges(node.ID, nil)
 		s.Core.Disconnect(node.ID)
 		cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		_ = s.Store.RememberCorePlayers(cleanup, departed)
 		_ = s.Store.DisconnectCore(cleanup, node.ID)
+		s.observePlayerNames(affected)
 	}()
 	if sendSocket(ctx, c, "core.welcome", hello.RequestID, map[string]any{"protocolVersion": 1, "serverId": node.ID, "chat": node.Chat, "itemPrefix": node.ItemPrefix, "heartbeatSeconds": 20, "maxFrameBytes": 32768, "features": []string{"core-v1", "commands", "catalog", "mailbox-v1", "presence"}}) != nil {
 		return
 	}
-	wake, unsubscribe := s.Hub.Subscribe()
+	events, unsubscribe := s.Hub.Watch(bridge.TopicPublic, bridge.TopicNames)
+	wake := events.Signal
 	defer unsubscribe()
 	done := make(chan struct{})
 	go func() {
@@ -150,7 +154,7 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if !replay {
-				s.Hub.Wake()
+				s.Hub.Wake(bridge.TopicPublic)
 			}
 			if chat != nil {
 				_ = s.Store.PublicSocialNotificationsV2(ctx, "core:"+node.ID, e.EventID)
@@ -161,7 +165,7 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	defer func() { cancel(); c.CloseNow(); <-done }()
-	poll := time.NewTicker(5 * time.Second)
+	poll := time.NewTicker(time.Minute)
 	defer poll.Stop()
 	ping := time.NewTicker(20 * time.Second)
 	defer ping.Stop()
@@ -170,6 +174,7 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 	for {
+		reconcile := false
 		select {
 		case <-ctx.Done():
 			return
@@ -179,7 +184,17 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 			}
 			continue
 		case <-poll.C:
+			reconcile = true
 		case <-wake:
+		}
+		topics := events.Take()
+		if r.Header.Get("X-Deuterium-Player-Names") == "1" && (topics[bridge.TopicNames] || topics["*"] || (!reconcile && len(topics) == 0)) {
+			if sendSocket(ctx, c, "player.names.changed", "", map[string]bool{"refresh": true}) != nil {
+				return
+			}
+		}
+		if !reconcile && len(topics) > 0 && !topics["*"] && !topics[bridge.TopicPublic] {
+			continue
 		}
 		if !node.Chat {
 			continue
@@ -227,7 +242,13 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	// Existing clients may treat every chat.message as public. Private delivery
 	// is explicitly enabled and always scoped to the authenticated account.
-	privateUpdates := r.Header.Get("X-Deuterium-Private-Chat") == "1"
+	liveUpdates := r.Header.Get("X-Deuterium-Sync") == "1"
+	for _, protocol := range strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), ",") {
+		if strings.TrimSpace(protocol) == "deuterium.sync.v1" {
+			liveUpdates = true
+		}
+	}
+	privateUpdates := r.Header.Get("X-Deuterium-Private-Chat") == "1" || liveUpdates
 	var privateCursor int64
 	if privateUpdates {
 		privateCursor, err = s.Store.LatestDirectChatSequence(r.Context(), session.User.ID)
@@ -236,7 +257,7 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: s.Config.PublicOrigins()})
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: s.Config.PublicOrigins(), Subprotocols: []string{"deuterium.sync.v1"}})
 	if err != nil {
 		return
 	}
@@ -246,7 +267,8 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	stop := context.AfterFunc(s.ctx, cancel)
 	defer stop()
-	wake, unsubscribe := s.Hub.Subscribe()
+	events, unsubscribe := s.Hub.Watch(bridge.TopicPublic, bridge.UserTopic(session.User.ID), bridge.TopicNames, bridge.TopicAccounts, bridge.TopicIcons, bridge.TopicNotices)
+	wake := events.Signal
 	defer unsubscribe()
 	done := make(chan struct{})
 	go func() {
@@ -268,7 +290,7 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	defer func() { cancel(); c.CloseNow(); <-done }()
-	poll := time.NewTicker(5 * time.Second)
+	poll := time.NewTicker(time.Minute)
 	defer poll.Stop()
 	ping := time.NewTicker(20 * time.Second)
 	defer ping.Stop()
@@ -280,6 +302,7 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 	for {
+		reconcile := false
 		select {
 		case <-ctx.Done():
 			return
@@ -289,15 +312,38 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 			}
 			continue
 		case <-poll.C:
+			reconcile = true
 		case <-wake:
 		}
 		if _, err = s.Store.Session(ctx, session.TokenHash); err != nil {
 			_ = c.Close(websocket.StatusPolicyViolation, "session expired or revoked")
 			return
 		}
+		topics := events.Take()
+		all := reconcile || topics["*"] || len(topics) == 0
+		directChanged := all || topics[bridge.UserTopic(session.User.ID)]
+		if liveUpdates {
+			changed := []string{}
+			for _, topic := range []string{bridge.TopicNames, bridge.TopicAccounts, bridge.TopicNotices} {
+				if (!reconcile && all) || topics[topic] {
+					changed = append(changed, topic)
+				}
+			}
+			if len(changed) > 0 && sendSocket(ctx, c, "sync.changed", "", map[string]any{"topics": changed}) != nil {
+				return
+			}
+		}
+		for topic := range topics {
+			if conversation, ok := strings.CutPrefix(topic, bridge.UserTopic(session.User.ID)+"/"); ok {
+				directChanged = true
+				if liveUpdates && sendSocket(ctx, c, "chat.conversation.changed", "", map[string]string{"conversationId": conversation}) != nil {
+					return
+				}
+			}
+		}
 		// Configuration is durable; the wakeup only accelerates this read. A lost
 		// wakeup or a reconnect is recovered by the existing periodic scan.
-		if iconUpdates {
+		if iconUpdates && (all || topics[bridge.TopicIcons]) {
 			if icon, iconErr := s.Store.LauncherIcon(ctx); iconErr == nil && icon.Version > iconVersion {
 				if sendSocket(ctx, c, "app.launcher-icon.changed", "", map[string]any{"version": icon.Version}) != nil {
 					return
@@ -305,23 +351,22 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 				iconVersion = icon.Version
 			}
 		}
-		messages, err := s.publicChatAfter(ctx, cursor)
-		if err != nil {
-			return
-		}
-		for _, m := range messages {
-			if sendSocket(ctx, c, "chat.message", "", map[string]any{"message": m}) != nil {
+		if all || topics[bridge.TopicPublic] || topics[bridge.TopicAccounts] {
+			messages, err := s.publicChatAfter(ctx, cursor)
+			if err != nil {
 				return
 			}
-			cursor = m.Sequence
-		}
-		if len(messages) == 50 {
-			select {
-			case wake <- struct{}{}:
-			default:
+			for _, m := range messages {
+				if sendSocket(ctx, c, "chat.message", "", map[string]any{"message": m}) != nil {
+					return
+				}
+				cursor = m.Sequence
+			}
+			if len(messages) == 50 {
+				events.Request(bridge.TopicPublic)
 			}
 		}
-		if privateUpdates {
+		if privateUpdates && directChanged {
 			direct, err := s.Store.DirectChatAfter(ctx, session.User.ID, privateCursor)
 			if err != nil {
 				return
@@ -333,10 +378,7 @@ func (s *Server) appSocket(w http.ResponseWriter, r *http.Request) {
 				privateCursor = m.Sequence
 			}
 			if len(direct) == 50 {
-				select {
-				case wake <- struct{}{}:
-				default:
-				}
+				events.Request(bridge.UserTopic(session.User.ID))
 			}
 		}
 	}
@@ -421,6 +463,6 @@ func (s *Server) sendChat(ctx context.Context, tokenHash string, payload []byte)
 		return failed("RESULT_UNKNOWN", "请使用原消息标识重试确认。")
 	}
 	_ = s.Store.PublicSocialNotificationsV2(ctx, "app:"+v.User.ID, in.ClientMessageID)
-	s.Hub.Wake()
+	s.Hub.Wake(bridge.TopicPublic)
 	return s.acceptedChatV203(ctx, in.ClientMessageID, id)
 }

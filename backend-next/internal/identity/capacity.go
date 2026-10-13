@@ -2,8 +2,30 @@ package identity
 
 import (
 	"context"
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 	"time"
 )
+
+// External identity calls never occupy a memory-heavy password worker.
+func (s *Service) resolveGameName(ctx context.Context, name string) (store.AdmissionProfile, error) {
+	select {
+	case s.nameLookups <- struct{}{}:
+		defer func() { <-s.nameLookups }()
+	default:
+		return store.AdmissionProfile{}, ErrNameLookupUnavailable
+	}
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+	return s.GameNameResolver(ctx, name)
+}
+
+func (s *Service) verifyPassword(ctx context.Context, hash, password string) (bool, error) {
+	if err := s.acquirePasswordSlot(ctx); err != nil {
+		return false, err
+	}
+	defer func() { <-s.slots }()
+	return Verify(hash, password), nil
+}
 
 // The KDF still runs in two slots. A small, time-bounded waiting room absorbs
 // normal login bursts without allocating more password-hashing memory.

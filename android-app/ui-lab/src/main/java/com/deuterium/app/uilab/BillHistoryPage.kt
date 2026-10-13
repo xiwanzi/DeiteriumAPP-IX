@@ -47,7 +47,7 @@ fun BillHistoryPage(state:LabState,initial:String,topInset:Dp,onRecord:(LedgerEn
         finally{if(current==generation)loading=false}
     }
     LaunchedEffect(start,end,type,refresh){remoteRows=emptyList();cursor=null;load()}
-    val rows by remember(state,start,end,type){derivedStateOf{(if(state.api==null)state.ledger else remoteRows).filter { it.at.toLocalDate().toEpochDay() in start..end && (type=="all" || if(type=="income")it.amount>0 else it.amount<0) }.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id})}}
+    val rows by remember(state,start,end,type){derivedStateOf{(if(state.api==null)state.ledger else remoteRows).map{it.copy(name=state.currentPlayerName(it.playerRef,it.name))}.filter { it.at.toLocalDate().toEpochDay() in start..end && (type=="all" || if(type=="income")it.amount>0 else it.amount<0) }.sortedWith(compareByDescending<LedgerEntry>{it.at}.thenByDescending{it.id})}}
     val days=remember(rows){rows.groupBy{it.at.toLocalDate()}}
     val totals=remember(rows){rows.filter{it.amount>0}.sumOf{it.amount} to rows.filter{it.amount<0}.sumOf{-it.amount}}
     val format=DateTimeFormatter.ofPattern("MM月dd日")

@@ -15,6 +15,18 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class BackendChatTest {
+    @Test fun syncHintsUseExistingSocketWithoutBecomingChatMessages() {
+        val server=MockWebServer();val changed=CountDownLatch(2);var messages=0
+        server.enqueue(MockResponse().withWebSocketUpgrade(object:WebSocketListener(){
+            override fun onOpen(webSocket:WebSocket,response:Response) {
+                webSocket.send("""{"type":"sync.changed","payload":{"topics":["players.names"]}}""")
+                webSocket.send("""{"type":"chat.conversation.changed","payload":{"conversationId":"conv_one"}}""")
+            }
+        }))
+        server.start()
+        val client=BackendChat(OkHttpClient(),server.url("/").toString(),"test-session",{messages++},{_,_->},{},onEvent={_,_->changed.countDown()})
+        try{client.connect();assertTrue(changed.await(5,TimeUnit.SECONDS));assertEquals("1",server.takeRequest(5,TimeUnit.SECONDS)!!.getHeader("X-Deuterium-Sync"));assertEquals(0,messages)}finally{client.close();server.close()}
+    }
     @Test fun iconChangeHintsUseAnOptInHeaderAndDoNotBecomeChatMessages() {
         val server=MockWebServer();val changed=CountDownLatch(1);var messages=0
         server.enqueue(MockResponse().withWebSocketUpgrade(object:WebSocketListener(){

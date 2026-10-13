@@ -1,7 +1,10 @@
+import { applyPlayerNames } from "./player-names.js";
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import Messenger from "./Messenger.jsx";
 import { Button, Field, Modal, Avatar, Empty } from "./components.jsx";
-import { createChatConnection, normalizeMessage, mergeMessages, recoveryCursor } from "./api.js";
+import { normalizeMessage, mergeMessages, recoveryCursor } from "./api.js";
+import { EventRefresh } from "./event-refresh.js";
 import { id } from "./format.js";
 import useAiConversation from "./AiConversation.jsx";
 import { acquireChatMedia } from "./chat-media.js";
@@ -18,11 +21,11 @@ function pendingMessage(user, entry) {
 export default function ConnectedChat({ client, user, onProfile, onUnavailable, requestedConversation }) {
   const [mediaService, setMediaService] = useState(null), [mediaState, setMediaState] = useState({ jobs: [], stickers: [], error: "" });
   const pending = useRef(readPending(user)),
-    [messages, setMessages] = useState(() => Object.values(pending.current).filter((entry) => entry.clientMessageId && entry.channel).map((entry) => pendingMessage(user, entry))),
-    [conversations, setConversations] = useState([]), [activeConversation, setActiveConversation] = useState(requestedConversation || "public"),
+    [messages, setMessages] = usePlayerNameState(client, () => Object.values(pending.current).filter((entry) => entry.clientMessageId && entry.channel).map((entry) => pendingMessage(user, entry))),
+    [conversations, setConversations] = usePlayerNameState(client, []), [activeConversation, setActiveConversation] = useState(requestedConversation || "public"),
     [publicConnection, setPublicConnection] = useState("connecting"), [directConnection, setDirectConnection] = useState("connecting"),
     [cursors, setCursors] = useState({}), [error, setError] = useState(""), [loadingEarlier, setLoadingEarlier] = useState(false),
-    [modal, setModal] = useState(null), [drafts, setDrafts] = useState({}), [readPositions, setReadPositions] = useState({});
+    [modal, setModal] = usePlayerNameState(client, null), [drafts, setDrafts] = useState({}), [readPositions, setReadPositions] = useState({});
   const transport = useRef(null), alive = useRef(true), messagesRef = useRef(messages), cursorsRef = useRef(cursors),
     selectedRef = useRef(activeConversation), loading = useRef(new Set()), readRef = useRef({});
   const conversationsRef = useRef(conversations), erasedChannels = useRef(new Set()); conversationsRef.current = conversations;
@@ -43,7 +46,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
     return { ...message, reply: quote(message.reply), forwarded: quote(message.forwarded), text: client.erasedPlayerRefs.has(message.forwarded?.sender) ? "原消息不可见" : message.text };
   };
   const integrate = (incoming) => {
-    incoming = incoming.filter((message) => !client.erasedPlayerRefs.has(message.sender) && !erasedChannels.current.has(message.channel)).map(cleanMessage);
+    incoming = applyPlayerNames(incoming, client.playerNames).filter((message) => !client.erasedPlayerRefs.has(message.sender) && !erasedChannels.current.has(message.channel)).map(cleanMessage);
     for (const message of incoming) if (message.mine && message.clientMessageId && pending.current[message.clientMessageId]) { delete pending.current[message.clientMessageId]; savePending(); }
     setMessages((old) => mergeMessages(old, incoming));
   };
@@ -79,11 +82,28 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
       if (alive.current) { setError(e.message); if (channel !== "public" && selectedRef.current === channel) setDirectConnection("disconnected"); }
     } finally { loading.current.delete(channel); if (alive.current && more) setLoadingEarlier(false); }
   };
+  const loadConversation = async id => {
+    try {
+      const response = await client.conversation(id);
+      if (!alive.current) return;
+      const row = applyPlayerNames(response.data, client.playerNames);
+      if (client.erasedPlayerRefs.has(row.otherPlayer.playerRef)) { forgetChannels([id]); return; }
+      setConversations(old => [...old.filter(value => value.conversationId !== id), row].sort((a,b) => Date.parse(b.updatedAt)-Date.parse(a.updatedAt) || b.conversationId.localeCompare(a.conversationId)));
+      if (row.lastMessage) integrate([normalizeMessage(row.lastMessage, user)]);
+    } catch (error) { if (error.status === 404) { if(alive.current)forgetChannels([id]); } else throw error; }
+  };
   useEffect(() => {
     alive.current = true; loadConversations(); loadMessages("public");
-    transport.current = createChatConnection({ client, onState: (value) => { if (alive.current) setPublicConnection(value); }, onMessage: (value) => { if (alive.current) integrate([normalizeMessage(value, user)]); }, onUnauthorized: () => client.onUnauthorized(), onRecovery: () => loadMessages("public") });
-    const timer = setInterval(() => { if (!document.hidden) { loadConversations(); const selected = selectedRef.current; if (selected !== "public" && selected !== "assistant") loadMessages(selected); } }, 4000);
-    return () => { alive.current = false; clearInterval(timer); transport.current?.close(); };
+    const refresh = new EventRefresh();
+    transport.current = { send: (...args) => client.realtime?.send(...args) || Promise.reject(new Error("实时连接尚未就绪")) };
+    setPublicConnection(client.realtimeState);
+    const stops = [
+      client.onRealtime("state", value => { setPublicConnection(value); setDirectConnection(value); }),
+      client.onRealtime("message", value => { if(alive.current)integrate([normalizeMessage(value,user)]); }),
+      client.onRealtime("conversation", id => { if(id)refresh.request(id, () => loadConversation(id)); }),
+      client.onRealtime("recovery", () => { loadConversations();loadMessages("public");const selected=selectedRef.current;if(selected!=="public"&&selected!=="assistant")loadMessages(selected); }),
+    ];
+    return () => { alive.current = false; refresh.close(); stops.forEach(stop => stop()); };
   }, [user.userId]);
   useEffect(() => {
     if (activeConversation !== "public" && activeConversation !== "assistant") { setDirectConnection("connecting"); loadMessages(activeConversation); }
@@ -156,7 +176,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
   };
   return <>
     {(activeConversation === "assistant" ? ai.error : error) && <div className="connected-history-error" role="alert"><span>{activeConversation === "assistant" ? ai.error : error}</span><button onClick={() => { if (activeConversation === "assistant") ai.load(); else { loadConversations(); loadMessages(activeConversation); } }}>重新连接</button></div>}
-    <Messenger user={{ ...user, id: user.playerRef, name: user.displayName || user.gameId }} contacts={contacts} messages={mergeMessages([...messages.map((message) => ({ ...message, senderName: profiles[message.sender]?.displayName || message.senderName, senderProfile: profiles[message.sender] || message.senderProfile })), ...ai.messages], mediaPending)} onSend={send} onRetry={retry} mediaService={mediaService} mediaState={mediaState}
+    <Messenger user={{ ...user, id: user.playerRef, name: user.displayName || user.gameId }} contacts={contacts} messages={mergeMessages([...messages.map((message) => ({ ...message, senderName: profiles[message.sender]?.displayName || message.senderName, senderProfile: applyPlayerNames(profiles[message.sender],client.playerNames) || message.senderProfile })), ...ai.messages], mediaPending)} onSend={send} onRetry={retry} mediaService={mediaService} mediaState={mediaState}
       activeConversation={activeConversation} onConversationChange={setActiveConversation} onNewConversation={() => setModal({ type: "new" })}
       canReply={activeConversation !== "assistant"} onForwardMessage={activeConversation === "assistant" ? undefined : (message) => setModal({ type: "forward", message, clientMessageId: id() })}
       connection={activeConversation === "public" ? publicConnection : activeConversation === "assistant" ? ai.connection : directConnection} onReconnect={() => activeConversation === "public" ? transport.current?.reconnect() : activeConversation === "assistant" ? ai.load() : loadMessages(activeConversation)}

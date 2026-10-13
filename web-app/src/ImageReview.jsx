@@ -1,3 +1,4 @@
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, ScanEye, Trash2, Settings2 } from "lucide-react";
 import { Button, Empty, Modal, PageHead } from "./components.jsx";
@@ -23,9 +24,9 @@ export default function ImageReview({ client, navigate, search = "" }) {
   return settings ? <ImageReviewSettings client={client} onBack={() => navigate("/admin?section=image-review")} /> : <ImageReviewList client={client} onSettings={() => navigate("/admin?section=image-review&view=settings")} />;
 }
 function ImageReviewList({ client, onSettings }) {
-  const [items, setItems] = useState([]), [summary, setSummary] = useState(null), [page, setPage] = useState(0), [more, setMore] = useState(false);
+  const [items, setItems] = usePlayerNameState(client, []), [summary, setSummary] = useState(null), [page, setPage] = useState(0), [more, setMore] = useState(false);
   const [loading, setLoading] = useState(true), [refreshing, setRefreshing] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
-  const [detail, setDetail] = useState(null), [detailLoading, setDetailLoading] = useState(false), [detailError, setDetailError] = useState("");
+  const [detail, setDetail] = usePlayerNameState(client, null), [detailLoading, setDetailLoading] = useState(false), [detailError, setDetailError] = useState("");
   const [remove, setRemove] = useState(null), [deleting, setDeleting] = useState(false), [deleteError, setDeleteError] = useState("");
   const alive = useRef(true), listing = useRef(null), details = useRef(null), busy = useRef(false);
   const load = useCallback(async () => {

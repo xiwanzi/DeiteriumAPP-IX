@@ -1,3 +1,5 @@
+import { rememberPlayerNames } from "./player-names.js";
+import { EventRefresh } from "./event-refresh.js";
 import { readAiEvents } from "./ai-stream.js";
 import { redactErasedAccounts } from "./account-erasure.js";
 export class ApiError extends Error {
@@ -12,6 +14,53 @@ export class ApiError extends Error {
 }
 export class DeuteriumClient {
   #csrf = "";
+  realtime = null;
+  realtimeState = "connecting";
+  realtimeListeners = new Map();
+  onRealtime(kind, listener) {
+    const listeners = this.realtimeListeners.get(kind) || new Set();
+    listeners.add(listener); this.realtimeListeners.set(kind, listeners);
+    return () => { listeners.delete(listener); };
+  }
+  emitRealtime(kind, value) { this.realtimeListeners.get(kind)?.forEach(listener => listener(value)); }
+  openRealtime() {
+    const refresh = new EventRefresh();
+    const sync = topic => {
+      if (topic === "players.names") refresh.request("names", () => this.syncPlayerNames());
+      if (topic === "accounts.changed") refresh.request("accounts", () => this.syncAccountDeletions());
+    };
+    const recover = () => { sync("players.names"); sync("accounts.changed"); this.emitRealtime("recovery"); };
+    const transport = createChatConnection({ client: this,
+      onState: state => { this.realtimeState = state; this.emitRealtime("state", state); },
+      onMessage: message => this.emitRealtime("message", message),
+      onUnauthorized: () => this.onUnauthorized(), onRecovery: recover,
+      onEvent: (kind, payload) => {
+        if (kind === "sync.changed") { for (const topic of payload.topics || []) sync(topic); }
+        if (kind === "chat.conversation.changed") this.emitRealtime("conversation", payload.conversationId);
+      },
+    });
+    this.realtime = transport;
+    const visible = () => { if (!document.hidden) recover(); };
+    document.addEventListener("visibilitychange", visible);
+    return () => { refresh.close(); document.removeEventListener("visibilitychange", visible); transport.close(); if (this.realtime === transport) this.realtime = null; };
+  }
+  playerNames = new Map();
+  playerNameListeners = new Set();
+  playerNameCursor = 0;
+  playerNameSync = null;
+  onPlayerNames(listener) { this.playerNameListeners.add(listener); return () => this.playerNameListeners.delete(listener); }
+  async syncPlayerNames() {
+    if (this.playerNameSync) return this.playerNameSync;
+    this.playerNameSync = (async () => {
+      let more;
+      do {
+        const { data } = await this.request(`/api/v1/chat/player-names?after=${this.playerNameCursor}`);
+        if (rememberPlayerNames(this.playerNames, data.items || [])) this.playerNameListeners.forEach(listener => listener(this.playerNames));
+        this.playerNameCursor = data.cursor; more = data.hasMore;
+      } while (more);
+    })();
+    try { await this.playerNameSync; } finally { this.playerNameSync = null; }
+  }
   erasedPlayerRefs = new Set();
   deletionCursor = 0;
   deletionListeners = new Set();
@@ -196,6 +245,7 @@ export class DeuteriumClient {
   patchProfile(body) { return this.request("/api/v1/account/me/profile", { method: "PATCH", body }); }
   directory(query = "") { return this.request(`/api/v1/chat/player-directory?query=${encodeURIComponent(query)}`); }
   conversations(cursor) { return this.request(`/api/v1/chat/conversations?limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`); }
+  conversation(id) { return this.request(`/api/v1/chat/conversations/${encodeURIComponent(id)}`); }
   createConversation(body) { return this.request("/api/v1/chat/conversations", { method: "POST", body }); }
   directMessages(conversationId, cursor) { return this.request(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`); }
   sendDirect(conversationId, body) { return this.request(`/api/v1/chat/conversations/${encodeURIComponent(conversationId)}/messages`, { method: "POST", body }); }
@@ -287,6 +337,7 @@ export function createChatConnection({
   onMessage,
   onUnauthorized,
   onRecovery,
+  onEvent,
 }) {
   let socket,
     stopped = false,
@@ -311,6 +362,7 @@ export function createChatConnection({
     onState(attempt ? "reconnecting" : "connecting");
     socket = new WebSocketImpl(
       `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/api/v1/chat/ws`,
+      ["deuterium.sync.v1"],
     );
     socket.onopen = () => {
       attempt = 0;
@@ -318,6 +370,7 @@ export function createChatConnection({
       onRecovery?.();
     };
     socket.onmessage = (event) => {
+      if (stopped) return;
       let frame;
       try {
         frame = JSON.parse(event.data);
@@ -328,6 +381,7 @@ export function createChatConnection({
         onMessage(frame.payload.message);
         return;
       }
+      if ((frame.type === "sync.changed" || frame.type === "chat.conversation.changed") && frame.payload) { onEvent?.(frame.type, frame.payload); return; }
       if (frame.type === "chat.send.result") {
         const p = pending.get(frame.requestId);
         if (!p) return;

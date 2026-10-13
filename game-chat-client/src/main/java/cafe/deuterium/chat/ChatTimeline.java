@@ -46,6 +46,7 @@ final class ChatTimeline extends UIElement {
 
     private record Hit(float x,float y,float width,float height,ChatMessage message,Row row){}
     ChatTimeline(boolean hud) {
+        setId(hud?"chat-hud-timeline":"chat-timeline");
         this.hud=hud;if(hud) { HUD=this;layout(l->l.widthPercent(100).heightPercent(100)); }
         addEventListener(UIEvents.MOUSE_WHEEL,e->{scrollBy(e.deltaY);e.stopPropagation();});
         addEventListener(UIEvents.MOUSE_DOWN,e->{var point=getLocalMouse(e.x,e.y);click(point.x,point.y,e.button);e.stopPropagation();});
@@ -53,6 +54,8 @@ final class ChatTimeline extends UIElement {
     void saveScroll(){if(!hud&&!scope.isEmpty())ChatStore.INSTANCE.scrolls.put(scope,targetScroll);}
     void resetScroll(){saveScroll();scroll=targetScroll=ChatStore.INSTANCE.scrolls.getOrDefault(ChatStore.INSTANCE.current,0f);scope="";}
     void followLatest(){targetScroll=0;}
+    boolean awayFromLatest(){return Math.max(scroll,targetScroll)>.5f;}
+    void jumpToLatest(){scroll=targetScroll=0;if(!scope.isEmpty())ChatStore.INSTANCE.scrolls.put(scope,0f);}
     void scrollBy(double amount){targetScroll=Math.clamp(targetScroll+(float)amount*25,0,Math.max(0,totalHeight-40));}
     @Override public void drawBackgroundAdditional(GUIContext ctx) {
         var mc=Minecraft.getInstance();boolean quick=mc.screen instanceof ChatScreen;

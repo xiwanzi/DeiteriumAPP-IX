@@ -67,6 +67,12 @@ func (s *Server) resolveCorePlayer(ctx context.Context, name string, onlineOnly 
 	if !identity.ValidGameID(name) || identity.SystemGameID(name) {
 		return store.CorePlayerIdentity{}, bridge.ErrProtocol
 	}
+	if bound, e := s.Store.UserByAlias(ctx, strings.ToLower(name)); e == nil && bound.GameVerified && strings.EqualFold(bound.GameID, name) {
+		if live, e := s.Core.Player("", bound.ServerUUID); e == nil && live.Online {
+			live.GameID = bound.GameID
+			return live, nil
+		}
+	}
 	live, err := s.Core.Player(name, "")
 	if err != nil {
 		return live, err

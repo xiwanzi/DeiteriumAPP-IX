@@ -23,7 +23,7 @@ func gameChatRoute(r *http.Request) bool {
 		return m == "GET"
 	case "chat/messages":
 		return m == "GET" || m == "POST"
-	case "chat/player-directory", "chat/presence", "chat/online-players":
+	case "chat/player-names", "chat/player-directory", "chat/presence", "chat/online-players":
 		return m == "GET"
 	case "chat/stickers", "chat/conversations", "chat/follows":
 		return m == "GET" || m == "POST"

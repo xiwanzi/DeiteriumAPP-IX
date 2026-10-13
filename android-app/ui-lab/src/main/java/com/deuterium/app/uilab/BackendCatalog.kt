@@ -128,6 +128,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             .onSuccess{if(revision!=visibilityRevision)return@onSuccess;state.commerce.listings.clear();state.commerce.listings.addAll(it.filterNot{entry->state.isErasedPlayer(entry.sellerRef)}.sortedWith(compareByDescending<MarketListing>{entry->entry.createdAt}.thenByDescending{entry->entry.id}));marketError=null}.onFailure{marketError=it.message}
     }
     private fun listing(value:JSONObject):MarketListing {
+        applyCurrentPlayerNames(value,api.playerNames())
         val seller=value.getJSONObject("seller");val name=seller.getString("gameId")
         if(name!=state.userName&&!state.isErasedPlayer(seller.optString("playerRef"))){Players.removeAll{it.name==name};Players.add(PlayerProfile(name,seller.optString("qq").takeUnless{it=="null"}.orEmpty(),seller.optString("bio"),seller.optBoolean("online"),seller.optString("lastSeenAt"),seller.getString("playerRef"),seller.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"}))}
         val photos=value.array("photoAssetIds").strings().map{"asset:$it"}
@@ -206,6 +207,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
         ShopCatalog.indices.forEach{i->if(ShopCatalog[i].offerPreview?.couponId==id)ShopCatalog[i]=ShopCatalog[i].copy(offerPreview=null)}
     }
     private fun putOrder(value:JSONObject):String {
+        applyCurrentPlayerNames(value,api.playerNames())
         if(value.optJSONObject("buyer")?.optString("playerRef")==api.playerRef&&value.optString("fundsStatus") in setOf("PAID","HELD","SETTLED"))value.optJSONObject("coupon")?.optString("couponId")?.takeIf{it.isNotBlank()}?.let(::invalidateRedeemedCoupon)
 
         val id=value.getString("orderId");if(value.optBoolean("hiddenFromHistory")){state.commerce.orders.removeAll{it.id==id};return id};val refund=value.optJSONObject("refund");val delivery=value.getJSONObject("delivery");val seller=value.getJSONObject("seller");val buyer=value.getJSONObject("buyer")
@@ -218,7 +220,7 @@ class BackendCatalog(private val api:BackendApi,private val state:LabState) {
             deadlineMillis=value.optString("autoConfirmAt").takeUnless{it.isBlank()||it=="null"}?.let{Instant.parse(it).toEpochMilli()},pausedMillis=if(value.isNull("pausedRemainingSeconds"))null else value.optLong("pausedRemainingSeconds")*1000,
             refundAttempts=value.optInt("refundAttemptsUsed"),refundRequestedAt=refund?.let{date(it,"requestedAt")},refundResolvedAt=refund?.let{date(it,"resolvedAt")},automatic=value.optBoolean("automatic"),completedAt=date(value,"workCompletedAt"),rejectionReason=refund?.optString("rejectionReason").orEmpty(),
             serverStatus=value.getString("status"),fundsStatus=value.getString("fundsStatus"),serverActions=value.array("availableActions").strings().toSet(),version=value.getLong("version"),refundId=refund?.optString("refundId"),refundVersion=refund?.optLong("version",1) ?: 1,interventionCaseId=value.optString("interventionCaseId").takeUnless{it.isBlank()||it=="null"},intervention=state.interventions?.cached(value.optString("interventionCaseId")),pendingOperationId=value.optString("pendingOperationId").takeUnless{it.isBlank()||it=="null"},canHideRecord=value.optBoolean("canHideRecord"),isSaki=value.optString("orderType")=="AI_SUBSCRIPTION",sellerAvatarUri=seller.optJSONObject("avatar")?.optString("url"),aiExpiresAt=date(value,"aiExpiresAt"),
-            paidAmount=amounts.total,originalAmount=amounts.originalTotal,productDiscount=amounts.productDiscount,couponDiscount=amounts.couponDiscount,couponName=value.optJSONObject("coupon")?.optString("name"))
+            paidAmount=amounts.total,originalAmount=amounts.originalTotal,productDiscount=amounts.productDiscount,couponDiscount=amounts.couponDiscount,couponName=value.optJSONObject("coupon")?.optString("name"),buyerRef=buyer.optString("playerRef"),sellerRef=seller.optString("playerRef"))
         val index=state.commerce.orders.indexOfFirst{it.id==id}
         state.commerce.orders.replaceInOrder(index,order,newestOrderFirst)
         serverOrders[id]=value;return id

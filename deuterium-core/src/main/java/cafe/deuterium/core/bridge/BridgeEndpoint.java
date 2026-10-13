@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 public interface BridgeEndpoint {
     void appChat(JsonObject payload) throws Exception;
     default void gameChat(JsonObject payload) throws Exception { throw new UnsupportedOperationException("Game chat unavailable"); }
+    default void playerNamesChanged() { }
     JsonObject command(JsonObject payload) throws Exception;
     JsonObject status();
     JsonObject presence();

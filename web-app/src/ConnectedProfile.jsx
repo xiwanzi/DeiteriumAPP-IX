@@ -1,3 +1,4 @@
+import { usePlayerNameState } from "./use-player-names.js";
 import React, { useEffect, useState, useRef } from "react";
 import { LogOut, PenLine, Upload, RefreshCw, Bell, MessageCircle } from "lucide-react";
 import { Avatar, Badge, Button, Empty, Field, Modal, PageHead, Toggle } from "./components.jsx";
@@ -5,7 +6,7 @@ import { id } from "./format.js";
 import { uploadAsset } from "./assets.js";
 
 export default function ConnectedProfile({ client, user, onLogout, onPasswordChanged, navigate, onProfileUpdated }) {
-  const [profile, setProfile] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
+  const [profile, setProfile] = usePlayerNameState(client, null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false), [bio, setBio] = useState(""), [displayName, setDisplayName] = useState(""), [progress, setProgress] = useState(null);
   const [changingPassword,setChangingPassword]=useState(false);
   const pendingBio = useRef(null), fileInput = useRef(null);
@@ -44,7 +45,7 @@ export default function ConnectedProfile({ client, user, onLogout, onPasswordCha
 }
 
 export function PlayerProfile({ client, user, playerRef, onMessage }) {
-  const [profile, setProfile] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  const [profile, setProfile] = usePlayerNameState(client, null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
   useEffect(() => { let active = true; setProfile(null); client.profile(playerRef).then((r) => { if (active && !client.erasedPlayerRefs.has(playerRef)) setProfile(r.data); }).catch((e) => { if (active) setError(e.message); }); const unsubscribe = client.onAccountDeletions((refs) => { if (refs.has(playerRef)) { setProfile(null); setError("该账号已注销"); } }); return () => { active = false; unsubscribe(); }; }, [client, playerRef]);
   const follow = async () => { setBusy(true); setError(""); try { const r = profile.followed ? await client.request(`/api/v1/chat/follows/${encodeURIComponent(playerRef)}`, { method: "DELETE" }) : await client.request("/api/v1/chat/follows", { method: "POST", body: { playerRef } }); setProfile({ ...profile, followed: r.data.followed }); } catch (e) { setError(e.message); } finally { setBusy(false); } };
   if (!profile) return <Empty title={error ? "暂时无法读取资料" : "正在读取资料"} text={error || "请稍候…"} />;

@@ -37,6 +37,9 @@ public final class BridgeClient implements AutoCloseable {
     }
     public String state() { return state; }
     public boolean connected() { return welcomed && socket != null && !closed; }
+    private final java.util.concurrent.atomic.AtomicBoolean presenceDirty = new java.util.concurrent.atomic.AtomicBoolean(true);
+    private long lastPresence;
+    public void presenceChanged() { presenceDirty.set(true); tick(); }
     public void tick() {
         if (closed || !ticking.compareAndSet(false, true)) return;
         workers.submit(() -> { try { step(); } finally { ticking.set(false); } return null; })
@@ -56,8 +59,11 @@ public final class BridgeClient implements AutoCloseable {
         if (now - lastPing >= 20000) { lastPing = now; current.sendPing(ByteBuffer.wrap(new byte[]{1})).get(5, TimeUnit.SECONDS); }
         if (now - lastState >= 10000) {
             send("core.status", null, endpoint.status());
-            send("core.presence.snapshot", null, endpoint.presence());
             lastState = now;
+        }
+        if (presenceDirty.getAndSet(false) || now - lastPresence >= 60000) {
+            send("core.presence.snapshot", null, endpoint.presence());
+            lastPresence = now;
         }
         if (now - lastFlush < 1000) return;
         lastFlush = now;
@@ -71,7 +77,7 @@ public final class BridgeClient implements AutoCloseable {
         connecting = true; state = "CONNECTING"; connectedAt = System.currentTimeMillis();
         long epoch = generation.incrementAndGet();
         http.newWebSocketBuilder().connectTimeout(Duration.ofSeconds(8))
-                .header("Authorization", "Bearer " + c.bridge().token()).header("X-Deuterium-Node-ID", c.nodeId()).header("X-Deuterium-Game-Chat", "1")
+                .header("Authorization", "Bearer " + c.bridge().token()).header("X-Deuterium-Node-ID", c.nodeId()).header("X-Deuterium-Game-Chat", "1").header("X-Deuterium-Player-Names", "1")
                 .buildAsync(c.bridge().uri(), new Incoming(epoch)).whenComplete((ws,error) -> { if (error != null && epoch == generation.get()) disconnect("CONNECT_FAILED"); });
     }
     private void send(String type, String request, JsonObject payload) throws Exception { write(envelope(type, request, payload)); }
@@ -94,6 +100,8 @@ public final class BridgeClient implements AutoCloseable {
                 if (Json.integer(payload, "protocolVersion") != 1 || !Json.string(payload, "serverId").equals(config.get().nodeId())) throw new IllegalArgumentException("Invalid welcome identity");
                 if(!payload.has("features")||!payload.getAsJsonArray("features").asList().stream().anyMatch(v->v.isJsonPrimitive()&&v.getAsString().equals("core-v1")))throw new IllegalArgumentException("Backend does not support Core runtime v1");
                 welcomed = true; connecting = false; failures = 0; lastPong = System.currentTimeMillis(); lastPing = lastPong; lastState = 0; state = "CONNECTED";
+                presenceDirty.set(true);
+                endpoint.playerNamesChanged();
             }
             case "core.event.result" -> {
                 String id = Checks.operationId(Json.string(payload, "eventId")); String result = Json.string(payload, "status");
@@ -104,6 +112,7 @@ public final class BridgeClient implements AutoCloseable {
                 }
             }
             case "game.chat.delivery" -> endpoint.gameChat(payload);
+            case "player.names.changed" -> endpoint.playerNamesChanged();
             case "chat.app.delivery" -> {
                 endpoint.appChat(payload);
                 JsonObject ack = new JsonObject(); ack.addProperty("messageId", Json.string(payload, "messageId"));

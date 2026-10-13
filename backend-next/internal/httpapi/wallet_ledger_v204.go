@@ -164,6 +164,19 @@ func (s *Server) readLedgerV204(ctx context.Context, actor, uuid string, f ledge
 			}
 		}
 	}
+	refs := make([]string, 0, len(result.Records))
+	for _, row := range result.Records {
+		refs = append(refs, row.PlayerUUID)
+	}
+	names, nameErr := s.Store.CurrentPlayerNames(ctx, refs)
+	if nameErr != nil {
+		return result, nameErr
+	}
+	for i := range result.Records {
+		if name := names[result.Records[i].PlayerUUID]; name != "" {
+			result.Records[i].GameID = name
+		}
+	}
 	return result, nil
 }
 

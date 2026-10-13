@@ -103,7 +103,7 @@ func (s *Server) renameAdminGameID(w http.ResponseWriter, r *http.Request) {
 		catalogFailV2(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.Hub.Wake("accounts.changed")
 	v2Success(w, r, result)
 }
 
@@ -147,6 +147,7 @@ func (s *Server) deleteAdminAccount(w http.ResponseWriter, r *http.Request) {
 		catalogFailV2(w, r, err)
 		return
 	}
+	s.Hub.Wake("accounts.changed")
 	v2Success(w, r, result)
 }
 

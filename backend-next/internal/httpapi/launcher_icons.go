@@ -54,6 +54,6 @@ func (s *Server) saveLauncherIcon(w http.ResponseWriter, r *http.Request) {
 		socialFailureV2(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.Hub.Wake("launcher.icons")
 	v2Success(w, r, v)
 }

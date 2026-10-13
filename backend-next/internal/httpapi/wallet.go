@@ -306,6 +306,11 @@ func (s *Server) transferRecord(ctx context.Context, u store.User, t store.Walle
 		}
 		other = p
 	}
+	if current, e := s.Store.WalletRecipient(ctx, other.PlayerRef); e == nil {
+		other = current
+	} else if !errors.Is(e, sql.ErrNoRows) {
+		return nil, e
+	}
 	result := map[string]any{"recordId": t.ID, "direction": direction, "amount": t.Amount, "currency": "CREDIT", "status": t.Status, "note": t.Note, "occurredAt": t.CreatedAt, "businessType": "TRANSFER", "businessRef": t.ID, "otherPlayer": other}
 	if detail {
 		result["status"] = strings.ToUpper(t.Status)

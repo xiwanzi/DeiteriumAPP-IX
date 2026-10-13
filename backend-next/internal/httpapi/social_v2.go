@@ -24,6 +24,7 @@ func (s *Server) registerSocialV2(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/chat/follows", s.socialFollowV2)
 	mux.HandleFunc("DELETE /api/v1/chat/follows/{playerRef}", s.socialUnfollowV2)
 	mux.HandleFunc("GET /api/v1/chat/conversations", s.socialConversationsV2)
+	mux.HandleFunc("GET /api/v1/chat/conversations/{conversationId}", s.socialConversationV2)
 	mux.HandleFunc("POST /api/v1/chat/conversations", s.socialCreateConversationV2)
 	mux.HandleFunc("GET /api/v1/chat/conversations/{conversationId}/messages", s.socialMessagesV2)
 	mux.HandleFunc("POST /api/v1/chat/conversations/{conversationId}/messages", s.socialSendV2)
@@ -253,6 +254,12 @@ func (s *Server) socialCreateConversationV2(w http.ResponseWriter, r *http.Reque
 		socialFailureV2(w, r, err)
 		return
 	}
+	var created struct {
+		ConversationID string `json:"conversationId"`
+	}
+	if json.Unmarshal(result, &created) == nil && created.ConversationID != "" {
+		s.notifyConversation(r.Context(), created.ConversationID)
+	}
 	writeJSON(w, 201, map[string]any{"requestId": requestID(r), "data": result, "serverTime": time.Now().UTC()})
 }
 func (s *Server) socialMessagesV2(w http.ResponseWriter, r *http.Request) {
@@ -304,7 +311,7 @@ func (s *Server) socialSendV2(w http.ResponseWriter, r *http.Request) {
 		socialFailureV2(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.notifyConversation(r.Context(), r.PathValue("conversationId"))
 	v2Success(w, r, result)
 }
 func (s *Server) socialForwardV2(w http.ResponseWriter, r *http.Request) {
@@ -326,7 +333,7 @@ func (s *Server) socialForwardV2(w http.ResponseWriter, r *http.Request) {
 		socialFailureV2(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.notifyConversation(r.Context(), r.PathValue("conversationId"))
 	v2Success(w, r, result)
 }
 func (s *Server) socialReadConversationV2(w http.ResponseWriter, r *http.Request) {
@@ -347,6 +354,7 @@ func (s *Server) socialReadConversationV2(w http.ResponseWriter, r *http.Request
 		socialFailureV2(w, r, err)
 		return
 	}
+	s.Hub.Wake(bridge.ConversationTopic(u.ID, r.PathValue("conversationId")))
 	v2Success(w, r, result)
 }
 func (s *Server) socialNotificationsV2(w http.ResponseWriter, r *http.Request) {
@@ -524,7 +532,7 @@ func (s *Server) socialDeleteAnnouncementV204(w http.ResponseWriter, r *http.Req
 		socialFailureV2(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.Hub.Wake(bridge.TopicNotices)
 	v2Success(w, r, result)
 }
 func (s *Server) socialUnpublishAnnouncementV2(w http.ResponseWriter, r *http.Request) {
@@ -550,6 +558,6 @@ func (s *Server) socialChangeAnnouncementV2(w http.ResponseWriter, r *http.Reque
 		socialFailureV2(w, r, err)
 		return
 	}
-	s.Hub.Wake()
+	s.Hub.Wake(bridge.TopicNotices)
 	v2Success(w, r, value)
 }

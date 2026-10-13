@@ -219,7 +219,11 @@ func (s *Store) Messages(ctx context.Context, cursor int64, after bool, limit in
 	if err != nil {
 		return nil, err
 	}
-	return scanMessages(rows)
+	messages, err := scanMessages(rows)
+	if err == nil {
+		err = refreshChatNames(ctx, s.DB, messages)
+	}
+	return messages, err
 }
 
 func (s *Store) LatestChatSequence(ctx context.Context) (seq int64, err error) {
@@ -239,6 +243,9 @@ func (s *Store) PublicChatMessageV203(ctx context.Context, id string) (ChatMessa
 	if len(messages) != 1 {
 		return ChatMessage{}, sql.ErrNoRows
 	}
+	if err = refreshChatNames(ctx, s.DB, messages); err != nil {
+		return ChatMessage{}, err
+	}
 	return messages[0], nil
 }
 
@@ -247,7 +254,11 @@ func (s *Store) PendingChats(ctx context.Context, node string) ([]ChatMessage, e
 	if err != nil {
 		return nil, err
 	}
-	return scanMessages(rows)
+	messages, err := scanMessages(rows)
+	if err == nil {
+		err = refreshChatNames(ctx, s.DB, messages)
+	}
+	return messages, err
 }
 
 func (s *Store) AckChat(ctx context.Context, node, messageID string) error {

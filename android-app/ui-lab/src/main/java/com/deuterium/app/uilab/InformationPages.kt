@@ -88,15 +88,16 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
         Box(Modifier.fillMaxSize().padding(top=topInset),contentAlignment=Alignment.Center){Text("该账号已注销",color=MaterialTheme.colorScheme.onSurfaceVariant)}
         return
     }
-    val messages=remember(name){state.conversation(name)}
-    var draft by rememberSaveable(name,stateSaver=TextFieldValue.Saver){mutableStateOf(TextFieldValue(state.pendingDirectDraft(name)))}
+    val peerKey=state.playerKey(name)
+    val messages=remember(peerKey){state.conversation(name)}
+    var draft by rememberSaveable(peerKey,stateSaver=TextFieldValue.Saver){mutableStateOf(TextFieldValue(state.pendingDirectDraft(name)))}
     val list=rememberLazyListState()
-    var mediaViewer by remember(name){mutableStateOf<ChatViewerRequest?>(null)}
-    var selectedMessage by remember(name){mutableStateOf<ChatLine?>(null)}
-    var forwarding by remember(name){mutableStateOf<ChatLine?>(null)}
+    var mediaViewer by remember(peerKey){mutableStateOf<ChatViewerRequest?>(null)}
+    var selectedMessage by remember(peerKey){mutableStateOf<ChatLine?>(null)}
+    var forwarding by remember(peerKey){mutableStateOf<ChatLine?>(null)}
     var aiOptions by remember{mutableStateOf(false)}
     val uriHandler=LocalUriHandler.current
-    var replyId by rememberSaveable(name){mutableStateOf<Long?>(null)}
+    var replyId by rememberSaveable(peerKey){mutableStateOf<Long?>(null)}
     val replying=messages.find{it.id==replyId}?.let{ChatReply(it.id,if(it.mine)state.userName else it.name,it.text,it.remoteId)}
     val focus=remember{FocusRequester()};val keyboard=LocalSoftwareKeyboardController.current;val scope=rememberCoroutineScope()
     val motion=LocalMotion.current
