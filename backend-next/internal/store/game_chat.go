@@ -84,7 +84,11 @@ func (s *Store) GameChatMedia(ctx context.Context, node string, in GameChatMedia
 	return m, tx.Commit()
 }
 func (s *Store) GameChatMessages(ctx context.Context, uuid, channel string) ([]GameChatMessage, error) {
-	rows, err := s.DB.QueryContext(ctx, `SELECT m.message_json FROM game_chat_messages m JOIN game_chat_recipients r ON r.message_id=m.message_id AND r.player_uuid=? WHERE m.channel=? AND m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) ORDER BY m.sequence_id DESC LIMIT 100`, uuid, channel)
+	retentionSeconds := 30 * 24 * 60 * 60
+	if channel == "nearby" {
+		retentionSeconds = 5 * 60
+	}
+	rows, err := s.DB.QueryContext(ctx, `SELECT m.message_json FROM game_chat_messages m JOIN game_chat_recipients r ON r.message_id=m.message_id AND r.player_uuid=? WHERE m.channel=? AND m.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL ? SECOND) ORDER BY m.sequence_id DESC LIMIT 100`, uuid, channel, retentionSeconds)
 	if err != nil {
 		return nil, err
 	}

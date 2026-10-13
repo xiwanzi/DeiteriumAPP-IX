@@ -16,6 +16,7 @@ class LiveBackendInstrumentation : Instrumentation() {
     private var options=Bundle()
     override fun onCreate(arguments:Bundle?) { super.onCreate(arguments);options=arguments ?: Bundle();start() }
     override fun onStart() {
+        if(options.getString("chatRealtime")=="true"){ChatRealtimeCheck.run(this);return}
         if(options.getString("shopRelease")=="true"){ShopReleaseCheck.run(this);return}
         if(options.getString("multiStoreCheckout")=="true"){MultiStoreCheckoutCheck.run(this);return}
         if(options.getString("shopNavigation")=="true"){ShopNavigationCheck.run(this);return}

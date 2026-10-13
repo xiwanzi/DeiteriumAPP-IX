@@ -487,15 +487,35 @@ func socialMessages(ctx context.Context, q socialQuery, userID, conversation str
 		return nil, err
 	}
 	defer rows.Close()
+	return scanSocialMessages(rows)
+}
+
+// DirectChatAfter only reads conversations the authenticated user belongs to.
+func (s *Store) DirectChatAfter(ctx context.Context, userID string, after int64) ([]SocialMessage, error) {
+	rows, err := s.DB.QueryContext(ctx, `SELECT `+socialMessageColumns+` FROM social_messages_v2 x JOIN identities i ON i.id=x.sender_id JOIN social_members_v2 m ON m.conversation_id=x.conversation_id AND m.user_id=? WHERE x.sequence_id>? AND x.sent_at>DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 30 DAY) ORDER BY x.sequence_id LIMIT 50`, userID, after)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanSocialMessages(rows)
+}
+
+func (s *Store) LatestDirectChatSequence(ctx context.Context, userID string) (int64, error) {
+	var sequence int64
+	err := s.DB.QueryRowContext(ctx, `SELECT COALESCE(MAX(x.sequence_id),0) FROM social_messages_v2 x JOIN social_members_v2 m ON m.conversation_id=x.conversation_id AND m.user_id=?`, userID).Scan(&sequence)
+	return sequence, err
+}
+
+func scanSocialMessages(rows *sql.Rows) ([]SocialMessage, error) {
 	result := []SocialMessage{}
 	for rows.Next() {
 		var m SocialMessage
 		var reply, forward, media sql.NullString
-		if err = rows.Scan(&m.Sequence, &m.MessageID, &m.ConversationID, &m.ClientMessageID, &m.Content, &reply, &forward, &m.SentAt, &m.Sender.PlayerRef, &m.Sender.GameID, &media); err != nil {
+		if err := rows.Scan(&m.Sequence, &m.MessageID, &m.ConversationID, &m.ClientMessageID, &m.Content, &reply, &forward, &m.SentAt, &m.Sender.PlayerRef, &m.Sender.GameID, &media); err != nil {
 			return nil, err
 		}
 		if media.Valid {
-			if err = json.Unmarshal([]byte(media.String), &m.Media); err != nil {
+			if err := json.Unmarshal([]byte(media.String), &m.Media); err != nil {
 				return nil, err
 			}
 		}
@@ -503,12 +523,12 @@ func socialMessages(ctx context.Context, q socialQuery, userID, conversation str
 		m.Sender.Registered = true
 		m.Sender.Source = "game_id"
 		if reply.Valid {
-			if err = json.Unmarshal([]byte(reply.String), &m.Reply); err != nil {
+			if err := json.Unmarshal([]byte(reply.String), &m.Reply); err != nil {
 				return nil, err
 			}
 		}
 		if forward.Valid {
-			if err = json.Unmarshal([]byte(forward.String), &m.Forwarded); err != nil {
+			if err := json.Unmarshal([]byte(forward.String), &m.Forwarded); err != nil {
 				return nil, err
 			}
 		}

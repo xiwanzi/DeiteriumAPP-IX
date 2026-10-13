@@ -88,6 +88,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     var contactsError by mutableStateOf<String?>(null);private set
     private val readCursors=mutableMapOf<String,String>()
     private val directHistoryCursors=mutableMapOf<String,String?>()
+    private val directSyncAnchors=mutableMapOf<String,String>()
     val directHistoryLoading=mutableStateMapOf<String,Boolean>()
     val directErrors=mutableStateMapOf<String,String>()
     val events = emptyList<ServerEvent>()
@@ -99,6 +100,10 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     val nextEventSequence: Long get() = serial
     private var chatSocket: BackendChat? = null
     private var reconnect: Job? = null
+    private var chatGeneration=0L
+    private var reconnectDelay=1000L
+    private val publicRefreshLock=kotlinx.coroutines.sync.Mutex()
+    private var publicSyncAnchor:String?=null
     private var closed = false
     private var preferencesSyncedAt=0L
     private var uncertainMessage: Triple<String, String, String?>? = null
@@ -135,6 +140,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             runCatching { service.verifySession() }.onSuccess { profileBio = service.user?.optString("bio").orEmpty();profileDisplayName=service.displayName }
                 .onFailure { report(it) }
             if(!service.signedIn || !service.gameVerified || closed) return@launch
+            publicSyncAnchor=chat.lastOrNull()?.remoteId
+            directChats.forEach{(name,messages)->conversationIds[name]?.let{id->messages.lastOrNull()?.remoteId?.let{directSyncAnchors[id]=it}}}
             openChat()
             scope.launch{notificationPreferences?.sync();preferencesSyncedAt=System.nanoTime()/1_000_000}
             service.pendingChat()?.let { previous ->
@@ -158,24 +165,66 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     private fun openChat() {
         val service = api ?: return
         val token = service.token ?: return
+        if(closed)return
+        val generation=++chatGeneration
         chatSocket?.close()
         chatSocket = BackendChat(service.http, service.baseUrl, token, { message -> scope.launch {
+            if(closed||generation!=chatGeneration)return@launch
             if(message.optString("kind")=="private_chat") {
                 val id=message.optString("conversationId")
-                if(conversationIds.values.none{it==id})loadConversations()
+                if(conversationIds.values.none{it==id}){
+                    val sender=message.optJSONObject("sender")
+                    if(sender!=null&&sender.optString("playerRef")!=service.playerRef&&!isErasedPlayer(sender.optString("playerRef"))){
+                        rememberPlayer(sender);rememberConversation(sender.getString("gameId"),id)
+                    }else loadConversations()
+                }
+                if(closed||generation!=chatGeneration)return@launch
                 conversationIds.entries.find{it.value==id}?.key?.let{addMessage(message,false,it)}
             }else if(message.optString("kind")=="public_chat")addMessage(message,true)
         } },
             { connected, error -> scope.launch {
+                if(closed||generation!=chatGeneration)return@launch
                 chatStatus = if(connected) "已连接服务器" else error ?: "连接暂不可用"
-                if(!connected && !closed) {
-                    reconnect?.cancel(); reconnect = scope.launch { delay(4000); runCatching { service.verifySession() }; if(service.signedIn && service.gameVerified && !closed) openChat() }
+                if(connected){reconnectDelay=1000;reconnect?.cancel();reconnect=null}
+                else if(!closed) {
+                    reconnect?.cancel();val wait=reconnectDelay;reconnectDelay=(reconnectDelay*2).coerceAtMost(15000)
+                    reconnect = scope.launch { delay(wait); if(service.signedIn && service.gameVerified && !closed) openChat() }
                 }
-            } }, { scope.launch { loadChat() };launcherIcons?.requestSync() },launcherIcons?.let{icons->{icons.requestSync()}}).also { it.connect() }
+            } }, { scope.launch { if(!closed&&generation==chatGeneration){loadChat()} };scope.launch{if(!closed&&generation==chatGeneration){loadConversations();activeConversation?.let{refreshDirect(it)}}};launcherIcons?.requestSync() },launcherIcons?.let{icons->{icons.requestSync()}}).also { it.connect() }
+    }
+    fun resumeChat() {
+        if(closed||chatSocket==null||api?.signedIn!=true||api.gameVerified!=true)return
+        reconnect?.cancel();reconnect=null;reconnectDelay=1000
+        openChat()
+        scope.launch{loadChat()}
+        scope.launch{activeConversation?.let{refreshDirect(it)}}
+    }
+    suspend fun refreshPublicChat(){
+        if(!foreground||closed||api?.signedIn!=true||api.gameVerified!=true)return
+        if(chatSocket?.connected!=true&&chatSocket?.connecting!=true&&reconnect?.isActive!=true&&chatSocket!=null)openChat()
+        loadChat()
     }
     private suspend fun loadChat() {
-        runCatching { api!!.request("GET", "/chat/messages?limit=100") }
-            .onSuccess { response->response.getJSONArray("messages").objects().asReversed().forEach { value -> addMessage(value, false) };if(!publicHistoryLoaded){publicHistoryCursor=cursor(response);publicHistoryLoaded=true} }.onFailure { chatStatus = it.message ?: "消息读取失败" }
+        if(closed||!publicRefreshLock.tryLock())return
+        try {
+            val anchor=publicSyncAnchor
+            var latest:String?=null
+            var before:String?=null
+            do {
+                val response=api!!.request("GET","/chat/messages?limit=100"+(before?.let{"&before=${URLEncoder.encode(it,"UTF-8")}"} ?: ""))
+                if(closed)return
+                val messages=response.getJSONArray("messages").objects()
+                if(before==null)latest=messages.firstOrNull()?.optString("messageId")
+                messages.asReversed().forEach{addMessage(it,false)}
+                if(!publicHistoryLoaded){publicHistoryCursor=cursor(response);publicHistoryLoaded=true}
+                val next=cursor(response)
+                if(anchor==null||messages.isEmpty()||messages.any{it.optString("messageId")==anchor}||next==before)break
+                before=next
+            }while(before!=null)
+            publicSyncAnchor=latest
+        }catch(cancelled:CancellationException){throw cancelled}
+        catch(error:Exception){chatStatus=error.message ?: "消息读取失败"}
+        finally{publicRefreshLock.unlock()}
     }
     private fun cursor(response:JSONObject)=response.optJSONObject("_page")?.optString("nextCursor")?.takeUnless{it.isBlank()||it=="null"}
     suspend fun loadOlderPublic(){
@@ -423,7 +472,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         conversationIds[name]=id
     }
     private fun forgetConversation(name:String){
-        conversationIds.remove(name)?.let{readCursors.remove(it)};directChats.remove(name);conversationUnread.remove(name);directErrors.remove(name);directHistoryCursors.remove(name);directHistoryLoading.remove(name);directPending.remove(name)
+        conversationIds.remove(name)?.let{readCursors.remove(it);directSyncAnchors.remove(it)};directChats.remove(name);conversationUnread.remove(name);directErrors.remove(name);directHistoryCursors.remove(name);directHistoryLoading.remove(name);directPending.remove(name)
     }
     private suspend fun syncAccountDeletions(){
         val service=api ?: return
@@ -473,9 +522,25 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         if(name=="AI 助手"){ai?.refresh();return}
         if(name !in conversationIds)loadConversations()
         val id=conversationIds[name] ?: return
-        runCatching { api!!.request("GET","/chat/conversations/$id/messages?limit=100") }
-            .onSuccess { response->response.getJSONArray("items").objects().asReversed().forEach{addMessage(it,false,name)};directErrors.remove(name);if(name !in directHistoryCursors)directHistoryCursors[name]=cursor(response) }
-            .onFailure { directErrors[name]=it.message ?: "消息读取失败" }
+        try {
+            val anchor=directSyncAnchors[id]
+            var latest:String?=null
+            var before:String?=null
+            do {
+                val response=api!!.request("GET","/chat/conversations/$id/messages?limit=100"+(before?.let{"&cursor=${URLEncoder.encode(it,"UTF-8")}"} ?: ""))
+                if(closed||conversationIds[name]!=id)return
+                val messages=response.getJSONArray("items").objects()
+                if(before==null)latest=messages.firstOrNull()?.optString("messageId")
+                messages.asReversed().forEach{addMessage(it,false,name)}
+                if(name !in directHistoryCursors)directHistoryCursors[name]=cursor(response)
+                val next=cursor(response)
+                if(anchor==null||messages.isEmpty()||messages.any{it.optString("messageId")==anchor}||next==before)break
+                before=next
+            }while(before!=null)
+            latest?.let{directSyncAnchors[id]=it}
+            directErrors.remove(name)
+        }catch(cancelled:CancellationException){throw cancelled}
+        catch(error:Exception){directErrors[name]=error.message ?: "消息读取失败"}
         conversation(name).lastOrNull()?.remoteId?.takeIf{foreground&&activeConversation==name&&it.isNotBlank()&&it!=readCursors[id]}?.let{last->
             runCatching { api!!.request("POST","/chat/conversations/$id/read",JSONObject().put("clientRequestId",UUID.randomUUID().toString()).put("lastReadMessageId",last)) }.onSuccess{readCursors[id]=last;conversationUnread[name]=it.optInt("unreadCount").coerceAtLeast(0)}
         }

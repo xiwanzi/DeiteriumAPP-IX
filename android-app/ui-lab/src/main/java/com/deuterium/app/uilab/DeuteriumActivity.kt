@@ -201,7 +201,15 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
     val notificationPermission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->notificationAllowed=granted&&notifications.allowed();pendingNotification=null;Toast.makeText(context,if(granted)"系统通知已开启" else "未开启系统通知，仍可查看应用内提醒",Toast.LENGTH_LONG).show()}
     val updates=LocalAppUpdates.current
     val lifecycle=LocalLifecycleOwner.current
-    DisposableEffect(lifecycle){state.foreground=lifecycle.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED);val observer=LifecycleEventObserver{_,event->state.foreground=lifecycle.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED);notificationAllowed=notifications.allowed();if(event==androidx.lifecycle.Lifecycle.Event.ON_RESUME)updates?.onResume()};lifecycle.lifecycle.addObserver(observer);onDispose{lifecycle.lifecycle.removeObserver(observer)}}
+    DisposableEffect(lifecycle,state){state.foreground=lifecycle.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED);val observer=LifecycleEventObserver{_,event->state.foreground=lifecycle.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED);notificationAllowed=notifications.allowed();if(event==androidx.lifecycle.Lifecycle.Event.ON_RESUME){updates?.onResume();state.resumeChat()}};lifecycle.lifecycle.addObserver(observer);onDispose{lifecycle.lifecycle.removeObserver(observer)}}
+    DisposableEffect(context,state){
+        val networks=context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val callback=object:android.net.ConnectivityManager.NetworkCallback(){
+            override fun onAvailable(network:android.net.Network){scope.launch{if(state.foreground)state.resumeChat()}}
+        }
+        networks.registerDefaultNetworkCallback(callback)
+        onDispose{networks.unregisterNetworkCallback(callback)}
+    }
     val sensorManager=remember{context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager}
     val sensorAvailable=remember{listOf(Sensor.TYPE_GAME_ROTATION_VECTOR,Sensor.TYPE_ROTATION_VECTOR,Sensor.TYPE_ACCELEROMETER).any{sensorManager.getDefaultSensor(it)!=null}}
     val saved=rememberSaveableStateHolder();val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()

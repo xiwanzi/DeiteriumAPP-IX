@@ -27,6 +27,7 @@ final class ChatClient {
     private final ConcurrentMap<String,CompletableFuture<JsonObject>> mediaRequests=new ConcurrentHashMap<>();
 
     void tick() {
+        ChatStore.INSTANCE.expireNearby();
         media.pump();
         var mc=Minecraft.getInstance();var c=mc.getConnection();if(mc.level==null||c==null)return;
         if(connection!=c){reset();connection=c;}
