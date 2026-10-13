@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-13：**App 2.0.27（22700）与Go于16:23上线，聊天0.1.10/资源0.0.58-dev于16:29发布**（PR #123，源码 `669c8f7a782c`）。附近消息五分钟过期、游戏私聊排序与App实时恢复已修复；世界内路标关闭，地图与石碑联动保留。原业务数据与游戏服PID保留，三常驻节点在线、MEK停止。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`，见[上线记录](docs/deployment/chat-recovery-2.0.27-live.md)。
+
 2026-10-13：**聊天0.1.9与资源0.0.57-dev已于00:52发布**（PR #121）。公屏和详细聊天统一HarmonyOS Sans SC Medium、增大字号；齿轮循环100/110/120%，文字与气泡同步、位置保持、偏好本机保存。原生GUI2/3/4及854小窗口三档边界通过；其他0.54–0.56更新、业务数据与所有服务器程序配置保留，无服务器重启。见[上线记录](docs/deployment/chat-font-0.0.57-live.md)。
 
 2026-10-12：**App 2.0.26（22600）私聊表情与媒体已于 23:50 上线**（PR #119，源码 `01cdac40bbc4`）。私聊与公屏共用 Emoji、图片/GIF、个人贴纸及预览/收藏/重试；队列按会话隔离，重启恢复保持原收件人。61 账号、47 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，三常驻节点在线、MEK 停止。Web 2.0.38、主 Go 程序、图片审核及游戏插件保持。维护 `.worktrees/chat-media` / `xiwanzi/release-v226-live`，见[上线记录](docs/deployment/deuterium-2.0.26-live.md)。
