@@ -20,10 +20,25 @@ public final class PlayerStore {
     }
     public void left(PlayerSession session) { if (session != null) db.read(c -> Sql.update(c, "UPDATE dc_players SET online=false,last_seen=? WHERE player_uuid=? AND node_id=? AND session_epoch=?", System.currentTimeMillis(), session.playerUuid().toString(), node, session.sessionEpoch())); }
     public void offline() { db.read(c -> Sql.update(c, "UPDATE dc_players SET online=false WHERE node_id=?", node)); }
+    public long nameCursor(){return db.read(c->Sql.count(c,"SELECT COALESCE(MAX(cursor_value),0) FROM dc_player_name_cursors WHERE node_id=?",node));}
+    public void nameCursor(long value){if(value<0)throw CoreFailure.invalid("名称游标无效");db.read(c->Sql.update(c,db.shared()?
+        "INSERT INTO dc_player_name_cursors VALUES(?,?) ON DUPLICATE KEY UPDATE cursor_value=GREATEST(cursor_value,VALUES(cursor_value))":
+        "INSERT INTO dc_player_name_cursors VALUES(?,?) ON CONFLICT(node_id) DO UPDATE SET cursor_value=MAX(cursor_value,excluded.cursor_value)",node,value));}
+    public void canonicalName(UUID uuid,String name,long sequence){
+        if(sequence<1||!name.matches("[A-Za-z0-9_]{1,32}"))throw CoreFailure.invalid("名称更新无效");
+        db.transaction(c->{
+            Sql.update(c,db.ignoreInsert()+" INTO dc_player_names VALUES(?,?,0)",uuid.toString(),name);
+            long old=Sql.count(c,"SELECT sequence_id FROM dc_player_names WHERE player_uuid=?"+db.lock(),uuid.toString());
+            if(sequence<=old)return null;
+            Sql.update(c,"UPDATE dc_player_names SET game_id=?,sequence_id=? WHERE player_uuid=?",name,sequence,uuid.toString());
+            Sql.update(c,"UPDATE dc_players SET game_id=? WHERE player_uuid=?",name,uuid.toString());return null;
+        });
+    }
+    public String canonicalName(UUID uuid){return db.read(c->{try(var s=Sql.statement(c,"SELECT game_id FROM dc_player_names WHERE player_uuid=?",uuid.toString());var r=s.executeQuery()){return r.next()?r.getString(1):null;}});}
     public PlayerIdentity resolve(String name) {
         return db.read(c -> {
             List<PlayerIdentity> matches = new ArrayList<>();
-            try (var s = Sql.statement(c, "SELECT * FROM dc_players WHERE LOWER(game_id)=LOWER(?) LIMIT 2", name); ResultSet r = s.executeQuery()) {
+            try (var s = Sql.statement(c, "SELECT p.player_uuid,COALESCE(n.game_id,p.game_id) AS game_id,p.node_id,p.online,p.last_seen FROM dc_players p LEFT JOIN dc_player_names n ON n.player_uuid=p.player_uuid WHERE LOWER(COALESCE(n.game_id,p.game_id))=LOWER(?) UNION ALL SELECT n.player_uuid,n.game_id,? AS node_id,false AS online,0 AS last_seen FROM dc_player_names n WHERE LOWER(n.game_id)=LOWER(?) AND NOT EXISTS(SELECT 1 FROM dc_players p WHERE p.player_uuid=n.player_uuid) LIMIT 2", name,node,name); ResultSet r = s.executeQuery()) {
                 while (r.next()) matches.add(new PlayerIdentity(UUID.fromString(r.getString("player_uuid")), r.getString("game_id"), r.getString("node_id"),
                         r.getBoolean("online") && r.getLong("last_seen") > System.currentTimeMillis() - 60000, r.getLong("last_seen")));
             }

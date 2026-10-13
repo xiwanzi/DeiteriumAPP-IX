@@ -15,6 +15,11 @@ import (
 )
 
 func sendSocket(ctx context.Context, c *websocket.Conn, kind, requestID string, payload any) error {
+	if source, ok := ctx.Value(nameProjectionKey{}).(*store.Store); ok {
+		if projected, e := source.ProjectPlayerNames(ctx, payload); e == nil {
+			payload = projected
+		}
+	}
 	frame := map[string]any{"type": kind, "sentAt": time.Now().UTC().Format(time.RFC3339Nano), "payload": payload}
 	if requestID != "" {
 		frame["requestId"] = requestID

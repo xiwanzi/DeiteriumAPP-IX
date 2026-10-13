@@ -18,5 +18,5 @@ fun ledgerEntries(values: List<JSONObject>): List<LedgerEntry> = values
         val note = value.optString("note").takeUnless { it.isBlank() || it == "null" } ?: title
         val identity = remoteId.takeIf { it.startsWith("econ_") }?.removePrefix("econ_")?.toLongOrNull()
             ?: UUID.nameUUIDFromBytes(remoteId.toByteArray()).mostSignificantBits
-        LedgerEntry(identity, name, note, amount, at.format(DateTimeFormatter.ofPattern("HH:mm")), at)
+        LedgerEntry(identity, name, note, amount, at.format(DateTimeFormatter.ofPattern("HH:mm")), at,if(value.optString("source")=="GAME")"" else value.optJSONObject("otherPlayer")?.optString("playerRef").orEmpty())
     }.distinctBy { it.id }.sortedWith(compareByDescending<LedgerEntry> { it.at }.thenByDescending { it.id })

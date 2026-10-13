@@ -89,7 +89,7 @@ class DeuteriumActivity : ComponentActivity() {
             }
         }
         val images=AppImages.get(this)
-        if(api.signedIn)prefs.getString("avatar:${api.userName}",null)?.let{source->lifecycleScope.launch{runCatching{images.bitmap(source,256)}}}
+        if(api.signedIn)prefs.getString("avatar:${api.playerRef}",prefs.getString("avatar:${api.userName}",null))?.let{source->lifecycleScope.launch{runCatching{images.bitmap(source,256)}}}
         val materialStore=GlassSettingsStore(prefs)
         val session = androidx.lifecycle.ViewModelProvider(this)[LabSession::class.java]
         val updates=androidx.lifecycle.ViewModelProvider(this)[AppUpdates::class.java]
@@ -108,11 +108,12 @@ class DeuteriumActivity : ComponentActivity() {
             var cropSource by rememberSaveable { mutableStateOf<String?>(null) }
             var avatar by remember { mutableStateOf(prefs.getString("avatar:${api.userName}",null).takeIf{api.signedIn}) }
             val userName = api.userName
+            val userRef=api.playerRef
             val signedIn = api.signedIn
             LaunchedEffect(signedIn,userName,api.gameVerified){
                 if(!signedIn||!api.gameVerified)avatar=null else {
-                    avatar=prefs.getString("avatar:$userName",null)
-                    runCatching{api.request("GET","/players/${api.playerRef}")}.onSuccess{profile->avatar=profile.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"};prefs.edit().putString("avatar:$userName",avatar).apply()}
+                    avatar=prefs.getString("avatar:$userRef",prefs.getString("avatar:$userName",null))
+                    runCatching{api.request("GET","/players/${api.playerRef}")}.onSuccess{profile->avatar=profile.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"};prefs.edit().putString("avatar:$userRef",avatar).apply()}
                 }
             }
             LaunchedEffect(signedIn) { if(!signedIn)session.clearSession() else runCatching{api.verifySession()} }
@@ -162,16 +163,16 @@ class DeuteriumActivity : ComponentActivity() {
                         { params = it; materialStore.save(it) },
                         { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                         { scope.launch { runCatching{api.logout()}.onSuccess{session.clearSession()}.onFailure{Toast.makeText(this@DeuteriumActivity,it.message ?: "退出失败，请重试",Toast.LENGTH_LONG).show()} } },
-                        prefs.getStringSet("followed:$userName",emptySet())?.toSet() ?: emptySet(),
-                        { prefs.edit().putStringSet("followed:$userName",it).apply() },
+                        prefs.getStringSet("followed:$userRef",prefs.getStringSet("followed:$userName",emptySet()))?.toSet() ?: emptySet(),
+                        { prefs.edit().putStringSet("followed:$userRef",it).apply() },
                         tilt,{tilt=it;prefs.edit().putBoolean("tilt",it).apply()},overlayGlass,{overlayGlass=it;prefs.edit().putBoolean("overlayGlass",it).apply()},incomingRoute,{incomingRoute=null;intent.removeExtra("route")},session
                     )
                     }
                     cropSource?.let { source ->
                         fun releaseSource(){cropSource=null;scope.launch(Dispatchers.IO){AppStorage.removeImageWorkFile(this@DeuteriumActivity,source)}}
-                        AvatarCropper(source,::releaseSource){avatar=it;prefs.edit().putString("avatar:$userName",it).apply();releaseSource()}
+                        AvatarCropper(source,::releaseSource){avatar=it;prefs.edit().putString("avatar:$userRef",it).apply();releaseSource()}
                     }
-                    AppLaunchOverlay(paymentAssetsReady&&(!signedIn||!api.gameVerified||session.readyFor(userName)),motion,session,nativeLaunchReady)
+                    AppLaunchOverlay(paymentAssetsReady&&(!signedIn||!api.gameVerified||session.readyFor(userRef)),motion,session,nativeLaunchReady)
                     }
                 }
             }
@@ -189,12 +190,12 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
     onTheme:(Int)->Unit,onMotion:(Boolean)->Unit,onGlass:(Boolean)->Unit,onParameters:(GlassMaterials)->Unit,onAvatar:()->Unit,onLogout:()->Unit,
     initialFollowed:Set<String>,saveFollowed:(Set<String>)->Unit,tilt:Boolean,onTilt:(Boolean)->Unit,overlayGlass:Boolean,onOverlayGlass:(Boolean)->Unit,incomingRoute:String?,consumeRoute:()->Unit,session:LabSession,providedState:LabState?=null) {
     val context=LocalContext.current;val scope=rememberCoroutineScope();val notifications=remember{LabNotifications(context.applicationContext)}
-    val state=providedState ?: remember(userName){session.get(userName,initialFollowed,saveFollowed,notifications::post,context.applicationContext)}
+    val state=providedState ?: remember(BackendApi.get(context).playerRef){session.get(userName,initialFollowed,saveFollowed,notifications::post,context.applicationContext)}
     LaunchedEffect(state.storageMessage){state.storageMessage?.let{Toast.makeText(context,it,Toast.LENGTH_LONG).show()}}
     if(state.restoring){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background));return}
     var destination by rememberSaveable{mutableStateOf(Destination.Shop)};var stack by rememberSaveable{mutableStateOf(listOf<String>())}
     val route=stack.lastOrNull();val page=route ?: destination.name
-    SideEffect{state.activeConversation=route?.takeIf{it.startsWith("dm:")}?.removePrefix("dm:")}
+    SideEffect{state.activeConversation=route?.takeIf{it.startsWith("dm:")}?.removePrefix("dm:")?.let(state::routeGameID)}
     var transfer by rememberSaveable{mutableStateOf(false)};var transferTo by rememberSaveable{mutableStateOf<String?>(null)}
     var people by remember{mutableStateOf(false)};var record by remember{mutableStateOf<LedgerEntry?>(null)};var tuner by remember{mutableStateOf(false)};var resetPassword by remember{mutableStateOf(false)}
     var pendingNotification by remember{mutableStateOf<String?>(null)};var notificationAllowed by remember{mutableStateOf(notifications.allowed())}
@@ -227,10 +228,10 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
     var bagCenter by remember{mutableStateOf(Offset.Zero)};var flight by remember{mutableStateOf<Pair<ShopProduct,Offset>?>(null)}
     val flightProgress=remember{Animatable(1f)}
     LaunchedEffect(flight){if(flight!=null){flightProgress.snapTo(0f);if(motion)flightProgress.animateTo(1f,tween(650,easing=FastOutSlowInEasing))else flightProgress.snapTo(1f);flight=null}}
-    fun open(name:String){keyboardController?.hide();if(stack.lastOrNull()!=name)stack=stack+name}
+    fun open(name:String){keyboardController?.hide();val stable=state.stablePlayerRoute(name);if(stack.lastOrNull()!=stable)stack=stack+stable}
     fun back(){keyboardController?.hide();if(stack.isNotEmpty())stack=stack.dropLast(1)else destination=Destination.Shop}
     LaunchedEffect(state.accountErasureRevision){
-        val name=route?.takeIf{it.startsWith("player:")||it.startsWith("dm:")}?.substringAfter(':')
+        val name=route?.takeIf{it.startsWith("player:")||it.startsWith("dm:")}?.substringAfter(':')?.let(state::routeGameID)
         if(name!=null&&state.isUnavailableAccount(name))back()
         if(transferTo?.let(state::isUnavailableAccount)==true){transfer=false;transferTo=null}
     }
@@ -242,7 +243,7 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
     LaunchedEffect(state.notice?.id){if(state.notice!=null){delay(4200);state.notice=null}}
     val title=when {
         route=="storage"->"存储空间";route=="coupons"->"优惠券"
-        route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->route.removePrefix("dm:").let{if(it=="AI 助手"||Players.any{p->p.name==it})it else "私聊"}
+        route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->state.routeGameID(route.removePrefix("dm:")).let{if(it=="AI 助手"||Players.any{p->p.name==it})it else "私聊"}
         route=="announcement"->"官方公告";route=="event"->"委托大厅";route=="bag"->"购物袋";route=="orders"->"我的订单";route?.startsWith("order:")==true->"订单详情"
         route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"编辑资料";route=="support"->"邮件支持";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"
@@ -265,14 +266,14 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
                             current=="account"->AccountPage(avatar,userName,inset,onAvatar,{resetPassword=true},onLogout){open("bio")}
                             current=="support"->SupportContactPage(inset)
                             current=="bio"->BioEditorPage(state,inset){back()}
-                            current.startsWith("player:")->PlayerProfilePage(current.removePrefix("player:"),state,avatar,inset,{open("dm:${current.removePrefix("player:")}")},{openTransfer(current.removePrefix("player:"))})
+                            current.startsWith("player:")->PlayerProfilePage(state.routeGameID(current.removePrefix("player:")),state,avatar,inset,{open("dm:${state.routeGameID(current.removePrefix("player:"))}")},{openTransfer(state.routeGameID(current.removePrefix("player:")))})
                             current.startsWith("search:")->SearchPage(current.removePrefix("search:"),state,{back()},::open,active=current==page)
                             current=="about"->UpdatePage(state,inset)
                             current=="storage"->StoragePage(inset)
                             current=="wallet"->WalletPage(state,{openTransfer()},{record=it},inset){open("bills:$it")}
                             current.startsWith("bills:")->BillHistoryPage(state,current.removePrefix("bills:"),inset){record=it}
                             current=="public"->Box(Modifier.fillMaxSize().windowInsetsPadding(ime)){ChatPage(state,secondaryContentTop,{open("player:$it")}){openTransfer(it)}}
-                            current=="ai"||current.startsWith("dm:")->Box(Modifier.fillMaxSize().windowInsetsPadding(if(current=="ai")conversationInsets else ime)){DirectChatPage(state,if(current=="ai")"AI 助手" else current.removePrefix("dm:"),secondaryContentTop,onPlans={open("ai-plans")}){open("player:$it")}}
+                            current=="ai"||current.startsWith("dm:")->Box(Modifier.fillMaxSize().windowInsetsPadding(if(current=="ai")conversationInsets else ime)){DirectChatPage(state,if(current=="ai")"AI 助手" else state.routeGameID(current.removePrefix("dm:")),secondaryContentTop,onPlans={open("ai-plans")}){open("player:$it")}}
                             current=="announcement"->CommunityDetail(false,state,inset)
                             current=="commissions"||current=="events"||current=="event"->CommissionHallPage(state,inset,{open("commission:$it")})
                             current=="my-commissions"->CommissionHallPage(state,inset,{open("commission:$it")},mine=true)

@@ -11,6 +11,9 @@ import (
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
+var ErrNameLookupUnavailable = errors.New("official name lookup unavailable")
+var ErrNameLookupDisabled = errors.New("official name lookup disabled for isolated tests")
+
 var ErrBusy = errors.New("password verification capacity exhausted")
 
 func (s *Service) HashPassword(ctx context.Context, password string) (string, error) {
@@ -28,10 +31,12 @@ func (s *Service) HashPassword(ctx context.Context, password string) (string, er
 }
 
 type Service struct {
-	Store     *store.Store
-	slots     chan struct{}
-	waiting   chan struct{}
-	dummyHash string
+	GameNameResolver func(context.Context, string) (store.AdmissionProfile, error)
+	SyncGameName     func(context.Context, store.AdmissionProfile, time.Time) error
+	Store            *store.Store
+	slots            chan struct{}
+	waiting          chan struct{}
+	dummyHash        string
 }
 
 func New(s *store.Store) *Service {
@@ -60,6 +65,35 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 		return
 	}
 	user, lookupErr := s.Store.UserByAlias(ctx, account)
+	var canonical *store.AdmissionProfile
+	var nameObservedAt time.Time
+	var nameLookupErr error
+	gameAlias := lookupErr == nil && user.GameVerified && strings.EqualFold(user.GameID, account) && account != user.QQ && !strings.EqualFold(account, user.Email)
+	if s.GameNameResolver != nil && store.ValidAdmissionName(account) && (errors.Is(lookupErr, sql.ErrNoRows) || gameAlias) {
+		nameObservedAt = time.Now().UTC()
+		profile, resolveErr := s.GameNameResolver(ctx, account)
+		switch {
+		case errors.Is(resolveErr, ErrNameLookupDisabled):
+		case errors.Is(resolveErr, store.ErrSocialNotFound):
+			user = store.User{}
+			lookupErr = sql.ErrNoRows
+		case resolveErr != nil || !store.ValidAdmissionUUID(profile.UUID) || !strings.EqualFold(profile.Name, account):
+			nameLookupErr = ErrNameLookupUnavailable
+		default:
+			found, findErr := s.Store.UserByUUID(ctx, profile.UUID)
+			if findErr == nil {
+				user = found
+				lookupErr = nil
+				canonical = &profile
+			} else if errors.Is(findErr, sql.ErrNoRows) {
+				user = store.User{}
+				lookupErr = sql.ErrNoRows
+			} else {
+				return "", session, findErr
+			}
+		}
+	}
+
 	if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
 		return "", session, lookupErr
 	}
@@ -74,11 +108,27 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 		hash = s.dummyHash
 	}
 	valid := Verify(hash, password)
+	if nameLookupErr != nil {
+		return "", session, nameLookupErr
+	}
 	if !valid || lookupErr != nil || user.Status != "active" {
 		return "", session, store.ErrUnauthorized
 	}
 	if err = ctx.Err(); err != nil {
 		return
+	}
+	if canonical != nil && s.SyncGameName != nil {
+		if err = s.SyncGameName(ctx, *canonical, nameObservedAt); err != nil {
+			return "", session, err
+		}
+		refreshed, refreshErr := s.Store.UserByUUID(ctx, user.ServerUUID)
+		if refreshErr != nil {
+			return "", session, refreshErr
+		}
+		if refreshed.ID != user.ID || refreshed.PasswordHash != user.PasswordHash || refreshed.Status != "active" {
+			return "", session, store.ErrUnauthorized
+		}
+		user = refreshed
 	}
 	newHash := ""
 	if NeedsUpgrade(hash) {

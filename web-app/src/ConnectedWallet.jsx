@@ -1,3 +1,4 @@
+import { usePlayerNameRefresh } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, RefreshCw, WalletCards, Check, Search } from "lucide-react";
 import { PageHead, SectionHead, Button, Empty, Badge, Modal, Field, Avatar } from "./components.jsx";
@@ -17,6 +18,7 @@ export default function ConnectedWallet({ client, user }) {
     [cursor, setCursor] = useState(null), [error, setError] = useState(""), [recordError, setRecordError] = useState(""),
     [busy, setBusy] = useState(false), [transferOpen, setTransferOpen] = useState(false),
     [journal, setJournal] = useState(() => readJournal(user.userId));
+  usePlayerNameRefresh(client, setRecords, setJournal);
   const generation = useRef(0);
   const load = async (refresh = false) => {
     const current = ++generation.current;
@@ -73,6 +75,7 @@ function TransferForm({ client, user, journal, saveJournal, onSuccess }) {
     [recipient, setRecipient] = useState(journal?.recipient || null), [amount, setAmount] = useState(""), [note, setNote] = useState(""),
     [confirmation, setConfirmation] = useState(null), [result, setResult] = useState(journal?.result || null),
     [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  usePlayerNameRefresh(client, setCandidates, setRecipient, setConfirmation, setResult);
   const submitting = useRef(false);
   const search = async (event) => {
     event.preventDefault(); if (busy || !query.trim()) return;

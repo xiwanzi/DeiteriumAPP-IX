@@ -15,8 +15,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.UUID
 
-data class LedgerEntry(val id: Long, val name: String, val detail: String, val amount: Long, val time: String, val at: LocalDateTime = LocalDateTime.now())
-data class ChatLine(val id: Long, val name: String, val text: String, val mine: Boolean, val time: String = "刚刚", val reply: ChatReply? = null, val remoteId: String = "", val serverAt: Long = 0, val forwarded:ChatReply?=null,val aiStatus:String?=null,val sources:List<AiSource> = emptyList(),val searchUsed:Boolean=false,val media:ChatMedia?=null,val clientMessageId:String="")
+data class LedgerEntry(val id: Long, val name: String, val detail: String, val amount: Long, val time: String, val at: LocalDateTime = LocalDateTime.now(),val playerRef:String="")
+data class ChatLine(val id: Long, val name: String, val text: String, val mine: Boolean, val time: String = "刚刚", val reply: ChatReply? = null, val remoteId: String = "", val serverAt: Long = 0, val forwarded:ChatReply?=null,val aiStatus:String?=null,val sources:List<AiSource> = emptyList(),val searchUsed:Boolean=false,val media:ChatMedia?=null,val clientMessageId:String="",val playerRef:String="")
 data class Announcement(val id: String, val title: String, val content: String, val publishedAt: String)
 fun credit(cents: Long): String = String.format(Locale.US, "%,.2f", cents / 100.0)
 fun apiCents(value: String): Long = value.toBigDecimal().movePointRight(2).longValueExact()
@@ -24,7 +24,14 @@ private fun JSONArray.objects(): List<JSONObject> = (0 until length()).mapNotNul
 private val chatChronology=compareBy<ChatLine>{it.serverAt}
 
 class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> = emptySet(),
-    private val saveFollowed: (Set<String>) -> Unit = {}, val userName: String = "", private val postNotification: (DemoNotice) -> Unit = {}, val api: BackendApi? = null,private val notificationPreferences:NotificationPreferences?=null,private val launcherIcons:LauncherIcons?=null) {
+    private val saveFollowed: (Set<String>) -> Unit = {}, userName: String = "", private val postNotification: (DemoNotice) -> Unit = {}, val api: BackendApi? = null,private val notificationPreferences:NotificationPreferences?=null,private val launcherIcons:LauncherIcons?=null) {
+    var userName by mutableStateOf(userName);private set
+    var playerNameRevision by mutableLongStateOf(0);private set
+    private var initialNamesApplied=false
+    private val conversationPeers=mutableMapOf<String,String>()
+    fun playerKey(name:String)=if(name==userName)api?.playerRef?.takeIf{it.isNotBlank()} ?: name else Players.find{it.name==name}?.playerRef?.takeIf{it.isNotBlank()} ?: name
+    fun routeGameID(key:String):String { playerNameRevision;return if(key==api?.playerRef)userName else Players.find{it.playerRef==key}?.name ?: api?.playerNames()?.get(key)?.gameId ?: key }
+    fun stablePlayerRoute(route:String):String {val kind=route.substringBefore(':');return if(kind in setOf("dm","player"))"$kind:${playerKey(route.substringAfter(':'))}" else route}
     var restoring by mutableStateOf(false)
     var storageMessage by mutableStateOf<String?>(null)
     var profileDisplayName by mutableStateOf(userName)
@@ -65,6 +72,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
     val chat = mutableStateListOf<ChatLine>()
     val followed = mutableStateListOf<String>().apply { addAll(initialFollowed) }
     val recentTransfers = mutableStateListOf<String>()
+    private val recentTransferRefs=mutableMapOf<String,String>()
     var notice by mutableStateOf<DemoNotice?>(null)
     val cart = mutableStateMapOf<String, Int>()
     val commerce = CommerceBook(userName, emptyList(), { balance }, { _, _, _ -> }, remoteOnly = true)
@@ -111,7 +119,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         if(target==null)addMessage(message,false)
         else if(!isErasedPlayer(target.playerRef)){
             val name=Players.find{player->player.playerRef==target.playerRef}?.name ?: target.name
-            rememberConversation(name,target.conversationId);addMessage(message,false,name)
+            rememberConversation(name,target.conversationId,target.playerRef);addMessage(message,false,name)
         }
     }}
     private var cacheRestored=false
@@ -126,10 +134,11 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             if(!cacheRestored){
                 cacheRestored=true
                 try{chatMedia?.cache?.let{cache->withContext(Dispatchers.IO){cache.read(limit=1000)}.forEach{record->
+                    applyCurrentPlayerNames(record.value,service.playerNames())
                     val peer=record.value.optString("_cachePeerRef")
                     if(!isErasedPlayer(peer)){
                         val thread=if(record.channel=="public")null else record.value.optString("_cachePeerName").takeIf{it.isNotBlank()}
-                        if(record.channel=="public"||thread!=null){if(thread!=null)rememberConversation(thread,record.channel);addMessage(record.value,false,thread,persist=false)}
+                        if(record.channel=="public"||thread!=null){if(thread!=null){conversationPeers[record.channel]=peer;rememberConversation(thread,record.channel)};addMessage(record.value,false,thread,persist=false)}
                     }
                 }}}
                 catch(cancelled:CancellationException){throw cancelled}
@@ -175,7 +184,8 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
                 if(conversationIds.values.none{it==id}){
                     val sender=message.optJSONObject("sender")
                     if(sender!=null&&sender.optString("playerRef")!=service.playerRef&&!isErasedPlayer(sender.optString("playerRef"))){
-                        rememberPlayer(sender);rememberConversation(sender.getString("gameId"),id)
+                        if(Players.any{it.name==sender.optString("gameId")&&it.playerRef!=sender.optString("playerRef")})loadConversations()
+                        else {rememberPlayer(sender);rememberConversation(sender.getString("gameId"),id,sender.optString("playerRef"))}
                     }else loadConversations()
                 }
                 if(closed||generation!=chatGeneration)return@launch
@@ -239,6 +249,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         loadingChatHistory=false
     }
     private fun addMessage(value: JSONObject, notify: Boolean, thread:String?=null,persist:Boolean=true) {
+        applyCurrentPlayerNames(value,api?.playerNames().orEmpty())
         val target=if(thread==null)chat else conversation(thread)
         val id = value.optString("messageId"); if(id.isBlank() || target.any { it.remoteId == id }) return
         val sender = value.optJSONObject("sender") ?: return
@@ -248,9 +259,9 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         if(name.isNotBlank() && name != userName && Players.none { it.name == name }) Players.add(PlayerProfile(name, online = sender.optBoolean("online"), playerRef = sender.optString("playerRef")))
         val sentAt=runCatching{Instant.parse(value.optString("sentAt"))}.getOrDefault(Instant.now())
         val at=sentAt.atZone(ZoneId.systemDefault()).toLocalDateTime()
-        val reply = value.optJSONObject("reply")?.let { ChatReply(it.optString("messageId").hashCode().toLong(), it.optJSONObject("sender")?.optString("gameId").orEmpty(), if(it.optString("availability")=="UNAVAILABLE")"原消息不可见" else it.optString("content"), it.optString("messageId")) }
-        val forwarded=value.optJSONObject("forwarded")?.let{ChatReply(it.optString("messageId").hashCode().toLong(),it.optJSONObject("sender")?.optString("gameId").orEmpty(),it.optString("content"),it.optString("messageId"))}
-        target.insertInOrder(ChatLine(++serial, if(mine) "你" else name, value.optString("content"), mine, at.format(DateTimeFormatter.ofPattern("HH:mm")), reply, id, sentAt.toEpochMilli(),forwarded,media=value.optJSONObject("media")?.let{runCatching{ChatMedia.parse(it)}.getOrNull()},clientMessageId=value.optString("clientMessageId")),chatChronology)
+        val reply = value.optJSONObject("reply")?.let { ChatReply(it.optString("messageId").hashCode().toLong(), it.optJSONObject("sender")?.optString("gameId").orEmpty(), if(it.optString("availability")=="UNAVAILABLE")"原消息不可见" else it.optString("content"), it.optString("messageId"),it.optJSONObject("sender")?.optString("playerRef").orEmpty()) }
+        val forwarded=value.optJSONObject("forwarded")?.let{ChatReply(it.optString("messageId").hashCode().toLong(),it.optJSONObject("sender")?.optString("gameId").orEmpty(),it.optString("content"),it.optString("messageId"),it.optJSONObject("sender")?.optString("playerRef").orEmpty())}
+        target.insertInOrder(ChatLine(++serial, if(mine) "你" else name, value.optString("content"), mine, at.format(DateTimeFormatter.ofPattern("HH:mm")), reply, id, sentAt.toEpochMilli(),forwarded,media=value.optJSONObject("media")?.let{runCatching{ChatMedia.parse(it)}.getOrNull()},clientMessageId=value.optString("clientMessageId"),playerRef=sender.optString("playerRef")),chatChronology)
         if(persist)chatMedia?.cache?.let{cache->
             val saved=JSONObject(value.toString());val epoch=ChatCache.epoch
             val channel=if(thread==null)"public" else value.optString("conversationId").ifBlank{conversationIds[thread].orEmpty()}
@@ -307,6 +318,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             runCatching { val values=api.request("GET","/wallet/records?limit=25").getJSONArray("records").objects();values to ledgerEntries(values) }.onSuccess { (values,records) ->
                 ledger.clear(); ledger.addAll(records)
                 ledgerKnown=true;ledgerError=null
+                recentTransferRefs.clear();values.forEach{v->v.optJSONObject("otherPlayer")?.let{p->if(p.optString("playerRef").isNotBlank())recentTransferRefs[p.optString("gameId")]=p.optString("playerRef")}}
                 recentTransfers.clear();recentTransfers.addAll(values.filter{it.optString("direction")=="expense"&&it.optString("businessType","TRANSFER")=="TRANSFER"}.mapNotNull{it.optJSONObject("otherPlayer")?.optString("gameId")?.takeUnless{name->name.isBlank()||name=="null"}}.distinct().take(5))
             }.onFailure { ledgerKnown=false;ledgerError="账单暂时无法完整同步，请稍后重试";walletError=walletError ?: ledgerError }
           } while(refreshAgain) } finally { refreshing=false }
@@ -399,7 +411,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             val shown=service.shownNotices();var delivered=0
             val all=values.map{value->
                 val target=value.getJSONObject("target");val ref=target.optString("referenceId");val kind=target.getString("kind")
-                val route=when(kind){"WALLET"->"wallet";"PUBLIC_CHAT"->"public";"CONVERSATION"->conversationIds.entries.find{it.value==ref}?.key?.let{"dm:$it"} ?: "Info";"COMMISSION"->"commission:$ref";"ORDER"->"order:$ref";"REFUND"->"refund:$ref";"ANNOUNCEMENT"->"announcement";"APP_UPDATE"->"about";else->"Info"}
+                val route=when(kind){"WALLET"->"wallet";"PUBLIC_CHAT"->"public";"CONVERSATION"->conversationPeers[ref]?.let{"dm:$it"} ?: conversationIds.entries.find{it.value==ref}?.key?.let{"dm:$it"} ?: "Info";"COMMISSION"->"commission:$ref";"ORDER"->"order:$ref";"REFUND"->"refund:$ref";"ANNOUNCEMENT"->"announcement";"APP_UPDATE"->"about";else->"Info"}
                 val id=value.getString("notificationId");val at=Instant.parse(value.getString("createdAt")).atZone(ZoneId.systemDefault()).toLocalDateTime()
                 val record=TradeNotice(id,userName,value.getString("title"),value.getString("body"),ref,kind,at,!value.isNull("readAt"),route)
                 if(id !in shown && !record.read && value.optBoolean("systemPush",true) && delivered<5){
@@ -433,7 +445,7 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         val name=value.optString("gameId");if(name.isBlank()||name==userName)return
         unavailableAccounts.remove(name)
         val player=PlayerProfile(name,value.optString("qq").takeUnless{it=="null"}.orEmpty(),value.optString("bio"),value.optBoolean("online",value.optBoolean("serverOnline")),value.optString("lastSeenAt").takeUnless{it.isBlank()||it=="null"} ?: "暂无记录",value.optString("playerRef"),if(value.has("avatar"))value.optJSONObject("avatar")?.optString("assetId")?.takeIf{it.isNotBlank()}?.let{"asset:$it"} else Players.find{it.name==name}?.avatar,displayName=value.optString("displayName",name))
-        Players.removeAll{it.name==name};Players.add(player)
+        Players.removeAll{it.name==name||player.playerRef.isNotBlank()&&it.playerRef==player.playerRef};Players.add(player)
     }
     private suspend fun loadDirectory() {
         runCatching { api!!.request("GET","/chat/player-directory").optJSONArray("players")?.objects().orEmpty() }.onSuccess { values->values.forEach(::rememberPlayer) }
@@ -453,10 +465,13 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
             contactsRefreshing=true
             val account=service.financialScope()
             syncAccountDeletions()
+            syncPlayerNames()
             val knownBefore=conversationIds.toMap()
             val values=service.listAll("/chat/conversations")
             account.verifyCurrent(service.financialScope())
             val currentIds=values.map{it.getString("conversationId")}.toSet()
+            val namesByID=values.associate{it.getString("conversationId") to it.getJSONObject("otherPlayer").getString("gameId")}
+            remapConversationKeys(conversationIds.mapNotNull{(old,id)->namesByID[id]?.takeIf{it!=old}?.let{old to it}}.toMap())
             knownBefore.filter{(name,id)->id !in currentIds&&conversationIds[name]==id}.keys.forEach(::forgetConversation)
             values.forEach{value->val other=value.getJSONObject("otherPlayer");if(isErasedPlayer(other.optString("playerRef")))return@forEach;rememberPlayer(other);val name=other.getString("gameId");val id=value.getString("conversationId");rememberConversation(name,id);value.optJSONObject("lastMessage")?.let{addMessage(it,false,name)};conversationUnread[name]=if(value.optJSONObject("lastMessage")?.optString("messageId")==readCursors[conversationIds[name]])0 else value.optInt("unreadCount").coerceAtLeast(0)}
             contactsKnown=true;contactsError=null
@@ -465,14 +480,57 @@ class LabState(private val scope: CoroutineScope, initialFollowed: Set<String> =
         finally{contactsRefreshing=false;contactRefreshLock.unlock()}
     }
     suspend fun refreshContacts()=loadConversations()
-    private fun rememberConversation(name:String,id:String){
+    private fun rememberConversation(name:String,id:String,peerRef:String=""){
+        peerRef.ifBlank{conversationPeers[id].orEmpty()}.ifBlank{Players.find{it.name==name}?.playerRef.orEmpty()}.takeIf{it.isNotBlank()}?.let{conversationPeers[id]=it}
         if(conversationIds[name]?.let{it!=id}==true)forgetConversation(name)
         val previous=conversationIds.entries.firstOrNull{it.value==id&&it.key!=name}?.key
         if(previous!=null){directChats.remove(previous)?.let{directChats[name]=it};conversationIds.remove(previous);directHistoryCursors.remove(previous)?.let{directHistoryCursors[name]=it}}
         conversationIds[name]=id
     }
     private fun forgetConversation(name:String){
-        conversationIds.remove(name)?.let{readCursors.remove(it);directSyncAnchors.remove(it)};directChats.remove(name);conversationUnread.remove(name);directErrors.remove(name);directHistoryCursors.remove(name);directHistoryLoading.remove(name);directPending.remove(name)
+        conversationIds.remove(name)?.let{readCursors.remove(it);directSyncAnchors.remove(it);conversationPeers.remove(it)};directChats.remove(name);conversationUnread.remove(name);directErrors.remove(name);directHistoryCursors.remove(name);directHistoryLoading.remove(name);directPending.remove(name)
+    }
+    private suspend fun syncPlayerNames(){
+        val service=api ?: return
+        val account=service.financialScope()
+        try {
+            var changed=false
+            do {
+                val response=service.request("GET","/chat/player-names?after=${service.playerNameCursor()}")
+                account.verifyCurrent(service.financialScope())
+                val entries=response.getJSONArray("items").objects().map(PlayerNameChange::parse)
+                changed=changed||entries.any{(service.playerNames()[it.playerRef]?.sequence ?: -1)<it.sequence}
+                service.rememberPlayerNames(entries,response.getLong("cursor"))
+            } while(response.optBoolean("hasMore"))
+            if(changed||!initialNamesApplied){initialNamesApplied=true;applyPlayerNames(service.playerNames())}
+        } catch(e:CancellationException){throw e} catch(_:Exception){/* Name synchronization retries without interrupting conversations. */}
+    }
+    private fun remapConversationKeys(moves:Map<String,String>){
+        if(moves.isEmpty())return
+        fun <T> moveKeys(values:MutableMap<String,T>){val before=values.toMap();values.clear();before.forEach{(key,value)->values[moves[key] ?: key]=value}}
+        moveKeys(directChats);moveKeys(directPending);moveKeys(conversationUnread);moveKeys(conversationIds);moveKeys(directHistoryCursors);moveKeys(directHistoryLoading);moveKeys(directErrors)
+        activeConversation=activeConversation?.let{moves[it] ?: it}
+    }
+    internal fun applyPlayerNames(names:Map<String,PlayerNameChange>){
+        if(names.isEmpty())return
+        val oldPeople=Players.toList()
+        val moves=oldPeople.mapNotNull{p->names[p.playerRef]?.gameId?.takeIf{it!=p.name}?.let{p.name to it}}.toMap().toMutableMap()
+        conversationIds.forEach{(name,id)->names[conversationPeers[id]]?.gameId?.takeIf{it!=name}?.let{moves[name]=it}}
+        remapConversationKeys(moves)
+        val nextFollowed=followed.map{moves[it] ?: it};followed.clear();followed.addAll(nextFollowed);saveFollowed(followed.toSet())
+        recentTransfers.indices.forEach{i->names[recentTransferRefs[recentTransfers[i]]]?.let{recentTransfers[i]=it.gameId}}
+        val nextRecent=recentTransferRefs.mapKeys{(name,ref)->names[ref]?.gameId ?: name};recentTransferRefs.clear();recentTransferRefs.putAll(nextRecent)
+        fun quote(v:ChatReply?)=v?.let{q->names[q.playerRef]?.let{q.copy(name=it.gameId)} ?: q}
+        fun line(v:ChatLine)=v.copy(name=if(v.mine)v.name else names[v.playerRef]?.gameId ?: v.name,reply=quote(v.reply),forwarded=quote(v.forwarded))
+        chat.indices.forEach{chat[it]=line(chat[it])};directChats.values.forEach{list->list.indices.forEach{list[it]=line(list[it])}};chatReplyTo=quote(chatReplyTo)
+        Players.indices.forEach{i->names[Players[i].playerRef]?.let{Players[i]=Players[i].copy(name=it.gameId)}}
+        onlinePlayers=onlinePlayers.map{p->names[p.playerRef]?.let{p.copy(name=it.gameId)} ?: p}
+        commerce.listings.indices.forEach{i->val item=commerce.listings[i];names[item.sellerRef]?.let{commerce.listings[i]=item.copy(seller=it.gameId)}}
+        commerce.orders.indices.forEach{i->val order=commerce.orders[i];commerce.orders[i]=order.copy(buyer=names[order.buyerRef]?.gameId ?: order.buyer,seller=names[order.sellerRef]?.gameId ?: order.seller)}
+        commissions.entries.indices.forEach{i->val entry=commissions.entries[i];commissions.entries[i]=entry.copy(owner=names[entry.ownerRef]?.gameId ?: entry.owner,worker=names[entry.workerRef]?.gameId ?: entry.worker)}
+        ledger.indices.forEach{i->val entry=ledger[i];names[entry.playerRef]?.let{ledger[i]=entry.copy(name=it.gameId)}}
+        names[api?.playerRef]?.let{userName=it.gameId;commerce.userName=it.gameId;commissions.userName=it.gameId}
+        playerNameRevision++
     }
     private suspend fun syncAccountDeletions(){
         val service=api ?: return

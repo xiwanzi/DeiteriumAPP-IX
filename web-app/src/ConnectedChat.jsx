@@ -1,3 +1,5 @@
+import { applyPlayerNames } from "./player-names.js";
+import { usePlayerNameRefresh } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import Messenger from "./Messenger.jsx";
 import { Button, Field, Modal, Avatar, Empty } from "./components.jsx";
@@ -27,6 +29,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
     selectedRef = useRef(activeConversation), loading = useRef(new Set()), readRef = useRef({});
   const conversationsRef = useRef(conversations), erasedChannels = useRef(new Set()); conversationsRef.current = conversations;
   messagesRef.current = messages; cursorsRef.current = cursors; selectedRef.current = activeConversation;
+  usePlayerNameRefresh(client, setMessages, setConversations, setModal);
   const ai = useAiConversation({ client, user, active: activeConversation === "assistant" });
   const savePending = () => sessionStorage.setItem(pendingKey(user), JSON.stringify(pending.current));
   const forgetChannels = (channels) => {
@@ -43,7 +46,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
     return { ...message, reply: quote(message.reply), forwarded: quote(message.forwarded), text: client.erasedPlayerRefs.has(message.forwarded?.sender) ? "原消息不可见" : message.text };
   };
   const integrate = (incoming) => {
-    incoming = incoming.filter((message) => !client.erasedPlayerRefs.has(message.sender) && !erasedChannels.current.has(message.channel)).map(cleanMessage);
+    incoming = applyPlayerNames(incoming, client.playerNames).filter((message) => !client.erasedPlayerRefs.has(message.sender) && !erasedChannels.current.has(message.channel)).map(cleanMessage);
     for (const message of incoming) if (message.mine && message.clientMessageId && pending.current[message.clientMessageId]) { delete pending.current[message.clientMessageId]; savePending(); }
     setMessages((old) => mergeMessages(old, incoming));
   };

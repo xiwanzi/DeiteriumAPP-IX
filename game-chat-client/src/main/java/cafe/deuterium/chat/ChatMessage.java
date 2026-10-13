@@ -27,6 +27,12 @@ public final class ChatMessage {
         this.receivedAt=historical?0:System.nanoTime()/1_000_000;
     }
     public String scope() { return channel.equals("private")?"private:"+conversation:channel; }
+    private ChatMessage(ChatMessage source,String currentName) {
+        id=source.id;senderId=source.senderId;name=currentName;channel=source.channel;server=source.server;conversation=source.conversation;
+        time=source.time;content=source.content;media=source.media;receivedAt=source.receivedAt;sentMillis=source.sentMillis;sentAt=source.sentAt;
+        system=source.system;reply=source.reply;failure=source.failure;pending=source.pending;
+    }
+    public ChatMessage withName(String currentName) {return currentName.equals(name)?this:new ChatMessage(this,currentName);}
     public static String str(JsonObject o,String k) { return o!=null&&o.has(k)&&!o.get(k).isJsonNull()?o.get(k).getAsString():""; }
     public static ChatMessage fromJson(JsonObject o, boolean historical, String channel, String conversation) {
         JsonObject sender=o.has("sender")?o.getAsJsonObject("sender"):new JsonObject();

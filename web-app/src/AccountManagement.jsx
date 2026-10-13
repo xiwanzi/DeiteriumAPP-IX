@@ -1,3 +1,4 @@
+import { usePlayerNameRefresh } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { Search, RefreshCw, ShieldCheck, Users, Pencil } from "lucide-react";
 import { Avatar, Badge, Button, Empty, Field, Modal, PageHead } from "./components.jsx";
@@ -10,6 +11,7 @@ export default function AccountManagement({ client, user }) {
   const [data, setData] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [change, setChange] = useState(null), [reason, setReason] = useState(""), [saving, setSaving] = useState(false), [feedback, setFeedback] = useState("");
   const generation = useRef(0), pending = useRef(null);
   const [editing, setEditing] = useState(null);
+  usePlayerNameRefresh(client,setData);
   const [password, setPassword] = useState("");
   const openChange = (account, action) => { setChange({ account, action }); setReason(""); setPassword(""); setError(""); };
   const closeChange = () => { if (!saving) { setPassword(""); setChange(null); } };

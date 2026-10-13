@@ -111,7 +111,12 @@ public final class CommandDispatcher {
                     // an offline UUID for an identity the server has never seen.
                     return CachedPlayers.find(name,config.get().nodeId());
                 }).get(Math.max(1,deadline-System.currentTimeMillis()),TimeUnit.MILLISECONDS);
-                if(known!=null&&cached!=null&&!known.playerUuid().equals(cached.playerUuid()))throw new CoreFailure("IDENTITY_AMBIGUOUS","历史目录与服务器缓存的 UUID 不一致，请人工核实该名称。");
+                if(cached!=null){String canonical=players.canonicalName(cached.playerUuid());if(canonical!=null&&!canonical.equalsIgnoreCase(name))cached=null;}
+                if(known!=null&&cached!=null&&!known.playerUuid().equals(cached.playerUuid())){
+                    String canonical=players.canonicalName(known.playerUuid());
+                    if(canonical!=null&&canonical.equalsIgnoreCase(name))cached=null;
+                    else throw new CoreFailure("IDENTITY_AMBIGUOUS","历史目录与服务器缓存的 UUID 不一致，请人工核实该名称。");
+                }
                 if(cached==null&&known==null)throw new CoreFailure("PLAYER_NOT_FOUND","服务器缓存与 Core 目录均未记录此玩家。");
                 yield Json.tree(known!=null&&known.online()?known:cached!=null?cached:known);
             }

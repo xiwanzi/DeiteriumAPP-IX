@@ -1,3 +1,4 @@
+import { applyPlayerNames } from "./player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { confirmNavigation } from "./unsaved-changes.js";
 import {
@@ -67,12 +68,17 @@ export default function ConnectedApp() {
   const client = clientRef.current;
   useEffect(() => {
     if (!session?.user.userId || session.user.gameVerified === false) return;
-    const sync = () => { if (!document.hidden) client.syncAccountDeletions().catch(() => {}); };
+    const sync = () => { if (!document.hidden) Promise.allSettled([client.syncAccountDeletions(), client.syncPlayerNames()]); };
     sync(); const timer = setInterval(sync, 4000);
     const unsubscribe = client.onAccountDeletions((refs) => setModal((old) => old?.type === "player" && refs.has(old.player.id) ? null : old));
     return () => { clearInterval(timer); unsubscribe(); };
   }, [client, session?.user.userId, session?.user.gameVerified]);
   const [ownProfile, setOwnProfile] = useState(null);
+  useEffect(() => client.onPlayerNames(names => {
+    if (sessionRef.current) applySession(applyPlayerNames(sessionRef.current, names));
+    setOwnProfile(value => applyPlayerNames(value, names));
+    setModal(value => applyPlayerNames(value, names));
+  }), [client]);
   useEffect(() => {
     let active = true;
     setOwnProfile(null);

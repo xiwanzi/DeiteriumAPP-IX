@@ -24,27 +24,43 @@ import (
 var ErrForbidden = errors.New("forbidden")
 
 type Server struct {
-	GameAvatarResolver func(context.Context, string) ([]byte, error)
-	AdmissionResolver  func(context.Context, string) (store.AdmissionProfile, error)
-	Store              *store.Store
-	Config             config.Config
-	Identity           *identity.Service
-	Hub                *bridge.Hub
-	Core               *bridge.Runtime
-	CommerceCore       CommerceExecutorV2
-	ctx                context.Context
-	cancel             context.CancelFunc
-	capacity           *requestCapacity
-	chatReads          sharedChatReads
-	ai                 *aiGatewayV2
-	desktop            *desktopRuntime
-	ysm                *ysmBridge
+	OfficialUUIDResolver func(context.Context, string) (store.AdmissionProfile, error)
+	GameAvatarResolver   func(context.Context, string) ([]byte, error)
+	AdmissionResolver    func(context.Context, string) (store.AdmissionProfile, error)
+	Store                *store.Store
+	Config               config.Config
+	Identity             *identity.Service
+	Hub                  *bridge.Hub
+	Core                 *bridge.Runtime
+	CommerceCore         CommerceExecutorV2
+	ctx                  context.Context
+	cancel               context.CancelFunc
+	capacity             *requestCapacity
+	chatReads            sharedChatReads
+	ai                   *aiGatewayV2
+	desktop              *desktopRuntime
+	ysm                  *ysmBridge
 }
 
 func New(s *store.Store, c config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	server := &Server{Store: s, Config: c, Identity: identity.New(s), Hub: bridge.NewHub(), Core: bridge.NewRuntime(), ctx: ctx, cancel: cancel, capacity: newRequestCapacity(c.Concurrency)}
 	server.CommerceCore = &commerceCoreAdapter{server: server}
+	server.Identity.GameNameResolver = func(ctx context.Context, name string) (store.AdmissionProfile, error) {
+		if server.Config.Development && server.AdmissionResolver == nil {
+			return store.AdmissionProfile{}, identity.ErrNameLookupDisabled
+		}
+		p, e := server.resolveAdmissionProfile(ctx, name)
+		if errors.Is(e, errAdmissionPlayerMissing) {
+			return p, store.ErrSocialNotFound
+		}
+		if e != nil {
+			return p, identity.ErrNameLookupUnavailable
+		}
+		return p, nil
+	}
+	server.Identity.SyncGameName = server.syncOfficialNameObserved
+	go server.playerNameWorker()
 	nodes := make([]string, 0, len(c.Nodes))
 	for _, node := range c.Nodes {
 		nodes = append(nodes, node.ID)
@@ -73,6 +89,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerChatMedia(mux)
 	s.registerGameChat(mux)
 	s.registerGameTitles(mux)
+	s.registerPlayerNames(mux)
 	s.registerSocialV2(mux)
 	s.registerCatalogV2(mux)
 	s.registerCommerceV2(mux)
@@ -121,6 +138,9 @@ func (s *Server) Handler() http.Handler {
 	limited := s.capacity.wrap(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(context.WithValue(r.Context(), requestIDKey{}, store.ID("req_")))
+		if strings.HasPrefix(r.URL.Path, "/api/v1/") && r.URL.Path != "/api/v1/chat/player-names" {
+			r = r.WithContext(context.WithValue(r.Context(), nameProjectionKey{}, s.Store))
+		}
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
@@ -130,7 +150,7 @@ func (s *Server) Handler() http.Handler {
 
 func requestID(r *http.Request) string { v, _ := r.Context().Value(requestIDKey{}).(string); return v }
 func success(w http.ResponseWriter, r *http.Request, data any) {
-	writeJSON(w, 200, map[string]any{"requestId": requestID(r), "data": data})
+	writeJSON(w, 200, map[string]any{"requestId": requestID(r), "data": projectedNames(r, data)})
 }
 func failure(w http.ResponseWriter, r *http.Request, status int, code, message string) {
 	writeJSON(w, status, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": code, "message": message, "details": map[string]string{}}})
@@ -313,6 +333,18 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request, kind string) {
 	defer cancel()
 	token, session, err := s.Identity.Login(ctx, input.Account, input.Password, s.remoteIP(r), kind)
 	if err != nil {
+		if errors.Is(err, identity.ErrNameLookupUnavailable) {
+			failure(w, r, 503, "NAME_LOOKUP_UNAVAILABLE", "正版名字核验暂不可用，请稍后重试或使用邮箱／QQ登录。")
+			return
+		}
+		if errors.Is(err, store.ErrNameProofStale) {
+			failure(w, r, 409, "NAME_CHANGED_RETRY", "游戏名字刚发生变化，请重试或使用邮箱／QQ登录。")
+			return
+		}
+		if errors.Is(err, store.ErrNameConflict) {
+			failure(w, r, 409, "NAME_SYNC_CONFLICT", "新名字与已有登录标识冲突，请先用邮箱／QQ登录并联系管理员核对。")
+			return
+		}
 		if errors.Is(err, store.ErrUnauthorized) {
 			failure(w, r, 401, "ACCOUNT_PASSWORD_INVALID", "账号或密码错误。")
 			return

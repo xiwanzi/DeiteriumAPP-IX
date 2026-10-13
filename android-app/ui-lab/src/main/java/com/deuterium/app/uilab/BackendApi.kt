@@ -116,6 +116,7 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
                     ?: throw ApiFailure("INVALID_RESPONSE", "服务器响应格式不正确")
                 root?.optJSONObject("page")?.let{result.put("_page",it)}
                 root?.optString("serverTime")?.takeIf{it.isNotBlank()}?.let{result.put("_serverTime",it)}
+                if(!path.startsWith("/chat/player-names"))applyCurrentPlayerNames(result,playerNames())
                 redactErasedAccounts(result,erasedPlayerRefs())
                 if(!authenticated||token==requestToken)RemoteImageUrls.remember(result,imageScope,refreshPath=path.takeIf{method=="GET"})
                 result
@@ -125,6 +126,24 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
         }
     }
 
+    private var nameScope=""
+    private var nameValues=emptyMap<String,PlayerNameChange>()
+    @Synchronized internal fun playerNames():Map<String,PlayerNameChange> {
+        val scopeKey="$baseUrl:$playerRef"
+        if(nameScope!=scopeKey){
+            nameScope=scopeKey
+            val saved=runCatching{org.json.JSONArray(prefs.getString("player-names:$scopeKey","[]"))}.getOrDefault(org.json.JSONArray())
+            nameValues=mergePlayerNames(emptyMap(),(0 until saved.length()).mapNotNull{runCatching{PlayerNameChange.parse(saved.getJSONObject(it))}.getOrNull()})
+        }
+        return nameValues
+    }
+    internal fun playerNameCursor()=prefs.getLong("player-name-cursor:$baseUrl:$playerRef",0)
+    @Synchronized internal fun rememberPlayerNames(changes:List<PlayerNameChange>,cursor:Long) {
+        nameValues=mergePlayerNames(playerNames(),changes)
+        val values=org.json.JSONArray();nameValues.values.distinctBy{it.playerRef}.forEach{values.put(it.json())}
+        prefs.edit().putString("player-names:$baseUrl:$playerRef",values.toString()).putLong("player-name-cursor:$baseUrl:$playerRef",cursor).apply()
+        nameValues[playerRef]?.let{current->user=user?.let{JSONObject(it.toString()).put("gameId",current.gameId)};prefs.edit().putString("user",user?.toString()).apply()}
+    }
     internal fun financialScope()=FinancialScope(if(signedIn)playerRef else "",baseUrl)
     internal fun erasedPlayerRefs():Set<String> = prefs.getStringSet("erased-player-refs:$baseUrl",emptySet()).orEmpty().toSet()
     internal fun accountDeletionCursor():Long=prefs.getLong("account-deletion-cursor:$baseUrl",0)

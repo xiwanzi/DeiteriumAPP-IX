@@ -11,7 +11,7 @@ data class Commission(val id:String,val key:String,val owner:String,val draft:Co
     val completedAt:LocalDateTime?=null,val confirmedAt:LocalDateTime?=null,val deadlineMillis:Long?=null,
     val completionNote:String="",val refund:RefundState=RefundState.None,val refundAttempts:Int=0,
     val refundReason:String="",val rejectionReason:String="",val pausedMillis:Long?=null,val automatic:Boolean=false,val intervention:InterventionCase?=null,
-    val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null,val canHideRecord:Boolean=false) {
+    val serverStatus:String?=null,val fundsStatus:String?=null,val serverActions:Set<String>?=null,val version:Long=1,val refundId:String?=null,val refundVersion:Long=1,val interventionCaseId:String?=null,val pendingOperationId:String?=null,val canHideRecord:Boolean=false,val ownerRef:String="",val workerRef:String="") {
     val visibleInHall:Boolean get()=((serverStatus=="OPEN"&&fundsStatus=="HELD")||(serverStatus==null&&stage==CommissionStage.Open&&held))&&pendingOperationId==null&&!platformPending&&refund!=RefundState.Requested&&refund!=RefundState.Approved
     val platformPending:Boolean get()=fundsStatus=="INTERVENTION_HOLD"||intervention?.pending==true
     val canIntervene:Boolean get()=pendingOperationId==null&&(serverActions?.contains("REQUEST_INTERVENTION") ?: (refund==RefundState.Rejected&&intervention==null))
@@ -21,7 +21,7 @@ data class Commission(val id:String,val key:String,val owner:String,val draft:Co
 }
 
 /** A local prepaid work board. Server-side escrow remains authoritative in the API contract. */
-class CommissionBook(val userName:String,private val balance:()->Long,private val cash:(Long,String,String)->Unit,
+class CommissionBook(var userName:String,private val balance:()->Long,private val cash:(Long,String,String)->Unit,
     private val clock:Clock=Clock.systemDefaultZone(),val remoteOnly:Boolean=false,private val notify:(TradeNotice)->Unit={}) {
     val entries=mutableStateListOf<Commission>()
     var network:BackendCommissions?=null

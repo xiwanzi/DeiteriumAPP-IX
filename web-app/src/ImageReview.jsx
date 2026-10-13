@@ -1,3 +1,4 @@
+import { usePlayerNameRefresh } from "./use-player-names.js";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, RefreshCw, ScanEye, Trash2, Settings2 } from "lucide-react";
 import { Button, Empty, Modal, PageHead } from "./components.jsx";
@@ -27,6 +28,7 @@ function ImageReviewList({ client, onSettings }) {
   const [loading, setLoading] = useState(true), [refreshing, setRefreshing] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
   const [detail, setDetail] = useState(null), [detailLoading, setDetailLoading] = useState(false), [detailError, setDetailError] = useState("");
   const [remove, setRemove] = useState(null), [deleting, setDeleting] = useState(false), [deleteError, setDeleteError] = useState("");
+  usePlayerNameRefresh(client, setItems, setDetail);
   const alive = useRef(true), listing = useRef(null), details = useRef(null), busy = useRef(false);
   const load = useCallback(async () => {
     listing.current?.abort(); const controller = new AbortController(); listing.current = controller;

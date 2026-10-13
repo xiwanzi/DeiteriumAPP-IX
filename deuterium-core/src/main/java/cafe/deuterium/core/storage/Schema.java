@@ -18,7 +18,9 @@ final class Schema {
                 "CREATE TABLE IF NOT EXISTS dc_inbox(node_id VARCHAR(32) NOT NULL,message_id VARCHAR(128) NOT NULL,fingerprint CHAR(64) NOT NULL,state VARCHAR(16) NOT NULL,expires_at BIGINT NOT NULL,PRIMARY KEY(node_id,message_id))",
                 "CREATE TABLE IF NOT EXISTS dc_commands(operation_id VARCHAR(128) PRIMARY KEY,command_type VARCHAR(64) NOT NULL,fingerprint CHAR(64) NOT NULL,state VARCHAR(16) NOT NULL,result " + text + ",node_id VARCHAR(32) NOT NULL,updated_at BIGINT NOT NULL)",
                 "CREATE TABLE IF NOT EXISTS dc_audit(sequence_id " + seq + ",actor VARCHAR(128) NOT NULL,action VARCHAR(64) NOT NULL,resource VARCHAR(192) NOT NULL,result VARCHAR(32) NOT NULL,created_at BIGINT NOT NULL)",
-                "CREATE TABLE IF NOT EXISTS dc_players(player_uuid CHAR(36) PRIMARY KEY,game_id VARCHAR(32) NOT NULL,node_id VARCHAR(32) NOT NULL,session_epoch CHAR(36) NOT NULL,online BOOLEAN NOT NULL,last_seen BIGINT NOT NULL)"
+                "CREATE TABLE IF NOT EXISTS dc_players(player_uuid CHAR(36) PRIMARY KEY,game_id VARCHAR(32) NOT NULL,node_id VARCHAR(32) NOT NULL,session_epoch CHAR(36) NOT NULL,online BOOLEAN NOT NULL,last_seen BIGINT NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS dc_player_names(player_uuid CHAR(36) PRIMARY KEY,game_id VARCHAR(32) NOT NULL,sequence_id BIGINT NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS dc_player_name_cursors(node_id VARCHAR(32) PRIMARY KEY,cursor_value BIGINT NOT NULL)"
         );
         db.read(c -> {
             try (Statement s = c.createStatement()) { for (String sql : ddl) s.execute(sql + engine); }

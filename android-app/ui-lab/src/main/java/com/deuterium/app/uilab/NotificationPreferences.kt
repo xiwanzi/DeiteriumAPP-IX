@@ -19,8 +19,12 @@ enum class NotificationTopic(val key:String,val title:String,val detail:String) 
 }
 class NotificationPreferences(context:Context,userName:String) {
     private val api=BackendApi.get(context)
-    private val suffix=MessageDigest.getInstance("SHA-256").digest(userName.toByteArray()).take(8).joinToString(""){"%02x".format(it)}
-    private val prefs=context.getSharedPreferences("notification-preferences-$suffix",Context.MODE_PRIVATE)
+    private val owner=api.playerRef.ifBlank{userName}
+    private val suffix=MessageDigest.getInstance("SHA-256").digest(owner.toByteArray()).take(8).joinToString(""){"%02x".format(it)}
+    private val prefs=context.getSharedPreferences("notification-preferences-$suffix",Context.MODE_PRIVATE).also{target->
+        if(owner!=userName){val legacyHash=MessageDigest.getInstance("SHA-256").digest(userName.toByteArray()).take(8).joinToString(""){"%02x".format(it)};val legacy=context.getSharedPreferences("notification-preferences-$legacyHash",Context.MODE_PRIVATE)
+            val edit=target.edit();legacy.all.forEach{(key,value)->if(value is Boolean&&!target.contains(key))edit.putBoolean(key,value)};edit.apply()}
+    }
     val values=mutableStateMapOf<String,Boolean>().apply{(listOf("enabled","showPreviews")+NotificationTopic.entries.map{it.key}).forEach{put(it,prefs.getBoolean(it,true))}}
     fun get(key:String)=values[key] ?: true
     fun set(key:String,value:Boolean){values[key]=value;prefs.edit().putBoolean(key,value).apply()}

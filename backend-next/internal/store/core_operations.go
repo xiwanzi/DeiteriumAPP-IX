@@ -149,11 +149,17 @@ func (s *Store) RememberCorePlayer(ctx context.Context, p CorePlayerIdentity) (s
 		return "", ErrSocialNotFound
 	}
 	ref := "player_" + Digest([]byte("deuterium-player:" + p.PlayerUUID))[:40]
-	var registered string
-	err = tx.QueryRowContext(ctx, "SELECT player_ref FROM identities WHERE server_uuid=? AND status<>'deleted'", p.PlayerUUID).Scan(&registered)
+	var registered, baselineName string
+	err = tx.QueryRowContext(ctx, "SELECT player_ref,game_id FROM identities WHERE server_uuid=? AND status<>'deleted'", p.PlayerUUID).Scan(&registered, &baselineName)
 	if err == nil {
 		ref = registered
 	} else if !errors.Is(err, sql.ErrNoRows) {
+		return "", err
+	}
+	if baselineName == "" {
+		baselineName = p.GameID
+	}
+	if _, err = tx.ExecContext(ctx, "INSERT IGNORE INTO player_names_state(player_uuid,player_ref,game_id) VALUES(?,?,?)", p.PlayerUUID, ref, baselineName); err != nil {
 		return "", err
 	}
 	var lastSeen any

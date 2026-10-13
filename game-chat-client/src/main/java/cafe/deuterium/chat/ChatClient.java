@@ -15,7 +15,7 @@ final class ChatClient {
     private final ThreadPoolExecutor io=new ThreadPoolExecutor(1,2,20,TimeUnit.SECONDS,new ArrayBlockingQueue<>(32),r->{var t=new Thread(r,"Deuterium-Chat-IO");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
     final ChatMediaClient media=new ChatMediaClient(this);
     volatile ChatApi api;
-    private long nextHello,nextPoll;
+    private long nextHello,nextPoll,nameCursor;
     private boolean polling,loaded;
     private final Map<String,String> readThrough=new HashMap<>();
     long epoch;
@@ -42,6 +42,7 @@ final class ChatClient {
             JsonObject p=JsonParser.parseString(json).getAsJsonObject();
             switch(ChatMessage.str(p,"type")) {
                 case "player-title" -> ChatTitles.receive(p);
+                case "player-names" -> {if(ChatStore.INSTANCE.applyNames(p.getAsJsonArray("items")))ChatAvatars.clear();}
                 case "session" -> {api=new ChatApi(p);node=api.server;ChatStore.INSTANCE.server=node;ChatStore.INSTANCE.selfRef=api.owner;ChatStore.INSTANCE.status="";nextPoll=0;media.refreshStickers();loadPins();}
                 case "media-result" -> {var future=mediaRequests.remove(ChatMessage.str(p,"requestId"));if(future!=null){if(p.has("error"))future.completeExceptionally(new java.io.IOException(ChatMessage.str(p,"error")));else future.complete(p.getAsJsonObject("message"));}}
                 case "message" -> {
@@ -116,13 +117,15 @@ final class ChatClient {
     }
     private void poll() {
         polling=true;boolean historical=!loaded;
-        submit(a->{var o=new JsonObject();o.add("messages",a.request("GET","/api/v1/chat/messages?limit=100",null));o.add("conversations",a.request("GET","/api/v1/chat/conversations",null));return o;},raw->{
-            polling=false;loaded=true;var o=raw.getAsJsonObject();var list=array(o.get("messages"));
+        submit(a->{var o=new JsonObject();try{o.add("names",a.request("GET","/api/v1/chat/player-names?after="+nameCursor,null));}catch(Exception ignored){}o.add("messages",a.request("GET","/api/v1/chat/messages?limit=100",null));o.add("conversations",a.request("GET","/api/v1/chat/conversations",null));return o;},raw->{
+            polling=false;loaded=true;var o=raw.getAsJsonObject();
+            if(o.has("names")){var names=o.getAsJsonObject("names");if(ChatStore.INSTANCE.applyNames(array(names)))ChatAvatars.clear();if(names.has("cursor"))nameCursor=names.get("cursor").getAsLong();if(names.has("hasMore")&&names.get("hasMore").getAsBoolean())nextPoll=0;}
+            var list=array(o.get("messages"));
             for(int i=list.size()-1;i>=0;i--)ChatStore.INSTANCE.add(ChatMessage.fromJson(list.get(i).getAsJsonObject(),historical,"world",""));
             for(var e:array(o.get("conversations"))){var c=e.getAsJsonObject();String id=ChatMessage.str(c,"conversationId");
                 if(c.has("lastMessage")&&c.get("lastMessage").isJsonObject())ChatStore.INSTANCE.add(ChatMessage.fromJson(c.getAsJsonObject("lastMessage"),historical,"private",id));
                 JsonObject other=c.has("otherPlayer")?c.getAsJsonObject("otherPlayer"):new JsonObject();
-                ChatStore.INSTANCE.contacts.put("private:"+id,new ChatStore.Contact("private:"+id,ChatMessage.str(other,"gameId"),ChatMessage.str(other,"playerRef"),false,c.has("unreadCount")?c.get("unreadCount").getAsInt():0));}
+                ChatStore.INSTANCE.putContact(new ChatStore.Contact("private:"+id,ChatMessage.str(other,"gameId"),ChatMessage.str(other,"playerRef"),false,c.has("unreadCount")?c.get("unreadCount").getAsInt():0));}
             ChatStore.INSTANCE.changed();if(ChatStore.INSTANCE.current.startsWith("private:"))loadScope(ChatStore.INSTANCE.current);
         });
     }
@@ -138,5 +141,5 @@ final class ChatClient {
         }
         return mc.screen!=null&&mc.screen.handleComponentClicked(style);
     }
-    void reset(){ChatTitles.reset();readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
+    void reset(){ChatTitles.reset();readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=nameCursor=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
 }

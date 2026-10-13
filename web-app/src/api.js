@@ -1,3 +1,4 @@
+import { applyPlayerNames, rememberPlayerNames } from "./player-names.js";
 import { readAiEvents } from "./ai-stream.js";
 import { redactErasedAccounts } from "./account-erasure.js";
 export class ApiError extends Error {
@@ -12,6 +13,23 @@ export class ApiError extends Error {
 }
 export class DeuteriumClient {
   #csrf = "";
+  playerNames = new Map();
+  playerNameListeners = new Set();
+  playerNameCursor = 0;
+  playerNameSync = null;
+  onPlayerNames(listener) { this.playerNameListeners.add(listener); return () => this.playerNameListeners.delete(listener); }
+  async syncPlayerNames() {
+    if (this.playerNameSync) return this.playerNameSync;
+    this.playerNameSync = (async () => {
+      let more;
+      do {
+        const { data } = await this.request(`/api/v1/chat/player-names?after=${this.playerNameCursor}`);
+        if (rememberPlayerNames(this.playerNames, data.items || [])) this.playerNameListeners.forEach(listener => listener(this.playerNames));
+        this.playerNameCursor = data.cursor; more = data.hasMore;
+      } while (more);
+    })();
+    try { await this.playerNameSync; } finally { this.playerNameSync = null; }
+  }
   erasedPlayerRefs = new Set();
   deletionCursor = 0;
   deletionListeners = new Set();
@@ -131,7 +149,7 @@ export class DeuteriumClient {
         err.retryScope || "",
       );
     }
-    return redactErasedAccounts(value, this.erasedPlayerRefs);
+    return redactErasedAccounts(path.startsWith("/api/v1/chat/player-names") ? value : applyPlayerNames(value, this.playerNames), this.erasedPlayerRefs);
   }
   async login(account, password) {
     const r = await this.request("/api/v1/web/session", {

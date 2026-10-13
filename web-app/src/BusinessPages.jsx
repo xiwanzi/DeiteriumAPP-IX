@@ -1,3 +1,4 @@
+import { usePlayerNameRefresh } from "./use-player-names.js";
 import React, { useEffect, useRef, useState } from "react";
 import { redactErasedAccounts } from "./account-erasure.js";
 import { Plus, RefreshCw } from "lucide-react";
@@ -16,6 +17,7 @@ const refundStatus = { REQUESTED: "等待处理", PROCESSING: "退款处理中",
 
 export function BusinessDetail({ client, user, type, reference, initial, onChanged }) {
   const [value, setValue] = useState(initial || null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [action, setAction] = useState(null), [mailbox, setMailbox] = useState(false), [intervention, setIntervention] = useState(null), [snapshot, setSnapshot] = useState(null);
+  usePlayerNameRefresh(client, setValue, setIntervention);
   const alive = useRef(true), current = useRef(value), loading = useRef(false); current.current = value;
   const load = async () => {
     if (loading.current) return; loading.current = true;
@@ -128,6 +130,7 @@ export function CommissionForm({ client, user, onResource }) {
 
 export default function BusinessPages({ client, user, type = "ORDER", merchantStoreId }) {
   const [scope, setScope] = useState(type === "COMMISSION" ? "委托大厅" : "全部"), [items, setItems] = useState([]), [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [selected, setSelected] = useState(null), [creating, setCreating] = useState(false), [pending, setPending] = useState(null);
+  usePlayerNameRefresh(client, setItems, setSelected, setPending);
   const generation = useRef(0), isCommission = type === "COMMISSION";
   const load = async (more = false) => {
     const current = ++generation.current; setBusy(true); setError("");
