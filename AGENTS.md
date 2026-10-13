@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-14：**App 2.0.28（22800）、Web 2.0.39 与 Go 于00:09上线，启动器0.6.8/资源0.0.60-dev于00:31–00:32发布**（主 PR #126，源码 `62f4da02fb3a`）。同 UUID 改名与事件同步、聊天回底和回车聚焦已发布；Core1.0.7、Teams0.3.4、Mail0.7.4、Cloud2.0.1同步更新。原业务/模型数据及配置保留，三常驻节点在线、Velocity未重启、MEK停止，TrChat词库关闭。维护 `.worktrees/uuid-name-sync` / `xiwanzi/uuid-name-sync`，见[上线记录](docs/deployment/uuid-name-sync-2.0.28-live.md)。
+
 2026-10-13：**资源0.0.59-dev于17:03发布，17:04公网核验通过**（DeLauncher PR #6）。修复进服设置页关闭后重新黑屏渐出的遗漏流程，正常首次过渡保留；仅更新主开屏JAR及显示版本。App2.0.27、聊天0.1.10、路标配置和服务器程序/PID保持。见[上线记录](docs/deployment/opening-menu-0.0.59-live.md)。
 
 2026-10-13：**App 2.0.27（22700）与Go于16:23上线，聊天0.1.10/资源0.0.58-dev于16:29发布**（PR #123，源码 `669c8f7a782c`）。附近消息五分钟过期、游戏私聊排序与App实时恢复已修复；世界内路标关闭，地图与石碑联动保留。原业务数据与游戏服PID保留，三常驻节点在线、MEK停止。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`，见[上线记录](docs/deployment/chat-recovery-2.0.27-live.md)。
