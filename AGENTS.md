@@ -1,5 +1,7 @@
 # Deuterium IX 工程约定
 
+2026-10-14：**App 2.0.29（22900）、Web 2.0.40 与配套 Go 已于14:19上线，14:21公网核验通过**（PR #130，源码 `a8377b1387d1`）。上线官方资料查询与登录容量优化、App 长期/Web 30 天会话、设备管理和未验证身份占用处理；未验证账号不自动清理，已验证身份不换绑。61 条账号记录、47 订单、5 委托、3,085 在售商品、12 工单、2 注销记录、8 个已验证身份及原配置保留，105 张原表指纹核对一致。三常驻节点在线、MEK停止；启动器0.6.8/资源0.0.60-dev保持，本轮未重启游戏服。维护 `.worktrees/account-experience-capacity` / `xiwanzi/account-experience-capacity`，见[上线记录](docs/deployment/account-experience-2.0.29-live.md)。下方候选说明为历史状态。
+
 2026-10-14：**注册正版 UUID 留存与新名登录修复已于11:29上线**（PR #128，源码 `632184682058`）。59 个未删除账号的 UUID 全部补齐；未进服验证的玩家也可用新游戏 ID＋原密码登录并自动更新名字，公开 UUID 不提前授予游戏权限。原 61 账号记录、业务数据、8 个已验证身份及配置保留；App2.0.28/Web2.0.39/启动器0.6.8/资源0.0.60-dev保持，本轮未操作游戏服。维护 `.worktrees/uuid-name-sync` / `xiwanzi/registration-profile-uuid`，见[上线记录](C:/DeiteriumAPP-IX/.worktrees/uuid-name-sync/docs/deployment/registration-profile-uuid-live.md)。
 
 2026-10-14：**App 2.0.28（22800）、Web 2.0.39 与 Go 于00:09上线，启动器0.6.8/资源0.0.60-dev于00:31–00:32发布**（主 PR #126，源码 `62f4da02fb3a`）。同 UUID 改名与事件同步、聊天回底和回车聚焦已发布；Core1.0.7、Teams0.3.4、Mail0.7.4、Cloud2.0.1同步更新。原业务/模型数据及配置保留，三常驻节点在线、Velocity未重启、MEK停止，TrChat词库关闭。维护 `.worktrees/uuid-name-sync` / `xiwanzi/uuid-name-sync`，见[上线记录](docs/deployment/uuid-name-sync-2.0.28-live.md)。

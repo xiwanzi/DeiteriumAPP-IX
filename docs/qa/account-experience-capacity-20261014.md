@@ -1,5 +1,7 @@
 # 账号体验与容量优化：本机候选验收
 
+后续发布状态：2026-10-14 14:19 已发布 App 2.0.29 / Web 2.0.40 与 Go，见[上线记录](../deployment/account-experience-2.0.29-live.md)。以下保留发布前的本机验收/计划时间切片，不表示当前仍未上线。
+
 2026-10-14，工作区 `.worktrees/account-experience-capacity`，分支 `xiwanzi/account-experience-capacity`，基于 `8487139`。**未推送、未合并、未部署；没有访问或更改生产数据库，没有在游戏服压测或重启游戏服。**
 
 ## 已完成
