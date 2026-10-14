@@ -1,5 +1,7 @@
 # Deuterium IX 项目上下文
 
+2026-10-14：**App 2.0.29（22900）、Web 2.0.40 与配套 Go 已于14:19上线，14:21公网核验通过**（PR #130，源码 `a8377b1387d1`）。上线官方资料查询与登录容量优化、App 长期/Web 30 天会话、设备管理和未验证身份占用处理；未验证账号不自动清理，已验证身份不换绑。61 条账号记录、47 订单、5 委托、3,085 在售商品、12 工单、2 注销记录、8 个已验证身份及原配置保留，105 张原表指纹核对一致。三常驻节点在线、MEK停止；启动器0.6.8/资源0.0.60-dev保持，本轮未重启游戏服。维护 `.worktrees/account-experience-capacity` / `xiwanzi/account-experience-capacity`，见[上线记录](docs/deployment/account-experience-2.0.29-live.md)。下方候选说明为历史状态。
+
 2026-10-13：**资源0.0.59-dev于17:03发布，17:04公网核验通过**（DeLauncher PR #6）。修复进服设置页关闭后重新黑屏渐出的遗漏流程，正常首次过渡保留；仅更新主开屏JAR及显示版本。App2.0.27、聊天0.1.10、路标配置和服务器程序/PID保持。见[上线记录](docs/deployment/opening-menu-0.0.59-live.md)。
 
 2026-10-13：**App 2.0.27（22700）与Go于16:23上线，聊天0.1.10/资源0.0.58-dev于16:29发布**（PR #123，源码 `669c8f7a782c`）。附近消息五分钟过期、游戏私聊排序与App实时恢复已修复；世界内路标关闭，地图与石碑联动保留。原业务数据与游戏服PID保留，三常驻节点在线、MEK停止。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`，见[上线记录](docs/deployment/chat-recovery-2.0.27-live.md)。
