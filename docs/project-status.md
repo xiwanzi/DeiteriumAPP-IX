@@ -1,5 +1,7 @@
 2026-10-13：**App 2.0.27（22700）与 Go 于16:23上线，聊天0.1.10/资源0.0.58-dev于16:29发布**（PR #123）。修复附近五分钟过期、游戏私聊排序和 App 实时恢复；关闭世界内路标显示，保留地图与石碑联动。原业务记录、配置和游戏服PID保留，三常驻节点在线、MEK停止。维护 `.worktrees/game-chat-ldlib` / `xiwanzi/chat-expiry-order`；见[上线记录](deployment/chat-recovery-2.0.27-live.md)。
 
+2026-10-14：**账号体验与容量优化本机候选已完成，未发布。** 维护 `.worktrees/account-experience-capacity` / `xiwanzi/account-experience-capacity`。统一正版查询排队与合并，登录来源/失败计数分离，App 长期/Web 30 天会话，设备管理和未验证身份冲突闭环；本机百人登录与通行隔离、账号回归、Web 和独立 Android QA 通过。见[验收](qa/account-experience-capacity-20261014.md)、[决策](adr/0011-account-sessions-and-profile-conflicts.md)及[契约/回退](contracts/account-experience-capacity.md)。生产仍以已有上线记录为准。
+
 2026-10-13：**资源0.0.59-dev于17:03发布，17:04公网核验通过**（DeLauncher PR #6）。修复进服设置页关闭后重新黑屏渐出的遗漏流程，正常首次过渡保留；仅更新主开屏JAR及显示版本。App2.0.27、聊天0.1.10、路标配置和服务器程序/PID保持。见[上线记录](deployment/opening-menu-0.0.59-live.md)。
 
 2026-10-12：**App 2.0.26（22600）私聊表情与媒体已于 23:50 上线**（PR #119，源码 `01cdac40bbc4`）。私聊与公屏共用 Emoji、图片/GIF、个人贴纸及预览/收藏/重试；队列按会话隔离，重启恢复保持原收件人。61 账号、47 订单、5 委托、3,085 件在售商品、12 工单、2 注销记录保留，三常驻节点在线、MEK 停止。Web 2.0.38、主 Go 程序、图片审核及游戏插件保持。维护 `.worktrees/chat-media` / `xiwanzi/release-v226-live`，见[上线记录](deployment/deuterium-2.0.26-live.md)。

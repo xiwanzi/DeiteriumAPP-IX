@@ -120,5 +120,8 @@ func (s *Server) syncObservedPlayerName(uuid string) error {
 	if canonical.UUID != uuid {
 		return identity.ErrNameLookupUnavailable
 	}
+	if !canonical.ObservedAt.IsZero() {
+		observedAt = canonical.ObservedAt
+	}
 	return s.syncOfficialNameObserved(ctx, canonical, observedAt)
 }

@@ -44,7 +44,7 @@ func (s *Store) DeleteAccount(ctx context.Context, proof AccountDeletionProof, t
 		return nil, catalogError(409, "ADMIN_CREDENTIAL_CHANGED", "管理员密码已改变，请重新输入当前密码确认。")
 	}
 	var sessionUser string
-	err = tx.QueryRowContext(ctx, "SELECT user_id FROM identity_sessions WHERE token_hash=? AND revoked_at IS NULL AND expires_at>UTC_TIMESTAMP(6) FOR UPDATE", proof.SessionHash).Scan(&sessionUser)
+	err = tx.QueryRowContext(ctx, "SELECT user_id FROM identity_sessions WHERE token_hash=? AND revoked_at IS NULL AND (expires_at>UTC_TIMESTAMP(6) OR (expires_at IS NULL AND client_kind='app')) FOR UPDATE", proof.SessionHash).Scan(&sessionUser)
 	if errors.Is(err, sql.ErrNoRows) || err == nil && sessionUser != proof.ActorID {
 		return nil, ErrUnauthorized
 	}

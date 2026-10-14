@@ -24,7 +24,7 @@ type AdminGameIdentity struct {
 }
 
 func (s *Store) AdminGameIdentity(ctx context.Context, target string) (out AdminGameIdentity, err error) {
-	err = s.DB.QueryRowContext(ctx, "SELECT game_id,COALESCE(server_uuid,''),status,game_verified,admin_version FROM identities WHERE id=?", target).Scan(&out.GameID, &out.UUID, &out.Status, &out.Verified, &out.Version)
+	err = s.DB.QueryRowContext(ctx, "SELECT game_id,COALESCE(server_uuid,profile_uuid,''),status,game_verified,admin_version FROM identities WHERE id=?", target).Scan(&out.GameID, &out.UUID, &out.Status, &out.Verified, &out.Version)
 	return out, socialMissing(err)
 }
 
@@ -41,10 +41,10 @@ func (s *Store) RenameAccountGameID(ctx context.Context, actor, target string, i
 		if err := requirePlatformAdminTxV206(ctx, tx, actor); err != nil {
 			return nil, err
 		}
-		var old, uuid, status, qq string
+		var old, uuid, status, qq, email string
 		var verified bool
 		var version int64
-		if err := tx.QueryRowContext(ctx, "SELECT game_id,COALESCE(server_uuid,''),status,qq,game_verified,admin_version FROM identities WHERE id=? FOR UPDATE", target).Scan(&old, &uuid, &status, &qq, &verified, &version); err != nil {
+		if err := tx.QueryRowContext(ctx, "SELECT game_id,COALESCE(server_uuid,''),status,qq,game_verified,admin_version,COALESCE(email,'') FROM identities WHERE id=? FOR UPDATE", target).Scan(&old, &uuid, &status, &qq, &verified, &version, &email); err != nil {
 			return nil, socialMissing(err)
 		}
 		if status == "deleted" {
@@ -70,6 +70,11 @@ func (s *Store) RenameAccountGameID(ctx context.Context, actor, target string, i
 		}
 		if old == in.GameID {
 			return map[string]any{"userId": target, "gameId": old, "previousGameId": old, "version": version, "changed": false}, nil
+		}
+		if !verified {
+			if err := profileReservationTx(ctx, tx, resolvedUUID, email, target); err != nil {
+				return nil, err
+			}
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			if _, err = tx.ExecContext(ctx, "INSERT INTO identity_aliases(alias_key,user_id) VALUES(LOWER(?),?)", in.GameID, target); err != nil {

@@ -23,6 +23,10 @@ import (
 func mailSupportFixture(t *testing.T) *socialFixtureV2 {
 	f := newSocialFixtureV2(t)
 	f.app.Close()
+	// Mail workers are stopped, but HTTP handlers still exercise bounded lookups.
+	lookupCtx, stopLookups := context.WithCancel(context.Background())
+	t.Cleanup(stopLookups)
+	f.app.profiles = newProfileCapacity(lookupCtx)
 	f.app.Config.SMTPKey = []byte(strings.Repeat("k", 32))
 	if err := f.store.Grant(context.Background(), f.users["Alice"].ID, "platform.admin"); err != nil {
 		t.Fatal(err)

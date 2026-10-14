@@ -245,7 +245,7 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
         route=="storage"->"存储空间";route=="coupons"->"优惠券"
         route=="wallet"->"我的钱包";route?.startsWith("bills:")==true->"历史账单";route=="public"->"公共聊天";route=="ai"->"小祥 AI";route=="ai-plans"->"套餐与额度";route?.startsWith("dm:")==true->state.routeGameID(route.removePrefix("dm:")).let{if(it=="AI 助手"||Players.any{p->p.name==it})it else "私聊"}
         route=="announcement"->"官方公告";route=="event"->"委托大厅";route=="bag"->"购物袋";route=="orders"->"我的订单";route?.startsWith("order:")==true->"订单详情"
-        route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"编辑资料";route=="support"->"邮件支持";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
+        route?.startsWith("refund:")==true->"退款详情";route=="trade-notices"->"交易通知";route=="commissions"->"委托大厅";route=="my-commissions"->"我的委托";route=="publish-commission"->"发布委托";route?.startsWith("commission:")==true->"委托详情";route=="events"->"委托大厅";route?.startsWith("event:")==true->"活动详情";route?.startsWith("player:")==true->"玩家资料";route=="bio"->"编辑资料";route=="support"->"邮件支持";route?.startsWith("edit-listing:")==true->"重新上架";route=="notifications"->"通知";route=="appearance"->"外观";route=="account"->"账号与安全";route=="devices"->"登录设备";route=="about"->"软件更新";route=="publish"->"发布商品";route=="listings"->"我发布的"
         route?.startsWith("product:")==true->ShopCatalog.find{it.id==route.removePrefix("product:")}?.name ?: "商品详情"
         route?.startsWith("market-product:")==true->"商品详情";else->destination.title
     }
@@ -263,7 +263,8 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
                             current=="Info"->InfoPage(state,inset,"",::open)
                             current=="Profile"->ProfilePage(state,avatar,userName,inset,"",::open,onAvatar)
                             current=="appearance"->AppearancePage(theme,motion,glass,tilt,inset,onTheme,onMotion,onGlass,onTilt,{tuner=true},sensorAvailable,overlayGlass,onOverlayGlass)
-                            current=="account"->AccountPage(avatar,userName,inset,onAvatar,{resetPassword=true},onLogout){open("bio")}
+                            current=="account"->AccountPage(avatar,userName,inset,onAvatar,{resetPassword=true},onLogout,onDevices={open("devices")}){open("bio")}
+                            current=="devices"->DeviceSessionsPage(inset)
                             current=="support"->SupportContactPage(inset)
                             current=="bio"->BioEditorPage(state,inset){back()}
                             current.startsWith("player:")->PlayerProfilePage(state.routeGameID(current.removePrefix("player:")),state,avatar,inset,{open("dm:${state.routeGameID(current.removePrefix("player:"))}")},{openTransfer(state.routeGameID(current.removePrefix("player:")))})

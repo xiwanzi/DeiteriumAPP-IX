@@ -1,0 +1,17 @@
+.device-sessions { min-width: 0; }
+.device-list { padding: 0; margin: 24px 0 0; list-style: none; }
+.device-list li { display: flex; align-items: center; gap: 16px; padding: 20px 0; border-top: 1px solid var(--line); }
+.device-icon { flex: none; color: var(--muted); }
+.device-details { display: grid; gap: 6px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.device-details span { color: var(--muted); font-size: .85rem; }
+.device-confirm { margin-top: 20px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; }
+.profile-resolution-history { display: grid; gap: 16px; margin: 24px 0; }
+.profile-resolution-history article { border-top: 1px solid var(--line); padding-top: 16px; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .device-list li { gap: 10px; flex-wrap: wrap; } .device-details { flex-basis: 60%; } }
+@media (max-width: 480px) {
+  .verification-page .auth-header { height: auto; min-height: 70px; flex-wrap: wrap; gap: 10px; padding-top: 12px; padding-bottom: 12px; }
+  .verification-page .auth-header > div { margin-left: auto; flex-shrink: 0; gap: 6px; }
+  .verification-page .auth-header .button { padding: 10px 12px; white-space: nowrap; }
+  .verification-page .verification-devices-button { min-width: 44px; min-height: 44px; }
+  .verification-page .verification-devices-button span { display: none; }
+}

@@ -151,6 +151,9 @@ func (s *Store) RegisterEmailUser(ctx context.Context, v EmailVerification, pass
 	}
 	defer tx.Rollback()
 	if v.ProfileUUID != "" {
+		if err = profileReservationTx(ctx, tx, v.ProfileUUID, v.Email, ""); err != nil {
+			return u, err
+		}
 		var occupied int
 		if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE status<>'deleted' AND (profile_uuid=? OR server_uuid=?)", v.ProfileUUID, v.ProfileUUID).Scan(&occupied); err != nil {
 			return u, err
@@ -182,6 +185,9 @@ func (s *Store) RegisterEmailUser(ctx context.Context, v EmailVerification, pass
 		return u, ErrConflict
 	}
 	if err != nil {
+		return u, err
+	}
+	if err = profileReservationTx(ctx, tx, v.ProfileUUID, v.Email, u.ID); err != nil {
 		return u, err
 	}
 	err = tx.Commit()

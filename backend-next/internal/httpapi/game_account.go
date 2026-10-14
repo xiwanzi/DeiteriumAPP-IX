@@ -101,7 +101,7 @@ func (s *Server) issueGameCode(w http.ResponseWriter, r *http.Request, ctx conte
 	// The installed Core understands register/password_reset; binding is still a
 	// registration proof on that wire. The local challenge keeps its own purpose.
 	wirePurpose := v.Purpose
-	if wirePurpose == "game_verify" {
+	if wirePurpose == "game_verify" || wirePurpose == "profile_claim" {
 		wirePurpose = "register"
 	}
 	if wirePurpose == "password_change" {

@@ -65,6 +65,12 @@ func (s *Server) resolveOfficialUUID(ctx context.Context, uuid string) (store.Ad
 	if !store.ValidAdmissionUUID(uuid) {
 		return store.AdmissionProfile{}, store.ErrSocialInvalid
 	}
+	return s.profilePool().resolve(ctx, "uuid:"+uuid, func(ctx context.Context) (store.AdmissionProfile, error) {
+		return s.queryOfficialUUID(ctx, uuid)
+	})
+}
+
+func (s *Server) queryOfficialUUID(ctx context.Context, uuid string) (store.AdmissionProfile, error) {
 	if s.OfficialUUIDResolver != nil {
 		p, e := s.OfficialUUIDResolver(ctx, uuid)
 		if e != nil {

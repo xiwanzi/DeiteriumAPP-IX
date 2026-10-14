@@ -29,6 +29,8 @@ type Session struct {
 	User                  User
 	TokenHash, Kind, CSRF string
 	ExpiresAt             time.Time
+	ID                    string
+	LastSeenAt            time.Time
 }
 
 func (s *Store) UserByAlias(ctx context.Context, alias string) (u User, err error) {
@@ -42,6 +44,9 @@ func (s *Store) UserByAlias(ctx context.Context, alias string) (u User, err erro
 }
 
 func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf string, expiry time.Time, newPasswordHash string) error {
+	if expiry.IsZero() && kind != "app" {
+		return ErrUnauthorized
+	}
 	tx, err := s.beginAccountTx(ctx, user.ID)
 	if err != nil {
 		return err
@@ -62,7 +67,12 @@ func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf s
 			return err
 		}
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO identity_sessions (token_hash,user_id,client_kind,csrf_token,created_at,expires_at) VALUES (?,?,?,?,UTC_TIMESTAMP(6),?)`, hash, user.ID, kind, csrf, expiry.UTC())
+	var expires any
+	if !expiry.IsZero() {
+		expires = expiry.UTC()
+	}
+	device, _ := ctx.Value(sessionDeviceKey{}).(string)
+	_, err = tx.ExecContext(ctx, `INSERT INTO identity_sessions (token_hash,user_id,client_kind,csrf_token,created_at,expires_at,session_id,device_name,last_seen_at) VALUES (?,?,?,?,UTC_TIMESTAMP(6),?,?,?,UTC_TIMESTAMP(6))`, hash, user.ID, kind, csrf, expires, ID("ses_"), device)
 	if err != nil {
 		return err
 	}
@@ -70,8 +80,12 @@ func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf s
 }
 
 func (s *Store) Session(ctx context.Context, hash string) (v Session, err error) {
-	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.status,s.client_kind,s.csrf_token,s.expires_at,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id),COALESCE(i.profile_uuid,'')
-	 FROM identity_sessions s JOIN identities i ON i.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>UTC_TIMESTAMP(6) AND i.status='active'`, hash).Scan(&v.User.ID, &v.User.PlayerRef, &v.User.GameID, &v.User.QQ, &v.User.ServerUUID, &v.User.Status, &v.Kind, &v.CSRF, &v.ExpiresAt, &v.User.Email, &v.User.GameVerified, &v.User.DisplayName, &v.User.ProfileUUID)
+	var expiry sql.NullTime
+	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.status,s.client_kind,s.csrf_token,s.expires_at,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id),COALESCE(i.profile_uuid,''),s.session_id,COALESCE(s.last_seen_at,s.created_at)
+	 FROM identity_sessions s JOIN identities i ON i.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND (s.expires_at>UTC_TIMESTAMP(6) OR (s.expires_at IS NULL AND s.client_kind='app')) AND i.status='active'`, hash).Scan(&v.User.ID, &v.User.PlayerRef, &v.User.GameID, &v.User.QQ, &v.User.ServerUUID, &v.User.Status, &v.Kind, &v.CSRF, &expiry, &v.User.Email, &v.User.GameVerified, &v.User.DisplayName, &v.User.ProfileUUID, &v.ID, &v.LastSeenAt)
+	if expiry.Valid {
+		v.ExpiresAt = expiry.Time
+	}
 	v.User.IdentityStatus = "bound"
 	if !v.User.GameVerified {
 		v.User.IdentityStatus = "unverified"
@@ -109,14 +123,70 @@ func (s *Store) Grant(ctx context.Context, user, permission string) error {
 	return tx.Commit()
 }
 
-// Reserving attempts before hashing closes the parallel-request bypass. Persistent
-// budgets survive restarts; the two keys are locked in a stable order.
+// Reserve credential attempts before hashing to close the parallel-request
+// bypass. Source traffic and persistent credential failures have separate windows.
 func (s *Store) ReserveLogin(ctx context.Context, accountKey, ipKey string) error {
-	return s.reserveBudgets(ctx, map[string]int{accountKey: 8, ipKey: 60})
+	_, err := s.ReserveLoginAttempt(ctx, accountKey, ipKey)
+	return err
 }
 
-func (s *Store) ReserveIdentityLogin(ctx context.Context, key string) error {
-	return s.reserveBudgets(ctx, map[string]int{key: 8})
+type LoginReservation struct {
+	Key       string
+	WindowEnd time.Time
+}
+
+func (s *Store) ReserveLoginAttempt(ctx context.Context, accountKey, ipKey string) (LoginReservation, error) {
+	// A short source-traffic window absorbs shared-network logins; credential
+	// failures still have a separate durable 8-attempt/15-minute budget.
+	if err := s.ReserveLoginSource(ctx, ipKey); err != nil {
+		return LoginReservation{}, err
+	}
+	return s.ReserveIdentityLogin(ctx, accountKey)
+}
+
+func (s *Store) ReserveLoginSource(ctx context.Context, ipKey string) error {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	key := Digest([]byte("login-source-minute:" + ipKey))
+	_, err = tx.ExecContext(ctx, `INSERT INTO auth_budgets VALUES (?,1,DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 1 MINUTE))
+	 ON DUPLICATE KEY UPDATE attempts=IF(expires_at<=UTC_TIMESTAMP(6),1,attempts+1),expires_at=IF(expires_at<=UTC_TIMESTAMP(6),DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 1 MINUTE),expires_at)`, key)
+	if err != nil {
+		return err
+	}
+	var attempts int
+	var expires time.Time
+	if err = tx.QueryRowContext(ctx, "SELECT attempts,expires_at FROM auth_budgets WHERE budget_key=?", key).Scan(&attempts, &expires); err != nil {
+		return err
+	}
+	if attempts > 240 {
+		return rateLimitedUntil(expires).withScope("SOURCE")
+	}
+	return tx.Commit()
+}
+
+func (s *Store) ReleaseLoginBudget(ctx context.Context, reservation LoginReservation) error {
+	// A late request from an older window must not erase a new window's failures.
+	_, err := s.DB.ExecContext(ctx, "UPDATE auth_budgets SET attempts=GREATEST(0,attempts-1) WHERE budget_key=? AND expires_at=? AND expires_at>UTC_TIMESTAMP(6)", reservation.Key, reservation.WindowEnd.UTC())
+	return err
+}
+
+func (s *Store) ReserveIdentityLogin(ctx context.Context, key string) (LoginReservation, error) {
+	reservation := LoginReservation{Key: key}
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return reservation, err
+	}
+	defer tx.Rollback()
+	if err = s.reserveBudgetsTx(ctx, tx, map[string]int{key: 8}); err != nil {
+		return reservation, err
+	}
+	if err = tx.QueryRowContext(ctx, "SELECT expires_at FROM auth_budgets WHERE budget_key=?", key).Scan(&reservation.WindowEnd); err != nil {
+		return reservation, err
+	}
+	return reservation, tx.Commit()
 }
 
 func (s *Store) reserveBudgets(ctx context.Context, limits map[string]int) error {

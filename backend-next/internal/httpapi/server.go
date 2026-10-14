@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -41,12 +42,15 @@ type Server struct {
 	desktop              *desktopRuntime
 	ysm                  *ysmBridge
 	nameQueue            playerNameQueue
+	profiles             *profileCapacity
+	profileInit          sync.Once
 }
 
 func New(s *store.Store, c config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	server := &Server{Store: s, Config: c, Identity: identity.New(s), Hub: bridge.NewHub(), Core: bridge.NewRuntime(), ctx: ctx, cancel: cancel, capacity: newRequestCapacity(c.Concurrency)}
 	server.CommerceCore = &commerceCoreAdapter{server: server}
+	server.profilePool()
 	server.Identity.GameNameResolver = func(ctx context.Context, name string) (store.AdmissionProfile, error) {
 		if server.Config.Development && server.AdmissionResolver == nil {
 			return store.AdmissionProfile{}, identity.ErrNameLookupDisabled
@@ -56,6 +60,9 @@ func New(s *store.Store, c config.Config) *Server {
 			return p, store.ErrSocialNotFound
 		}
 		if e != nil {
+			if errors.Is(e, identity.ErrNameLookupBusy) {
+				return p, e
+			}
 			return p, identity.ErrNameLookupUnavailable
 		}
 		return p, nil
@@ -102,6 +109,8 @@ func (s *Server) Handler() http.Handler {
 	s.registerMailSupport(mux)
 	mux.HandleFunc("POST /api/v1/mail/aliyun/events", s.aliyunMailEvent)
 	s.registerAdminAccountsV206(mux)
+	s.registerAccountSessions(mux)
+	s.registerProfileConflicts(mux)
 	s.registerAdminCommerceV204(mux)
 	s.registerLauncherIcons(mux)
 	s.registerDesktopLauncher(mux)
@@ -196,6 +205,9 @@ func failError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, identity.ErrBusy):
 		w.Header().Set("Retry-After", "1")
 		failure(w, r, 503, "SERVER_BUSY", "服务繁忙，请稍后重试。")
+	case errors.Is(err, identity.ErrNameLookupBusy):
+		w.Header().Set("Retry-After", "1")
+		failure(w, r, 503, "NAME_LOOKUP_BUSY", "正版查询正在处理较多请求，请稍后重试；登录也可使用邮箱或 QQ。")
 	case errors.Is(err, bridge.ErrNodeOffline):
 		failure(w, r, 503, "PLUGIN_BRIDGE_UNAVAILABLE", "游戏服务器连接暂不可用。")
 	case errors.Is(err, store.ErrConflict):
@@ -303,6 +315,7 @@ func (s *Server) authenticate(r *http.Request) (v store.Session, err error) {
 	if !v.User.GameVerified && !unverifiedAccountRoute(r) {
 		return v, store.ErrGameVerificationRequired
 	}
+	s.Store.TouchSession(r.Context(), v)
 	return
 }
 
@@ -322,8 +335,9 @@ func (s *Server) webLogin(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) login(w http.ResponseWriter, r *http.Request, kind string) {
 	var input struct {
-		Account  string `json:"account"`
-		Password string `json:"password"`
+		Account    string `json:"account"`
+		Password   string `json:"password"`
+		DeviceName string `json:"deviceName,omitempty"`
 	}
 	if err := body(w, r, &input); err != nil {
 		failError(w, r, err)
@@ -331,7 +345,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request, kind string) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	token, session, err := s.Identity.Login(ctx, input.Account, input.Password, s.remoteIP(r), kind)
+	token, session, err := s.Identity.Login(sessionDeviceContext(ctx, r, kind, input.DeviceName), input.Account, input.Password, s.remoteIP(r), kind)
 	if err != nil {
 		if errors.Is(err, identity.ErrNameLookupUnavailable) {
 			failure(w, r, 503, "NAME_LOOKUP_UNAVAILABLE", "正版名字核验暂不可用，请稍后重试或使用邮箱／QQ登录。")
@@ -356,6 +370,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request, kind string) {
 				retry = limited.RetryAfterSeconds
 			}
 			w.Header().Set("Retry-After", strconv.Itoa(retry))
+			if limited != nil && limited.Scope == "SOURCE" {
+				writeJSON(w, 429, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": "LOGIN_TRAFFIC_LIMITED", "message": fmt.Sprintf("当前网络登录请求较多，请 %d 秒后再试。", retry), "retryAfterSeconds": retry, "retryScope": "SOURCE", "details": map[string]string{}}})
+				return
+			}
 			writeJSON(w, 429, map[string]any{"requestId": requestID(r), "error": map[string]any{"code": "LOGIN_LOCKED", "message": fmt.Sprintf("登录尝试过多，请 %d 秒后再试。", retry), "details": map[string]string{}, "retryAfterSeconds": retry}})
 			return
 		}
@@ -410,6 +428,11 @@ func (s *Server) webSession(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		failError(w, r, err)
 		return
+	}
+	// Refresh the browser's cookie to the stored deadline after the lifetime
+	// migration. This never slides the 30-day server-side expiry forward.
+	if cookie, e := r.Cookie(s.cookieName()); e == nil {
+		s.setCookie(w, cookie.Value, v.ExpiresAt)
 	}
 	success(w, r, map[string]any{"user": v.User, "csrfToken": v.CSRF, "expiresAt": v.ExpiresAt})
 }
