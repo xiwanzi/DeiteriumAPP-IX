@@ -2,27 +2,28 @@ package httpapi
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
-func (s *Server) checkRegistrationProfile(ctx context.Context, name, ip string) error {
+func (s *Server) checkRegistrationProfile(ctx context.Context, name, ip string) (store.AdmissionProfile, error) {
 	if !store.ValidAdmissionName(name) {
-		return errAdmissionPlayerMissing
+		return store.AdmissionProfile{}, errAdmissionPlayerMissing
 	}
-	checked, err := s.Store.MinecraftProfileChecked(ctx, name)
-	if err != nil || checked {
-		return err
+	profile, err := s.Store.CachedMinecraftProfile(ctx, name)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return profile, err
 	}
 	if err = s.Store.ReserveProfileLookup(ctx, ip); err != nil {
-		return err
+		return store.AdmissionProfile{}, err
 	}
-	if _, err = s.resolveAdmissionProfile(ctx, name); err != nil {
-		return err
+	if profile, err = s.resolveAdmissionProfile(ctx, name); err != nil {
+		return profile, err
 	}
-	return s.Store.CacheMinecraftProfileCheck(ctx, name)
+	return profile, s.Store.CacheMinecraftProfileCheck(ctx, name, profile.UUID)
 }
 
 func registrationProfileFailure(w http.ResponseWriter, r *http.Request, err error) {

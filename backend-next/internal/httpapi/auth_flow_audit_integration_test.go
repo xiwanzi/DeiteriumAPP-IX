@@ -44,7 +44,7 @@ func TestAuthAuditFailedLookupDoesNotExhaustSendQuota(t *testing.T) {
 func TestAuthAuditCooldownConcurrentSendAndDailyLimit(t *testing.T) {
 	f := mailSupportFixture(t)
 	auditProfile(f)
-	if err := f.store.CacheMinecraftProfileCheck(context.Background(), "NewPlayer"); err != nil {
+	if err := f.store.CacheMinecraftProfileCheck(context.Background(), "NewPlayer", admissionTestUUID); err != nil {
 		t.Fatal(err)
 	}
 	input := map[string]string{"gameId": "NewPlayer", "email": "same@example.com"}
