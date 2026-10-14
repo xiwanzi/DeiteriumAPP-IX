@@ -1,6 +1,6 @@
 # 启动器增量发布 API 与 Web 2.0.41 候选验收
 
-2026-10-15，本机候选，尚未部署。维护 `.worktrees/launcher-incremental` / `xiwanzi/launcher-incremental`。配套启动器 0.6.10 采用轻量更新器和文件级增量；本轮不更换 App、游戏资源或游戏服务器程序。
+2026-10-15，本机验收完成，随后已正式上线；见[上线记录](../deployment/launcher-incremental-0.6.10-live.md)。维护 `.worktrees/launcher-incremental` / `xiwanzi/launcher-incremental`。配套启动器 0.6.10 采用轻量更新器和文件级增量；本轮不更换 App、游戏资源或游戏服务器程序。
 
 - Go 全量测试、vet 和发布相关 `-race` 通过；原有协议 1 验证保持。
 - 新协议分别验证旧/新信封、同版本同完整包绑定、清单与文件摘要、受管路径、重复内容复用与有界上传。文件对象生成失败不改变当前发布；真实签名构件通过本机 MariaDB 11.8.8 和假 OSS 完成 HTTP 发布验证，重试仅产生一次发布，缺失/损坏包拒绝。
