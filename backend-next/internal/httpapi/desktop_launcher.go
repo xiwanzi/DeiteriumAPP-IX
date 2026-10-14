@@ -30,6 +30,7 @@ type desktopRuntime struct {
 	token                                                                          string
 	tokenMu                                                                        sync.Mutex
 	syncMu                                                                         sync.Mutex
+	applicationMu                                                                  sync.Mutex
 }
 type desktopIndexEntry struct {
 	Label    string `json:"label"`

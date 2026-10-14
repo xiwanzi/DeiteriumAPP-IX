@@ -3,11 +3,8 @@ import { CheckCircle2, FileArchive, LoaderCircle, RefreshCw, ShieldCheck, Upload
 import launcherIcon from "./assets/launcher-icons/default.svg";
 import { Button } from "./components.jsx";
 import { id } from "./format.js";
+import { launcherPublication, matchesLauncherPublication, unpackLauncherRelease as unpack } from "./launcher-publication.js";
 
-function unpack(envelope) {
-  if (!envelope || typeof envelope.payload !== "string" || typeof envelope.signature !== "string") throw new Error("请选择构建生成的版本清单。");
-  return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(envelope.payload), (c) => c.charCodeAt(0))));
-}
 const megabytes = (value) => `${(value / 1048576).toFixed(1)} MB`;
 const endpoint = "/api/v1/admin/desktop-launcher/application";
 
@@ -33,14 +30,14 @@ export default function LauncherApplicationRelease({ client, onBusyChange }) {
     setError(""); setMessage(""); setSelection(null); request.current = null;
     try {
       const list = [...files], zip = list.find((f) => /\.zip$/i.test(f.name)), metadata = list.find((f) => /\.json$/i.test(f.name));
-      if (list.length !== 2 || !zip || !metadata || metadata.size > 64000) throw new Error("请同时选择构建生成的更新 ZIP 和版本 JSON 两个文件。");
-      const envelope = JSON.parse(await metadata.text()), release = unpack(envelope);
+      if (list.length !== 2 || !zip || !metadata || metadata.size > 128000) throw new Error("请同时选择构建生成的更新 ZIP 和版本 JSON 两个文件。");
+      const publication = launcherPublication(JSON.parse(await metadata.text())), release = publication.release;
       if (!release || release.product !== "DLauncher" || release.platform !== "windows-x64"
           || typeof release.version !== "string" || !/^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(release.version)
           || !Number.isSafeInteger(release.versionCode) || release.versionCode < 1
           || typeof release.notes !== "string" || release.notes.length > 16000
           || zip.size !== release.package?.size || zip.size > 1024 ** 3) throw new Error("更新包与版本清单不匹配，请重新选择。");
-      if (mounted.current) setSelection({ zip, envelope, release });
+      if (mounted.current) setSelection({ zip, ...publication });
     } catch (e) { if (mounted.current) setError(e.message); }
   }
   async function publish() {
@@ -69,18 +66,18 @@ export default function LauncherApplicationRelease({ client, onBusyChange }) {
       });
       if (!mounted.current) return;
       setPhase("verifying");
-      await client.request(`${endpoint}/publish`, { method: "POST", body: request.current, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(180000)]) });
+      await client.request(`${endpoint}/publish`, { method: "POST", body: request.current, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(660000)]) });
       if (!mounted.current) return;
       request.current = null;
       await load();
-      setMessage(`启动器 ${selection.release.version} 已发布。已接入自更新的旧版玩家，下次打开时会进入强制更新。`);
+      setMessage(`启动器 ${selection.release.version} 已发布。玩家会在自动检查或下次打开时收到更新提示。`);
       setSelection(null);
     } catch (e) {
       if (!mounted.current) return;
       // A lost response can follow a successful commit; inspect the published release.
       try {
         const current = await load();
-        if (current.application.release?.payload === selection.envelope.payload && current.application.release?.signature === selection.envelope.signature) {
+        if (matchesLauncherPublication(current.application, selection)) {
           request.current = null; setMessage("已确认此版本发布成功。"); setSelection(null); return;
         }
       } catch {}
@@ -102,11 +99,11 @@ export default function LauncherApplicationRelease({ client, onBusyChange }) {
     <div className="dl-editor-grid">
       <section className="panel dl-form-card">
         <div className="dl-card-heading"><h3>发布新版</h3><Button secondary disabled={busy} aria-label="刷新启动器版本" onClick={() => load().catch((e) => setError(e.message))}><RefreshCw size={16} /></Button></div>
-        <p className="dl-note">选择构建生成的 ZIP 与 JSON。后台会验证版本签名和上传文件，校验通过后再发布。</p>
+        <p className="dl-note">选择构建生成的 ZIP 与 JSON。后台校验并准备更新文件后发布，旧版启动器仍可正常升级。</p>
         <button className="dl-release-picker" type="button" disabled={busy} onClick={() => input.current?.click()}><FileArchive size={28} /><strong>{selection ? selection.zip.name : "选择版本文件"}</strong><span>{selection ? megabytes(selection.zip.size) : "同时选择更新包和版本清单"}</span></button>
         <input ref={input} type="file" accept=".zip,.json" multiple hidden onChange={(e) => { choose(e.target.files); e.target.value = ""; }} />
-        {selection && <div className="dl-release-selection"><span>待发布版本<strong>v{selection.release.version}</strong></span><span>更新方式<strong>强制更新</strong></span></div>}
-        {busy && <div className="dl-upload-progress" role="status"><span><LoaderCircle size={14} className="dl-spin" /> {phase === "preparing" ? "验证版本签名" : phase === "uploading" ? `上传更新包 · ${progress}%` : "校验更新包并发布，请稍候…"}</span><progress max={100} value={phase === "uploading" ? progress : undefined} /></div>}
+        {selection && <div className="dl-release-selection"><span>待发布版本<strong>v{selection.release.version}</strong></span><span>下载方式<strong>{selection.incremental ? "按需下载 · 兼容旧版" : "完整程序包"}</strong></span></div>}
+        {busy && <div className="dl-upload-progress" role="status"><span><LoaderCircle size={14} className="dl-spin" /> {phase === "preparing" ? "验证版本签名" : phase === "uploading" ? `上传更新包 · ${progress}%` : "校验并准备更新文件，请稍候…"}</span><progress max={100} value={phase === "uploading" ? progress : undefined} /></div>}
         <div className="dl-release-action"><Button disabled={busy || !selection || !data?.uploadReady || selection.release.versionCode <= (data?.application?.versionCode || 0)} onClick={publish}><Upload size={16} />{busy ? "正在发布…" : "上传并发布"}</Button></div>
         {selection && selection.release.versionCode <= (data?.application?.versionCode || 0) && <p className="dl-note">请使用高于当前发布版本的新版本号。</p>}
       </section>
