@@ -20,6 +20,7 @@ type User struct {
 	DisplayName    string   `json:"displayName"`
 	Permissions    []string `json:"permissions,omitempty"`
 	ServerUUID     string   `json:"-"`
+	ProfileUUID    string   `json:"-"`
 	PasswordHash   string   `json:"-"`
 	Status         string   `json:"-"`
 }
@@ -31,8 +32,8 @@ type Session struct {
 }
 
 func (s *Store) UserByAlias(ctx context.Context, alias string) (u User, err error) {
-	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.password_hash,i.status,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id)
-	 FROM identities i JOIN identity_aliases a ON a.user_id=i.id WHERE a.alias_key=?`, alias).Scan(&u.ID, &u.PlayerRef, &u.GameID, &u.QQ, &u.ServerUUID, &u.PasswordHash, &u.Status, &u.Email, &u.GameVerified, &u.DisplayName)
+	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.password_hash,i.status,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id),COALESCE(i.profile_uuid,'')
+	 FROM identities i JOIN identity_aliases a ON a.user_id=i.id WHERE a.alias_key=?`, alias).Scan(&u.ID, &u.PlayerRef, &u.GameID, &u.QQ, &u.ServerUUID, &u.PasswordHash, &u.Status, &u.Email, &u.GameVerified, &u.DisplayName, &u.ProfileUUID)
 	u.IdentityStatus = "bound"
 	if !u.GameVerified {
 		u.IdentityStatus = "unverified"
@@ -69,8 +70,8 @@ func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf s
 }
 
 func (s *Store) Session(ctx context.Context, hash string) (v Session, err error) {
-	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.status,s.client_kind,s.csrf_token,s.expires_at,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id)
-	 FROM identity_sessions s JOIN identities i ON i.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>UTC_TIMESTAMP(6) AND i.status='active'`, hash).Scan(&v.User.ID, &v.User.PlayerRef, &v.User.GameID, &v.User.QQ, &v.User.ServerUUID, &v.User.Status, &v.Kind, &v.CSRF, &v.ExpiresAt, &v.User.Email, &v.User.GameVerified, &v.User.DisplayName)
+	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.status,s.client_kind,s.csrf_token,s.expires_at,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id),COALESCE(i.profile_uuid,'')
+	 FROM identity_sessions s JOIN identities i ON i.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>UTC_TIMESTAMP(6) AND i.status='active'`, hash).Scan(&v.User.ID, &v.User.PlayerRef, &v.User.GameID, &v.User.QQ, &v.User.ServerUUID, &v.User.Status, &v.Kind, &v.CSRF, &v.ExpiresAt, &v.User.Email, &v.User.GameVerified, &v.User.DisplayName, &v.User.ProfileUUID)
 	v.User.IdentityStatus = "bound"
 	if !v.User.GameVerified {
 		v.User.IdentityStatus = "unverified"

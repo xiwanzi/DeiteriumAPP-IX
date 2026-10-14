@@ -122,9 +122,9 @@ func (s *Store) RegisterGameUser(ctx context.Context, v GameVerification, passwo
 	if err = consumeVerification(ctx, tx, v); err != nil {
 		return
 	}
-	u = User{ID: ID("user_"), ServerUUID: v.PlayerUUID, GameID: v.GameID, QQ: v.QQ, PasswordHash: passwordHash, Status: "active", IdentityStatus: "bound"}
+	u = User{ID: ID("user_"), ServerUUID: v.PlayerUUID, ProfileUUID: v.PlayerUUID, GameVerified: true, GameID: v.GameID, QQ: v.QQ, PasswordHash: passwordHash, Status: "active", IdentityStatus: "bound"}
 	u.PlayerRef = "player_" + Digest([]byte("deuterium-player:" + v.PlayerUUID + ":" + u.ID))[:40]
-	_, err = tx.ExecContext(ctx, `INSERT INTO identities (id,player_ref,server_uuid,game_id,qq,password_hash,status,created_at,updated_at,legacy_fingerprint) VALUES (?,?,?,?,?,?,'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),'native')`, u.ID, u.PlayerRef, u.ServerUUID, u.GameID, u.QQ, u.PasswordHash)
+	_, err = tx.ExecContext(ctx, `INSERT INTO identities (id,player_ref,server_uuid,game_id,qq,password_hash,status,created_at,updated_at,legacy_fingerprint,profile_uuid) VALUES (?,?,?,?,?,?,'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),'native',?)`, u.ID, u.PlayerRef, u.ServerUUID, u.GameID, u.QQ, u.PasswordHash, u.ProfileUUID)
 	if duplicate(err) {
 		return u, ErrConflict
 	}

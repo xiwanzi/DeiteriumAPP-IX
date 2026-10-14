@@ -172,11 +172,13 @@ func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.
 		return
 	}
 	if v.Purpose == "register" {
-		if err = s.checkRegistrationProfile(ctx, v.GameID, v.IssueIP); err != nil {
+		var profile store.AdmissionProfile
+		if profile, err = s.checkRegistrationProfile(ctx, v.GameID, v.IssueIP); err != nil {
 			registrationProfileFailure(w, r, err)
 			return
 		}
 		v.ProfileChecked = true
+		v.ProfileUUID = profile.UUID
 	}
 	random, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
@@ -222,11 +224,14 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 	}
 	// The verification record owns the requested ID. A public profile confirms
 	// existence only; game ownership remains a separate verification step.
-	if !v.ProfileChecked {
-		if err = s.checkRegistrationProfile(ctx, v.GameID, s.remoteIP(r)); err != nil {
+	if v.ProfileUUID == "" {
+		var profile store.AdmissionProfile
+		if profile, err = s.checkRegistrationProfile(ctx, v.GameID, s.remoteIP(r)); err != nil {
 			registrationProfileFailure(w, r, err)
 			return
 		}
+		v.ProfileUUID = profile.UUID
+		v.ProfileChecked = true
 	}
 	hash, err := s.Identity.HashPassword(ctx, in.Password)
 	if err != nil {
@@ -298,6 +303,10 @@ func (s *Server) gameVerificationCode(w http.ResponseWriter, r *http.Request) {
 	p, err := s.resolveCorePlayer(ctx, session.User.GameID, true)
 	if err != nil {
 		failError(w, r, err)
+		return
+	}
+	if session.User.ProfileUUID != "" && session.User.ProfileUUID != p.PlayerUUID {
+		failure(w, r, 409, "GAME_ID_IDENTITY_MISMATCH", "当前游戏身份与注册时的正版账号不一致，请联系支持人员核对。")
 		return
 	}
 	var count int

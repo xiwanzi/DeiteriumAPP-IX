@@ -84,7 +84,10 @@ func (s *Store) RenameAccountGameID(ctx context.Context, actor, target string, i
 				return nil, err
 			}
 		}
-		if _, err = tx.ExecContext(ctx, "UPDATE identities SET game_id=?,admin_version=admin_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=?", in.GameID, target); err != nil {
+		if _, err = tx.ExecContext(ctx, "UPDATE identities SET profile_uuid=IF(game_verified,server_uuid,?),profile_observed_at=UTC_TIMESTAMP(6),game_id=?,admin_version=admin_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=?", nullString(resolvedUUID), in.GameID, target); err != nil {
+			if duplicate(err) {
+				return nil, catalogError(409, "GAME_ID_IN_USE", "该正版账号已被其他平台账号登记，请联系支持人员核对。")
+			}
 			return nil, err
 		}
 		if _, err = tx.ExecContext(ctx, "UPDATE game_verifications SET state='EXPIRED' WHERE user_id=? AND state IN ('PENDING','ACTIVE')", target); err != nil {

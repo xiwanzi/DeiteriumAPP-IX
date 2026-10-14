@@ -98,6 +98,16 @@ func (s *Server) renameAdminGameID(w http.ResponseWriter, r *http.Request) {
 		}
 		resolved = player.PlayerUUID
 	}
+	if !current.Verified && current.Version == input.ExpectedVersion && current.Status != "deleted" && target != actor.ID && current.GameID != input.GameID {
+		if !s.Config.Development || s.AdmissionResolver != nil {
+			profile, e := s.resolveAdmissionProfile(ctx, input.GameID)
+			if e != nil {
+				registrationProfileFailure(w, r, e)
+				return
+			}
+			resolved = profile.UUID
+		}
+	}
 	result, err := s.Store.RenameAccountGameID(ctx, actor.ID, target, input, resolved)
 	if err != nil {
 		catalogFailV2(w, r, err)

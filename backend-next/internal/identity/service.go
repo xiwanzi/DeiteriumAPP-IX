@@ -65,7 +65,7 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	var canonical *store.AdmissionProfile
 	var nameObservedAt time.Time
 	var nameLookupErr error
-	gameAlias := lookupErr == nil && user.GameVerified && strings.EqualFold(user.GameID, account) && account != user.QQ && !strings.EqualFold(account, user.Email)
+	gameAlias := lookupErr == nil && (user.GameVerified || user.ProfileUUID != "") && strings.EqualFold(user.GameID, account) && account != user.QQ && !strings.EqualFold(account, user.Email)
 	if s.GameNameResolver != nil && store.ValidAdmissionName(account) && (errors.Is(lookupErr, sql.ErrNoRows) || gameAlias) {
 		nameObservedAt = time.Now().UTC()
 		profile, resolveErr := s.resolveGameName(ctx, account)
@@ -77,7 +77,7 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 		case resolveErr != nil || !store.ValidAdmissionUUID(profile.UUID) || !strings.EqualFold(profile.Name, account):
 			nameLookupErr = ErrNameLookupUnavailable
 		default:
-			found, findErr := s.Store.UserByUUID(ctx, profile.UUID)
+			found, findErr := s.Store.UserByProfileUUID(ctx, profile.UUID)
 			if findErr == nil {
 				user = found
 				lookupErr = nil
@@ -117,11 +117,18 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if err = ctx.Err(); err != nil {
 		return
 	}
-	if canonical != nil && s.SyncGameName != nil {
-		if err = s.SyncGameName(ctx, *canonical, nameObservedAt); err != nil {
+	if canonical != nil {
+		if user.GameVerified {
+			if s.SyncGameName != nil {
+				err = s.SyncGameName(ctx, *canonical, nameObservedAt)
+			}
+		} else {
+			err = s.Store.SyncRegisteredName(ctx, user, *canonical, nameObservedAt)
+		}
+		if err != nil {
 			return "", session, err
 		}
-		refreshed, refreshErr := s.Store.UserByUUID(ctx, user.ServerUUID)
+		refreshed, refreshErr := s.Store.UserByProfileUUID(ctx, canonical.UUID)
 		if refreshErr != nil {
 			return "", session, refreshErr
 		}

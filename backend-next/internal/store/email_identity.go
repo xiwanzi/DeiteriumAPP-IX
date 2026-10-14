@@ -17,6 +17,7 @@ type EmailVerification struct {
 	ID, TokenHash, CodeHash, Email, Purpose, UserID, GameID string
 	ExpiresAt                                               time.Time
 	ProfileChecked                                          bool
+	ProfileUUID                                             string
 	ResendAt                                                time.Time
 	IssueIP                                                 string
 }
@@ -71,7 +72,7 @@ func (s *Store) NewEmailVerification(ctx context.Context, v EmailVerification, c
 	if _, err = tx.ExecContext(ctx, "UPDATE email_verifications SET state='EXPIRED' WHERE email=? AND purpose=? AND state='ACTIVE'", v.Email, v.Purpose); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO email_verifications(verification_id,token_hash,code_hash,email,purpose,user_id,game_id,state,expires_at,created_at,profile_checked) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,UTC_TIMESTAMP(6),?)`, v.ID, v.TokenHash, v.CodeHash, v.Email, v.Purpose, nullString(v.UserID), v.GameID, v.ExpiresAt, v.ProfileChecked); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO email_verifications(verification_id,token_hash,code_hash,email,purpose,user_id,game_id,state,expires_at,created_at,profile_checked,profile_uuid) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,UTC_TIMESTAMP(6),?,?)`, v.ID, v.TokenHash, v.CodeHash, v.Email, v.Purpose, nullString(v.UserID), v.GameID, v.ExpiresAt, v.ProfileChecked, nullString(v.ProfileUUID)); err != nil {
 		return err
 	}
 	payload := notify.VerificationMail{TemplateVersion: notify.VerificationTemplateVersion, Purpose: v.Purpose, GameID: v.GameID, Code: code}
@@ -103,7 +104,7 @@ func (s *Store) CheckEmailVerification(ctx context.Context, token, code, purpose
 	defer tx.Rollback()
 	var state string
 	var attempts int
-	err = tx.QueryRowContext(ctx, `SELECT verification_id,token_hash,code_hash,email,purpose,COALESCE(user_id,''),game_id,state,attempts,expires_at,profile_checked FROM email_verifications WHERE token_hash=? AND purpose=? FOR UPDATE`, token, purpose).Scan(&v.ID, &v.TokenHash, &v.CodeHash, &v.Email, &v.Purpose, &v.UserID, &v.GameID, &state, &attempts, &v.ExpiresAt, &v.ProfileChecked)
+	err = tx.QueryRowContext(ctx, `SELECT verification_id,token_hash,code_hash,email,purpose,COALESCE(user_id,''),game_id,state,attempts,expires_at,profile_checked,COALESCE(profile_uuid,'') FROM email_verifications WHERE token_hash=? AND purpose=? FOR UPDATE`, token, purpose).Scan(&v.ID, &v.TokenHash, &v.CodeHash, &v.Email, &v.Purpose, &v.UserID, &v.GameID, &state, &attempts, &v.ExpiresAt, &v.ProfileChecked, &v.ProfileUUID)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrVerification
 	}
@@ -141,16 +142,28 @@ func consumeEmailVerification(ctx context.Context, tx *sql.Tx, v EmailVerificati
 }
 
 func (s *Store) RegisterEmailUser(ctx context.Context, v EmailVerification, passwordHash string) (u User, err error) {
+	if v.ProfileUUID != "" && !ValidAdmissionUUID(v.ProfileUUID) || v.ProfileChecked && v.ProfileUUID == "" {
+		return u, ErrVerification
+	}
 	tx, err := s.beginAccountTx(ctx, "")
 	if err != nil {
 		return u, err
 	}
 	defer tx.Rollback()
+	if v.ProfileUUID != "" {
+		var occupied int
+		if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM identities WHERE status<>'deleted' AND (profile_uuid=? OR server_uuid=?)", v.ProfileUUID, v.ProfileUUID).Scan(&occupied); err != nil {
+			return u, err
+		}
+		if occupied > 0 {
+			return u, ErrConflict
+		}
+	}
 	if err = consumeEmailVerification(ctx, tx, v); err != nil {
 		return u, err
 	}
-	u = User{ID: ID("user_"), PlayerRef: ID("player_"), Email: v.Email, GameID: v.GameID, DisplayName: v.GameID, PasswordHash: passwordHash, Status: "active", IdentityStatus: "unverified", GameVerified: false}
-	_, err = tx.ExecContext(ctx, `INSERT INTO identities(id,player_ref,server_uuid,game_id,qq,email,game_verified,password_hash,status,created_at,updated_at,legacy_fingerprint) VALUES(?,?,NULL,?,'',?,FALSE,?,'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),'native')`, u.ID, u.PlayerRef, u.GameID, u.Email, passwordHash)
+	u = User{ID: ID("user_"), PlayerRef: ID("player_"), Email: v.Email, GameID: v.GameID, ProfileUUID: v.ProfileUUID, DisplayName: v.GameID, PasswordHash: passwordHash, Status: "active", IdentityStatus: "unverified", GameVerified: false}
+	_, err = tx.ExecContext(ctx, `INSERT INTO identities(id,player_ref,server_uuid,game_id,qq,email,game_verified,password_hash,status,created_at,updated_at,legacy_fingerprint,profile_uuid) VALUES(?,?,NULL,?,'',?,FALSE,?,'active',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6),'native',?)`, u.ID, u.PlayerRef, u.GameID, u.Email, passwordHash, nullString(v.ProfileUUID))
 	if duplicate(err) {
 		return u, ErrConflict
 	}
@@ -185,20 +198,20 @@ func (s *Store) BindGameIdentity(ctx context.Context, userID string, v GameVerif
 	}
 	defer tx.Rollback()
 	var verified bool
-	var ref, currentGameID string
-	if err = tx.QueryRowContext(ctx, "SELECT game_verified,player_ref,game_id FROM identities WHERE id=? FOR UPDATE", userID).Scan(&verified, &ref, &currentGameID); err != nil {
+	var ref, currentGameID, profileUUID string
+	if err = tx.QueryRowContext(ctx, "SELECT game_verified,player_ref,game_id,COALESCE(profile_uuid,'') FROM identities WHERE id=? FOR UPDATE", userID).Scan(&verified, &ref, &currentGameID, &profileUUID); err != nil {
 		return err
 	}
 	if verified {
 		return ErrConflict
 	}
-	if !strings.EqualFold(currentGameID, v.GameID) {
+	if !strings.EqualFold(currentGameID, v.GameID) || profileUUID != "" && profileUUID != v.PlayerUUID {
 		return ErrVerification
 	}
 	if err = consumeVerification(ctx, tx, v); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, "UPDATE identities SET server_uuid=?,game_id=?,qq=?,game_verified=TRUE,updated_at=UTC_TIMESTAMP(6) WHERE id=?", v.PlayerUUID, v.GameID, v.QQ, userID)
+	_, err = tx.ExecContext(ctx, "UPDATE identities SET profile_uuid=?,server_uuid=?,game_id=?,qq=?,game_verified=TRUE,updated_at=UTC_TIMESTAMP(6) WHERE id=?", v.PlayerUUID, v.PlayerUUID, v.GameID, v.QQ, userID)
 	if duplicate(err) {
 		return ErrConflict
 	}

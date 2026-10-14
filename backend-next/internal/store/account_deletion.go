@@ -98,7 +98,7 @@ func (s *Store) DeleteAccount(ctx context.Context, proof AccountDeletionProof, t
 	tombstone[8] = (tombstone[8] & 63) | 128
 	h := hex.EncodeToString(tombstone[:])
 	uuid := h[:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:]
-	if _, err = tx.ExecContext(ctx, "UPDATE identities SET status='deleted',email=NULL,display_name=NULL,game_id=?,qq='',password_hash='',server_uuid=?,legacy_fingerprint='deleted',ban_reason='',admin_version=admin_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=?", DeletedAccountName, uuid, target); err != nil {
+	if _, err = tx.ExecContext(ctx, "UPDATE identities SET status='deleted',profile_uuid=NULL,profile_observed_at=NULL,email=NULL,display_name=NULL,game_id=?,qq='',password_hash='',server_uuid=?,legacy_fingerprint='deleted',ban_reason='',admin_version=admin_version+1,updated_at=UTC_TIMESTAMP(6) WHERE id=?", DeletedAccountName, uuid, target); err != nil {
 		return nil, err
 	}
 	if _, err = tx.ExecContext(ctx, "INSERT INTO account_deletions(user_id,player_ref,original_uuid,deleted_at) VALUES(?,?,?,UTC_TIMESTAMP(6))", target, u.PlayerRef, u.ServerUUID); err != nil {
