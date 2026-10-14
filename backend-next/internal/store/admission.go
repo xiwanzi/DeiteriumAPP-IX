@@ -18,8 +18,9 @@ var admissionQQ = regexp.MustCompile(`^[1-9][0-9]{4,10}$`)
 var admissionUUID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type AdmissionProfile struct {
-	UUID string `json:"uuid"`
-	Name string `json:"name"`
+	UUID       string    `json:"uuid"`
+	Name       string    `json:"name"`
+	ObservedAt time.Time `json:"-"`
 }
 
 type AdmissionSubmission struct {

@@ -20,6 +20,12 @@ func (s *Server) resolveAdmissionProfile(ctx context.Context, name string) (stor
 	if !store.ValidAdmissionName(name) {
 		return store.AdmissionProfile{}, store.ErrSocialInvalid
 	}
+	return s.profilePool().resolve(ctx, "name:"+strings.ToLower(name), func(ctx context.Context) (store.AdmissionProfile, error) {
+		return s.queryAdmissionProfile(ctx, name)
+	})
+}
+
+func (s *Server) queryAdmissionProfile(ctx context.Context, name string) (store.AdmissionProfile, error) {
 	if s.AdmissionResolver != nil {
 		return s.AdmissionResolver(ctx, name)
 	}

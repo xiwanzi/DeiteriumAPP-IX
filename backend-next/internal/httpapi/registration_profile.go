@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/identity"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
@@ -27,7 +28,7 @@ func (s *Server) checkRegistrationProfile(ctx context.Context, name, ip string) 
 }
 
 func registrationProfileFailure(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, store.ErrRateLimited) {
+	if errors.Is(err, store.ErrRateLimited) || errors.Is(err, identity.ErrNameLookupBusy) {
 		failError(w, r, err)
 	} else if errors.Is(err, errAdmissionPlayerMissing) || errors.Is(err, store.ErrSocialInvalid) {
 		failure(w, r, 400, "MINECRAFT_PLAYER_NOT_FOUND", "未找到此正版账号 ID，请核对 Minecraft Java 版玩家名后重新获取验证码。")

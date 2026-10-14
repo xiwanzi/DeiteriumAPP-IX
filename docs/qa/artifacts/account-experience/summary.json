@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-14",
+  "status": "local-candidate-not-deployed",
+  "baseCommit": "8487139",
+  "branch": "xiwanzi/account-experience-capacity",
+  "environment": {
+    "cpu": "Ryzen 5 9600X",
+    "go": "1.27.1",
+    "mariadb": "11.8.8",
+    "network": "loopback",
+    "officialLookup": "simulated 20ms",
+    "passwordWorkers": 2,
+    "officialQueryWorkers": 8
+  },
+  "hundredLoginTrials": [
+    {
+      "source": "capacity-conflicts.log",
+      "success": 100,
+      "busy": 0,
+      "loginP50": "1.2960622s",
+      "loginP95": "2.3372765s",
+      "loginMax": "2.4350038s",
+      "admissionP95": "2.1102ms",
+      "admissionMax": "35.6995ms"
+    },
+    {
+      "source": "capacity-final.log",
+      "success": 100,
+      "busy": 0,
+      "loginP50": "1.7350039s",
+      "loginP95": "2.7509409s",
+      "loginMax": "2.8376678s",
+      "admissionP95": "3.6737ms",
+      "admissionMax": "499.11ms"
+    },
+    {
+      "source": "capacity-handler.log",
+      "success": 100,
+      "busy": 0,
+      "loginP50": "1.2314809s",
+      "loginP95": "2.232448s",
+      "loginMax": "2.3165418s",
+      "admissionP95": "1.5127ms",
+      "admissionMax": "33.2649ms"
+    }
+  ],
+  "webTests": 88,
+  "androidUnitTests": 178,
+  "nativeInstrumentation": "PASS",
+  "productionAccess": false
+}

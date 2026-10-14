@@ -18,6 +18,12 @@ import (
 )
 
 func unverifiedAccountRoute(r *http.Request) bool {
+	if r.Method == "POST" && r.URL.Path == "/api/v1/account/game-profile" {
+		return true
+	}
+	if accountSessionRoute(r) {
+		return true
+	}
 	switch r.URL.Path {
 	case "/api/v1/account/me", "/api/v1/account/logout", "/api/v1/web/session", "/api/v1/account/game-verification-code", "/api/v1/account/game-verification", "/api/v1/account/password-change-code", "/api/v1/account/password-change":
 		return true
@@ -179,6 +185,10 @@ func (s *Server) issueEmailCode(w http.ResponseWriter, r *http.Request, v store.
 		}
 		v.ProfileChecked = true
 		v.ProfileUUID = profile.UUID
+		if err = s.Store.CheckProfileReservation(ctx, profile.UUID, v.Email); err != nil {
+			catalogFailV2(w, r, err)
+			return
+		}
 	}
 	random, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
@@ -206,6 +216,7 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 		VerificationToken string `json:"verificationToken"`
 		Code              string `json:"code"`
 		Password          string `json:"password"`
+		DeviceName        string `json:"deviceName,omitempty"`
 	}
 	if body(w, r, &in) != nil || !validCode(in.VerificationToken, in.Code) {
 		failError(w, r, bridge.ErrProtocol)
@@ -244,15 +255,14 @@ func (s *Server) registerEmail(w http.ResponseWriter, r *http.Request, kind stri
 			failure(w, r, 409, "ACCOUNT_ALREADY_EXISTS", "该邮箱或正版账号 ID 已注册，请登录或找回密码。")
 			return
 		}
-		failError(w, r, err)
+		catalogFailV2(w, r, err)
 		return
 	}
-	s.newAccountSession(w, r, ctx, u, kind)
+	s.newAccountSession(w, r, sessionDeviceContext(ctx, r, kind, in.DeviceName), u, kind)
 }
 func (s *Server) newAccountSession(w http.ResponseWriter, r *http.Request, ctx context.Context, u store.User, kind string) {
-	token, csrf := identity.Secret(), identity.Secret()
-	expiry := time.Now().UTC().Add(7 * 24 * time.Hour)
-	if err := s.Store.CreateSession(ctx, u, store.Digest([]byte(token)), kind, csrf, expiry, ""); err != nil {
+	token, session, err := s.Identity.IssueSession(ctx, u, kind)
+	if err != nil {
 		failure(w, r, 503, "ACCOUNT_CREATED_LOGIN_REQUIRED", "账号已创建，暂未完成登录。请使用刚才的邮箱和密码登录。")
 		return
 	}
@@ -264,8 +274,8 @@ func (s *Server) newAccountSession(w http.ResponseWriter, r *http.Request, ctx c
 				return
 			}
 		}
-		s.setCookie(w, token, expiry)
-		success(w, r, map[string]any{"user": u, "csrfToken": csrf, "expiresAt": expiry})
+		s.setCookie(w, token, session.ExpiresAt)
+		success(w, r, map[string]any{"user": u, "csrfToken": session.CSRF, "expiresAt": session.ExpiresAt})
 	} else {
 		success(w, r, map[string]any{"token": token, "user": u})
 	}
@@ -278,6 +288,10 @@ func (s *Server) gameVerificationCode(w http.ResponseWriter, r *http.Request) {
 	}
 	if session.User.GameVerified {
 		failure(w, r, 409, "ALREADY_VERIFIED", "此账号已完成游戏身份验证。")
+		return
+	}
+	if session.User.GameID == "" {
+		failure(w, r, 409, "GAME_PROFILE_REQUIRED", "原游戏身份登记已解除，请先在最新版 App 或网页登记自己的正版游戏账号。")
 		return
 	}
 	var in struct {

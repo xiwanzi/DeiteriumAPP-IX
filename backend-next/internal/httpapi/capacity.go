@@ -27,13 +27,13 @@ func (b *requestBudget) enter() bool {
 }
 
 type requestCapacity struct {
-	http, realtime, ai, control, core *requestBudget
+	http, realtime, ai, control, core, auth *requestBudget
 }
 
 func newRequestCapacity(c config.Concurrency) *requestCapacity {
 	c = c.WithDefaults()
 	return &requestCapacity{newRequestBudget(c.HTTPRequests), newRequestBudget(c.RealtimeConnections),
-		newRequestBudget(c.AIStreams), newRequestBudget(c.ControlRequests), newRequestBudget(32)}
+		newRequestBudget(c.AIStreams), newRequestBudget(c.ControlRequests), newRequestBudget(32), newRequestBudget(128)}
 }
 
 // Classify registered operations, never client-supplied Upgrade/Accept headers.
@@ -41,6 +41,10 @@ func newRequestCapacity(c config.Concurrency) *requestCapacity {
 // ordinary HTTP requests, AI streams or player reconnects.
 func (c *requestCapacity) budget(r *http.Request) *requestBudget {
 	switch r.Method + " " + r.URL.Path {
+	case "POST /api/v1/account/login", "POST /api/v1/web/session", "POST /api/v1/account/register", "POST /api/v1/web/register",
+		"POST /api/v1/account/registration-code", "POST /api/v1/account/password-reset-code", "POST /api/v1/account/password-reset",
+		"POST /api/v1/account/password-change-code", "POST /api/v1/account/password-change":
+		return c.auth
 	case "GET /api/v1/chat/ws":
 		return c.realtime
 	case "GET /bridge/v1/connect":
@@ -76,7 +80,7 @@ type budgetSnapshot struct {
 
 func (c *requestCapacity) snapshot() map[string]budgetSnapshot {
 	out := make(map[string]budgetSnapshot)
-	for name, b := range map[string]*requestBudget{"http": c.http, "realtime": c.realtime, "aiStreams": c.ai, "control": c.control, "core": c.core} {
+	for name, b := range map[string]*requestBudget{"http": c.http, "realtime": c.realtime, "aiStreams": c.ai, "control": c.control, "core": c.core, "auth": c.auth} {
 		out[name] = budgetSnapshot{len(b.slots), cap(b.slots), b.rejected.Load()}
 	}
 	return out
@@ -89,7 +93,9 @@ func (s *Server) runtimeCapacity(w http.ResponseWriter, r *http.Request) {
 	}
 	db := s.Store.DB.Stats()
 	success(w, r, map[string]any{
-		"requests": s.capacity.snapshot(),
+		"requests":          s.capacity.snapshot(),
+		"minecraftProfiles": s.profiles.snapshot(),
+		"authentication":    s.Identity.CapacitySnapshot(),
 		"database": map[string]any{"limit": db.MaxOpenConnections, "open": db.OpenConnections, "inUse": db.InUse,
 			"idle": db.Idle, "waitCount": db.WaitCount, "waitMilliseconds": db.WaitDuration.Milliseconds()},
 		"publicChat": map[string]uint64{"databaseReads": s.chatReads.reads.Load(), "sharedReads": s.chatReads.shared.Load()},

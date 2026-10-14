@@ -75,12 +75,12 @@ class BackendApi internal constructor(context: Context, origin: String = BuildCo
     }
     fun forgetSession() { token = null; user = null; AppImages.sessionEnded(); prefs.edit().remove("session").remove("user").apply() }
     suspend fun login(account: String, password: String): String {
-        val data = request("POST", "/account/login", JSONObject().put("account", account).put("password", password), authenticated = false)
+        val data = request("POST", "/account/login", JSONObject().put("account", account).put("password", password).put("deviceName", "Android · ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"), authenticated = false)
         rememberSession(data); return userName
     }
     suspend fun register(gameId: String, email: String, password: String, verificationToken: String, code: String): String {
         val data = request("POST", "/account/register", JSONObject()
-            .put("password", password).put("verificationToken", verificationToken).put("code", code), authenticated = false)
+            .put("password", password).put("verificationToken", verificationToken).put("code", code).put("deviceName", "Android · ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"), authenticated = false)
         rememberSession(data); return userName
     }
     suspend fun verifySession() {

@@ -15,7 +15,7 @@ import (
 
 func TestLongRequestSaturationLeavesControlAndHTTPAvailable(t *testing.T) {
 	c := newRequestCapacity(config.Concurrency{HTTPRequests: 1, RealtimeConnections: 1, AIStreams: 1, ControlRequests: 1})
-	for _, b := range []*requestBudget{c.realtime, c.ai, c.core} {
+	for _, b := range []*requestBudget{c.realtime, c.ai, c.core, c.auth} {
 		for b.enter() {
 		}
 	}

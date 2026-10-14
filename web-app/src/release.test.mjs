@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { DeuteriumClient } from "./api.js";
 import { credit, transferAmount } from "./format.js";
 import { publicConfig, backendOrigin } from "../gateway.mjs";
 
 test("release configuration cannot activate a demo login without an upstream", () => {
-  assert.deepEqual(publicConfig(null), { mode: "connected", version: "2.0.38", configured: false });
+  const version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+  assert.deepEqual(publicConfig(null), { mode: "connected", version, configured: false });
   assert.equal(publicConfig(backendOrigin("http://127.0.0.1:8080")).mode, "connected");
 });
 

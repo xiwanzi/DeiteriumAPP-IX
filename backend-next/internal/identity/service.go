@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -13,6 +14,7 @@ import (
 
 var ErrNameLookupUnavailable = errors.New("official name lookup unavailable")
 var ErrNameLookupDisabled = errors.New("official name lookup disabled for isolated tests")
+var ErrNameLookupBusy = errors.New("official name lookup capacity exhausted")
 
 var ErrBusy = errors.New("password verification capacity exhausted")
 
@@ -27,6 +29,8 @@ func (s *Service) HashPassword(ctx context.Context, password string) (string, er
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
+	start := time.Now()
+	defer s.passwordTiming.observe(start)
 	return Hash(password), nil
 }
 
@@ -36,18 +40,25 @@ type Service struct {
 	Store            *store.Store
 	slots            chan struct{}
 	waiting          chan struct{}
-	nameLookups      chan struct{}
 	dummyHash        string
+
+	loginTiming         timing
+	passwordQueueTiming timing
+	passwordTiming      timing
+	sessionTiming       timing
+	passwordRejected    atomic.Uint64
 }
 
 func New(s *store.Store) *Service {
 	// Public synthetic hash, never an account credential. Unknown accounts still
 	// execute the same bounded KDF, without allocating 64 MiB just to start up.
 	const dummy = "$argon2id$v=19$m=65536,t=3,p=2$2vFuEp4//iUeRq5II53mPw$qX0Vqkwxq2VJxZUjXYGv5D7meMQzHQ4V1cGb/RIMjBg"
-	return &Service{Store: s, slots: make(chan struct{}, 2), waiting: make(chan struct{}, 32), nameLookups: make(chan struct{}, 8), dummyHash: dummy}
+	return &Service{Store: s, slots: make(chan struct{}, 2), waiting: make(chan struct{}, 128), dummyHash: dummy}
 }
 
 func (s *Service) Login(ctx context.Context, account, password, ip, kind string) (token string, session store.Session, err error) {
+	start := time.Now()
+	defer s.loginTiming.observe(start)
 	account = strings.ToLower(strings.TrimSpace(account))
 	if SystemGameID(account) {
 		return "", session, store.ErrUnauthorized
@@ -58,9 +69,23 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	}
 	accountKey := store.Digest([]byte("account:" + account))
 	ipKey := store.Digest([]byte("ip:" + ip))
-	if err = s.Store.ReserveLogin(ctx, accountKey, ipKey); err != nil {
+	accountReservation, reserveErr := s.Store.ReserveLoginAttempt(ctx, accountKey, ipKey)
+	if reserveErr != nil {
+		err = reserveErr
 		return
 	}
+	reserved := []store.LoginReservation{accountReservation}
+	credentialRejected := false
+	defer func() {
+		if !credentialRejected {
+			cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+			defer cancel()
+			// Busy, upstream failure and cancellation are not password failures.
+			for _, reservation := range reserved {
+				_ = s.Store.ReleaseLoginBudget(cleanup, reservation)
+			}
+		}
+	}()
 	user, lookupErr := s.Store.UserByAlias(ctx, account)
 	var canonical *store.AdmissionProfile
 	var nameObservedAt time.Time
@@ -69,8 +94,13 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if s.GameNameResolver != nil && store.ValidAdmissionName(account) && (errors.Is(lookupErr, sql.ErrNoRows) || gameAlias) {
 		nameObservedAt = time.Now().UTC()
 		profile, resolveErr := s.resolveGameName(ctx, account)
+		if !profile.ObservedAt.IsZero() {
+			nameObservedAt = profile.ObservedAt
+		}
 		switch {
 		case errors.Is(resolveErr, ErrNameLookupDisabled):
+		case errors.Is(resolveErr, ErrNameLookupBusy):
+			return "", session, resolveErr
 		case errors.Is(resolveErr, store.ErrSocialNotFound):
 			user = store.User{}
 			lookupErr = sql.ErrNoRows
@@ -94,11 +124,17 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
 		return "", session, lookupErr
 	}
+	if nameLookupErr != nil {
+		return "", session, nameLookupErr
+	}
 	userBudgetKey := store.Digest([]byte("identity:" + user.ID))
 	if lookupErr == nil {
-		if err = s.Store.ReserveIdentityLogin(ctx, userBudgetKey); err != nil {
+		reservation, e := s.Store.ReserveIdentityLogin(ctx, userBudgetKey)
+		if e != nil {
+			err = e
 			return
 		}
+		reserved = append(reserved, reservation)
 	}
 	hash := user.PasswordHash
 	if lookupErr != nil {
@@ -112,6 +148,7 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 		return "", session, nameLookupErr
 	}
 	if !valid || lookupErr != nil || user.Status != "active" {
+		credentialRejected = true
 		return "", session, store.ErrUnauthorized
 	}
 	if err = ctx.Err(); err != nil {
@@ -143,10 +180,7 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 			return "", session, err
 		}
 	}
-	token = Secret()
-	csrf := Secret()
-	expiry := time.Now().UTC().Add(7 * 24 * time.Hour)
-	err = s.Store.CreateSession(ctx, user, store.Digest([]byte(token)), kind, csrf, expiry, newHash)
+	token, session, err = s.issueSession(ctx, user, kind, newHash)
 	if errors.Is(err, store.ErrCredentialChanged) {
 		// A concurrent first login may have upgraded the same legacy password.
 		// Reverify once against the current hash: never bypass a real password reset.
@@ -168,7 +202,7 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 				return "", session, err
 			}
 		}
-		err = s.Store.CreateSession(ctx, user, store.Digest([]byte(token)), kind, csrf, expiry, newHash)
+		token, session, err = s.issueSession(ctx, user, kind, newHash)
 		if errors.Is(err, store.ErrCredentialChanged) {
 			err = store.ErrUnauthorized
 		}
@@ -176,9 +210,6 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if err != nil {
 		return "", session, err
 	}
-	// Clearing the account budget never clears the source IP budget.
-	_ = s.Store.ClearAccountBudget(ctx, accountKey)
-	_ = s.Store.ClearAccountBudget(ctx, userBudgetKey)
-	session = store.Session{User: user, TokenHash: store.Digest([]byte(token)), Kind: kind, CSRF: csrf, ExpiresAt: expiry}
+	// Release just this successful reservation, preserving concurrent failures.
 	return
 }

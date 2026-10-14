@@ -4,11 +4,13 @@ import { LogOut, PenLine, Upload, RefreshCw, Bell, MessageCircle } from "lucide-
 import { Avatar, Badge, Button, Empty, Field, Modal, PageHead, Toggle } from "./components.jsx";
 import { id } from "./format.js";
 import { uploadAsset } from "./assets.js";
+import DeviceSessions from "./DeviceSessions.jsx";
 
 export default function ConnectedProfile({ client, user, onLogout, onPasswordChanged, navigate, onProfileUpdated }) {
   const [profile, setProfile] = usePlayerNameState(client, null), [error, setError] = useState(""), [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false), [bio, setBio] = useState(""), [displayName, setDisplayName] = useState(""), [progress, setProgress] = useState(null);
   const [changingPassword,setChangingPassword]=useState(false);
+  const [devices, setDevices] = useState(false);
   const pendingBio = useRef(null), fileInput = useRef(null);
   const load = async () => { setError(""); try { const r = await client.profile(user.playerRef); setProfile(r.data); } catch (e) { setError(e.message); } };
   useEffect(() => { load(); }, [user.playerRef]);
@@ -36,10 +38,11 @@ export default function ConnectedProfile({ client, user, onLogout, onPasswordCha
         <input ref={fileInput} type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={(e) => saveAvatar(e.target.files?.[0])} />
         {progress && <div role="status"><p>{progress.label} · {progress.value}%</p><progress value={progress.value} max="100" style={{ width: "100%" }} aria-label="头像上传进度" /></div>}
       </div>
-      <div className="button-row"><Button secondary onClick={()=>setChangingPassword(true)}>更改密码</Button><Button secondary onClick={() => navigate("/notification-settings")}><Bell size={16} />通知设置</Button><Button secondary onClick={() => navigate("/support")}>邮件支持</Button><Button secondary onClick={() => navigate("/wallet")}>查看钱包</Button><Button secondary onClick={() => navigate("/orders")}>我的订单</Button><Button secondary onClick={() => navigate("/merchant")}>我的商店</Button><Button secondary onClick={onLogout}><LogOut size={16} />退出登录</Button></div>
+      <div className="button-row"><Button secondary onClick={()=>setChangingPassword(true)}>更改密码</Button><Button secondary onClick={() => setDevices(true)}>登录设备</Button><Button secondary onClick={() => navigate("/notification-settings")}><Bell size={16} />通知设置</Button><Button secondary onClick={() => navigate("/support")}>邮件支持</Button><Button secondary onClick={() => navigate("/wallet")}>查看钱包</Button><Button secondary onClick={() => navigate("/orders")}>我的订单</Button><Button secondary onClick={() => navigate("/merchant")}>我的商店</Button><Button secondary onClick={onLogout}><LogOut size={16} />退出登录</Button></div>
     </>}
     {!profile && !error && <p className="muted">正在读取资料…</p>}
     {changingPassword && <Modal title="更改密码" close={()=>setChangingPassword(false)} dismissOnBackdrop={false}><PasswordChangeForm client={client} user={user} onChanged={onPasswordChanged} /></Modal>}
+    {devices && <Modal title="登录设备" close={() => setDevices(false)}><DeviceSessions client={client} /></Modal>}
     {editing && <Modal title="编辑个人资料" close={() => { if (!busy) setEditing(false); }}><form onSubmit={saveBio}><Field label="昵称" hint="支持中文，最多 24 个字符；不会改变游戏 ID。" required maxLength={24} value={displayName} onChange={e => { setDisplayName(e.target.value); pendingBio.current=null; }} /><Field label="个人简介"><textarea value={bio} onChange={(e) => { setBio(e.target.value); pendingBio.current = null; }} maxLength={200} rows={5} /></Field><p className="muted">{bio.length} / 200</p>{error && <p className="auth-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? "正在保存…" : "保存"}</Button></form></Modal>}
   </section>;
 }
