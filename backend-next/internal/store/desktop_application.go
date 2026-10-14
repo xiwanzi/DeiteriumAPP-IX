@@ -30,7 +30,7 @@ func (s *Store) DesktopApplication(ctx context.Context) (DesktopApplication, err
 }
 
 func (s *Store) PublishDesktopApplication(ctx context.Context, actor, request string, expected int64, name string, code int64, envelope json.RawMessage) (json.RawMessage, error) {
-	if expected < 0 || code < 1 || len(name) > 32 || len(envelope) > 64000 || !json.Valid(envelope) {
+	if expected < 0 || code < 1 || len(name) > 32 || len(envelope) > 128000 || !json.Valid(envelope) {
 		return nil, ErrSocialInvalid
 	}
 	input := struct {

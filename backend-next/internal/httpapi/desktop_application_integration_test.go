@@ -6,17 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"strings"
-	"sync/atomic"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
@@ -74,7 +67,7 @@ func TestDesktopApplicationRealArtifactPublication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	release, err := verifyDesktopApplication(raw, desktopApplicationPublicKey)
+	release, err := verifyDesktopPublication(raw, desktopApplicationPublicKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,29 +75,16 @@ func TestDesktopApplicationRealArtifactPublication(t *testing.T) {
 	if err = f.store.Grant(context.Background(), f.users["Alice"].ID, "platform.admin"); err != nil {
 		t.Fatal(err)
 	}
-	var corrupt atomic.Bool
-	corrupt.Store(true)
-	objects := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" || r.URL.Path != "/fixture/"+desktopApplicationObjectKey(release) {
-			t.Errorf("unexpected object request: %s %s", r.Method, r.URL.Path)
-			w.WriteHeader(404)
-			return
-		}
-		if corrupt.Load() {
-			w.Write([]byte("incomplete upload fixture"))
-			return
-		}
-		file, err := os.Open(packagePath)
-		if err != nil {
-			t.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-		defer file.Close()
-		io.Copy(w, file)
-	}))
-	defer objects.Close()
-	f.app.desktop = &desktopRuntime{bucket: "fixture", publicURL: strings.TrimSuffix(release.Package.URL, "/"+desktopApplicationObjectKey(release)), objects: s3.New(s3.Options{Region: "us-east-1", BaseEndpoint: aws.String(objects.URL), UsePathStyle: true, Credentials: credentials.NewStaticCredentialsProvider("fixture", "fixture", "")})}
+	objects := newApplicationObjects(t)
+	runtime := objects.runtime()
+	runtime.publicURL = strings.TrimSuffix(release.Package.URL, "/"+desktopApplicationObjectKey(release))
+	f.app.desktop = runtime
+	bad := objects.directory + "/incomplete.zip"
+	if err := os.WriteFile(bad, []byte("incomplete"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	key := desktopApplicationObjectKey(release)
+	objects.seed(key, bad, 10, release.Package.SHA256)
 	endpoint := "/api/v1/admin/desktop-launcher/application"
 	prepared := socialDataV2(f.request(t, "Alice", "POST", endpoint+"/upload", map[string]any{"release": json.RawMessage(raw)}, 200))
 	if prepared["version"] != release.Version {
@@ -116,15 +96,33 @@ func TestDesktopApplicationRealArtifactPublication(t *testing.T) {
 	if before.Revision != 0 {
 		t.Fatal("incomplete upload changed publication")
 	}
-	corrupt.Store(false)
+	objects.seed(key, packagePath, release.Package.Size, release.Package.SHA256)
+	if release.UpdaterProtocol == 2 {
+		objects.fail.Store(true)
+		f.request(t, "Alice", "POST", endpoint+"/publish", input, 409)
+		before, _ = f.store.DesktopApplication(context.Background())
+		if before.Revision != 0 {
+			t.Fatal("failed content preparation changed publication")
+		}
+		objects.fail.Store(false)
+	}
 	f.request(t, "Alice", "POST", endpoint+"/publish", input, 200)
 	f.request(t, "Alice", "POST", endpoint+"/publish", input, 200)
 	current, err := f.store.DesktopApplication(context.Background())
 	if err != nil || current.Revision != 1 || current.Version != release.Version {
 		t.Fatal("actual artifact publication failed", err)
 	}
-	public := socialDataV2(f.request(t, "", "GET", "/api/v1/launcher/application", nil, 200))
-	if public["release"] == nil {
-		t.Fatal("published artifact is not readable")
+	for _, query := range []string{"", "?updaterProtocol=2", "?updaterProtocol=999"} {
+		public := socialDataV2(f.request(t, "", "GET", "/api/v1/launcher/application"+query, nil, 200))
+		selected, _ := json.Marshal(public["release"])
+		value, err := verifyDesktopApplication(selected, desktopApplicationPublicKey)
+		expected := 1
+		if query == "?updaterProtocol=2" {
+			expected = release.UpdaterProtocol
+		}
+		if err != nil || value.UpdaterProtocol != expected {
+			t.Fatal("incompatible public release", query, value.UpdaterProtocol, err)
+		}
 	}
+	t.Logf("Verified signed %s artifact (%d bytes): permissions, incomplete upload, preparation failure, idempotency and protocol negotiation", release.Version, release.Package.Size)
 }
