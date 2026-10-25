@@ -142,6 +142,11 @@ func corePeer(f *fixture, handler func(string, map[string]any) (string, any)) {
 	})
 }
 func setupRegistrationDM(t *testing.T, f *fixture) {
+	// Match the synthetic Core identity instead of querying a real player's
+	// public profile. Registration now preserves that UUID for later binding.
+	f.app.AdmissionResolver = func(_ context.Context, name string) (store.AdmissionProfile, error) {
+		return store.AdmissionProfile{UUID: "d97161f9-2a7c-4abd-a8e7-6fd64a64c009", Name: name}, nil
+	}
 	f.app.Config.SMTPKey = []byte(strings.Repeat("k", 32))
 	raw, _ := json.Marshal(notify.Settings{Enabled: true, Host: "127.0.0.1", Port: 9, Security: "TLS", From: "code@example.com", Recipients: []string{"operator@example.com"}})
 	if _, err := f.store.DB.Exec("INSERT INTO mail_channels VALUES('DM',?,'',1,UTC_TIMESTAMP(6))", raw); err != nil {

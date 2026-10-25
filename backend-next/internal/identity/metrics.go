@@ -27,6 +27,7 @@ func (t *timing) snapshot() map[string]uint64 {
 func (s *Service) CapacitySnapshot() map[string]any {
 	return map[string]any{"passwordWorkers": len(s.slots), "passwordWorkerLimit": cap(s.slots),
 		"passwordWaiting": len(s.waiting), "passwordQueueLimit": cap(s.waiting), "passwordRejected": s.passwordRejected.Load(),
+		"localLogins": s.localLogins.Load(), "nameLoginLookups": s.nameLoginLookups.Load(),
 		"login": s.loginTiming.snapshot(), "passwordQueue": s.passwordQueueTiming.snapshot(),
 		"passwordCalculation": s.passwordTiming.snapshot(), "sessionWrite": s.sessionTiming.snapshot()}
 }

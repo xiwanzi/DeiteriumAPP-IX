@@ -37,16 +37,20 @@ func (s *Service) HashPassword(ctx context.Context, password string) (string, er
 type Service struct {
 	GameNameResolver func(context.Context, string) (store.AdmissionProfile, error)
 	SyncGameName     func(context.Context, store.AdmissionProfile, time.Time) error
-	Store            *store.Store
-	slots            chan struct{}
-	waiting          chan struct{}
-	dummyHash        string
+	// Queue-only callback: no network/database work on the login response path.
+	RefreshGameName func(store.User)
+	Store           *store.Store
+	slots           chan struct{}
+	waiting         chan struct{}
+	dummyHash       string
 
 	loginTiming         timing
 	passwordQueueTiming timing
 	passwordTiming      timing
 	sessionTiming       timing
 	passwordRejected    atomic.Uint64
+	localLogins         atomic.Uint64
+	nameLoginLookups    atomic.Uint64
 }
 
 func New(s *store.Store) *Service {
@@ -87,11 +91,53 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 		}
 	}()
 	user, lookupErr := s.Store.UserByAlias(ctx, account)
+	if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
+		return "", session, lookupErr
+	}
+	// A platform alias and its password authenticate the stable platform account.
+	// Official lookup is a fallback for a new/reused name, not a prerequisite for
+	// every successful login. Reuse each identity reservation/KDF within a request.
+	type checkedCredential struct {
+		hash  string
+		valid bool
+	}
+	checked := map[string]checkedCredential{}
+	budgeted := map[string]bool{}
+	verifyUser := func(candidate store.User) (bool, error) {
+		if !budgeted[candidate.ID] {
+			reservation, e := s.Store.ReserveIdentityLogin(ctx, store.Digest([]byte("identity:"+candidate.ID)))
+			if e != nil {
+				return false, e
+			}
+			reserved = append(reserved, reservation)
+			budgeted[candidate.ID] = true
+		}
+		if previous, ok := checked[candidate.ID]; ok && previous.hash == candidate.PasswordHash {
+			return previous.valid && candidate.Status == "active", nil
+		}
+		valid, e := s.verifyPassword(ctx, candidate.PasswordHash, password)
+		if e == nil {
+			checked[candidate.ID] = checkedCredential{candidate.PasswordHash, valid}
+		}
+		return valid && candidate.Status == "active", e
+	}
 	var canonical *store.AdmissionProfile
 	var nameObservedAt time.Time
-	var nameLookupErr error
 	gameAlias := lookupErr == nil && (user.GameVerified || user.ProfileUUID != "") && strings.EqualFold(user.GameID, account) && account != user.QQ && !strings.EqualFold(account, user.Email)
-	if s.GameNameResolver != nil && store.ValidAdmissionName(account) && (errors.Is(lookupErr, sql.ErrNoRows) || gameAlias) {
+	valid := false
+	var verifyErr error
+	if lookupErr == nil {
+		valid, verifyErr = verifyUser(user)
+		// Once local credentials were actually rejected, an upstream outage must
+		// not erase that failed attempt. A successful fallback to the current
+		// name owner releases all reservations below as usual.
+		credentialRejected = verifyErr == nil && !valid
+		if verifyErr != nil && (!gameAlias || !errors.Is(verifyErr, store.ErrRateLimited)) {
+			return "", session, verifyErr
+		}
+	}
+	if !valid && s.GameNameResolver != nil && store.ValidAdmissionName(account) && (errors.Is(lookupErr, sql.ErrNoRows) || gameAlias) {
+		s.nameLoginLookups.Add(1)
 		nameObservedAt = time.Now().UTC()
 		profile, resolveErr := s.resolveGameName(ctx, account)
 		if !profile.ObservedAt.IsZero() {
@@ -105,13 +151,17 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 			user = store.User{}
 			lookupErr = sql.ErrNoRows
 		case resolveErr != nil || !store.ValidAdmissionUUID(profile.UUID) || !strings.EqualFold(profile.Name, account):
-			nameLookupErr = ErrNameLookupUnavailable
+			return "", session, ErrNameLookupUnavailable
 		default:
 			found, findErr := s.Store.UserByProfileUUID(ctx, profile.UUID)
 			if findErr == nil {
 				user = found
 				lookupErr = nil
 				canonical = &profile
+				valid, verifyErr = verifyUser(user)
+				if verifyErr == nil && valid {
+					credentialRejected = false
+				}
 			} else if errors.Is(findErr, sql.ErrNoRows) {
 				user = store.User{}
 				lookupErr = sql.ErrNoRows
@@ -124,28 +174,15 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
 		return "", session, lookupErr
 	}
-	if nameLookupErr != nil {
-		return "", session, nameLookupErr
-	}
-	userBudgetKey := store.Digest([]byte("identity:" + user.ID))
-	if lookupErr == nil {
-		reservation, e := s.Store.ReserveIdentityLogin(ctx, userBudgetKey)
-		if e != nil {
-			err = e
-			return
-		}
-		reserved = append(reserved, reservation)
-	}
 	hash := user.PasswordHash
 	if lookupErr != nil {
 		hash = s.dummyHash
+		if len(checked) == 0 {
+			_, verifyErr = s.verifyPassword(ctx, hash, password)
+		}
 	}
-	valid, verifyErr := s.verifyPassword(ctx, hash, password)
 	if verifyErr != nil {
 		return "", session, verifyErr
-	}
-	if nameLookupErr != nil {
-		return "", session, nameLookupErr
 	}
 	if !valid || lookupErr != nil || user.Status != "active" {
 		credentialRejected = true
@@ -180,6 +217,7 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 			return "", session, err
 		}
 	}
+	ctx = store.WithLoginAlias(ctx, account)
 	token, session, err = s.issueSession(ctx, user, kind, newHash)
 	if errors.Is(err, store.ErrCredentialChanged) {
 		// A concurrent first login may have upgraded the same legacy password.
@@ -209,6 +247,12 @@ func (s *Service) Login(ctx context.Context, account, password, ip, kind string)
 	}
 	if err != nil {
 		return "", session, err
+	}
+	if canonical == nil {
+		s.localLogins.Add(1)
+		if s.RefreshGameName != nil {
+			s.RefreshGameName(session.User)
+		}
 	}
 	// Release just this successful reservation, preserving concurrent failures.
 	return
