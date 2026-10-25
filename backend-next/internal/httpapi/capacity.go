@@ -96,6 +96,7 @@ func (s *Server) runtimeCapacity(w http.ResponseWriter, r *http.Request) {
 		"requests":          s.capacity.snapshot(),
 		"minecraftProfiles": s.profiles.snapshot(),
 		"authentication":    s.Identity.CapacitySnapshot(),
+		"loginNameRefresh":  map[string]any{"queued": len(s.loginProfiles.jobs), "queueLimit": cap(s.loginProfiles.jobs), "completed": s.loginProfiles.completed.Load(), "failed": s.loginProfiles.failed.Load(), "dropped": s.loginProfiles.dropped.Load()},
 		"database": map[string]any{"limit": db.MaxOpenConnections, "open": db.OpenConnections, "inUse": db.InUse,
 			"idle": db.Idle, "waitCount": db.WaitCount, "waitMilliseconds": db.WaitDuration.Milliseconds()},
 		"publicChat": map[string]uint64{"databaseReads": s.chatReads.reads.Load(), "sharedReads": s.chatReads.shared.Load()},

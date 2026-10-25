@@ -125,7 +125,7 @@ func TestAccountCapacityUpstreamFailureDoesNotConsumeCredentialBudget(t *testing
 		return store.AdmissionProfile{}, identity.ErrNameLookupBusy
 	}
 	for range 10 {
-		_, _, err := f.app.Identity.Login(context.Background(), u.GameID, "test-password", "127.0.0.10", "app")
+		_, _, err := f.app.Identity.Login(context.Background(), "UnknownNewName", "test-password", "127.0.0.10", "app")
 		if !errors.Is(err, identity.ErrNameLookupBusy) {
 			t.Fatal("busy lookup became a password lock", err)
 		}

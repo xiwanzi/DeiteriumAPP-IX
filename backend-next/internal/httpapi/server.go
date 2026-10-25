@@ -42,6 +42,7 @@ type Server struct {
 	desktop              *desktopRuntime
 	ysm                  *ysmBridge
 	nameQueue            playerNameQueue
+	loginProfiles        loginProfileRefresh
 	profiles             *profileCapacity
 	profileInit          sync.Once
 }
@@ -68,6 +69,9 @@ func New(s *store.Store, c config.Config) *Server {
 		return p, nil
 	}
 	server.Identity.SyncGameName = server.syncOfficialNameObserved
+	server.loginProfiles = loginProfileRefresh{next: make(map[string]time.Time), jobs: make(chan loginProfileJob, 128), done: make(chan struct{})}
+	server.Identity.RefreshGameName = server.queueLoginProfile
+	go server.loginProfileWorker()
 	server.nameQueue.pending = map[string]nameRetry{}
 	server.nameQueue.wake = make(chan struct{}, 1)
 	go server.playerNameWorker()
@@ -84,6 +88,7 @@ func New(s *store.Store, c config.Config) *Server {
 }
 func (s *Server) Close() {
 	s.cancel()
+	<-s.loginProfiles.done
 	s.Hub.Wake()
 	if s.ysm != nil {
 		s.ysm.client.CloseIdleConnections()

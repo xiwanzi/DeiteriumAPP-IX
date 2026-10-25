@@ -87,11 +87,12 @@ func TestRegisteredProfileDuplicateUUIDAndReusedName(t *testing.T) {
 	if got := deletionCount(t, f, "SELECT COUNT(*) FROM identities WHERE profile_uuid=?", admissionTestUUID); got != 1 {
 		t.Fatal(got)
 	}
-	// Another official UUID using the old name cannot authenticate to this account.
+	// A guessed password for a reused name cannot authenticate the previous owner.
+	// Correct local credentials now use the platform alias until background refresh.
 	f.app.AdmissionResolver = func(_ context.Context, name string) (store.AdmissionProfile, error) {
 		return store.AdmissionProfile{UUID: "99999999-0000-4000-8000-000000000099", Name: name}, nil
 	}
-	if _, _, e := f.app.Identity.Login(ctx, "OldPlayer", "test-password", "127.0.0.3", "app"); !errors.Is(e, store.ErrUnauthorized) {
+	if _, _, e := f.app.Identity.Login(ctx, "OldPlayer", "other-password", "127.0.0.3", "app"); !errors.Is(e, store.ErrUnauthorized) {
 		t.Fatal("name reuse selected previous owner", e)
 	}
 	still, e := f.store.UserByAlias(ctx, "registered@example.com")

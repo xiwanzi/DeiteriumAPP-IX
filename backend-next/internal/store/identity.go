@@ -33,6 +33,14 @@ type Session struct {
 	LastSeenAt            time.Time
 }
 
+type loginAliasKey struct{}
+
+// Login's selected identity must still own the alias when its session commits.
+// Registration and other session issuers do not use an unverified login alias.
+func WithLoginAlias(ctx context.Context, alias string) context.Context {
+	return context.WithValue(ctx, loginAliasKey{}, alias)
+}
+
 func (s *Store) UserByAlias(ctx context.Context, alias string) (u User, err error) {
 	err = s.DB.QueryRowContext(ctx, `SELECT i.id,i.player_ref,i.game_id,i.qq,COALESCE(i.server_uuid,''),i.password_hash,i.status,COALESCE(i.email,''),i.game_verified,COALESCE(i.display_name,i.game_id),COALESCE(i.profile_uuid,'')
 	 FROM identities i JOIN identity_aliases a ON a.user_id=i.id WHERE a.alias_key=?`, alias).Scan(&u.ID, &u.PlayerRef, &u.GameID, &u.QQ, &u.ServerUUID, &u.PasswordHash, &u.Status, &u.Email, &u.GameVerified, &u.DisplayName, &u.ProfileUUID)
@@ -61,6 +69,18 @@ func (s *Store) CreateSession(ctx context.Context, user User, hash, kind, csrf s
 	}
 	if storedHash != user.PasswordHash {
 		return ErrCredentialChanged
+	}
+	if alias, ok := ctx.Value(loginAliasKey{}).(string); ok {
+		var owner string
+		if err = tx.QueryRowContext(ctx, "SELECT user_id FROM identity_aliases WHERE alias_key=? LOCK IN SHARE MODE", alias).Scan(&owner); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrNameProofStale
+			}
+			return err
+		}
+		if owner != user.ID {
+			return ErrNameProofStale
+		}
 	}
 	if newPasswordHash != "" {
 		if _, err = tx.ExecContext(ctx, "UPDATE identities SET password_hash=?,updated_at=UTC_TIMESTAMP(6) WHERE id=?", newPasswordHash, user.ID); err != nil {
