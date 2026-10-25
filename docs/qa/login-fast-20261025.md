@@ -1,3 +1,5 @@
+2026-10-25 更新：**16:03:52 已上线，16:06:32 核验通过**，部署连接已恢复。见[上线记录](../deployment/login-fast-live.md)。以下候选状态保留为发布前历史。
+
 # 快速登录候选验收
 
 2026-10-25，本机实现与验证完成，**尚未上线**。维护 `C:/DeiteriumAPP-IX/.worktrees/login-fast` / `xiwanzi/login-fast`，基于 `32f3e94`。范围和别名语义见[计划](../plans/login-fast.md)，构件与上线前置见[交付记录](../deployment/login-fast-candidate.md)。

@@ -1,3 +1,5 @@
+2026-10-25：**登录优化已于16:03上线，16:06核验通过**（PR #134，源码 `4ee23840e0e5`）。已知游戏 ID 本地密码认证、后台按 UUID 更新名字；新名字与验证不匹配保留官方核验。官网中英文/客服弹窗立即打开。62 账号记录、52 订单、5 委托、3,085 在售商品、13 工单、2 注销记录、8 个已验证身份及原配置保留，109 张原表指纹一致，无数据库迁移。App2.0.29/Web2.0.41/启动器0.6.10/资源0.0.61-dev保持，三常驻节点在线、MEK停止，本轮未重启游戏服。维护 `.worktrees/login-fast` / `xiwanzi/login-fast`。见[上线记录](docs/deployment/login-fast-live.md)。
+
 2026-10-15：**启动器 0.6.10 于03:00发布，Web 2.0.41 与配套 Go 于02:58上线，03:03公网核验通过**（DeLauncher PR #11 / 主 PR #132）。共享更新运行库并支持签名文件级增量，更新器73.80→2.72 MiB，完整包271.75→201.10 MiB；更新器样式保持。首次0.6.9迁移仍需完整包。原账号、业务、配置及游戏资源0.0.60-dev保留，App2.0.29保持，三常驻节点在线、MEK停止，本轮未重启游戏服。维护 `.worktrees/launcher-incremental` / `xiwanzi/launcher-incremental`。见[上线记录](docs/deployment/launcher-incremental-0.6.10-live.md)。下方为历史状态。
 
 # Deuterium IX 工程约定
