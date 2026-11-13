@@ -23,7 +23,7 @@ fun InAppNoticeCard(title:String,body:String,onOpen:()->Unit,onDismiss:()->Unit,
                 Text(title,style=MaterialTheme.typography.titleMedium)
                 Text(body,style=MaterialTheme.typography.bodySmall,maxLines=2,overflow=TextOverflow.Ellipsis)
             }
-            IconButton(onDismiss,Modifier.size(44.dp)){Icon(Icons.Outlined.Close,"关闭提醒",Modifier.size(18.dp))}
+            GlassIconButton(onDismiss,Modifier.size(44.dp)){Icon(Icons.Outlined.Close,"关闭提醒",Modifier.size(18.dp))}
         }
     }
 }

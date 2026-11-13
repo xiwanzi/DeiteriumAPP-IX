@@ -52,7 +52,22 @@ fun GlassTuner(materials: GlassMaterials, onChange: (GlassMaterials) -> Unit, on
                     drawCircle(Color(0xFFDEC087), size.height*.5f, Offset(size.width*.7f,size.height*.42f))
                     drawCircle(Color(0xFFA4B5D8), size.height*.25f, Offset(size.width*.47f,size.height*.75f))
                 }
-                LiquidGlass(Modifier.align(if(selected==3)Alignment.BottomCenter else Alignment.Center).fillMaxWidth(if(selected==3)1f else .86f).height(85.dp), backdrop = preview, backdropOrigin = origin,parameters=parameters,enabled=true,tint=style?.tint ?: Color.Unspecified,shadeOpacity=style?.shade,topCornersOnly=selected==3) {
+                val radius = when (selected) {
+                    0 -> BottomNavigationRadius
+                    1, 3 -> 44.dp
+                    else -> 26.dp
+                }
+                LiquidGlass(
+                    Modifier.align(if (selected == 3) Alignment.BottomCenter else Alignment.Center)
+                        .fillMaxWidth(if (selected == 3) 1f else .86f).height(if (selected == 0) 64.dp else 85.dp),
+                    radius = radius,
+                    backdrop = preview,
+                    backdropOrigin = origin,
+                    parameters = parameters,
+                    enabled = true,
+                    tint = style?.tint ?: if (selected == 0) kyantCatalogTint(!dark) else kyantSheetTint(!dark),
+                    topCornersOnly = selected == 3
+                ) {
                     Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(when(selected){2->"输入消息";3->"表情面板";else->"柔光玻璃"}, style = MaterialTheme.typography.titleLarge)
                         Text("模糊与折射实时预览", style = MaterialTheme.typography.bodySmall)
@@ -62,7 +77,7 @@ fun GlassTuner(materials: GlassMaterials, onChange: (GlassMaterials) -> Unit, on
             Spacer(Modifier.height(20.dp))
             ParameterSlider("模糊半径", "${parameters.blur.roundToInt()} dp", parameters.blur, 0f..if(selected>=2)72f else 36f) { update(parameters.copy(blur = it)) }
             ParameterSlider("表面不透明度", "${(parameters.opacity*100).roundToInt()}%", parameters.opacity, .08f..1f) { update(parameters.copy(opacity = it)) }
-            ParameterSlider("折射强度", parameters.refraction.roundToInt().toString(), parameters.refraction, 0f..24f) { update(parameters.copy(refraction = it)) }
+            ParameterSlider("折射强度", "${parameters.refraction.roundToInt()} dp", parameters.refraction, 0f..48f) { update(parameters.copy(refraction = it)) }
             ParameterSlider("边缘高光", "${(parameters.highlight*100).roundToInt()}%", parameters.highlight, 0f..1f) { update(parameters.copy(highlight = it)) }
           }
             MotionButton(onClose, Modifier.fillMaxWidth().padding(top = 8.dp).height(52.dp)) { Text("完成") }

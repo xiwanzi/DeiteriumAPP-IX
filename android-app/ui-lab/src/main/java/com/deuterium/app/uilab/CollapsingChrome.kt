@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.input.nestedscroll.*
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.*
 
@@ -64,10 +66,35 @@ fun CollapsingChrome(title:String,placeholder:String,state:PageChromeState,statu
         Box(Modifier.fillMaxWidth().padding(top=statusTop+54.dp*(1f-p)+11.dp*p).height((46f-20f*p).dp),contentAlignment=Alignment.CenterStart) {
             Text(title,Modifier.graphicsLayer {
                 translationX=24.dp.toPx()*(1f-p)+(this@BoxWithConstraints.constraints.maxWidth-size.width)/2*p
-            },fontSize=titleSize,lineHeight=(42f-16f*p).sp,fontWeight=FontWeight.Bold,letterSpacing=(-.6f+.3f*p).sp,maxLines=1)
+            },color=colors.onBackground,fontSize=titleSize,lineHeight=(42f-16f*p).sp,fontWeight=FontWeight.Bold,letterSpacing=(-.6f+.3f*p).sp,maxLines=1)
         }
         if(searchHeight>0.dp)Box(Modifier.align(Alignment.BottomCenter).offset(y=-tail).padding(horizontal=20.dp).fillMaxWidth().height(searchHeight).clipToBounds()) {
             Row(Modifier.fillMaxWidth().height(52.dp).graphicsLayer{alpha=1f-state.searchProgress}.clip(androidx.compose.foundation.shape.RoundedCornerShape(17.dp)).background(colors.surfaceVariant.copy(alpha=.58f)).clickable(onClick=onSearch).padding(horizontal=15.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Outlined.Search,null,Modifier.size(21.dp),tint=colors.onSurfaceVariant);Text(placeholder,Modifier.padding(start=10.dp),style=MaterialTheme.typography.bodyLarge,color=colors.onSurfaceVariant)}
         }
+    }
+}
+
+@Composable
+internal fun CompactPageToolbar(
+    title: String,
+    statusTop: Dp,
+    onBack: () -> Unit,
+    actionCount: Int = 1,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth().padding(top = statusTop).height(48.dp).padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onBack) {
+            Icon(Icons.Outlined.ChevronLeft, "返回", Modifier.size(29.dp), tint = colors.primary)
+        }
+        if (actionCount == 2) Spacer(Modifier.width(48.dp))
+        if (title.isEmpty()) Spacer(Modifier.weight(1f))
+        else Text(title, Modifier.weight(1f), textAlign = TextAlign.Center, color = colors.onBackground,
+            style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (actionCount == 0) Spacer(Modifier.width(48.dp))
+        else Row(verticalAlignment = Alignment.CenterVertically, content = actions)
     }
 }

@@ -60,6 +60,9 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
     var mediaViewer by remember{mutableStateOf<ChatViewerRequest?>(null)}
     val motion = LocalMotion.current
     val list = rememberLazyListState()
+    val chatSnapshot = state.chat.toList()
+    val messageGroups = remember(chatSnapshot) { groupChatMessages(chatSnapshot) }
+    val groupStarts = remember(messageGroups) { messageGroups.map { it.first.id }.toSet() }
     val clipboard = LocalClipboardManager.current
     val haptics = LocalHapticFeedback.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -98,16 +101,10 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                 if(state.chatReplyPending) item(key = "typing") { TypingStatus("正在发送…") }
                 state.chatMedia?.let{service->items(service.pending.filter{!it.importing&&it.target==null&&state.chat.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}}
                 items(state.chat.asReversed(), key = { it.id }, contentType = { "message" }) { line ->
-                    Row(Modifier.fillMaxWidth().then(if(motion) Modifier.animateItem() else Modifier), horizontalArrangement = if(line.mine) Arrangement.End else Arrangement.Start) {
-                        if(!line.mine) {
-                            PlayerAvatar(line.name, Modifier.clip(RoundedCornerShape(15.dp)).semantics { contentDescription = "玩家${line.name}头像" }.combinedClickable(
-                                onClickLabel = "查看${line.name}资料", onLongClickLabel = "提及${line.name}",
-                                onClick = { onProfile(line.name) },
-                                onLongClick = { haptics.performHapticFeedback(HapticFeedbackType.LongPress); mention(line.name) }))
-                            Spacer(Modifier.width(9.dp))
-                        }
+                    Row(Modifier.fillMaxWidth().heightIn(min = 42.dp).then(if(motion) Modifier.animateItem(placementSpec = null) else Modifier), horizontalArrangement = if(line.mine) Arrangement.End else Arrangement.Start) {
+                        if(!line.mine) Spacer(Modifier.width(51.dp))
                         Column(Modifier.widthIn(max = 268.dp), horizontalAlignment = if(line.mine) Alignment.End else Alignment.Start) {
-                            if(!line.mine) Row(verticalAlignment = Alignment.CenterVertically) {
+                            if(!line.mine && line.id in groupStarts) Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(state.displayName(line.name), Modifier.padding(start = 3.dp, bottom = 5.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 if(line.name in state.followed) Icon(Icons.Outlined.Star, "特别关心", Modifier.padding(start = 4.dp, bottom = 5.dp).size(13.dp), tint = MaterialTheme.colorScheme.primary)
                             }
@@ -138,7 +135,15 @@ fun ChatPage(state: LabState, topInset: Dp, onProfile:(String)->Unit, onTransfer
                 item(key = "day") { Text(state.chatStatus, Modifier.fillMaxWidth().padding(vertical = 6.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
                 if(state.loadingChatHistory)item(key="history-loading"){Text("正在读取历史消息…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             }
-            if(unread > 0 && !nearBottom) FilledTonalButton(onClick = { scope.launch { list.animateScrollToItem(0); unread = 0 } }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom=dockInset)) { Text("↓ $unread 条新消息") }
+            ChatGroupAvatars(list, messageGroups) { line, modifier ->
+                PlayerAvatar(line.name, modifier.clip(RoundedCornerShape(15.dp))
+                    .semantics { contentDescription = "玩家${line.name}头像" }
+                    .combinedClickable(onClickLabel = "查看${line.name}资料", onLongClickLabel = "提及${line.name}",
+                        onClick = { onProfile(line.name) }, onLongClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress); mention(line.name)
+                        }))
+            }
+            if(unread > 0 && !nearBottom) SecondaryButton(onClick = { scope.launch { list.animateScrollToItem(0); unread = 0 } }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom=dockInset)) { Text("↓ $unread 条新消息") }
             androidx.compose.animation.AnimatedVisibility(query != null, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom=dockInset).padding(horizontal = 16.dp, vertical = 8.dp),
                 enter = fadeIn(tween(if(motion) 140 else 0)) + slideInVertically(tween(if(motion) 180 else 0)) { it / 3 },
                 exit = fadeOut(tween(if(motion) 100 else 0)) + slideOutVertically { it / 4 }) {

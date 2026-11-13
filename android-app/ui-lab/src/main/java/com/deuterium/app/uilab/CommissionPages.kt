@@ -37,11 +37,15 @@ fun CommissionHallPage(state:LabState,topInset:Dp,onOpen:(String)->Unit,mine:Boo
     LaunchedEffect(Unit){state.commissions.network?.refresh()}
     var deleting by remember{mutableStateOf<Commission?>(null)}
     var role by rememberSaveable{mutableIntStateOf(0)};var filter by rememberSaveable{mutableStateOf("全部")}
+    val filterScroll = rememberScrollState()
+    LaunchedEffect(role, filter) {
+        if (filter == "全部") filterScroll.scrollTo(0)
+    }
     val entries by remember(state,mine,role,filter){derivedStateOf{state.commissions.entries.filter{(mine||it.visibleInHall)&&(!mine||if(role==0)it.owner==state.userName else it.worker==state.userName)&&(when(filter){"待接取"->it.stage==CommissionStage.Open;"进行中"->it.stage==CommissionStage.Active;"待确认"->it.stage==CommissionStage.Completed;"已结束"->it.stage in setOf(CommissionStage.Confirmed,CommissionStage.Cancelled)&&!it.held;else->true})}.sortedWith(compareByDescending<Commission>{it.createdAt}.thenByDescending{it.id})}}
     LazyColumn(contentPadding=PaddingValues(start=18.dp,end=18.dp,top=topInset,bottom=45.dp),verticalArrangement=Arrangement.spacedBy(15.dp)) {
         item{Text(if(mine)"我的委托" else "互相搭把手",style=MaterialTheme.typography.headlineLarge);Text(if(mine)"查看履约进度，及时沟通与确认。" else LocalAppUpdates.current?.resourceStrings?.get("commissions.subtitle") ?: "报酬已预付，完成后安心结算。",Modifier.padding(top=8.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         if(mine)item{SegmentedControl(listOf("我发布的","我接取的"),role,{role=it;filter="全部"})}
-        item{Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){(if(mine)listOf("全部","待接取","进行中","待确认","已结束") else listOf("全部","待接取")).forEach{label->ChoiceChip(filter==label,{filter=if(filter==label)"全部" else label},{Text(label)})}}}
+        item{Row(Modifier.horizontalScroll(filterScroll),horizontalArrangement=Arrangement.spacedBy(7.dp)){(if(mine)listOf("全部","待接取","进行中","待确认","已结束") else listOf("全部","待接取")).forEach{label->ChoiceChip(filter==label,{filter=if(filter==label)"全部" else label},{Text(label)})}}}
         state.commissions.network?.error?.let{error->item{Text(error,color=MaterialTheme.colorScheme.error)}}
         if(entries.isEmpty())item{Column(Modifier.fillMaxWidth().padding(vertical=65.dp),horizontalAlignment=Alignment.CenterHorizontally){Icon(Icons.Outlined.Assignment,null,Modifier.size(42.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant);Text("暂时没有相关委托",Modifier.padding(top=17.dp),style=MaterialTheme.typography.titleMedium)}}
         items(entries,key={it.id}){entry->Surface(onClick={onOpen(entry.id)},shape=RoundedCornerShape(23.dp),color=MaterialTheme.colorScheme.surface){Column(Modifier.padding(16.dp)){

@@ -41,7 +41,7 @@ fun PlayerProfilePage(name:String,state:LabState,avatar:String?,topInset:Dp,onMe
             ProfileAction("转账",Icons.Outlined.AccountBalanceWallet,Modifier.weight(1f),onTransfer,enabled=!own&&player!=null)
         }}
         item{LabCard{Text("个人简介",style=MaterialTheme.typography.titleMedium);Text(bio,Modifier.padding(top=11.dp),style=MaterialTheme.typography.bodyLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)}}
-        item{LabCard{DetailRow("游戏 ID",name);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("QQ",Modifier.weight(1f),color=MaterialTheme.colorScheme.onSurfaceVariant);Text(qq);IconButton({clipboard.setText(AnnotatedString(qq))},enabled=qq!="尚未填写"){Icon(Icons.Outlined.ContentCopy,"复制QQ",Modifier.size(18.dp),tint=MaterialTheme.colorScheme.primary)}}}}
+        item{LabCard{DetailRow("游戏 ID",name);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text("QQ",Modifier.weight(1f),color=MaterialTheme.colorScheme.onSurfaceVariant);Text(qq);GlassIconButton({clipboard.setText(AnnotatedString(qq))},enabled=qq!="尚未填写"){Icon(Icons.Outlined.ContentCopy,"复制QQ",Modifier.size(18.dp),tint=MaterialTheme.colorScheme.primary)}}}}
     }
 }
 @Composable

@@ -35,7 +35,7 @@ fun DeleteRecordDialog(title: String, onDismiss: () -> Unit, onDelete: suspend (
             busy = true
             try { if (onDelete()) onDismiss() else failed = true } finally { busy = false }
         } }, Modifier.fillMaxWidth().heightIn(min=51.dp), enabled = !busy) {
-            Text(if(busy) "处理中…" else "确认",color=MaterialTheme.colorScheme.error.copy(alpha=if(busy).35f else 1f))
+            Text(if(busy) "处理中…" else "确认")
         }
-    }, { PlainButton(onDismiss, Modifier.fillMaxWidth().heightIn(min=51.dp), enabled = !busy) { Text("取消") } })
+    }, { PlainButton(onDismiss, Modifier.fillMaxWidth().heightIn(min=51.dp), enabled = !busy) { Text("取消") } }, destructive = true)
 }

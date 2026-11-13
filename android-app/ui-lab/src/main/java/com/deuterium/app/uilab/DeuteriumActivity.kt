@@ -1,6 +1,9 @@
 package com.deuterium.app.uilab
 
 import android.net.Uri
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.backdrops.rememberCanvasBackdrop
+import com.kyant.backdrop.catalog.components.LiquidButton
 import android.content.Intent
 import android.os.Build
 import android.Manifest
@@ -45,6 +48,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
@@ -90,7 +95,7 @@ class DeuteriumActivity : ComponentActivity() {
         }
         val images=AppImages.get(this)
         if(api.signedIn)prefs.getString("avatar:${api.playerRef}",prefs.getString("avatar:${api.userName}",null))?.let{source->lifecycleScope.launch{runCatching{images.bitmap(source,256)}}}
-        val materialStore=GlassSettingsStore(prefs)
+        val materialStore = GlassSettingsStore(getSharedPreferences("ui-lab-kyant-polished", MODE_PRIVATE)).apply { applyReferencePreset() }
         val session = androidx.lifecycle.ViewModelProvider(this)[LabSession::class.java]
         val updates=androidx.lifecycle.ViewModelProvider(this)[AppUpdates::class.java]
         updates.initialize()
@@ -214,6 +219,11 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
     val sensorManager=remember{context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager}
     val sensorAvailable=remember{listOf(Sensor.TYPE_GAME_ROTATION_VECTOR,Sensor.TYPE_ROTATION_VECTOR,Sensor.TYPE_ACCELEROMETER).any{sensorManager.getDefaultSensor(it)!=null}}
     val saved=rememberSaveableStateHolder();val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
+    val pageForeground = rememberGraphicsLayer()
+    val pageBackdrop = rememberLayerBackdrop(graphicsLayer = backdrop) {
+        drawLayer(atmosphere)
+        drawLayer(pageForeground)
+    }
     val overlays=remember{IosOverlayRegistry()}
     val density=LocalDensity.current;val ime=WindowInsets.ime;val keyboard=ime.getBottom(density)>0
     val statusTop=WindowInsets.statusBars.asPaddingValues().calculateTopPadding();val compactTop=statusTop+48.dp
@@ -251,7 +261,7 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
     }
     CompositionLocalProvider(LocalAccountAvatar provides PlayerProfile(userName,avatar=avatar),LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalIosOverlayRegistry provides overlays) {
         Box(Modifier.fillMaxSize().then(if(route==null&&destination!=Destination.Shop)Modifier.nestedScroll(connection) else Modifier)) {
-            GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()) {
+            GlassScene(atmosphere, backdrop, Modifier.fillMaxSize(), pageForeground, pageBackdrop) {
                 AnimatedContent(page,modifier=Modifier.fillMaxSize(),transitionSpec={if(motion)(fadeIn(tween(180,25))+slideInHorizontally(tween(260,easing=FastOutSlowInEasing)){it/14}) togetherWith fadeOut(tween(130)) else EnterTransition.None togetherWith ExitTransition.None},label="pages"){current->
                     saved.SaveableStateProvider(current) {
                         val inset=if(current in Destination.entries.map{it.name})statusTop+184.dp-chromeFor(current).offset.dp else secondaryContentTop
@@ -297,27 +307,80 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
                     }
                 }
             }
-            if(route==null&&destination!=Destination.Shop)CollapsingChrome(title,when(destination){Destination.Shop->"搜索商品";Destination.Market->"搜索物品或玩家";Destination.Info->"搜索联系人";Destination.Profile->"搜索设置"},chrome,statusTop,backdrop,{open("search:${destination.name}")}) {
-                if(chrome.searchProgress>.75f)IconButton({open("search:${destination.name}")}){Icon(Icons.Outlined.Search,"搜索",tint=MaterialTheme.colorScheme.primary)}
-                if(destination==Destination.Market)IconButton({open("publish")}){Icon(Icons.Outlined.Add,"发布商品",tint=MaterialTheme.colorScheme.primary)}
-            } else if(route!=null&&!route.startsWith("search:")&&!route.startsWith("shop-categories:")) {
-                GradientGlassHeader(backdrop,Modifier.fillMaxWidth().height(compactFadeBottom))
-                Row(Modifier.fillMaxWidth().padding(top=statusTop).height(48.dp).padding(horizontal=10.dp),verticalAlignment=Alignment.CenterVertically){
-                    IconButton({back()}){Icon(Icons.Outlined.ChevronLeft,"返回",Modifier.size(29.dp),tint=MaterialTheme.colorScheme.primary)}
-                    if(route in listOf("commissions","events","event","my-commissions"))Spacer(Modifier.width(48.dp))
-                    Text(title,Modifier.weight(1f),textAlign=androidx.compose.ui.text.style.TextAlign.Center,style=MaterialTheme.typography.titleMedium,maxLines=1)
+            if (route == null && destination != Destination.Shop) {
+                CollapsingChrome(title, when (destination) {
+                    Destination.Shop -> "搜索商品"
+                    Destination.Market -> "搜索物品或玩家"
+                    Destination.Info -> "搜索联系人"
+                    Destination.Profile -> "搜索设置"
+                }, chrome, statusTop, backdrop, { open("search:${destination.name}") }) {
+                    if (chrome.searchProgress > .75f) GlassIconButton({ open("search:${destination.name}") }) {
+                        Icon(Icons.Outlined.Search, "搜索", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    if (destination == Destination.Market) GlassIconButton({ open("publish") }) {
+                        Icon(Icons.Outlined.Add, "发布商品", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            } else if (route != null && !route.startsWith("search:") && !route.startsWith("shop-categories:")) {
+                val conversationRoute = route == "public" || route == "ai" || route.startsWith("dm:")
+                if (conversationRoute) ChatTopFade(
+                    Modifier.fillMaxWidth().height(compactTop + if (route == "public") 0.dp else 24.dp),
+                    protectTitle = route != "public")
+                else GradientGlassHeader(backdrop, Modifier.fillMaxWidth().height(compactFadeBottom))
+                val commissionRoute = route in listOf("commissions", "events", "event", "my-commissions")
+                val actionCount = when {
+                    commissionRoute -> 2
+                    route in listOf("public", "bag", "listings") || route.startsWith("product:") || route.startsWith("dm:") -> 1
+                    else -> 0
+                }
+                CompactPageToolbar(if (route == "public") "" else title, statusTop, { back() }, actionCount = actionCount) {
                     when {
-                        route in listOf("commissions","events","event","my-commissions")->Row{IconButton({open("my-commissions")}){Icon(Icons.Outlined.Assignment,"我的委托",tint=MaterialTheme.colorScheme.primary)};IconButton({open("publish-commission")}){Icon(Icons.Outlined.Add,"发布委托",tint=MaterialTheme.colorScheme.primary)}}
-                        route=="public"->IconButton({keyboardController?.hide();people=true}){Icon(Icons.Outlined.PeopleOutline,"在线玩家",tint=MaterialTheme.colorScheme.primary)}
-                        route=="bag"->IconButton({open("coupons")}){Icon(Icons.Outlined.ConfirmationNumber,"优惠券",tint=MaterialTheme.colorScheme.primary)}
-                        route.startsWith("product:")->Box(Modifier.onGloballyPositioned{bagCenter=it.positionInRoot()+Offset(it.size.width/2f,it.size.height/2f)}){ShoppingBagButton(state.cart.values.sum()){open("bag")}}
-                        route=="listings"->IconButton({open("publish")}){Icon(Icons.Outlined.Add,"发布商品",tint=MaterialTheme.colorScheme.primary)}
-                        route.startsWith("dm:")->IconButton({open("player:${route.removePrefix("dm:")}")}){Icon(Icons.Outlined.PersonOutline,"查看玩家资料",tint=MaterialTheme.colorScheme.primary)}
-                        else->Spacer(Modifier.width(48.dp))
+                        commissionRoute -> {
+                            IconButton({ open("my-commissions") }) {
+                                Icon(Icons.Outlined.Assignment, "我的委托", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton({ open("publish-commission") }) {
+                                Icon(Icons.Outlined.Add, "发布委托", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        route == "public" -> IconButton({ keyboardController?.hide(); people = true }) {
+                            Icon(Icons.Outlined.PeopleOutline, "在线玩家", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        route == "bag" -> IconButton({ open("coupons") }) {
+                            Icon(Icons.Outlined.ConfirmationNumber, "优惠券", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        route.startsWith("product:") -> Box(Modifier.onGloballyPositioned {
+                            bagCenter = it.positionInRoot() + Offset(it.size.width / 2f, it.size.height / 2f)
+                        }) { ShoppingBagButton(state.cart.values.sum()) { open("bag") } }
+                        route == "listings" -> IconButton({ open("publish") }) {
+                            Icon(Icons.Outlined.Add, "发布商品", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        route.startsWith("dm:") -> IconButton({ open("player:${route.removePrefix("dm:")}") }) {
+                            Icon(Icons.Outlined.PersonOutline, "查看玩家资料", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
-            if(route==null)LiquidGlass(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal=18.dp,vertical=9.dp).fillMaxWidth().height(70.dp).graphicsLayer{alpha=if(keyboard)0f else 1f},radius=30.dp,backdrop=backdrop,enabled=glass,parameters=parameters.bottomBar){MovingGlassNav(Destination.entries.map{it.title},Destination.entries.map{it.icon},destination.ordinal,!keyboard,buildSet{if(updates?.hasUpdates==true)add(Destination.Profile.ordinal);if(state.hasUnreadMessages)add(Destination.Info.ordinal)}){destination=Destination.entries[it]}}
+            if (route == null && !keyboard) {
+                if (glass && Build.VERSION.SDK_INT >= 31) BottomGlassFade(Modifier.align(Alignment.BottomCenter))
+                val barHeight = 64.dp + ((LocalDensity.current.fontScale - 1.25f).coerceAtLeast(0f) * 16f).dp
+                Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+                    .padding(horizontal = 18.dp, vertical = 8.dp).fillMaxWidth().height(barHeight)) {
+                    MovingGlassNav(
+                        Destination.entries.map { it.title },
+                        Destination.entries.map { it.icon },
+                        destination.ordinal,
+                        enabled = true,
+                        badges = buildSet {
+                            if (updates?.hasUpdates == true) add(Destination.Profile.ordinal)
+                            if (state.hasUnreadMessages) add(Destination.Info.ordinal)
+                        },
+                        backdrop = if (glass && Build.VERSION.SDK_INT >= 31) pageBackdrop else null,
+                        parameters = parameters.bottomBar,
+                        barHeight = barHeight
+                    ) { destination = Destination.entries[it] }
+                }
+            }
             state.commerce.network?.couponAttention?.let{attention->
                 CouponArrivalHost(attention,session.launchFinished&&route!="coupons"&&!keyboard&&!transfer&&!tuner&&!resetPassword&&!people&&record==null&&state.notice==null,compactTop+8.dp,{open("coupons")},Modifier.fillMaxSize())
             }
@@ -335,9 +398,33 @@ internal fun LabApp(theme:Int,motion:Boolean,glass:Boolean,parameters:GlassMater
 }
 
 @Composable
-internal fun ShoppingBagButton(count:Int,onClick:()->Unit){
-    Box(Modifier.size(48.dp)){
-        IconButton(onClick,Modifier.matchParentSize()) { Icon(Icons.Outlined.ShoppingBag,"购物袋",Modifier.size(23.dp)) }
+internal fun ShoppingBagButton(count: Int, onClick: () -> Unit) {
+    Box(Modifier.size(48.dp)) {
+        val colors = MaterialTheme.colorScheme
+        val tint = colors.surfaceVariant.copy(alpha = SHOP_SEARCH_TINT_ALPHA)
+        if (Build.VERSION.SDK_INT >= 31 && LocalOverlayGlassEnabled.current) {
+            // Only sample the page's ambient layer. The storefront content includes this button.
+            val atmosphere = LocalGlassBackdrop.current
+            var position by remember { mutableStateOf(Offset.Zero) }
+            val backing = rememberCanvasBackdrop {
+                if (atmosphere != null) {
+                    translate(-position.x, -position.y) { drawLayer(atmosphere) }
+                } else {
+                    drawRect(colors.background)
+                }
+            }
+            LiquidButton(
+                onClick, backing, Modifier.matchParentSize().onGloballyPositioned { position = it.positionInRoot() },
+                isInteractive = LocalMotion.current, surfaceColor = tint,
+                contentPadding = PaddingValues(0.dp), highlightAlpha = .10f
+            ) {
+                Icon(Icons.Outlined.ShoppingBag, "购物袋", Modifier.size(23.dp), tint = colors.onSurface)
+            }
+        } else {
+            GlassIconButton(onClick, Modifier.matchParentSize(), surface = tint) {
+                Icon(Icons.Outlined.ShoppingBag, "购物袋", Modifier.size(23.dp), tint = colors.onSurface)
+            }
+        }
         if(count>0)Box(Modifier.align(Alignment.TopEnd).padding(top=1.dp,end=1.dp).defaultMinSize(minWidth=19.dp,minHeight=19.dp).background(MaterialTheme.colorScheme.error,CircleShape).padding(horizontal=4.dp,vertical=3.dp),contentAlignment=Alignment.Center){
             Text(if(count>99)"99+" else count.toString(),fontSize=10.sp,lineHeight=12.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onError,maxLines=1)
         }

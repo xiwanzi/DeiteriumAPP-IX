@@ -45,7 +45,7 @@ fun ListingPhotoEditor(photos:List<String>,onChange:(List<String>)->Unit,onBusy:
             itemsIndexed(photos,key={_,uri->uri}){index,uri->Column(Modifier.width(105.dp)){
                 Box(Modifier.size(105.dp).clip(RoundedCornerShape(16.dp))){ListingImage(MarketListing("preview","商品图片","","","",1,1,"","",emptySet(),"",imageUri=uri),Modifier.fillMaxSize())
                     Box(Modifier.align(Alignment.TopStart).background(if(index==0)MaterialTheme.colorScheme.primary else Color.Black.copy(alpha=.5f)).padding(horizontal=6.dp,vertical=3.dp)){Text(if(evidence)"凭证 ${index+1}" else if(index==0)"首页封面" else "详情 ${index}",color=Color.White,fontSize=10.sp)}
-                    IconButton({onChange(photos.filterIndexed{i,_->i!=index})},Modifier.align(Alignment.BottomEnd).size(32.dp).background(Color.Black.copy(alpha=.5f),CircleShape),enabled=!busy){Icon(Icons.Outlined.Close,"删除图片${index+1}",Modifier.size(17.dp),tint=Color.White)}
+                    GlassIconButton({onChange(photos.filterIndexed{i,_->i!=index})},Modifier.align(Alignment.BottomEnd).size(32.dp), enabled = !busy, surface = Color.Black.copy(alpha = .65f)){Icon(Icons.Outlined.Close,"删除图片${index+1}",Modifier.size(17.dp),tint=Color.White)}
                 }
                 if(index>0&&!evidence)PlainButton({onChange(listOf(uri)+photos.filter{it!=uri});scope.launch{withFrameNanos{};list.animateScrollToItem(0)}},Modifier.fillMaxWidth(),enabled=!busy){Text("设为封面",fontSize=12.sp)}
             }}

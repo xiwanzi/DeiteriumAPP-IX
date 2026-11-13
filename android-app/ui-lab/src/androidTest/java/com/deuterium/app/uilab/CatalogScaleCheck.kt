@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
 import okhttp3.mockwebserver.*
@@ -23,7 +25,7 @@ import java.util.concurrent.TimeUnit
 
 /** Production composables, isolated 3085-item HTTP fixture, no real purchases. */
 object CatalogScaleCheck {
-    fun run(test:Instrumentation) {
+    fun run(test: Instrumentation, polish: Boolean = false) {
         val result=Bundle();val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
         val server=MockWebServer();var host:DeuteriumActivity?=null
         val context=object:ContextWrapper(test.targetContext){override fun getSharedPreferences(name:String,mode:Int):SharedPreferences=super.getSharedPreferences("qa-catalog-scale-$name",mode)}
@@ -63,7 +65,27 @@ object CatalogScaleCheck {
             val activity=host
             test.runOnMainSync{activity.setContent{LabTheme(theme,true,false){val backdrop=rememberGraphicsLayer()
                 CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface,LocalOverlayBackdrop provides backdrop){
-                    Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop).background(MaterialTheme.colorScheme.background)){
+                    if (polish) {
+                        val atmosphere = rememberGraphicsLayer()
+                        val foreground = rememberGraphicsLayer()
+                        val layer = rememberLayerBackdrop(graphicsLayer = backdrop) {
+                            drawLayer(atmosphere)
+                            drawLayer(foreground)
+                        }
+                        Box(Modifier.fillMaxSize()) {
+                            GlassScene(atmosphere, backdrop, Modifier.fillMaxSize(), foreground, layer) {
+                                CompositionLocalProvider(LocalGlassBackdrop provides atmosphere) {
+                                    ShopPage(state, {}, WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), "")
+                                }
+                            }
+                            Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+                                .padding(horizontal = 18.dp, vertical = 8.dp).fillMaxWidth().height(64.dp)) {
+                                MovingGlassNav(listOf("商城", "市场", "信息", "我的"),
+                                    listOf(DeuteriumIcons.Shop, DeuteriumIcons.Market, DeuteriumIcons.Messages, DeuteriumIcons.Person),
+                                    selected = 0, enabled = true, backdrop = layer) {}
+                            }
+                        }
+                    } else Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop).background(MaterialTheme.colorScheme.background)){
                         if(page=="shop")ShopPage(state,{},90.dp,"")else SearchPage("Shop",state,{page="shop"},{})
                         if(page=="shop")Surface(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(85.dp)){Row(Modifier.statusBarsPadding(),verticalAlignment=Alignment.CenterVertically){Text("商城隔离验收",Modifier.weight(1f));TextButton({page="search"}){Text("搜索")}}}
                     }
@@ -79,6 +101,19 @@ object CatalogScaleCheck {
             check(requests.count{it.startsWith("/api/v1/store/products?")&&!it.contains("badge=") }==1){"First screen fetched the whole catalog"}
             result.putString("first_page_only","PASS");screenshot("first-page-light")
             test.runOnMainSync{theme=2};Thread.sleep(250);screenshot("first-page-dark")
+            if (polish) {
+                val bounds = { label: String -> Rect().also { checkNotNull(find(label)).getBoundsInScreen(it) } }
+                val search = bounds("搜索商品、品牌或分类")
+                val bag = bounds("购物袋")
+                val categories = bounds("更多分类")
+                check(search.right <= bag.left && kotlin.math.abs(search.centerY() - bag.centerY()) <= 5)
+                check(categories.top >= bag.bottom && categories.centerX() >= bag.centerX()) {
+                    "The category button must remain in the second row: $bag / $categories"
+                }
+                result.putString("catalogPolish", "PASS baseline two-row header, bag glass and light/dark bottom bar")
+                test.finish(-1, result)
+                return
+            }
             failNext.set(true)
             repeat(25){
                 if(find("隔离测试：续页失败")==null){

@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
+import com.kyant.shapes.Capsule
 
 val LocalMotion=staticCompositionLocalOf { true }
 val LocalGlassEnabled=staticCompositionLocalOf { true }
@@ -46,22 +47,30 @@ fun LabTheme(theme:Int,motion:Boolean,glass:Boolean=true,parameters:GlassParamet
         titleMedium=TextStyle(fontWeight=FontWeight.SemiBold,fontSize=17.sp,lineHeight=25.sp),
         bodyLarge=TextStyle(fontSize=17.sp,lineHeight=26.sp),bodyMedium=TextStyle(fontSize=15.sp,lineHeight=23.sp),bodySmall=TextStyle(fontSize=13.sp,lineHeight=20.sp),
         labelLarge=TextStyle(fontWeight=FontWeight.SemiBold,fontSize=16.sp,lineHeight=23.sp),labelMedium=TextStyle(fontSize=13.sp,lineHeight=19.sp),labelSmall=TextStyle(fontSize=11.sp,lineHeight=15.sp))
-    CompositionLocalProvider(LocalMotion provides motion,LocalGlassEnabled provides glass,LocalGlassParameters provides parameters,LocalIndication provides QuietIndication) {
+    CompositionLocalProvider(LocalMotion provides motion,LocalGlassEnabled provides glass,LocalGlassParameters provides parameters,LocalContentColor provides colors.onSurface,LocalIndication provides QuietIndication) {
         MaterialTheme(colorScheme=colors,typography=type,shapes=Shapes(small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(18.dp),large=RoundedCornerShape(24.dp),extraLarge=RoundedCornerShape(30.dp)),content=content)
     }
 }
 
 @Composable
-fun MotionButton(onClick:()->Unit,modifier:Modifier=Modifier,enabled:Boolean=true,shape:Shape=CircleShape,colors:ButtonColors=ButtonDefaults.buttonColors(),content:@Composable RowScope.()->Unit) {
-    val source=remember{MutableInteractionSource()};val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if(pressed).97f else 1f,if(LocalMotion.current)spring(.8f,650f) else snap(),label="button-press")
-    val background=if(enabled)colors.containerColor else colors.disabledContainerColor
-    val foreground=if(enabled)colors.contentColor else colors.disabledContentColor
-    Row(modifier.heightIn(min=48.dp).graphicsLayer{scaleX=scale;scaleY=scale}.clip(shape).background(background)
-        .clickable(interactionSource=source,indication=null,enabled=enabled,role=Role.Button,onClick=onClick).padding(horizontal=20.dp,vertical=10.dp),
-        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.Center) {
-        CompositionLocalProvider(LocalContentColor provides foreground){ProvideTextStyle(MaterialTheme.typography.labelLarge){content()}}
-    }
+fun MotionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = Capsule(),
+    colors: ButtonColors = ButtonDefaults.buttonColors(),
+    content: @Composable RowScope.() -> Unit
+) {
+    val fill = if (enabled) colors.containerColor else MaterialTheme.colorScheme.surfaceVariant
+    val tinted = enabled && fill.alpha >= .99f
+    CatalogAction(
+        onClick, modifier, enabled, shape,
+        tint = if (tinted) fill else Color.Unspecified,
+        surface = if (tinted) Color.Unspecified else fill,
+        foreground = colors.contentColor, glass = true,
+        padding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        content = content
+    )
 }
 
 @Composable
@@ -69,6 +78,6 @@ fun LabCard(modifier:Modifier=Modifier,content:@Composable ColumnScope.()->Unit)
     Surface(modifier.fillMaxWidth(),shape=RoundedCornerShape(24.dp),color=MaterialTheme.colorScheme.surface){Column(Modifier.padding(18.dp),content=content)}
 }
 @Composable
-fun RoundIcon(icon:ImageVector,description:String,onClick:()->Unit){IconButton(onClick,Modifier.size(44.dp)){Icon(icon,description,Modifier.size(22.dp),tint=MaterialTheme.colorScheme.primary)}}
+fun RoundIcon(icon:ImageVector,description:String,onClick:()->Unit){GlassIconButton(onClick,Modifier.size(44.dp)){Icon(icon,description,Modifier.size(22.dp),tint=MaterialTheme.colorScheme.primary)}}
 @Composable
 fun Eyebrow(text:String,modifier:Modifier=Modifier){Text(text,modifier,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,letterSpacing=1.sp)}

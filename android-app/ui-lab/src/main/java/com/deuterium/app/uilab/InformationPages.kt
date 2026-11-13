@@ -92,6 +92,8 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
     val messages=remember(peerKey){state.conversation(name)}
     var draft by rememberSaveable(peerKey,stateSaver=TextFieldValue.Saver){mutableStateOf(TextFieldValue(state.pendingDirectDraft(name)))}
     val list=rememberLazyListState()
+    val messageSnapshot = messages.toList()
+    val messageGroups = remember(messageSnapshot) { groupChatMessages(messageSnapshot) }
     var mediaViewer by remember(peerKey){mutableStateOf<ChatViewerRequest?>(null)}
     var selectedMessage by remember(peerKey){mutableStateOf<ChatLine?>(null)}
     var forwarding by remember(peerKey){mutableStateOf<ChatLine?>(null)}
@@ -111,6 +113,7 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
     LaunchedEffect(messages.lastOrNull()?.id){if(list.firstVisibleItemIndex<2||messages.lastOrNull()?.mine==true){if(motion)list.animateScrollToItem(0) else list.scrollToItem(0)}}
     LaunchedEffect(list.firstVisibleItemIndex,messages.size){if(messages.size>=90&&list.firstVisibleItemIndex>=messages.size-12)state.loadOlderDirect(name)}
     ChatGlassLayout(body={dockInset->
+        Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(),state=list,reverseLayout=true,contentPadding=PaddingValues(start=20.dp,end=20.dp,top=topInset+18.dp,bottom=dockInset+16.dp),verticalArrangement=Arrangement.spacedBy(10.dp,Alignment.Bottom)) {
             if(state.directPending[name]==true)item{Text(if(name=="AI 助手")state.ai?.statusText ?: "正在生成回复…" else "正在发送…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             state.directErrors[name]?.let{error->item{Text(error,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error)}}
@@ -118,8 +121,9 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
                 val peerRef=Players.find{it.name==name}?.playerRef
                 items(service.pending.filter{!it.importing&&it.target!=null&&it.target.playerRef==peerRef&&messages.none{line->line.clientMessageId==it.id}}.asReversed(),key={"media-pending:${it.id}"}){job->ChatPendingMediaRow(service,job){mediaViewer=it}}
             }
-            items(messages.asReversed(),key={it.id}) { line -> Row(Modifier.fillMaxWidth(),horizontalArrangement=if(line.mine)Arrangement.End else Arrangement.Start) {
-                if(!line.mine){if(name=="AI 助手")Image(painterResource(R.drawable.xiaoxiang_avatar),"小祥菜单",Modifier.size(42.dp).clip(CircleShape).clickable{aiOptions=true}) else PlayerAvatar(name,Modifier.clickable{onProfile(name)});Spacer(Modifier.width(9.dp))}
+            items(messages.asReversed(),key={it.id}) { line ->
+                Row(Modifier.fillMaxWidth().heightIn(min = 42.dp),horizontalArrangement=if(line.mine)Arrangement.End else Arrangement.Start) {
+                if(!line.mine) Spacer(Modifier.width(51.dp))
                 Column(Modifier.widthIn(max=270.dp),horizontalAlignment=if(line.mine)Alignment.End else Alignment.Start) {
                     if(line.media!=null&&state.chatMedia!=null){
                         line.reply?.let{QuotedMessage(it,false,Modifier.padding(bottom=7.dp))}
@@ -135,6 +139,12 @@ fun DirectChatPage(state:LabState,name:String,topInset:Dp,onPlans:()->Unit={},on
             } }
             item { Text(if(name=="AI 助手")state.ai?.quotaText ?: "DEUTERIUM ASSISTANT" else "今天",Modifier.fillMaxWidth().padding(vertical=12.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=androidx.compose.ui.text.style.TextAlign.Center) }
             if(state.directHistoryLoading[name]==true)item{Text("正在读取历史消息…",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        }
+        ChatGroupAvatars(list, messageGroups) { _, modifier ->
+            if(name=="AI 助手") Image(painterResource(R.drawable.xiaoxiang_avatar),"小祥菜单",
+                modifier.clip(CircleShape).clickable{aiOptions=true})
+            else PlayerAvatar(name, modifier.clickable{onProfile(name)})
+        }
         }
     },composer={Column {
         if(name=="AI 助手"&&messages.isEmpty()&&state.ai?.conversationId!=null&&state.ai?.busy==false&&state.ai?.recoveredDraft.isNullOrBlank())PlainButton(onPlans,Modifier.fillMaxWidth()){Text("Saki AI · 套餐与额度")}

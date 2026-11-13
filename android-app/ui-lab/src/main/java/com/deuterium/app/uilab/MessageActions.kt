@@ -37,7 +37,7 @@ fun ReplyPreview(reply:ChatReply,onCancel:()->Unit) {
     Row(Modifier.fillMaxWidth().padding(horizontal=15.dp).clip(RoundedCornerShape(15.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.5f)).padding(start=12.dp),verticalAlignment=Alignment.CenterVertically){
         Icon(Icons.Outlined.Reply,null,Modifier.size(20.dp),tint=MaterialTheme.colorScheme.primary)
         Column(Modifier.weight(1f).padding(horizontal=9.dp,vertical=9.dp)){Text("回复 ${reply.name}",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary);Text(reply.text,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)}
-        IconButton(onCancel){Icon(Icons.Outlined.Close,"取消回复",Modifier.size(19.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)}
+        GlassIconButton(onCancel){Icon(Icons.Outlined.Close,"取消回复",Modifier.size(19.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)}
     }
 }
 

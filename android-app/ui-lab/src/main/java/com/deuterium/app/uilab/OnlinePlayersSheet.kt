@@ -33,7 +33,7 @@ internal fun OnlinePlayersSheet(state:LabState,onClose:()->Unit,onMessage:(Strin
             when {
                 state.onlinePlayersError!=null->Column(Modifier.padding(top=18.dp)){
                     Text(state.onlinePlayersError!!,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                    TextButton(onClick={scope.launch{state.refreshOnlinePlayers()}},enabled=!state.onlinePlayersRefreshing){Text("重试")}
+                    PlainButton(onClick={scope.launch{state.refreshOnlinePlayers()}},enabled=!state.onlinePlayersRefreshing){Text("重试")}
                 }
                 !state.onlinePlayersKnown->Text("正在读取在线玩家…",Modifier.padding(vertical=18.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
                 state.onlinePlayers.isEmpty()->Text("当前没有玩家在线",Modifier.padding(vertical=18.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)

@@ -13,7 +13,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 22900
-        versionName = "2.0.29"
+        versionName = "2.0.30-glass-preview.17"
         testInstrumentationRunner = providers.gradleProperty("deuteriumTestRunner").orElse("com.deuterium.app.uilab.LiveBackendInstrumentation").get()
         val apiBase = providers.gradleProperty("deuteriumApiBase").orElse("https://47.103.99.34").get()
         require(apiBase.matches(Regex("https?://[A-Za-z0-9.:-]+"))) { "deuteriumApiBase must be an HTTP(S) origin" }
@@ -79,6 +79,13 @@ dependencies {
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.3")
+    implementation("io.github.kyant0:backdrop:1.0.6") {
+        // The Android app already supplies the AndroidX Compose UI used by Kyant's shapes.
+        exclude(group = "org.jetbrains.compose.ui", module = "ui")
+    }
+    implementation("io.github.kyant0:shapes:1.2.0") {
+        exclude(group = "org.jetbrains.compose.ui", module = "ui")
+    }
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("com.github.bumptech.glide:gifdecoder:4.16.0")

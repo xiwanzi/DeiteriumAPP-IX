@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -73,10 +74,10 @@ class BackendChatTest {
 
     @Test fun duplicateConnectDoesNotOpenAnotherSocketAndClosedSocketIgnoresLateMessages() {
         val server=MockWebServer();val opened=CountDownLatch(1)
-        val remote=java.util.concurrent.atomic.AtomicReference<WebSocket>()
+        val remote = CompletableFuture<WebSocket>()
         val messages=java.util.concurrent.atomic.AtomicInteger()
         server.enqueue(MockResponse().withWebSocketUpgrade(object:WebSocketListener(){
-            override fun onOpen(webSocket:WebSocket,response:Response){remote.set(webSocket)}
+            override fun onOpen(webSocket:WebSocket,response:Response){remote.complete(webSocket)}
         }))
         server.start()
         val client=BackendChat(OkHttpClient(),server.url("/").toString(),"test-session",{messages.incrementAndGet()},{_,_->},{opened.countDown()})
@@ -84,7 +85,7 @@ class BackendChatTest {
             client.connect();client.connect();assertTrue(opened.await(5,TimeUnit.SECONDS))
             assertEquals(1,server.requestCount)
             client.close()
-            client.onMessage(remote.get(),JSONObject().put("type","chat.message").put("payload",JSONObject().put("message",JSONObject().put("messageId","late"))).toString())
+            client.onMessage(remote.get(5, TimeUnit.SECONDS),JSONObject().put("type","chat.message").put("payload",JSONObject().put("message",JSONObject().put("messageId","late"))).toString())
             client.connect()
             assertFalse(client.connected);assertFalse(client.connecting)
             assertEquals(0,messages.get());assertEquals(1,server.requestCount)

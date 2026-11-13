@@ -58,7 +58,7 @@ object OverdrawDiagnostics {
                                         repeat(4){index->Surface(color=if(index%2==0)Color(0xFF007AFF) else Color(0xFFE2C599),modifier=Modifier.fillMaxWidth().height(80.dp)) {Text("固定对照 $index",Modifier.padding(20.dp))}}
                                     }
                                 }
-                                if(mode=="production")GlassScene(atmosphere,backdrop,Modifier.fillMaxSize(),foreground)
+                                if(mode=="production")GlassScene(atmosphere,backdrop,Modifier.fillMaxSize(),content=foreground)
                                 else if(mode=="separate")DiagnosticSeparateScene(backdrop,foreground)
                                 else Box(Modifier.fillMaxSize().recordGlassBackdrop(backdrop)){DiagnosticAtmosphere(mode,Modifier.recordGlassBackdrop(atmosphere));foreground()}
                                 if(scene=="glass") {

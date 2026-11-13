@@ -80,7 +80,8 @@ fun DeviceSessionsPage(topInset: Dp) {
                 catch (e: Exception) { error = e.message; others = false; confirmation = null }
                 finally { busy = false }
             }
-        }) { Text(if (busy) "正在退出…" else "确认退出", color = MaterialTheme.colorScheme.error) } },
-        { PlainButton({ if (!busy) { others = false; confirmation = null } }) { Text("取消") } }
+        }, enabled = !busy) { Text(if (busy) "正在退出…" else "确认退出") } },
+        { PlainButton({ if (!busy) { others = false; confirmation = null } }, enabled = !busy) { Text("取消") } },
+        destructive = true
     )
 }
