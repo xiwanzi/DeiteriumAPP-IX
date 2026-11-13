@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 data class ShopCategory(val id:String,val name:String,val parentId:String="",val order:Int=0,val image:String?=null)
 data class ShopBanner(val id:String,val title:String,val image:String,val order:Int=0)
 const val NEW_PRODUCT_BADGE="新品推荐"
+internal const val SHOP_SEARCH_TINT_ALPHA = .58f
 fun shopSearchRoute(query:String)="search:Shop:"+android.net.Uri.encode(query)
 fun shopRootCategories(categories:List<ShopCategory>)=categories.filter{it.parentId.isBlank()||categories.none{p->p.id==it.parentId}}.distinctBy{it.name}
 
@@ -73,10 +74,11 @@ fun ShopPage(state:LabState,onProduct:(String)->Unit,topInset:Dp,query:String,on
             Spacer(Modifier.height(topInset))
             Box(Modifier.fillMaxWidth().height(8.dp).semantics{contentDescription="回到商城顶部"}.clickable{scope.launch{if(motion)list.animateScrollToItem(0)else list.scrollToItem(0)}})
             Row(Modifier.padding(start=12.dp,end=4.dp),verticalAlignment=Alignment.CenterVertically) {
-                Row(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.58f)).clickable{onOpen("search:Shop")}.padding(horizontal=15.dp),verticalAlignment=Alignment.CenterVertically) {
+                Row(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = SHOP_SEARCH_TINT_ALPHA)).clickable{onOpen("search:Shop")}.padding(horizontal=15.dp),verticalAlignment=Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Search,null,Modifier.size(21.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("搜索商品、品牌或分类",Modifier.padding(start=10.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
+                Spacer(Modifier.width(4.dp))
                 ShoppingBagButton(state.cart.values.sum()){onOpen("bag")}
             }
             Row(Modifier.fillMaxWidth().padding(top=2.dp,bottom=2.dp),verticalAlignment=Alignment.CenterVertically) {
@@ -155,7 +157,7 @@ private fun ShopProductCard(product:ShopProduct,onClick:()->Unit,onAdd:suspend()
                 if(!promotion&&offer==null)Text(product.category,fontSize=11.sp,lineHeight=15.sp,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
                 Row(verticalAlignment=Alignment.CenterVertically) {
                     CompactShopPrice(offer?.finalPrice ?: product.price,Modifier.weight(1f),if(offer!=null)"券后"else if(promotion)"促销价"else"")
-                    IconButton({if(!adding)scope.launch{adding=true;try{added=onAdd()}finally{adding=false}}},Modifier.size(36.dp),enabled=!adding&&product.stock>0){
+                    GlassIconButton({if(!adding)scope.launch{adding=true;try{added=onAdd()}finally{adding=false}}},Modifier.size(36.dp),enabled=!adding&&product.stock>0){
                         Box(Modifier.size(23.dp).background(MaterialTheme.colorScheme.primaryContainer,CircleShape),contentAlignment=Alignment.Center){Icon(if(added)Icons.Outlined.Check else Icons.Outlined.Add,"加入购物袋：${product.name}",Modifier.size(17.dp),tint=MaterialTheme.colorScheme.primary)}
                     }
                 }
@@ -248,7 +250,7 @@ fun ShopCategoriesPage(state:LabState,initial:String,onClose:()->Unit,onOpen:(St
     val children=shopGroupChildren(categories,current?.name.orEmpty())
     val sections=remember(current,children){shopDirectorySections(current?.name.orEmpty(),if(children.isEmpty())listOfNotNull(current)else children)}
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding()) {
-        Row(Modifier.fillMaxWidth().height(48.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClose){Icon(Icons.Outlined.ChevronLeft,"返回")};Text("分类",Modifier.weight(1f),textAlign=TextAlign.Center,fontSize=20.sp,fontWeight=FontWeight.SemiBold);IconButton({onOpen("search:Shop")}){Icon(Icons.Outlined.Search,"搜索商品")}}
+        Row(Modifier.fillMaxWidth().height(48.dp),verticalAlignment=Alignment.CenterVertically){GlassIconButton(onClose){Icon(Icons.Outlined.ChevronLeft,"返回")};Text("分类",Modifier.weight(1f),textAlign=TextAlign.Center,fontSize=20.sp,fontWeight=FontWeight.SemiBold);GlassIconButton({onOpen("search:Shop")}){Icon(Icons.Outlined.Search,"搜索商品")}}
         if(roots.isEmpty()){val scope=rememberCoroutineScope();CatalogMessage(network?.shopError ?: "暂无商品分类"){scope.launch{network?.ensureMetadata()}}}
         Row(Modifier.weight(1f)) {
             LazyColumn(Modifier.width(104.dp).fillMaxHeight(),contentPadding=PaddingValues(top=6.dp,bottom=12.dp)) {
@@ -264,7 +266,7 @@ fun ShopCategoriesPage(state:LabState,initial:String,onClose:()->Unit,onOpen:(St
                     if(sections.size>1) {
                         Row(Modifier.fillMaxWidth().height(48.dp),verticalAlignment=Alignment.CenterVertically){
                             LazyRow(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(6.dp)){items(sections.size){index->DirectoryTab(sections[index].name,index==active){selectSection(index)}}}
-                            IconButton({expanded=!expanded},Modifier.size(32.dp)){Icon(if(expanded)Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,"展开全部分组",Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)}
+                            GlassIconButton({expanded=!expanded},Modifier.size(32.dp)){Icon(if(expanded)Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,"展开全部分组",Modifier.size(20.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)}
                         }
                         if(expanded)FlowRow(Modifier.padding(bottom=8.dp),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){sections.forEachIndexed{index,section->DirectoryTab(section.name,index==active){selectSection(index)}}}
                     } else Spacer(Modifier.height(8.dp))
@@ -293,7 +295,7 @@ fun ShopSearchPage(state:LabState,initial:String,onClose:()->Unit,onOpen:(String
     CatalogAutoLoad(page,list,products,active&&submitted.isNotBlank())
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().padding(start=4.dp,end=8.dp,top=8.dp,bottom=12.dp),verticalAlignment=Alignment.CenterVertically) {
-            IconButton({keyboard?.hide();onClose()}){Icon(Icons.Outlined.ChevronLeft,"返回")}
+            GlassIconButton({keyboard?.hide();onClose()}){Icon(Icons.Outlined.ChevronLeft,"返回")}
             RefinedField(query,{query=it.take(80)},Modifier.weight(1f).focusRequester(focus),placeholder={Text("搜索商品、品牌或分类",style=MaterialTheme.typography.bodyMedium)},singleLine=true,keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={search(query)}),trailingIcon=if(query.isNotBlank()){{IconButton({query="";submitted="";focus.requestFocus();keyboard?.show()}){Icon(Icons.Outlined.Cancel,"清除搜索",Modifier.size(18.dp))}}}else null)
             PlainButton({search(query)}){Text("搜索")}
         }

@@ -259,7 +259,7 @@ internal fun ChatPendingMediaRow(service:BackendChatMedia,job:PendingChatMedia,o
         Box{
             job.reply?.let{QuotedMessage(it,false)}
             ChatMediaTile(service,media,local=job.localFile.takeIf{it.isFile},playRequested=false,onOpen={if(job.media!=null)onView(it)})
-            if(job.status=="failed")IconButton({service.retry(job)},Modifier.align(Alignment.BottomEnd).padding(6.dp).size(30.dp).background(MaterialTheme.colorScheme.error,CircleShape)){Icon(Icons.Outlined.Refresh,"重试发送",Modifier.size(18.dp),tint=Color.White)}
+            if(job.status=="failed")GlassIconButton({service.retry(job)},Modifier.align(Alignment.BottomEnd).padding(6.dp).size(30.dp), tint = MaterialTheme.colorScheme.error){Icon(Icons.Outlined.Refresh,"重试发送",Modifier.size(18.dp),tint=Color.White)}
             else CircularProgressIndicator(Modifier.align(Alignment.BottomEnd).padding(10.dp).size(18.dp),color=MaterialTheme.colorScheme.primary,strokeWidth=2.dp)
         }
         if(job.status=="failed")Row(verticalAlignment=Alignment.CenterVertically){Text(job.error ?: "发送失败",Modifier.widthIn(max=230.dp),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.error);PlainButton({scope.launch{service.dismiss(job)}}){Text("移除")}}
@@ -312,8 +312,8 @@ internal fun ChatMediaViewer(service:BackendChatMedia,request:ChatViewerRequest,
                 }
             }
             if(showControls)Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(12.dp),verticalAlignment=Alignment.CenterVertically){
-                IconButton(::close){Icon(Icons.Outlined.Close,"关闭图片",tint=Color.White)};Spacer(Modifier.weight(1f));Text(if(media.type=="sticker")"贴纸" else "图片",color=Color.White);Spacer(Modifier.weight(1f))
-                if(request.messageId!=null)IconButton({scope.launch{try{service.collect(media,request.messageId);notice="已加入贴纸添加队列"}catch(e:Exception){notice=e.message}}}){Icon(Icons.Outlined.AddPhotoAlternate,"添加到贴纸",tint=Color.White)}else Spacer(Modifier.size(48.dp))
+                GlassIconButton(::close, surface = Color.Black.copy(alpha = .65f)){Icon(Icons.Outlined.Close,"关闭图片",tint=Color.White)};Spacer(Modifier.weight(1f));Text(if(media.type=="sticker")"贴纸" else "图片",color=Color.White);Spacer(Modifier.weight(1f))
+                if(request.messageId!=null)GlassIconButton({scope.launch{try{service.collect(media,request.messageId);notice="已加入贴纸添加队列"}catch(e:Exception){notice=e.message}}}, surface = Color.Black.copy(alpha = .65f)){Icon(Icons.Outlined.AddPhotoAlternate,"添加到贴纸",tint=Color.White)}else Spacer(Modifier.size(48.dp))
             }
             if(showControls||notice!=null)Text(notice ?: "双指缩放 · 双击放大",Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(20.dp),color=Color.White.copy(alpha=.7f),style=MaterialTheme.typography.labelMedium)
         }

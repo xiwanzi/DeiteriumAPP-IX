@@ -23,7 +23,7 @@ fun ActionFeedback(title:String,detail:String,onDone:()->Unit) {
     var done by remember{mutableStateOf(false)};val latest by rememberUpdatedState(onDone)
     LaunchedEffect(done){if(done){delay(600);latest()}}
     IosOverlayHost(onDismissRequest={if(done)onDone()}){
-        SoftGlassSurface(Modifier.widthIn(max=340.dp).fillMaxWidth(.88f),radius=30.dp){
+        KyantDialogGlass(Modifier.widthIn(max=340.dp).fillMaxWidth(.88f)){
             Column(Modifier.fillMaxWidth().padding(26.dp),horizontalAlignment=Alignment.CenterHorizontally){
                 PaymentConfirmation(Modifier.size(130.dp)){done=true}
                 Text(title,Modifier.fillMaxWidth(),style=MaterialTheme.typography.headlineSmall,textAlign=androidx.compose.ui.text.style.TextAlign.Center)

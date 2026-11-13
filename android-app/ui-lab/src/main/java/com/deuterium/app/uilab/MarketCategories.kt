@@ -24,7 +24,7 @@ fun MarketCategoryBar(selected:String,onSelect:(String)->Unit) {
         LazyRow(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(7.dp)){
             items(listOf("全部","建材","装备","建筑服务")){label->ChoiceChip(normalized==label,{onSelect(if(normalized==label)"全部" else label)},{Text(label)})}
         }
-        IconButton({show=true}){Icon(Icons.Outlined.Tune,"筛选分类")}
+        GlassIconButton({show=true}){Icon(Icons.Outlined.Tune,"筛选分类")}
     }
     if(show)CategorySheet(normalized,{show=false},allowClear=true){onSelect(it);show=false}
 }

@@ -99,7 +99,7 @@ fun MarketProductPage(book:CommerceBook,listingId:String,topInset:Dp,onChat:(Str
     }
     if(confirmQuote&&quoteText!=null)CheckoutQuoteConfirmation(JSONObject(quoteText!!),{confirmQuote=false}){confirmQuote=false;pending=true}
     if(pending&&quoteText!=null)PaymentExperience(apiCents(JSONObject(quoteText!!).getString("totalAmount")),listing.seller,"支付成功",onCommit={orderId=book.network?.createOrder(JSONObject(quoteText!!),key);orderId!=null},autoCloseOnSuccess=true,errorMessage=book.network?.error){pending=false;quoteKey=UUID.randomUUID().toString();orderId?.let(onOrder)}
-    if(unlist)IosDialog({unlist=false},{Text("下架这件商品？")},{Text("下架后其他玩家将无法购买，已经成交的订单仍需正常履约。重新上架时需要检查发布信息。")},{PlainButton({scope.launch{if(book.network?.unlist(listing.id)==true)unlist=false else error=book.network?.error}}){Text("确认下架",color=MaterialTheme.colorScheme.error)}},{PlainButton({unlist=false}){Text("取消")}})
+    if(unlist)IosDialog({unlist=false},{Text("下架这件商品？")},{Text("下架后其他玩家将无法购买，已经成交的订单仍需正常履约。重新上架时需要检查发布信息。")},{PlainButton({scope.launch{if(book.network?.unlist(listing.id)==true)unlist=false else error=book.network?.error}}){Text("确认下架")}},{PlainButton({unlist=false}){Text("取消")}}, destructive = true)
 
 }
 fun durationHours(hours:Int)=if(hours%24==0)"${hours/24} 天" else "$hours 小时"

@@ -67,7 +67,7 @@ internal fun SakiPurchaseCheckout(state:LabState,selected:JSONObject,onClose:()-
             }else{
                 BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding()){
                     Box(Modifier.matchParentSize().clickable(indication=null,interactionSource=remember{androidx.compose.foundation.interaction.MutableInteractionSource()}){if(!paying)onClose()})
-                    SoftGlassSurface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max=maxHeight*.96f),radius=30.dp,tint=MaterialTheme.colorScheme.background){
+                    SoftGlassSurface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max=maxHeight*.96f)){
                         Column(Modifier.navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(top=14.dp,bottom=22.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
                                 Text("Saki AI",Modifier.weight(1f),fontSize=20.sp,fontWeight=FontWeight.SemiBold)

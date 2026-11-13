@@ -80,7 +80,7 @@ private fun BalanceCard(state: LabState, onTransfer: () -> Unit) {
         Column(Modifier.padding(24.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("可用余额", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                IconButton(onClick = { state.privacy = !state.privacy }, modifier = Modifier.size(48.dp)) {
+                GlassIconButton(onClick = { state.privacy = !state.privacy }, modifier = Modifier.size(48.dp)) {
                     Icon(if(state.privacy) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         if(state.privacy) "显示余额" else "隐藏余额", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(21.dp))
                 }
@@ -106,9 +106,8 @@ private fun BalanceCard(state: LabState, onTransfer: () -> Unit) {
                     Spacer(Modifier.width(9.dp))
                     Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.size(19.dp))
                 }
-                OutlinedIconButton(onClick = state::refresh, enabled = !state.refreshing,
-                    modifier = Modifier.size(51.dp), shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                GlassIconButton(onClick = state::refresh, enabled = !state.refreshing,
+                    modifier = Modifier.size(51.dp)) {
                     Icon(Icons.Outlined.Refresh, "刷新余额", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(23.dp)
                         .graphicsLayer { rotationZ = rotation?.value ?: 0f })
                 }

@@ -53,6 +53,17 @@ object ChatMediaCheck {
         check(tuned.chatInputDark==legacy.chatInputDark&&tuned.chatPanelLight==legacy.chatPanelLight&&tuned.overlay==legacy.overlay)
         materialPrefs.edit().putFloat("chatInput.light.blur",Float.NaN).commit()
         check(materialStore.load().chatInputLight.blur==GlassMaterials().chatInputLight.blur&&materialStore.load().chatPanelDark.blur==63f)
+        val migrationPrefs=context.getSharedPreferences("qa-reference-material-migration",0)
+        migrationPrefs.edit().clear().commit()
+        val migrationStore=GlassSettingsStore(migrationPrefs)
+        migrationStore.save(tuned)
+        migrationStore.applyReferencePreset()
+        val migrated=migrationStore.load()
+        check(migrated.overlay==tuned.overlay&&migrated.header==tuned.header)
+        check(migrated.bottomBar==GlassMaterials().bottomBar&&migrated.chatPanelDark==GlassMaterials().chatPanelDark)
+        migrationStore.save(migrated.copy(chatInputLight=migrated.chatInputLight.copy(blur=19f)))
+        migrationStore.applyReferencePreset()
+        check(migrationStore.load().chatInputLight.blur==19f)
         result.putString("material_persistence","PASS legacy settings retained; input/panel and light/dark save independently; 52+ dp blur survives reload")
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);val server=MockWebServer()
         val objectBytes=ConcurrentHashMap<String,ByteArray>();val manifests=ConcurrentHashMap<String,JSONObject>();val sent=ConcurrentHashMap<String,JSONObject>();val stickers=JSONArray()
@@ -129,7 +140,16 @@ object ChatMediaCheck {
             val transport=OkHttpClient.Builder().addInterceptor{chain->check(chain.request().header("Authorization")==null);val buffer=Buffer();chain.request().body!!.writeTo(buffer);objectBytes[chain.request().url.encodedPath]=buffer.readByteArray();puts.incrementAndGet();Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK").body(ByteArray(0).toResponseBody("application/octet-stream".toMediaType())).build()}.build()
             val accepted=mutableListOf<JSONObject>();val sender=BackendChatMedia(api,scope,transport){message,_->accepted+=message}
             runBlocking{withContext(Dispatchers.Main){sender.enqueue(Uri.fromFile(source).toString(),null)}}
-            fun waitFor(label:String,condition:()->Boolean){val end=System.currentTimeMillis()+30000;while(!condition()&&System.currentTimeMillis()<end)Thread.sleep(80);check(condition()){label}}
+            fun waitFor(label:String,condition:()->Boolean){
+                val end=System.currentTimeMillis()+30000
+                while(System.currentTimeMillis()<end){
+                    if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache()
+                    if(condition())return
+                    Thread.sleep(80)
+                }
+                test.uiAutomation.takeScreenshot()?.let{b->File(context.filesDir,"qa-failure.png").outputStream().use{b.compress(Bitmap.CompressFormat.PNG,100,it)};b.recycle()}
+                error(label)
+            }
             waitFor("uncertain send retained"){sender.pending.firstOrNull()?.status=="failed"}
             check(sends.get()==1&&puts.get()==2)
             test.runOnMainSync{sender.retry(sender.pending.first())};waitFor("original send recovered"){sender.pending.isEmpty()&&accepted.size==1};check(sends.get()==1&&puts.get()==2)
@@ -154,12 +174,18 @@ object ChatMediaCheck {
             val uiMaterials=mutableStateOf(GlassMaterials())
             val activity=test.startActivitySync(Intent(context,DeuteriumActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as DeuteriumActivity
             test.runOnMainSync{activity.setContent{LabTheme(theme,theme==1,true){
+              SideEffect {
+                  androidx.core.view.WindowCompat.getInsetsController(activity.window, activity.window.decorView).apply {
+                      isAppearanceLightStatusBars=theme==1
+                      isAppearanceLightNavigationBars=theme==1
+                  }
+              }
               val atmosphere=rememberGraphicsLayer();val backdrop=rememberGraphicsLayer()
               CompositionLocalProvider(LocalGlassMaterials provides uiMaterials.value,LocalGlassBackdrop provides atmosphere,LocalOverlayBackdrop provides backdrop,LocalOverlayGlassEnabled provides overlayGlass){Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)){
                 GlassScene(atmosphere,backdrop,Modifier.fillMaxSize()){
                 Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime)){ChatPage(state,90.dp,{},{})}
-                Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp).background(MaterialTheme.colorScheme.background).statusBarsPadding(),contentAlignment=Alignment.Center){Text("公共聊天",style=MaterialTheme.typography.titleMedium,color=MaterialTheme.colorScheme.onSurface)}
                 }
+                ChatTopFade(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(90.dp),protectTitle=false)
                 if(previewOpen.value)ChatAttachmentPreview(Uri.fromFile(source).toString(),false,false,null,{},{},{previewOpen.value=false})
                 if(tunerOpen.value)GlassTuner(uiMaterials.value,{uiMaterials.value=it;materialStore.save(it)},{tunerOpen.value=false})
             }}}}}
@@ -196,15 +222,16 @@ object ChatMediaCheck {
             result.putString("panel_motion","PASS composer dock endpoints; rendered trajectory verified separately: ${anchorSamples.first()} -> ${anchorSamples.last()}")
             shot("emoji-$theme");click("手势");shot("gestures-$theme");click("👍");check(state.chatDraft.text=="👍");click("删除表情");check(state.chatDraft.text.isEmpty())
             click("心情");click("❤️‍🔥");check(state.chatDraft.text=="❤️‍🔥");click("删除表情");check(state.chatDraft.text.isEmpty())
-            click("贴纸 10/10");shot("stickers-$theme");check(find(test.uiAutomation.rootInActiveWindow,"贴纸已满，删除已有贴纸后可继续添加")!=null)
+            click("贴纸 10/10");shot("stickers-$theme");check(find(test.uiAutomation.rootInActiveWindow,"导入贴纸")!=null)
             test.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);Thread.sleep(300);click("查看图片");shot("viewer-$theme")
             fun zoomed(node:AccessibilityNodeInfo?):Boolean {if(node==null)return false;val state=androidx.core.view.accessibility.AccessibilityNodeInfoCompat.wrap(node).stateDescription?.toString();if(state=="缩放 300%")return true;repeat(node.childCount){if(zoomed(node.getChild(it)))return true};return false}
             val screen=test.uiAutomation.takeScreenshot()!!;val cx=screen.width/2f;val cy=screen.height/2f;screen.recycle()
-            fun tap(){val now=android.os.SystemClock.uptimeMillis();val down=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,cx,cy,0);test.sendPointerSync(down);down.recycle();Thread.sleep(25);val up=android.view.MotionEvent.obtain(now,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,cx,cy,0);test.sendPointerSync(up);up.recycle()}
+            fun tap(){val now=android.os.SystemClock.uptimeMillis();val down=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,cx,cy,0);down.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;check(test.uiAutomation.injectInputEvent(down, true));down.recycle();Thread.sleep(25);val up=android.view.MotionEvent.obtain(now,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,cx,cy,0);up.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;check(test.uiAutomation.injectInputEvent(up, true));up.recycle()}
             tap();Thread.sleep(60);tap();waitFor("double tap zoom"){zoomed(test.uiAutomation.rootInActiveWindow)};shot("zoom-$theme");click("关闭图片");waitFor("viewer closed"){find(test.uiAutomation.rootInActiveWindow,"选择表情")!=null}
             result.putString("viewer","PASS full image + double tap zoom + close")
             click("输入消息");Thread.sleep(700)
             val keyboardAnchor=android.graphics.Rect();find(test.uiAutomation.rootInActiveWindow,"选择表情")!!.getBoundsInScreen(keyboardAnchor)
+            shot("keyboard-$theme")
             click("选择表情");Thread.sleep(500)
             val panelAnchor=android.graphics.Rect();find(test.uiAutomation.rootInActiveWindow,"切换键盘")!!.getBoundsInScreen(panelAnchor)
             check(kotlin.math.abs(keyboardAnchor.bottom-panelAnchor.bottom)<context.resources.displayMetrics.density*28){"Keyboard/panel changed composer position: $keyboardAnchor -> $panelAnchor"}
@@ -217,10 +244,12 @@ object ChatMediaCheck {
                 if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache()
                 val node=find(test.uiAutomation.rootInActiveWindow,label)!!;val bounds=android.graphics.Rect();node.getBoundsInScreen(bounds)
                 val x=bounds.exactCenterX();val y=bounds.exactCenterY();val downAt=android.os.SystemClock.uptimeMillis()
-                fun event(action:Int,at:Float){val ev=android.view.MotionEvent.obtain(downAt,android.os.SystemClock.uptimeMillis(),action,x,at,0);test.sendPointerSync(ev);ev.recycle()}
+                val dm=context.resources.displayMetrics
+                val travel=delta.coerceIn(dm.density*32-y,dm.heightPixels-dm.density*48-y)
+                fun event(action:Int,at:Float){val ev=android.view.MotionEvent.obtain(downAt,android.os.SystemClock.uptimeMillis(),action,x,at,0);try{ev.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;check(test.uiAutomation.injectInputEvent(ev, true))}catch(e:Exception){throw IllegalStateException("Handle $label bounds=$bounds y=$at travel=$travel",e)}finally{ev.recycle()}}
                 event(android.view.MotionEvent.ACTION_DOWN,y)
-                repeat(12){Thread.sleep(18);event(android.view.MotionEvent.ACTION_MOVE,y+delta*(it+1)/12)}
-                event(android.view.MotionEvent.ACTION_UP,y+delta);test.waitForIdleSync();Thread.sleep(350)
+                repeat(12){Thread.sleep(18);event(android.view.MotionEvent.ACTION_MOVE,y+travel*(it+1)/12)}
+                event(android.view.MotionEvent.ACTION_UP,y+travel);test.waitForIdleSync();Thread.sleep(350)
             }
             dragHandle("展开预览",-context.resources.displayMetrics.density*220)
             waitFor("preview expanded by drag"){if(android.os.Build.VERSION.SDK_INT>=33)test.uiAutomation.clearCache();find(test.uiAutomation.rootInActiveWindow,"收起预览")!=null};shot("attachment-full-$theme")
@@ -237,9 +266,11 @@ object ChatMediaCheck {
                 val target=input.top-context.resources.displayMetrics.density*35
                 val delta=(target-picture.top).coerceIn(0f,context.resources.displayMetrics.heightPixels*.6f)
                 val startY=context.resources.displayMetrics.density*110;val x=picture.exactCenterX();val downAt=android.os.SystemClock.uptimeMillis()
-                fun swipe(action:Int,y:Float){val event=android.view.MotionEvent.obtain(downAt,android.os.SystemClock.uptimeMillis(),action,x,y,0);test.sendPointerSync(event);event.recycle()}
+                fun swipe(action:Int,y:Float){val event=android.view.MotionEvent.obtain(downAt,android.os.SystemClock.uptimeMillis(),action,x,y,0);event.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;check(test.uiAutomation.injectInputEvent(event, true));event.recycle()}
                 swipe(android.view.MotionEvent.ACTION_DOWN,startY)
                 repeat(20){Thread.sleep(22);swipe(android.view.MotionEvent.ACTION_MOVE,startY+delta*(it+1)/20)}
+                // This fixture needs an exact overlap, independent of host/GPU fling timing.
+                Thread.sleep(180);swipe(android.view.MotionEvent.ACTION_MOVE,startY+delta)
                 swipe(android.view.MotionEvent.ACTION_UP,startY+delta);test.waitForIdleSync();Thread.sleep(600)
                 shot(if(overlayGlass)"glass-$theme" else "glass-off-$theme")
                 val behind=bounds("查看图片");val dockInput=bounds("输入消息")
@@ -248,6 +279,50 @@ object ChatMediaCheck {
                 test.uiAutomation.takeScreenshot()!!.let{frame->check(panelBounds.left==0&&panelBounds.right==frame.width&&panelBounds.bottom==frame.height){"Panel must reach both sides and the physical bottom: $panelBounds / ${frame.width}x${frame.height}"};frame.recycle()}
                 result.putString("panel_edges","PASS top corners only; both sides and gesture area reach screen edges")
                 result.putString("glass_backdrop","PASS actual message image under input/panel: $behind / $dockInput")
+                val firstEmojiHeight = bounds("😀").height()
+                val gridBefore = bounds("表情网格")
+                fun scrollExpressions(delta: Float) {
+                    val grid = bounds("表情网格")
+                    val x = grid.exactCenterX()
+                    val y = if (delta < 0) grid.top + grid.height() * .72f else grid.top + grid.height() * .22f
+                    val downAt = android.os.SystemClock.uptimeMillis()
+                    fun move(action: Int, at: Float) {
+                        val event = android.view.MotionEvent.obtain(downAt, android.os.SystemClock.uptimeMillis(), action, x, at, 0)
+                        event.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;check(test.uiAutomation.injectInputEvent(event, true)); event.recycle()
+                    }
+                    move(android.view.MotionEvent.ACTION_DOWN, y)
+                    repeat(18) { Thread.sleep(22); move(android.view.MotionEvent.ACTION_MOVE, y + delta * (it + 1) / 18) }
+                    move(android.view.MotionEvent.ACTION_UP, y + delta)
+                    test.waitForIdleSync(); Thread.sleep(500)
+                }
+                scrollExpressions(-context.resources.displayMetrics.density * 110)
+                val hidden = bounds("表情网格")
+                check(gridBefore.top - hidden.top > context.resources.displayMetrics.density * 36) {
+                    "Expression header left an empty slot: $gridBefore -> $hidden"
+                }
+                shot("emoji-collapsed-$theme")
+                scrollExpressions(context.resources.displayMetrics.density * 90)
+                val shown = bounds("表情网格")
+                check(kotlin.math.abs(shown.top - gridBefore.top) < context.resources.displayMetrics.density * 3) {
+                    "Expression header did not return: $gridBefore -> $shown"
+                }
+                shot("emoji-revealed-$theme")
+                repeat(6) {
+                    if (find(test.uiAutomation.rootInActiveWindow, "💩") == null) {
+                        checkNotNull(find(test.uiAutomation.rootInActiveWindow, "表情网格"))
+                            .performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                        test.waitForIdleSync(); Thread.sleep(250)
+                    }
+                }
+                val last = bounds("💩")
+                check(last.height() >= firstEmojiHeight * .85f)
+                val footerNode = find(test.uiAutomation.rootInActiveWindow, "表情符号")
+                if (footerNode != null && footerNode.isVisibleToUser) {
+                    val footer = android.graphics.Rect().also { footerNode.getBoundsInScreen(it) }
+                    check(last.bottom <= footer.top) { "Final emoji sits under the floating footer: $last / $footer" }
+                } else check(last.bottom <= bounds("表情网格").bottom)
+                shot("emoji-end-$theme")
+                result.putString("expression_scroll", "PASS continuous grid, header gives up space, reverse restores it, final row clears floating controls")
                 test.runOnMainSync{tunerOpen.value=true}
                 click("输入栏")
                 fun range(node:AccessibilityNodeInfo?):AccessibilityNodeInfo?{if(node==null)return null;if(node.contentDescription?.toString()=="模糊半径"&&node.rangeInfo!=null)return node;repeat(node.childCount){range(node.getChild(it))?.let{return it}};return null}
@@ -260,7 +335,9 @@ object ChatMediaCheck {
                 check((if(theme==2)uiMaterials.value.chatInputDark else uiMaterials.value.chatInputLight).blur==30f)
                 check(materialStore.load()==uiMaterials.value)
                 click("还原")
-                check((if(theme==2)uiMaterials.value.chatPanelDark else uiMaterials.value.chatPanelLight).blur==52f)
+                val defaults = GlassMaterials()
+                val defaultPanel = if (theme == 2) defaults.chatPanelDark else defaults.chatPanelLight
+                check((if (theme == 2) uiMaterials.value.chatPanelDark else uiMaterials.value.chatPanelLight) == defaultPanel)
                 check((if(theme==2)uiMaterials.value.chatInputDark else uiMaterials.value.chatInputLight).blur==30f)
                 shot("material-tuner-$theme")
                 click("完成");waitFor("tuner closed"){!tunerOpen.value}

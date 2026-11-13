@@ -46,7 +46,16 @@ internal fun ChatAttachmentPreview(uri:String,importing:Boolean,busy:Boolean,err
     fun close(){if(busy||closing)return;closing=true;scope.launch{height.snapTo(dragging ?: height.value);dragging=null;if(motion)height.animateTo(0f,tween(220, easing=FastOutSlowInEasing));onDismiss()}}
     Dialog(::close,properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=false)){
         val window=(LocalView.current.parent as? DialogWindowProvider)?.window
-        DisposableEffect(window){window?.apply{setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT));setDimAmount(0f);setWindowAnimations(0)};onDispose{}}
+        val light = MaterialTheme.colorScheme.background.red >= .5f
+        DisposableEffect(window, light) {
+            window?.apply {
+                setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+                setDimAmount(0f)
+                setWindowAnimations(0)
+                applyOverlaySystemBars(light)
+            }
+            onDispose {}
+        }
         BackHandler{close()}
         BoxWithConstraints(Modifier.fillMaxSize()){
             val top=WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -66,12 +75,12 @@ internal fun ChatAttachmentPreview(uri:String,importing:Boolean,busy:Boolean,err
                     })
                 }
             SoftGlassSurface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(with(density){current.toDp()})
-                .semantics{contentDescription="图片预览抽屉";stateDescription=if(expanded)"已展开" else "半屏"},radius=28.dp){
+                .semantics{contentDescription="图片预览抽屉";stateDescription=if(expanded)"已展开" else "半屏"}){
                 Column(Modifier.fillMaxSize().navigationBarsPadding()){
                   Column(resizeGesture){
                     Box(Modifier.fillMaxWidth().height(25.dp).semantics{contentDescription=if(expanded)"收起预览" else "展开预览"}.clickable(enabled=!busy&&!closing){scope.launch{val target=if(expanded)half else full;if(motion)height.animateTo(target,tween(260, easing=FastOutSlowInEasing))else height.snapTo(target)}},contentAlignment=Alignment.Center){Box(Modifier.size(34.dp,4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=.35f),CircleShape))}
                     Row(Modifier.fillMaxWidth().padding(horizontal=10.dp),verticalAlignment=Alignment.CenterVertically){
-                        IconButton(::close,enabled=!busy&&!closing){Icon(Icons.Outlined.Close,"取消")}
+                        GlassIconButton(::close,enabled=!busy&&!closing){Icon(Icons.Outlined.Close,"取消")}
                         Text(if(importing)"添加贴纸" else "发送图片",Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
                         PlainButton(onChooseAgain,enabled=!busy&&!closing){Text("重新选择")}
                     }

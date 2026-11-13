@@ -22,12 +22,19 @@ class LiveBackendInstrumentation : Instrumentation() {
         if(options.getString("multiStoreCheckout")=="true"){MultiStoreCheckoutCheck.run(this);return}
         if(options.getString("shopNavigation")=="true"){ShopNavigationCheck.run(this);return}
         if(options.getString("catalogScale")=="true"){CatalogScaleCheck.run(this);return}
+        if(options.getString("catalogPolish")=="true"){CatalogScaleCheck.run(this, polish = true);return}
+        if(options.getString("pagePolish")=="true"){PagePolishCheck.run(this);return}
+        if(options.getString("referenceGlass")=="true"){ReferenceGlassCheck.run(this);return}
+        if(options.getString("avatarFrames")=="true"){AvatarFrameCheck.run(this);return}
+        if(options.getString("chatEdgeFade")=="true"){ChatEdgeFadeCheck.run(this);return}
+        if(options.getString("glassCalibration")=="true"){GlassCalibrationCheck.run(this);return}
         if(options.getString("chatNavigation")=="true"){ChatNavigationCheck.run(this);return}
         if(options.getString("accountErasure")=="true"){AccountErasureCheck.run(this);return}
         if(options.getString("authRegistration")=="true"){AuthRegistrationCheck.run(this);return}
         options.getString("overdrawPageCapture")?.let{OverdrawPageCapture.run(this,it);return}
         options.getString("overdrawScrollBenchmark")?.let{OverdrawPageCapture.run(this,it,benchmark=true);return}
         options.getString("overdrawDiagnostics")?.let{OverdrawDiagnostics.run(this,experiments=it=="experiments");return}
+        if (options.getString("catalogGlass") == "true") { CatalogGlassCheck.run(this); return }
         options.getString("performanceVisual")?.let{PerformanceVisualCheck.run(this,it);return}
         if(options.getString("performanceIO")=="true"){PerformanceIoCheck.run(this);return}
         if(options.getString("couponArrivals")=="true"){CouponArrivalCheck.run(this);return}

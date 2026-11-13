@@ -106,7 +106,7 @@ fun AccountPage(avatar:String?,userName:String,topInset:Dp,onAvatar:()->Unit,onP
         item { SettingsGroup { Box(Modifier.padding(horizontal=18.dp,vertical=7.dp)){DetailRow("玩家 ID",userName)};SettingsDivider();SettingsRow("修改密码",Icons.Outlined.Key,Color(0xFF007AFF),onClick=onPassword);SettingsDivider();SettingsRow("登录设备",Icons.Outlined.Devices,Color(0xFF34C759),onClick=onDevices);SettingsDivider();SettingsRow("昵称与简介",Icons.Outlined.Edit,Color(0xFF8E8E93),onClick=onBio) } }
         item { SettingsGroup { PlainButton({confirm=true},Modifier.fillMaxWidth().height(54.dp)){Text("退出登录",color=MaterialTheme.colorScheme.error)} } }
     }
-    if(confirm)IosDialog({confirm=false},{Text("退出登录？")},{Text("头像和外观设置会保留。")},{PlainButton(onLogout){Text("退出",color=MaterialTheme.colorScheme.error)}},{PlainButton({confirm=false}){Text("取消")}})
+    if(confirm)IosDialog({confirm=false},{Text("退出登录？")},{Text("头像和外观设置会保留。")},{PlainButton(onLogout){Text("退出")}},{PlainButton({confirm=false}){Text("取消")}}, destructive = true)
 }
 @Composable
 fun AboutPage(state:LabState,topInset:Dp) { UpdatePage(state,topInset) }

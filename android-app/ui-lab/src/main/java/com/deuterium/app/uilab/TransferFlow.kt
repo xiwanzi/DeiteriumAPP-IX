@@ -39,7 +39,11 @@ fun TransferSheet(state: LabState, initialRecipient: String? = null, onClose: ()
         runCatching{state.searchRecipients(query)}.onSuccess{results=it;verifiedRecipient=it.find{candidate->candidate.name==selectedName};error=null}.onFailure{results=emptyList();verifiedRecipient=null;error=it.message}
         searching=false
     }
-    IosSheet(onDismissRequest = {if(pending==0L)onClose()}, containerColor = MaterialTheme.colorScheme.surface,
+    IosSheet(
+        onDismissRequest = { if (pending == 0L) onClose() },
+        surfaceParameters = TransactionGlass,
+        surfaceRadius = 30.dp,
+        dimAmount = .14f,
         replacementContent=if(pending>0) {{
             PaymentExperience(pending,"转给 ${selectedName.orEmpty()}","转账成功",onCommit={val result=selectedName?.let{state.transfer(it,pending,note,paymentKey,paymentRecipientRef)} ?: false;paymentKey=state.activeTransferKey;result},errorMessage=state.storageMessage,confirmed=if(paymentKey!=null&&paymentKey==state.completedTransferKey&&state.transferSucceeded)true else null,embedded=true,onClose=onClose)
         }} else null) {

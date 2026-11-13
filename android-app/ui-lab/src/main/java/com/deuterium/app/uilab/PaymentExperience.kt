@@ -15,6 +15,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import com.kyant.shapes.Capsule
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.*
@@ -45,7 +49,7 @@ fun PaymentExperience(amount:Long,recipient:String,successTitle:String,onCommit:
     LaunchedEffect(completed,result) { if(completed&&result==true&&autoCloseOnSuccess){delay(850);close()} }
     val paymentContent:@Composable ()->Unit = {
         Box(Modifier.fillMaxSize().padding(22.dp),contentAlignment=Alignment.Center) {
-            SoftGlassSurface(Modifier.fillMaxWidth().widthIn(max=440.dp),radius=34.dp) {
+            SoftGlassSurface(Modifier.fillMaxWidth().widthIn(max = 440.dp), radius = 34.dp, parameters = TransactionGlass) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=26.dp,vertical=28.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                     AnimatedContent(if(!authenticated)"面容确认" else "付款结果",transitionSpec={fadeIn(tween(130,30)) togetherWith fadeOut(tween(100))},label="payment-label"){label->
                         Text(label,style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -58,7 +62,22 @@ fun PaymentExperience(amount:Long,recipient:String,successTitle:String,onCommit:
                     Text(credit(amount),Modifier.padding(top=16.dp),fontSize=36.sp,fontWeight=FontWeight.SemiBold,letterSpacing=(-1).sp)
                     Text("信用点",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(if(visibleResult==false)commitError ?: errorMessage ?: "请查看返回信息；结果待确认时请勿重复付款" else recipient,Modifier.padding(vertical=22.dp),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                    MotionButton(onClose,Modifier.fillMaxWidth().height(52.dp),enabled=completed){Text(if(completed&&autoCloseOnSuccess)"查看订单" else if(completed)"完成" else "请稍候…")}
+                    if (completed) {
+                        MotionButton(onClose, Modifier.fillMaxWidth().height(52.dp)) {
+                            Text(if (autoCloseOnSuccess) "查看订单" else "完成")
+                        }
+                    } else {
+                        val colors = MaterialTheme.colorScheme
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(52.dp)
+                                .semantics { liveRegion = LiveRegionMode.Polite },
+                            shape = Capsule(), color = colors.surfaceVariant, contentColor = colors.onSurfaceVariant
+                        ) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("请稍候…", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    }
                 }
             }
         }
