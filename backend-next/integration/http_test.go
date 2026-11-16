@@ -311,8 +311,14 @@ func TestFourNodeChatReplayDeliveryAndRevocation(t *testing.T) {
 	if ack := socketRead(t, cores["amiya"], "core.event.result"); ack["replayed"] != true {
 		t.Fatal("replay not identified", ack)
 	}
-	if count(t, f.store, "chat_messages_next") != 1 || count(t, f.store, "core_chat_deliveries") != 0 {
-		t.Fatal("game echo was duplicated or forwarded back to TrChat")
+	// Native chat persists one delivery for each peer. Legacy TrChat connections acknowledge
+	// these without forwarding them; the source node must never receive its own game echo.
+	if count(t, f.store, "chat_messages_next") != 1 || count(t, f.store, "core_chat_deliveries") != 3 {
+		t.Fatal("game replay duplicated the message or peer delivery intents")
+	}
+	var sourceDeliveries int
+	if err := f.store.DB.QueryRow("SELECT COUNT(*) FROM core_chat_deliveries WHERE node_id='amiya'").Scan(&sourceDeliveries); err != nil || sourceDeliveries != 0 {
+		t.Fatal("game message was routed back to its source", sourceDeliveries, err)
 	}
 	chat["content"] = "modified"
 	socketWrite(t, cores["amiya"], "chat.public.event", chat, "game-message-one")
