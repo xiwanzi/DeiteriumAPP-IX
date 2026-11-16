@@ -41,6 +41,9 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
     private final PlayerEvents playerEvents;
     private final ChatAccess chat;
     private final cafe.deuterium.core.game.GameChatChannel gameChat;
+    private final cafe.deuterium.core.supply.SupplyHttp supplyHttp;
+    private final cafe.deuterium.core.supply.SupplyChannel supplyChannel;
+    private final cafe.deuterium.core.supply.SupplyDeliveryPump supplyDelivery;
     private final ChatEvents chatEvents;
     private final EconomyAccess economy = new EconomyAccess();
     private final CommandDispatcher commands;
@@ -79,6 +82,9 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         initialized.add(bridge);
         gameChat = new cafe.deuterium.core.game.GameChatChannel(plugin, settings::get, game, chat, sessions, players);
         chat.bindGameChat(gameChat); initialized.add(gameChat);
+        supplyHttp = new cafe.deuterium.core.supply.SupplyHttp(settings::get); initialized.add(supplyHttp);
+        supplyChannel = new cafe.deuterium.core.supply.SupplyChannel(plugin, sessions, supplyHttp); initialized.add(supplyChannel);
+        supplyDelivery = new cafe.deuterium.core.supply.SupplyDeliveryPump(plugin, this, supplyHttp); initialized.add(supplyDelivery);
         timer = Executors.newSingleThreadScheduledExecutor(task -> { Thread thread = new Thread(task, "DeuteriumCore-Timer"); thread.setDaemon(true); return thread; });
         initialized.add(timer::shutdownNow);
         timer.scheduleWithFixedDelay(this::tick, 0, 1, TimeUnit.SECONDS);
@@ -104,6 +110,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         if (ticks % 300 == 0) workers.submit(() -> { inbox.sweep(); return null; });
     }
     public CoreConfig config() { return settings.get(); }
+    public cafe.deuterium.core.supply.SupplyHttp supplyHttp() { return supplyHttp; }
     public PlayerDataService dataProvider() { return Bukkit.getServicesManager().load(PlayerDataService.class); }
     public PlayerDataService inventoryAccess() {
         PlayerDataService provider = dataProvider();
@@ -155,6 +162,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
     public void ensureOpen() { if (closing.get()) throw new CoreFailure("CORE_STOPPED", "Core 已停用。"); }
     @Override public void close() {
         if (!closing.compareAndSet(false, true)) return;
+        supplyDelivery.close(); supplyChannel.close(); supplyHttp.close();
         gameChat.close(); bridge.close(); timer.shutdownNow(); game.close(); localData.disable(); mailbox.close();
         HandlerList.unregisterAll(plugin);
         Bukkit.getServicesManager().unregisterAll(plugin); workers.close(); sessions.clear();

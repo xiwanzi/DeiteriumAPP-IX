@@ -6,6 +6,9 @@ authors: [Deuterium]
 description: Item library, cluster bridge and controlled game integration for Deuterium.
 softdepend: [DeuteriumMail, TrChat, Vault, XConomy, LuckPerms, PlaceholderAPI]
 commands:
+  supplytickets:
+    description: 补给票券余额、流水与管理
+    usage: /supplytickets balance|history|add|take|remove|set
   dc:
     description: Deuterium Core 鐗╁搧搴撲笌绠＄悊
     usage: /dc help
