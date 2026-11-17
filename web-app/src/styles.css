@@ -25,6 +25,11 @@
 * {
   box-sizing: border-box;
 }
+@media (min-width: 768px) {
+  :root {
+    font-size: clamp(100%, calc(62.5% + .78125vw), 125%);
+  }
+}
 body {
   margin: 0;
   min-width: 320px;
@@ -2812,6 +2817,12 @@ tr:last-child td {
   .main-shell {
     margin-left: 240px;
   }
+}
+@media (min-width: 1024px) {
+  .sidebar nav a { font-size: clamp(.875rem, calc(.75rem + .25vw), 1.0625rem); }
+  .breadcrumb { font-size: clamp(.75rem, calc(.625rem + .25vw), .9375rem); }
+  .page-head h1 { font-size: clamp(2.125rem, calc(1.5rem + 1vw), 2.625rem); }
+  .page-head .subtitle { font-size: clamp(.875rem, calc(.75rem + .25vw), 1rem); }
 }
 @media (max-width: 1200px) {
   .sidebar {

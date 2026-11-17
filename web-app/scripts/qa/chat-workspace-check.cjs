@@ -37,7 +37,7 @@ async (page) => {
       socket.send(JSON.stringify({type:"chat.message",payload:{message:accepted}}));
     });
   });
-  await page.route("**/web-config.json", route => route.fulfill({json:{mode:"connected",version:"2.0.42",configured:true}}));
+  await page.route("**/web-config.json", route => route.fulfill({json:{mode:"connected",version:"2.0.43",configured:true}}));
   await page.route("**/api/v1/**", async route => {
     const request=route.request(), path=new URL(request.url()).pathname;
     const reply = data => route.fulfill({json:{data,page:{hasMore:false,nextCursor:null},serverTime:now.toISOString()}});
@@ -64,16 +64,23 @@ async (page) => {
     if(path==="/api/v1/chat/follows"||path==="/api/v1/chat/player-directory")return reply({players:peers});
     return reply({});
   });
-  await page.setViewportSize({width:1840,height:922});
+  await page.setViewportSize({width:2480,height:1284});
   await page.goto("http://127.0.0.1:5286/information");
   await page.locator(".bubble").filter({hasText:"好，马上到。"}).waitFor();
   const editor=page.getByRole("textbox",{name:"消息内容",exact:true});
   const contact=name=>page.locator(".pc-contact").filter({has:page.getByText(name,{exact:true})});
   const layout=await page.evaluate(()=>{
     const box=s=>document.querySelector(s).getBoundingClientRect();
-    return {rail:box('.sidebar').width,list:box('.pc-conversations').width,header:box('.pc-thread-header').width,composer:box('.chat-composer-capsule').width,topbar:getComputedStyle(document.querySelector('.topbar')).display,overflow:document.documentElement.scrollWidth>innerWidth};
+    return {rail:box('.sidebar').width,list:box('.pc-conversations').width,header:box('.pc-thread-header').width,headerHeight:box('.pc-thread-header').height,composer:box('.chat-composer-capsule').width,avatar:box('.pc-contact .conversation-symbol').width,topbar:getComputedStyle(document.querySelector('.topbar')).display,overflow:document.documentElement.scrollWidth>innerWidth};
   });
-  check(layout.rail===64&&layout.list>=320&&layout.list<=380&&layout.header<=720&&layout.composer<=720&&!layout.overflow&&layout.topbar==='none',"desktop has a narrow rail, balanced list, aligned thread, and no extra topbar");
+  check(layout.rail===80&&layout.list===500&&layout.header===1120&&layout.composer===layout.header&&!layout.overflow&&layout.topbar==='none',"desktop at normal browser zoom matches the reference rail, list and reading column");
+  const messageFont = () => page.locator('.bubble').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+  check(layout.headerHeight===62.5 && layout.avatar===57.5 && await messageFont()===25, "desktop typography, header and avatars match the 125% reference");
+  await page.setViewportSize({width:1840,height:922});
+  const wideFont = await messageFont();
+  await page.getByRole('button',{name:'展开会话详情'}).click();
+  check(wideFont>20 && await messageFont()<wideFont, "opening details adapts text to the remaining thread width");
+  await page.getByRole('button',{name:'关闭会话详情'}).click();
   check(await page.locator('.pc-details').count()===0,"conversation details start collapsed");
   check(await page.locator('.public-thread .group-continues > .avatar-button').first().evaluate(el=>getComputedStyle(el).visibility)==='hidden',"group avatar appears at the end of consecutive messages");
   await page.screenshot({path:"output/playwright/chat-workspace-light.png"});
@@ -115,7 +122,7 @@ async (page) => {
   });
   check(motion.some(s=>s.opacity>0&&s.opacity<1)&&motion.at(-1).opacity===1,"emoji popover has a real intermediate fade and scale animation");
   const composerAfter=await page.locator('.chat-composer-capsule').boundingBox(), menu=await page.locator('.chat-expression-viewport.open').boundingBox();
-  check(Math.abs(composerBefore.y-composerAfter.y)<1&&menu.y+menu.height<=composerAfter.y&&menu.width<=384,"emoji menu floats above the input without moving its position");
+  check(Math.abs(composerBefore.y-composerAfter.y)<1&&menu.y+menu.height<=composerAfter.y&&menu.width<=480,"emoji menu floats above the input without moving its position");
   let vectorEmojiCount=0;
   for(const name of ['表情','手势','心情','自然','美食','活动']) {
     await page.getByRole('tab',{name,exact:true}).click();
@@ -165,6 +172,7 @@ async (page) => {
     const bounds=await editor.boundingBox();check(bounds&&bounds.x>=0&&bounds.x+bounds.width<=width&&bounds.y+bounds.height<=850,`composer stays visible at ${width}px`);
   }
   await page.screenshot({path:"output/playwright/chat-workspace-mobile-dark.png",animations:'disabled'});
+  check(await messageFont()===16 && (await editor.boundingBox()).width>=220, "390px phones preserve 16px text and room to type beside the send controls");
   await page.getByRole('button',{name:'返回会话列表',exact:true}).click();
   check(await contact('公共聊天').isVisible(),"mobile back returns to the conversation list");
   await page.getByRole('button',{name:'打开导航菜单',exact:true}).click();

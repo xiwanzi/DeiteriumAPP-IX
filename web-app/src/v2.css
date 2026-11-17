@@ -1616,15 +1616,17 @@
     padding-left: 32px;
     padding-right: 32px;
   }
-  .auth-form-wrap {
-    max-width: 400px;
-  }
   .auth-story-copy h2 {
     font-size: 65px;
   }
   .auth-story-copy > p {
     font-size: 16px;
   }
+}
+@media (min-width: 1024px) {
+  .auth-form-wrap { max-width: clamp(23.125rem, 29vw, 28rem); }
+  .auth-form-wrap > h1 { font-size: clamp(2.125rem, calc(1.5rem + 1vw), 2.625rem); }
+  .auth-intro, .auth-form input { font-size: clamp(.875rem, calc(.75rem + .25vw), 1rem); }
 }
 @media (max-width: 1200px) {
   .pc-chat {
