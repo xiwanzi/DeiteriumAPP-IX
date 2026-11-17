@@ -63,7 +63,7 @@ func (s *Server) publicSupplyCatalog(ctx context.Context, pools []store.SupplyPo
 			if d.Kind == "LIMITED" {
 				label += " · " + scheme
 			}
-			pages[key] = map[string]any{"title": title, "label": label, "badge": badge, "tag": fmt.Sprintf("出金概率 %s%%", strconv.FormatFloat(float64(rule.GoldPPM)/10000, 'f', -1, 64)), "time": when, "code": scheme, "featured": featured, "entries": entries, "poolId": pool.ID, "revision": pool.PublishedRevision, "scheme": scheme, "kind": d.Kind, "currency": currency, "scope": scope, "rule": rule, "art": d.Art, "description": d.Description, "startsAt": d.StartsAt, "endsAt": d.EndsAt, "open": d.Open(time.Now().UTC())}
+			pages[key] = map[string]any{"title": title, "label": label, "badge": badge, "tag": fmt.Sprintf("6 星概率 %s%%", strconv.FormatFloat(float64(rule.GoldPPM)/10000, 'f', -1, 64)), "time": when, "code": scheme, "featured": featured, "entries": entries, "poolId": pool.ID, "revision": pool.PublishedRevision, "scheme": scheme, "kind": d.Kind, "currency": currency, "scope": scope, "rule": rule, "art": d.Art, "description": d.Description, "startsAt": d.StartsAt, "endsAt": d.EndsAt, "open": d.Open(time.Now().UTC())}
 		}
 	}
 	return map[string]any{"weapons": weapons, "pools": pages, "order": order}, art, nil

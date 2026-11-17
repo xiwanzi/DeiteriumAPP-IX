@@ -111,6 +111,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerGameChat(mux)
 	s.registerGameTitles(mux)
 	s.registerSupplyAdmin(mux)
+	s.registerSupplyInventory(mux)
 	s.registerSupplyArtwork(mux)
 	s.registerSupplyGame(mux)
 	s.registerPlayerNames(mux)

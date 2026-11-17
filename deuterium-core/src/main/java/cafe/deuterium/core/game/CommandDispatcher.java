@@ -1,6 +1,7 @@
 package cafe.deuterium.core.game;
 
 import cafe.deuterium.core.config.CoreConfig;
+import cafe.deuterium.core.items.InventoryCatalogCapture;
 import cafe.deuterium.core.mail.CoreMailbox;
 import cafe.deuterium.core.runtime.GameThread;
 import cafe.deuterium.core.runtime.Sessions;
@@ -19,8 +20,8 @@ import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public final class CommandDispatcher {
-    private static final Set<String> TYPES = Set.of("player.resolve", "verification.deliver", "wallet.balance", "wallet.records", "wallet.transfer", "operation.query", "mailbox.create", "mailbox.query", "mailbox.revoke","wallet.escrow.reserve","wallet.escrow.bind","wallet.escrow.settle","wallet.escrow.refund","wallet.escrow.query");
-    private static final Set<String> READS = Set.of("player.resolve", "wallet.balance", "wallet.records", "operation.query", "mailbox.query","wallet.escrow.query");
+    private static final Set<String> TYPES = Set.of("player.resolve", "verification.deliver", "wallet.balance", "wallet.records", "wallet.transfer", "operation.query", "mailbox.create", "mailbox.query", "mailbox.revoke","wallet.escrow.reserve","wallet.escrow.bind","wallet.escrow.settle","wallet.escrow.refund","wallet.escrow.query", "items.inventory", "items.capture");
+    private static final Set<String> READS = Set.of("player.resolve", "wallet.balance", "wallet.records", "operation.query", "mailbox.query","wallet.escrow.query", "items.inventory");
     private final Supplier<CoreConfig> config;
     private final Supplier<CoreMailbox> mailbox;
     private final GameThread game;
@@ -28,9 +29,15 @@ public final class CommandDispatcher {
     private final PlayerStore players;
     private final RpcJournal journal;
     private final EconomyAccess economy;
+    private final InventoryCatalogCapture items;
     public CommandDispatcher(Supplier<CoreConfig> config, Supplier<CoreMailbox> mailbox, GameThread game, Sessions sessions,
                              PlayerStore players, RpcJournal journal, EconomyAccess economy) {
+        this(config, mailbox, game, sessions, players, journal, economy, null);
+    }
+    public CommandDispatcher(Supplier<CoreConfig> config, Supplier<CoreMailbox> mailbox, GameThread game, Sessions sessions,
+                             PlayerStore players, RpcJournal journal, EconomyAccess economy, InventoryCatalogCapture items) {
         this.config = config; this.mailbox = mailbox; this.game = game; this.sessions = sessions; this.players = players; this.journal = journal; this.economy = economy;
+        this.items = items;
     }
     public JsonObject execute(JsonObject request) {
         String operation = ""; boolean started = false;
@@ -54,7 +61,7 @@ public final class CommandDispatcher {
                     throw new CoreFailure("COMMAND_EXPIRED", "请求已过期或有效期不正确。");
                 }
                 boolean committedEconomyReplay=type.startsWith("wallet.")&&config.get().economyEnabled()&&config.get().nodeId().equals(config.get().economyAuthority())&&economy.available();
-                RpcJournal.Entry entry = journal.begin(operation, type, fingerprint, type.startsWith("mailbox.")||committedEconomyReplay);
+                RpcJournal.Entry entry = journal.begin(operation, type, fingerprint, type.startsWith("mailbox.")||committedEconomyReplay||type.equals("items.capture"));
                 if (!entry.acquired()) {
                     if (entry.state().equals("COMPLETED") && type.startsWith("mailbox."))
                         return result(operation, "COMPLETED", invoke(operation, type, payload, expiry), null);
@@ -78,9 +85,17 @@ public final class CommandDispatcher {
     }
     private JsonObject invoke(String operation, String type, JsonObject payload, long deadline) throws Exception {
         if (type.startsWith("mailbox.")) return mailbox.get().execute(operation, type, payload);
+        if (type.equals("items.inventory") || type.equals("items.capture")) {
+            if (items == null) throw new CoreFailure("COMMAND_NOT_ALLOWED", "物品采集能力尚未就绪。");
+            return items.execute(operation, type, payload, deadline);
+        }
         return switch (type) {
             case "operation.query" -> {
                 Json.fields(payload, "operationId");String id=Checks.operationId(Json.string(payload,"operationId"));RpcJournal.Entry entry=journal.find(id);
+                if (items != null && Set.of("UNKNOWN", "NOT_FOUND").contains(entry.state())) {
+                    JsonObject saved = items.recover(id);
+                    if (saved != null) yield Json.tree(new RpcJournal.Entry(false, "COMPLETED", Json.GSON.toJson(result(id, "COMPLETED", saved, null))));
+                }
                 if(Set.of("UNKNOWN","NOT_FOUND").contains(entry.state())) {
                     JsonObject cancellation = mailbox.get().queryCancellation(id);
                     if(cancellation != null) {

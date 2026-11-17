@@ -11,6 +11,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CatalogStoreTest {
     @TempDir Path folder;
+    @Test void replayedCreationKeepsOneVersionAndOnePublication() throws Exception {
+        try (var f = new StoreFixture(folder); var pool = Executors.newFixedThreadPool(4)) {
+            var captured = StoreFixture.item("deuterium:capture", new byte[]{1, 2, 3});
+            List<Future<Long>> jobs = new ArrayList<>();
+            for (int i = 0; i < 8; i++) jobs.add(pool.submit(() -> f.catalog.create(captured, "web-admin").revision()));
+            for (var job : jobs) assertEquals(1L, job.get(10, TimeUnit.SECONDS));
+            assertEquals(List.of(1L), f.catalog.versions(captured.ref(), 1));
+            assertEquals(2, f.outbox.pendingCount());
+        }
+        try (var f = new StoreFixture(folder)) {
+            assertArrayEquals(new byte[]{1, 2, 3}, f.catalog.create(StoreFixture.item("deuterium:capture", new byte[]{9}), "web-admin").payload());
+            assertEquals(2, f.outbox.pendingCount());
+        }
+    }
     @Test void completeSnapshotsSurviveRestartAndArchiveKeepsHistory() throws Exception {
         try (var f = new StoreFixture(folder)) {
             byte[] original = {1,2,3,4};

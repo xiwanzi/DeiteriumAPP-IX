@@ -1,4 +1,5 @@
 export const poolKinds = { STANDARD: "常驻池", LIMITED: "轮换限定", EVENT: "独立活动" };
+export const supplyGrades = [{ stars: 4, label: "4 星 · 紫色" }, { stars: 5, label: "5 星 · 金色" }, { stars: 6, label: "6 星 · 橙红色" }];
 export const ticketKinds = { STANDARD: "常驻券", LIMITED: "限定券" };
 export const deliveryStates = { PENDING: "等待交付", PREPARING: "准备物品", ISSUING: "正在写入背包", INVENTORY: "已放入背包", MAIL_PENDING: "等待寄送邮箱", MAIL: "已寄送邮箱", REVIEW: "等待保存回执核对" };
 
@@ -11,9 +12,9 @@ export function newPool(kind = "LIMITED") {
 }
 
 export function ruleText(kind, scheme, definition = {}) {
-  if (kind === "EVENT") return `每抽 ${Number(definition.eventGoldPpm || 0) / 10000}% · ${definition.eventPity || "—"} 抽必出金 · 100% UP`;
-  if (kind === "STANDARD") return "每抽 0.5% · 80 抽必出金";
-  return scheme === "120" ? "每抽 1.2% · 每轮随机 100～120 抽保底 · 100% UP" : "每抽 0.5% · 80 抽必出金 · 100% UP";
+  if (kind === "EVENT") return `每抽 6 星概率 ${Number(definition.eventGoldPpm || 0) / 10000}% · ${definition.eventPity || "—"} 抽必得 6 星 · 6 星均为 UP`;
+  if (kind === "STANDARD") return "每抽 6 星概率 0.5% · 80 抽必得 6 星";
+  return scheme === "120" ? "每抽 6 星概率 1.2% · 每轮随机 100～120 抽保底 · 6 星均为 UP" : "每抽 6 星概率 0.5% · 80 抽必得 6 星 · 6 星均为 UP";
 }
 
 export function scheduleInput(iso) {
@@ -47,7 +48,7 @@ export function poolIssues(d) {
   if (d.kind !== "STANDARD" && (!d.startsAt || !d.endsAt)) issues.push("设置开放和结束时间");
   if (d.startsAt && d.endsAt && new Date(d.endsAt) <= new Date(d.startsAt)) issues.push("结束时间必须晚于开放时间");
   if (d.visibleAt && d.startsAt && new Date(d.visibleAt) > new Date(d.startsAt)) issues.push("预告时间不能晚于开放时间");
-  if (!d.rewards?.some(r => r.stars === 6) || !d.rewards?.some(r => r.stars < 6)) issues.push("同时配置金色与普通品质奖品");
+  if (!d.rewards?.some(r => r.stars === 6) || !d.rewards?.some(r => r.stars < 6)) issues.push("同时配置6 星与 4/5 星奖品");
   for (const r of d.rewards || []) {
     if (!r.itemRef || !r.itemRevision || !r.payloadSha256 || !r.servers?.length) issues.push(`${r.name || "奖品"} 尚未选择有效的物品库版本`);
     if (d.kind !== "STANDARD" && r.stars === 6 && !r.up) issues.push(`${r.name} 必须标为 UP`);

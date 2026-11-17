@@ -22,17 +22,19 @@ import (
 )
 
 type supplyHTTPFixture struct {
-	store       *store.Store
-	app         *Server
-	http        *httptest.Server
-	admin       store.User
-	player      store.User
-	adminToken  string
-	playerToken string
-	nodeToken   string
-	funds       *commerceTestCore
-	mu          sync.Mutex
-	receipts    map[string]map[string]any
+	store            *store.Store
+	app              *Server
+	http             *httptest.Server
+	admin            store.User
+	player           store.User
+	adminToken       string
+	playerToken      string
+	nodeToken        string
+	funds            *commerceTestCore
+	mu               sync.Mutex
+	receipts         map[string]map[string]any
+	captures         int
+	inventoryChanged bool
 }
 
 func newSupplyHTTPFixture(t *testing.T, origin string) *supplyHTTPFixture {
@@ -63,7 +65,7 @@ func newSupplyHTTPFixture(t *testing.T, origin string) *supplyHTTPFixture {
 	if origin == "" {
 		origin = "http://" + f.http.Listener.Addr().String()
 	}
-	node := config.Node{ID: "amiya", Chat: true, Economy: true, ClaimEnabled: true, InventoryDomain: "survival", MailCluster: "supply-fixture", TokenSHA256: store.Digest([]byte(f.nodeToken))}
+	node := config.Node{ID: "amiya", ItemPrefix: "deuterium:", Chat: true, Economy: true, ClaimEnabled: true, InventoryDomain: "survival", MailCluster: "supply-fixture", TokenSHA256: store.Digest([]byte(f.nodeToken))}
 	f.app = New(f.store, config.Config{Development: true, PublicOrigin: origin, Nodes: []config.Node{node}})
 	f.app.Core.Connect(node.ID, func(ctx context.Context, _ string, frame any) error { return f.coreReply(ctx, node, frame) })
 	presence, _ := json.Marshal(map[string]any{"players": []map[string]string{{"playerUuid": f.player.ServerUUID, "gameId": f.player.GameID, "sessionEpoch": "supply-session"}, {"playerUuid": f.admin.ServerUUID, "gameId": f.admin.GameID, "sessionEpoch": "admin-session"}}})
@@ -93,8 +95,32 @@ func (f *supplyHTTPFixture) coreReply(ctx context.Context, node config.Node, fra
 		return err
 	}
 	var data any
+	var replyError map[string]string
 	status := "COMPLETED"
 	switch request.Command {
+	case "items.inventory":
+		data = map[string]any{"playerUuid": request.Payload["playerUuid"], "sessionEpoch": request.Payload["sessionEpoch"], "slots": supplyFixtureInventory()}
+	case "items.capture":
+		f.mu.Lock()
+		changed := f.inventoryChanged
+		f.mu.Unlock()
+		var selected *supplyInventorySlot
+		for _, slot := range supplyFixtureInventory() {
+			if slot.Slot == request.Payload["slot"] && slot.Savable && slot.Fingerprint == request.Payload["fingerprint"] {
+				copy := slot
+				selected = &copy
+			}
+		}
+		if changed || selected == nil {
+			status = "FAILED"
+			replyError = map[string]string{"code": "INVENTORY_CHANGED", "message": "该槽位的物品已变化，请刷新背包后重新选择。"}
+		} else {
+			f.mu.Lock()
+			f.captures++
+			f.mu.Unlock()
+			item := store.ItemVersion{ItemRef: "deuterium:supply_" + store.Digest([]byte(request.OperationID))[:32], Revision: 1, PayloadSHA256: strings.Repeat("a", 64), DisplayName: selected.Name, MaxQuantity: 99999, CompatibleServerIDs: []string{"amiya"}, Codec: "bukkit-bytes-v1", ItemID: selected.ItemID, InventoryDomain: "survival", CompatibilityProfile: "youer"}
+			data = map[string]any{"item": item}
+		}
 	case "wallet.balance":
 		balance := int64(10000000)
 		f.funds.mu.Lock()
@@ -131,6 +157,9 @@ func (f *supplyHTTPFixture) coreReply(ctx context.Context, node config.Node, fra
 		data = copyData
 	}
 	reply := map[string]any{"operationId": request.OperationID, "status": status, "data": data}
+	if replyError != nil {
+		reply["error"] = replyError
+	}
 	encoded, _ := json.Marshal(reply)
 	if err := f.app.acceptCoreReceiptV2(ctx, node, store.CoreOperation{ID: request.OperationID, Command: request.Command, Payload: mustJSON(request.Payload)}, status, mustJSON(data)); err != nil {
 		return err

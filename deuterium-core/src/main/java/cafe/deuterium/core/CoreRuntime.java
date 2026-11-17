@@ -76,7 +76,8 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         Bukkit.getPluginManager().registerEvents(new SystemAccountGuard(economy),plugin);
         mailbox = attachMailbox();
         initialized.add(mailbox);
-        commands = new CommandDispatcher(settings::get, () -> mailbox, game, sessions, players, journal, economy);
+        commands = new CommandDispatcher(settings::get, () -> mailbox, game, sessions, players, journal, economy,
+                new InventoryCatalogCapture(settings::get, sessions, this::inventoryAccess, game, codec, catalog));
         bridge = new BridgeClient(settings::get, outbox, this, workers, plugin.getLogger());
         playerEvents.onChange(bridge::presenceChanged);
         initialized.add(bridge);

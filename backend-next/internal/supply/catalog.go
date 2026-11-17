@@ -159,7 +159,7 @@ func (d Definition) Validate(publishing bool) error {
 		if r.Stars == 6 {
 			top++
 			if d.Kind != "STANDARD" && !r.UP {
-				return errors.New("限定和活动的全部金色奖品必须属于 UP")
+				return errors.New("限定和活动的全部 6 星奖品必须属于 UP")
 			}
 		} else {
 			other++
@@ -172,7 +172,7 @@ func (d Definition) Validate(publishing bool) error {
 		}
 	}
 	if publishing && (top == 0 || other == 0) {
-		return errors.New("请同时配置金色奖品和普通品质奖品")
+		return errors.New("请同时配置6 星奖品和普通品质奖品")
 	}
 	return nil
 }
