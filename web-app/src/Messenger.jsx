@@ -71,6 +71,11 @@ function messageExcerpt(message) {
   return message.media ? (message.media.type === "sticker" ? "[贴纸]" : "[图片]") : message.text;
 }
 
+function fitComposer(field) {
+  field.style.height = "0px";
+  field.style.height = field.scrollHeight + "px";
+}
+
 export default function Messenger({
   user,
   contacts,
@@ -187,14 +192,21 @@ export default function Messenger({
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [emoji]);
-  useLayoutEffect(() => { if (input.current) { input.current.style.height = "0px"; input.current.style.height = Math.min(132, Math.max(44, input.current.scrollHeight)) + "px"; } }, [text, channel]);
+  useLayoutEffect(() => { fitComposer(input.current); }, [text, channel]);
   useLayoutEffect(() => {
     const composer = composerElement.current;
+    const thread = composer.closest(".pc-thread");
+    let threadWidth;
     const observer = new ResizeObserver(() => {
-      composer.closest(".pc-thread")?.style.setProperty("--chat-dock-height", `${composer.offsetHeight}px`);
+      if (threadWidth !== thread.clientWidth) {
+        threadWidth = thread.clientWidth;
+        fitComposer(input.current);
+      }
+      thread.style.setProperty("--chat-dock-height", `${composer.offsetHeight}px`);
       if (!beforeSearch.current && (atBottom.current || performance.now() < dockPinUntil.current)) toBottom();
     });
     observer.observe(composer);
+    observer.observe(thread);
     observer.observe(stack.current);
     return () => observer.disconnect();
   }, []);
