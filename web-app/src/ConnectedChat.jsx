@@ -149,7 +149,7 @@ export default function ConnectedChat({ client, user, onProfile, onUnavailable, 
     try { await client.readDirect(channel, { clientRequestId: id(), lastReadMessageId: messageID }); if (alive.current) setConversations((old) => old.map((c) => c.conversationId === channel ? { ...c, unreadCount: 0 } : c)); }
     catch (e) { if (alive.current) { delete readRef.current[channel]; setError(e.message); } }
   };
-  const contacts = [{ id: "public", channel: "public", name: "公共聊天", caption: "服务器公共消息" }, ...conversations.map((c) => ({ id: c.conversationId, channel: c.conversationId, name: c.otherPlayer.displayName || c.otherPlayer.gameId, player: c.otherPlayer, caption: c.lastMessage?.content || c.otherPlayer.bio || "开始一段对话", unreadCount: c.unreadCount })), { id: "assistant", channel: "assistant", name: "小祥 AI", caption: ai.caption }];
+  const contacts = [{ id: "public", channel: "public", name: "公共聊天", caption: "服务器公共消息" }, ...conversations.map((c) => ({ id: c.conversationId, channel: c.conversationId, name: c.otherPlayer.displayName || c.otherPlayer.gameId, player: c.otherPlayer, caption: c.lastMessage?.content || c.otherPlayer.bio || "开始一段对话", updatedAt: c.lastMessage?.sentAt || c.updatedAt, unreadCount: c.unreadCount })), { id: "assistant", channel: "assistant", name: "小祥 AI", caption: ai.caption }];
   const [profiles, setProfiles] = useState({}), profileRequests = useRef(new Map());
   useEffect(() => {
     // Public chat intentionally carries a small identity. Resolve each player's

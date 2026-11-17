@@ -1,3 +1,5 @@
+2026-11-17：**Web 聊天体验首轮本机候选已完成，未推送/部署**。侧栏与会话列表参考 WhatsApp，输入区、公共聊天和表情浮层参考 TG；无蓝色输入聚焦线，带展开/收起动画和本地 SVG 表情。91 项单元测试与浏览器检查通过。维护 `.worktrees/web-chat-whatsapp` / `xiwanzi/web-chat-whatsapp`，见[候选验收](docs/qa/web-chat-workspace-20261117.md)。线上 App2.0.30/Web2.0.41 保持。
+
 2026-11-14：**App 2.0.30（23000）已于01:25上线并完成公网核验**（PR #136，源码 `d9fd676052ed`）。发布用户确认的 pre17，版本说明为空；185 项单元测试、lint、签名和正式 2.0.29 覆盖升级通过。67 条账号记录、52 订单、5 委托与原配置保留，原 30 条更新记录保留，无数据库迁移。Web2.0.41、Go、启动器及游戏资源保持；仅重启 API 读取清单，未重启游戏服。维护 `.worktrees/android-liquid-glass-preview` / `xiwanzi/release-v230-live`。见[上线记录](docs/deployment/deuterium-2.0.30-live.md)。下方为历史状态。
 
 2026-10-25：**登录优化已于16:03上线，16:06核验通过**（PR #134，源码 `4ee23840e0e5`）。已知游戏 ID 本地密码认证、后台按 UUID 更新名字；新名字与验证不匹配保留官方核验。官网中英文/客服弹窗立即打开。62 账号记录、52 订单、5 委托、3,085 在售商品、13 工单、2 注销记录、8 个已验证身份及原配置保留，109 张原表指纹一致，无数据库迁移。App2.0.29/Web2.0.41/启动器0.6.10/资源0.0.61-dev保持，三常驻节点在线、MEK停止，本轮未重启游戏服。维护 `.worktrees/login-fast` / `xiwanzi/login-fast`。见[上线记录](docs/deployment/login-fast-live.md)。

@@ -118,6 +118,11 @@ export default function AppShell({
           ))}
         </nav>
         <div className="sidebar-bottom">
+          {chat && <div className="chat-rail-actions">
+            <button className="icon-button" title={dark ? "切换浅色模式" : "切换深色模式"} aria-label={dark ? "切换浅色模式" : "切换深色模式"} onClick={toggleTheme}>{dark ? <Sun size={21} /> : <Moon size={21} />}</button>
+            <button className="icon-button" title="打开通知" aria-label="打开通知" onClick={onNotifications}><Bell size={21} />{unread > 0 && <i className="notification-dot" />}</button>
+            {onCart && <button className="icon-button bag-icon" title="打开购物袋" aria-label="打开购物袋" onClick={onCart}><ShoppingBag size={21} />{cartCount > 0 && <b>{cartCount}</b>}</button>}
+          </div>}
           <div className="world-card">
             <span className="world-dot" />
             <span>

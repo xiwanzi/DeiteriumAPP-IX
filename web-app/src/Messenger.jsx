@@ -31,6 +31,32 @@ import { id } from "./format.js";
 import { deleteChatGrapheme } from "./chat-expressions.js";
 import { ChatMediaBubble, ChatPictureButton, ChatExpressionPanel, ChatImageViewer } from "./ChatMedia.jsx";
 
+function messageDate(value) {
+  const date = new Date(value);
+  if (!value || !Number.isFinite(date.getTime())) return "";
+  const today = new Date(), yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return "今天";
+  if (date.toDateString() === yesterday.toDateString()) return "昨天";
+  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+}
+
+function conversationTime(value) {
+  const date = new Date(value), label = messageDate(value);
+  if (!label) return "";
+  return label === "今天" ? date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }) : label === "昨天" ? label : date.toLocaleDateString("zh-CN");
+}
+
+function sameMessageGroup(previous, message) {
+  const gap = Date.parse(message.sentAt) - Date.parse(previous?.sentAt);
+  return previous?.sender === message.sender && previous?.source === message.source &&
+    gap >= 0 && gap < 5 * 60 * 1000 && messageDate(previous.sentAt) === messageDate(message.sentAt);
+}
+
+function senderTone(sender = "") {
+  return [...String(sender || "")].reduce((hash, character) => (hash * 31 + character.codePointAt(0)) % 6, 0);
+}
+
 export default function Messenger({
   user,
   contacts,
@@ -65,11 +91,12 @@ export default function Messenger({
   const composerElement = useRef(null);
   const [active, setActive] = useState("public"),
     [contactQuery, setContactQuery] = useState(""),
+    [contactFilter, setContactFilter] = useState("all"),
     [text, setText] = useState(drafts[`${user.id}:public`] || ""),
     [reply, setReply] = useState(null),
     [showSearch, setShowSearch] = useState(false),
     [search, setSearch] = useState(""),
-    [details, setDetails] = useState(() => window.innerWidth >= 1250),
+    [details, setDetails] = useState(false),
     [mobileThread, setMobileThread] = useState(false),
     [emoji, setEmoji] = useState(false),
     [sending, setSending] = useState({}),
@@ -123,6 +150,12 @@ export default function Messenger({
     if (emoji) { setEmoji(false); input.current?.focus({preventScroll: true}); }
     else { rememberSelection(); input.current?.blur(); setEmoji(true); if (channel === "public") mediaService?.refreshStickers(); }
   };
+  useEffect(() => {
+    if (!emoji) return;
+    const close = event => { if (!composerElement.current?.contains(event.target)) setEmoji(false); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [emoji]);
   useLayoutEffect(() => { if (input.current) { input.current.style.height = "0px"; input.current.style.height = Math.min(132, Math.max(44, input.current.scrollHeight)) + "px"; } }, [text, channel]);
   useLayoutEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
@@ -246,17 +279,23 @@ export default function Messenger({
       setError("浏览器未允许复制，请选中文字手动复制。");
     }
   };
+  const filteredContacts = contacts.filter(c =>
+    `${c.name} ${c.caption || ""}`.toLowerCase().includes(contactQuery.trim().toLowerCase()) &&
+    (contactFilter !== "unread" || (active !== c.id && unread(c) > 0)) &&
+    (contactFilter !== "direct" || (c.id !== "public" && c.id !== "assistant")),
+  );
   return (
     <div
       className={`pc-chat ${details ? "with-details" : ""} ${mobileThread ? "thread-open" : ""}`}
     >
       <aside className="pc-conversations">
         <header>
-          <h1>信息</h1>
-          {onNewConversation && <button className="icon-button" aria-label="发起私聊" onClick={onNewConversation}><Plus size={19} /></button>}
+          <h1>聊天</h1>
+          {onNewConversation && <button className="icon-button new-conversation" aria-label="发起私聊" title="发起私聊" onClick={onNewConversation}><Plus size={22} /></button>}
           <button
             className="icon-button"
             aria-label="查看社区公告"
+            title="查看社区公告"
             onClick={onAnnouncements}
           >
             <Megaphone size={19} />
@@ -270,17 +309,13 @@ export default function Messenger({
             onChange={(e) => setContactQuery(e.target.value)}
             placeholder="搜索会话或玩家"
           />
+          {contactQuery && <button type="button" aria-label="清除会话搜索" onClick={() => setContactQuery("")}><X size={16} /></button>}
         </label>
-        <div className="conversation-section-label">
-          会话 <span>{contacts.length}</span>
+        <div className="conversation-filters" role="group" aria-label="筛选会话">
+          {[["all", "全部"], ["unread", "未读"], ["direct", "私聊"]].map(([value, label]) => <button key={value} aria-pressed={contactFilter === value} className={contactFilter === value ? "selected" : ""} onClick={() => setContactFilter(value)}>{label}</button>)}
         </div>
         <div className="pc-contact-scroll">
-          {contacts
-            .filter((c) =>
-              `${c.name}${c.caption || ""}`
-                .toLowerCase()
-                .includes(contactQuery.toLowerCase()),
-            )
+          {filteredContacts
             .map((c) => {
               const latest = messages
                   .filter((m) => m.channel === c.channel)
@@ -290,6 +325,7 @@ export default function Messenger({
                 <button
                   className={`pc-contact ${active === c.id ? "selected" : ""}`}
                   key={c.id}
+                  aria-pressed={active === c.id}
                   onClick={() => choose(c)}
                 >
                   {c.id === "public" ? (
@@ -308,7 +344,7 @@ export default function Messenger({
                   <span className="pc-contact-content">
                     <span>
                       <strong>{c.name}</strong>
-                      <time>{latest?.time || ""}</time>
+                      <time dateTime={latest?.sentAt || c.updatedAt} className={n > 0 ? "unread-time" : ""}>{conversationTime(latest?.sentAt || c.updatedAt) || latest?.time || ""}</time>
                     </span>
                     <span>
                       <small>
@@ -327,6 +363,7 @@ export default function Messenger({
                 </button>
               );
             })}
+          {!filteredContacts.length && <div className="conversation-empty" role="status"><Search size={24} /><strong>{contactQuery ? "没有找到会话" : contactFilter === "unread" ? "暂无未读消息" : "还没有私聊"}</strong><p>{contactQuery ? "换个名字或关键词试试。" : contactFilter === "unread" ? "新消息会出现在这里。" : "点击上方加号，找一位玩家聊聊。"}</p></div>}
         </div>
         <footer>
           <span className={`connection-dot ${ready ? "ready" : ""}`} />
@@ -342,7 +379,7 @@ export default function Messenger({
           {!ready && onReconnect && <button onClick={onReconnect}>重连</button>}
         </footer>
       </aside>
-      <section className="pc-thread">
+      <section className={`pc-thread ${channel === "public" ? "public-thread" : "private-thread"}`}>
         <header className="pc-thread-header">
           <button
             className="icon-button pc-back"
@@ -366,7 +403,7 @@ export default function Messenger({
           )}
           <div>
             <h2>{current?.name}</h2>
-            <p>{unsupported || current?.caption || "私聊 · 仅双方可见"}</p>
+            <p>{unsupported || (active === "public" ? "服务器公共消息" : active === "assistant" ? current?.caption : "私聊 · 仅双方可见")}</p>
           </div>
           <div className="pc-thread-actions">
             {threadActions}
@@ -455,9 +492,7 @@ export default function Messenger({
               {loadingEarlier ? "正在加载…" : "查看更早的消息"}
             </button>
           )}
-          <div className="pc-date-divider">
-            <span>{channel === "public" ? "公共消息记录" : "会话消息"}</span>
-          </div>
+          <div className="pc-message-stack">
           {unsupported ? (
             <Empty title="服务暂不可用" text={unsupported} />
           ) : !visible.length ? (
@@ -472,7 +507,7 @@ export default function Messenger({
               text={
                 search
                   ? "试试其他关键词，或加载更早的消息。"
-                  : "这里将显示服务器公共聊天。"
+                  : channel === "public" ? "和大家分享游戏里的新鲜事。" : "发一条消息，开始这段对话。"
               }
             />
           ) : (
@@ -482,10 +517,14 @@ export default function Messenger({
                   m.senderName ||
                   contacts.find((c) => c.id === m.sender)?.name ||
                   m.sender;
+              const grouped = !search && sameMessageGroup(visible[i - 1], m);
+              const continues = !search && sameMessageGroup(m, visible[i + 1] || {});
+              const date = messageDate(m.sentAt);
               return (
+                <React.Fragment key={m.id}>
+                {date && date !== messageDate(visible[i - 1]?.sentAt) && <div className="pc-date-divider"><span>{date}</span></div>}
                 <div
-                  className={`pc-message ${mine ? "mine" : ""} ${m.status === "failed" || m.status === "unknown" ? "message-failed" : ""}`}
-                  key={m.id}
+                  className={`pc-message ${mine ? "mine" : ""} ${grouped ? "message-grouped" : ""} ${continues ? "group-continues" : ""} ${channel !== "public" ? "direct-message" : ""} ${m.status === "failed" || m.status === "unknown" ? "message-failed" : ""}`}
                 >
                   {m.sender === "assistant" ? (
                     <img
@@ -503,14 +542,13 @@ export default function Messenger({
                     </button>
                   )}
                   <div className="pc-message-content">
-                    <div className="pc-message-meta">
+                    <div className={`bubble ${m.media ? "has-media" : ""}`}>
+                    {!mine && (channel === "public" || m.sender === "assistant") && !grouped && <div className={`pc-message-meta sender-tone-${senderTone(m.sender)}`}>
                       <strong>
                         {m.sender === "assistant" ? "小祥" : name}
                       </strong>
                       {m.source && <span>{m.source}</span>}
-                      <time>{m.time}</time>
-                    </div>
-                    <div className={`bubble ${m.media ? "has-media" : ""}`}>
+                    </div>}
                       {m.reply && (
                         <blockquote>
                           {m.reply.text || "引用消息暂不可见"}
@@ -521,16 +559,10 @@ export default function Messenger({
                       {m.sources?.length > 0 && <div className="ai-sources">{m.sources.map((source, n) => <a key={`${source.url}:${n}`} href={source.url} target="_blank" rel="noopener noreferrer">{source.origin === "provider_text" ? "正文链接" : "来源"} · {source.title}</a>)}</div>}
                       {m.searchUsed && <small className="muted">已使用联网搜索</small>}
                       {m.sender === "assistant" && ["failed", "unknown", "incomplete"].includes(m.aiStatus) && <p className="composer-error">这次回复未完成，可以开始新对话。</p>}
+                      <span className="message-stamp"><time dateTime={m.sentAt} title={m.sentAt ? new Date(m.sentAt).toLocaleString("zh-CN") : undefined}>{m.time}</time>{mine && (m.status === "sending" ? <LoaderCircle className="spin" size={13} aria-label="发送中" /> : m.status === "sent" ? <Check size={14} aria-label="已发送" /> : null)}</span>
                     </div>
-                    {m.status && (
+                    {(m.status === "failed" || m.status === "unknown") && (
                       <div className="message-delivery">
-                        {m.status === "sending" ? (
-                          <>
-                            <LoaderCircle className="spin" size={11} />
-                            发送中
-                          </>
-                        ) : m.status === "failed" || m.status === "unknown" ? (
-                          <>
                             <span>{m.error || "结果暂未确认"}</span>
                             <button
                               onClick={async () => {
@@ -548,13 +580,6 @@ export default function Messenger({
                             >
                               使用原消息重试
                             </button>
-                          </>
-                        ) : (
-                          <>
-                            <Check size={12} />
-                            已发送
-                          </>
-                        )}
                       </div>
                     )}
                   </div>
@@ -583,9 +608,11 @@ export default function Messenger({
                     {onForwardMessage && !m.media && !m.id.startsWith("pending:") && <button aria-label={`转发消息 ${m.id}`} onClick={() => onForwardMessage(m)}><Forward size={15} /></button>}
                   </div>
                 </div>
+                </React.Fragment>
               );
             })
           )}
+          </div>
         </div>
         {newBelow && (
           <button className="new-message-button" style={{ bottom: "calc(var(--chat-dock-height, 68px) + 14px)" }} onClick={toBottom}>
@@ -619,25 +646,23 @@ export default function Messenger({
             </div>
           )}
           <div className="chat-composer-capsule">
-            <button type="button" className="chat-expression-toggle" aria-label={emoji ? "切换键盘" : "选择表情"} aria-expanded={emoji} onMouseDown={e => e.preventDefault()} onClick={toggleExpressions}>
-              {emoji ? <Keyboard size={22} /> : <Smile size={22} />}
-            </button>
+            {channel === "public" && mediaService && <ChatPictureButton service={mediaService} reply={reply} onError={setError} onSent={() => setReply(null)} />}
             <textarea ref={input} aria-label="消息内容" placeholder={unsupported ? "暂不可发送" : "输入消息"} disabled={Boolean(unsupported)} value={text} maxLength={maxLength} rows={1}
               onChange={e => { setText(e.target.value); rememberSelection(); }} onSelect={rememberSelection}
               onFocus={() => { if (emoji) setEmoji(false); }} onBlur={() => { rememberSelection(); onDraft?.(channel, text); }}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) { e.preventDefault(); send(); } }} />
-            {channel === "public" && mediaService && <ChatPictureButton service={mediaService} reply={reply} onError={setError} onSent={() => setReply(null)} />}
-            <button type="submit" className="chat-send-button" aria-label="发送消息" disabled={sending[channel] || !text.trim() || !ready || Boolean(unsupported)}>
-              <span>{sending[channel] ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}</span>
+            <button type="button" className="chat-expression-toggle" aria-label={emoji ? "切换键盘" : "选择表情"} aria-expanded={emoji} onMouseDown={e => e.preventDefault()} onClick={toggleExpressions}>
+              {emoji ? <Keyboard size={22} /> : <Smile size={22} />}
+            </button>
+            <button type="submit" className="chat-send-button" aria-label="发送消息" onMouseDown={e => e.preventDefault()} disabled={sending[channel] || !text.trim() || !ready || Boolean(unsupported)}>
+              <span>{sending[channel] ? <LoaderCircle className="spin" size={21} /> : <Send size={21} />}</span>
             </button>
           </div>
           {error && <p className="composer-error" role="alert">{error}</p>}
           {text.length > maxLength * .8 && <div className="chat-character-count">{text.length} / {maxLength}</div>}
-          {channel === "public" && mediaService ? <ChatExpressionPanel service={mediaService} state={mediaState} open={emoji} onEmoji={insertEmoji} onBackspace={backspaceEmoji}
+          <ChatExpressionPanel service={channel === "public" ? mediaService : null} state={channel === "public" ? mediaState : undefined} open={emoji} onEmoji={insertEmoji} onBackspace={backspaceEmoji}
             onSticker={async media => { try { await mediaService.enqueue(null, reply, media); setReply(null); } catch (e) { setError(e.message); } }}
-            onPreview={(media, rect, preview, source) => setViewingMedia({ media, rect, preview, source })} /> : <div className={`chat-expression-viewport simple ${emoji ? "open" : ""}`} aria-hidden={!emoji} inert={!emoji}>
-              <div className="emoji-picker">{["🌿", "✨", "👍", "😊", "🎉", "🏡", "💙", "🌙", "⛏️", "🌸"].map(e => <button key={e} type="button" onMouseDown={event => event.preventDefault()} onClick={() => insertEmoji(e)}>{e}</button>)}</div>
-            </div>}
+            onPreview={(media, rect, preview, source) => setViewingMedia({ media, rect, preview, source })} />
         </form>
       </section>
       {viewingMedia && <ChatImageViewer service={mediaService} {...viewingMedia} close={() => setViewingMedia(null)} />}
