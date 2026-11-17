@@ -1,6 +1,6 @@
 # Web 聊天体验候选验收
 
-2026-11-17。工作区 `.worktrees/web-chat-whatsapp`，分支 `xiwanzi/web-chat-whatsapp`，基于主线 `1401140`。当前仅为本机候选，未推送、合并或部署；线上 App 2.0.30 / Web 2.0.41 保持。
+2026-11-17 起在 `.worktrees/web-chat-whatsapp` 完成三轮候选，分支 `xiwanzi/web-chat-whatsapp`，基于主线 `1401140`。2026-11-18 已作为社区 Web 2.0.42 发布，见[上线记录](../deployment/web-chat-2.0.42-live.md)。
 
 ## 第三轮 · 2026-11-18
 

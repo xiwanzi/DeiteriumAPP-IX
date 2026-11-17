@@ -1,3 +1,5 @@
+2026-11-18：**社区 Web 2.0.42 已于 02:47 上线**。聊天界面三轮修改经 PR #139 合入主线，两个公网入口的静态构件及正式站加载的 57 项模拟交互检查通过。本次仅切换社区静态站点。维护 `.worktrees/web-chat-whatsapp`，见[上线记录](docs/deployment/web-chat-2.0.42-live.md)。
+
 2026-11-17：**Web 聊天第二轮本机候选完成，未推送/部署**。新增浅深色原创线描壁纸，统一列表与聊天列比例，减薄头栏/输入栏并优化字号层次；按用户要求保持表情资源与菜单不变。构建、39 项浏览器回归及 7 项布局检查通过。维护 `.worktrees/web-chat-whatsapp` / `xiwanzi/web-chat-whatsapp`，见[候选验收](docs/qa/web-chat-workspace-20261117.md)。
 
 2026-11-17：**Web 聊天体验首轮本机候选已完成，未推送/部署**。侧栏与会话列表参考 WhatsApp，输入区、公共聊天和表情浮层参考 TG；无蓝色输入聚焦线，带展开/收起动画和本地 SVG 表情。91 项单元测试与浏览器检查通过。维护 `.worktrees/web-chat-whatsapp` / `xiwanzi/web-chat-whatsapp`，见[候选验收](docs/qa/web-chat-workspace-20261117.md)。线上 App2.0.30/Web2.0.41 保持。
