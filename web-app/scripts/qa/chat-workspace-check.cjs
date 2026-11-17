@@ -68,7 +68,7 @@ async (page) => {
     const box=s=>document.querySelector(s).getBoundingClientRect();
     return {rail:box('.sidebar').width,list:box('.pc-conversations').width,header:box('.pc-thread-header').width,composer:box('.chat-composer-capsule').width,topbar:getComputedStyle(document.querySelector('.topbar')).display,overflow:document.documentElement.scrollWidth>innerWidth};
   });
-  check(layout.rail===64&&layout.list>=500&&layout.header<=756&&layout.composer<=756&&!layout.overflow&&layout.topbar==='none',"desktop has a narrow rail, readable list, centered thread, and no extra topbar");
+  check(layout.rail===64&&layout.list>=320&&layout.list<=380&&layout.header<=720&&layout.composer<=720&&!layout.overflow&&layout.topbar==='none',"desktop has a narrow rail, balanced list, aligned thread, and no extra topbar");
   check(await page.locator('.pc-details').count()===0,"conversation details start collapsed");
   check(await page.locator('.public-thread .group-continues > .avatar-button').first().evaluate(el=>getComputedStyle(el).visibility)==='hidden',"group avatar appears at the end of consecutive messages");
   await page.screenshot({path:"output/playwright/chat-workspace-light.png"});

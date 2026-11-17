@@ -1,3 +1,5 @@
+2026-11-17：**Web 聊天第二轮本机候选完成，未推送/部署**。新增浅深色原创线描壁纸，统一列表与聊天列比例，减薄头栏/输入栏并优化字号层次；按用户要求保持表情资源与菜单不变。构建、39 项浏览器回归及 7 项布局检查通过。维护 `.worktrees/web-chat-whatsapp` / `xiwanzi/web-chat-whatsapp`，见[候选验收](qa/web-chat-workspace-20261117.md)。
+
 2026-11-17：**Web 聊天体验首轮本机候选已完成，未推送/部署**。侧栏与会话列表参考 WhatsApp，输入区、公共聊天和表情浮层参考 TG；无蓝色输入聚焦线，带展开/收起动画和本地 SVG 表情。91 项单元测试与浏览器检查通过。维护 `.worktrees/web-chat-whatsapp` / `xiwanzi/web-chat-whatsapp`，见[候选验收](qa/web-chat-workspace-20261117.md)。线上 App2.0.30/Web2.0.41 保持。
 
 2026-11-14：**App 2.0.30（23000）已于01:25上线并完成公网核验**（PR #136，源码 `d9fd676052ed`）。发布用户确认的 pre17，版本说明为空；185 项单元测试、lint、签名和正式 2.0.29 覆盖升级通过。67 条账号记录、52 订单、5 委托与原配置保留，原 30 条更新记录保留，无数据库迁移。Web2.0.41、Go、启动器及游戏资源保持；仅重启 API 读取清单，未重启游戏服。维护 `.worktrees/android-liquid-glass-preview` / `xiwanzi/release-v230-live`。见[上线记录](deployment/deuterium-2.0.30-live.md)。下方为历史状态。
