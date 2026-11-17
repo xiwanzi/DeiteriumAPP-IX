@@ -7,6 +7,7 @@ import './admin-v204.css';
 import './desktop-admin.css';
 import './commerce-v209.css';
 import './launcher-embed.css';
+import './chat-workspace.css';
 
 if (new URLSearchParams(location.search).get('launcher') === '1' || /\bDLauncher\//.test(navigator.userAgent)) {
   document.documentElement.dataset.launcher = 'true';

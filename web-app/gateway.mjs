@@ -23,7 +23,7 @@ export function backendOrigin(raw = process.env.WEB_API_ORIGIN) {
 }
 export const publicConfig = (target) => ({
   mode: "connected",
-  version: "2.0.41",
+  version: "2.0.42",
   configured: Boolean(target),
 });
 function requestOptions(req, target) {
