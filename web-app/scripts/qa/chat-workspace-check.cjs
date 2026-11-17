@@ -1,5 +1,6 @@
 async (page) => {
   const passed = [], errors = [], sent = [], sockets = [];
+  let pendingAck;
   const check = (value, label) => { if (!value) throw new Error(label); passed.push(label); };
   page.on("pageerror", error => errors.push(error.message));
   await page.addInitScript(() => localStorage.setItem("deuterium-web-theme", "light"));
@@ -26,16 +27,17 @@ async (page) => {
   const conversations = () => peers.map((p,i)=>({conversationId:["conv_lin","conv_island","conv_blue"][i],otherPlayer:p,lastMessage:i===0?privateMessages.at(-1):message(`summary_${i}`,p,["","材料已经整理好了，谢谢！","周末一起去探索吧"][i],22+i),unreadCount:i===2?3:0,updatedAt:stamp(20+i),version:1}));
   await page.routeWebSocket("**/api/v1/chat/ws", socket => {
     sockets.push(socket);
-    socket.onMessage(raw => {
+    socket.onMessage(async raw => {
       const frame=JSON.parse(raw); if(frame.type!=="chat.send")return;
       sent.push({channel:"public",...frame.payload});
+      if (pendingAck) await pendingAck;
       const accepted=message(`sent_${sent.length}`,self,frame.payload.content,0,{clientMessageId:frame.payload.clientMessageId});
       publicMessages.push(accepted);
       socket.send(JSON.stringify({type:"chat.send.result",requestId:frame.requestId,payload:{status:"accepted",messageId:accepted.messageId}}));
       socket.send(JSON.stringify({type:"chat.message",payload:{message:accepted}}));
     });
   });
-  await page.route("**/web-config.json", route => route.fulfill({json:{mode:"connected",version:"2.0.41",configured:true}}));
+  await page.route("**/web-config.json", route => route.fulfill({json:{mode:"connected",version:"2.0.42",configured:true}}));
   await page.route("**/api/v1/**", async route => {
     const request=route.request(), path=new URL(request.url()).pathname;
     const reply = data => route.fulfill({json:{data,page:{hasMore:false,nextCursor:null},serverTime:now.toISOString()}});
@@ -53,7 +55,10 @@ async (page) => {
     }
     if(path.endsWith("/read"))return reply({unreadCount:0});
     if(path.startsWith("/api/v1/chat/conversations/"))return reply(conversations().find(c=>path.endsWith(c.conversationId)));
-    if(path==="/api/v1/chat/messages")return reply({messages:publicMessages.slice().reverse()});
+    if(path==="/api/v1/chat/messages") {
+      if (new URL(request.url()).searchParams.has('before')) return reply({messages:[message('older_fixture',peers[1],'早上的第一条记录。',60)]});
+      return route.fulfill({json:{data:{messages:publicMessages.slice().reverse()},page:{hasMore:true,nextCursor:'older_fixture'},serverTime:now.toISOString()}});
+    }
     if(path==="/api/v1/chat/stickers")return reply({stickers:[]});
     if(path==="/api/v1/notifications")return reply([]);
     if(path==="/api/v1/chat/follows"||path==="/api/v1/chat/player-directory")return reply({players:peers});
@@ -175,6 +180,100 @@ async (page) => {
   await page.emulateMedia({reducedMotion:'no-preference'});
   await page.setViewportSize({width:1840,height:922});
   await page.getByRole('button',{name:'切换深色模式',exact:true}).click();
+  let releaseAck;
+  pendingAck = new Promise(resolve => { releaseAck = resolve; });
+  await editor.fill('等待回执的消息');
+  await editor.press('Enter');
+  await page.getByLabel('发送中',{exact:true}).waitFor();
+  await contact('林间风').click();
+  await editor.fill('留在私聊的新草稿');
+  pendingAck = null;
+  releaseAck();
+  await contact('公共聊天').getByText('你：等待回执的消息',{exact:true}).waitFor();
+  check(await editor.inputValue()==='留在私聊的新草稿','late acknowledgement clears only the original public draft');
+  await contact('公共聊天').click();
+  check(await editor.inputValue()==='', 'acknowledged background draft is cleared when reopening its thread');
+
+  pendingAck = new Promise(resolve => { releaseAck = resolve; });
+  await editor.fill('正在发送的第一句');
+  await editor.press('Enter');
+  await page.getByLabel('发送中',{exact:true}).waitFor();
+  await editor.fill('已经开始写第二句');
+  pendingAck = null;
+  releaseAck();
+  await page.getByLabel('发送中',{exact:true}).waitFor({state:'hidden'});
+  check(await editor.inputValue()==='已经开始写第二句','typing the next draft survives the previous send completing');
+  await editor.fill('');
+
+  const incoming = (messageId, content, extra={}) => sockets.at(-1).send(JSON.stringify({type:'chat.message',payload:{message:{
+    ...message(messageId,peers[0],content,0),sentAt:new Date().toISOString(),...extra,
+  }}}));
+  incoming('quoted_fixture','线路编号 [IX-42] 已记下。',{reply:{messageId:'public_2',sender:peers[0],content:publicMessages[1].content}});
+  await page.locator('[data-message-id="quoted_fixture"]').waitFor();
+  await page.getByRole('button',{name:'搜索当前会话消息'}).click();
+  await page.getByRole('textbox',{name:'搜索已加载消息'}).fill('[ix-42]');
+  check(await page.locator('.bubble mark').innerText()==='[IX-42]','search highlights literal punctuation and preserves the original case');
+  await page.keyboard.press('Escape');
+  check(await page.getByRole('button',{name:'搜索当前会话消息'}).evaluate(el=>el===document.activeElement),'closing search returns keyboard focus to the search control');
+  await page.setViewportSize({width:390,height:700});
+  await page.getByRole('button',{name:/^查看原消息/}).click();
+  check(await page.locator('[data-message-id="public_2"][data-located]').count()===1,'tapping a quotation locates its loaded original');
+  const jump = page.getByRole('button',{name:'回到最新消息',exact:true});
+  await jump.waitFor();
+  const readingPosition = await page.locator('.pc-message-scroll').evaluate(el=>el.scrollTop);
+  await page.getByRole('button',{name:'搜索当前会话消息'}).click();
+  await page.getByRole('textbox',{name:'搜索已加载消息'}).fill('不存在的线路');
+  await page.getByText('没有匹配的消息',{exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  await jump.waitFor();
+  check(Math.abs(await page.locator('.pc-message-scroll').evaluate(el=>el.scrollTop)-readingPosition)<2,'closing a filtered search restores the previous history position');
+  incoming('read_while_away','花田收工，明天见。');
+  await jump.getByText('有新消息').waitFor();
+  check(Math.abs(await page.locator('.pc-message-scroll').evaluate(el=>el.scrollTop)-readingPosition)<2,'incoming messages leave the current reading position in place');
+  await jump.click();
+  await jump.waitFor({state:'hidden'});
+  check(await page.locator('.pc-message-scroll').evaluate(el=>el.scrollHeight-el.clientHeight-el.scrollTop<2),'jump lands below the newest message');
+  await page.getByRole('button',{name:'消息操作 read_while_away',exact:true}).click();
+  const actions = page.getByRole('dialog',{name:'消息操作'});
+  check(await actions.getByRole('button',{name:'回复消息 read_while_away',exact:true}).isVisible(),'touch layout exposes actions for the chosen message in a dialog');
+  await page.screenshot({path:'output/playwright/chat-review-mobile-actions.png',animations:'disabled'});
+  await actions.getByRole('button',{name:'回复消息 read_while_away',exact:true}).click();
+  await page.locator('.reply-preview').waitFor();
+  check(await page.locator('.reply-preview').innerText().then(text=>text.includes('花田收工，明天见。')),'touch reply shows the correct excerpt above the composer');
+  await page.getByRole('button',{name:'选择表情',exact:true}).click();
+  await page.keyboard.press('Escape');
+  check(await page.locator('.reply-preview').isVisible(),'dismissing the emoji panel preserves the reply');
+  await page.screenshot({path:'output/playwright/chat-review-mobile-reply.png',animations:'disabled'});
+  await page.getByRole('button',{name:'展开会话详情'}).click();
+  check(await page.getByRole('button',{name:'关闭会话详情'}).isVisible(),'mobile details opens with a reachable close control');
+  await page.keyboard.press('Escape');
+  incoming('long_word', 'abcdefghijklmnopqrstuvwxyz'.repeat(9));
+  await page.setViewportSize({width:320,height:570});
+  const longBubble=page.locator('[data-message-id="long_word"] .bubble');
+  await longBubble.waitFor();
+  check(await longBubble.evaluate(el=>el.scrollWidth<=el.clientWidth+1 && el.getBoundingClientRect().right<=innerWidth),'unbroken text wraps inside the bubble at 320px');
+  await page.getByRole('button',{name:'返回会话列表'}).click();
+  await contact('林间风').click();
+  check(await editor.evaluate(el=>document.activeElement!==el),'opening a conversation on a phone keeps the keyboard closed');
+  await page.setViewportSize({width:1024,height:640});
+  await contact('公共聊天').click();
+  const history = page.locator('.pc-message-scroll'), firstMessage = page.locator('[data-message-id="public_1"]');
+  await history.evaluate(el=>{el.scrollTop=0;});
+  const anchorTop = (await firstMessage.boundingBox()).y;
+  await page.getByRole('button',{name:'查看更早的消息'}).click();
+  await page.locator('[data-message-id="older_fixture"]').waitFor();
+  await page.waitForFunction(top=>Math.abs(document.querySelector('[data-message-id="public_1"]').getBoundingClientRect().top-top)<2,anchorTop);
+  check(true,'loading an older page preserves the visible message anchor');
+  await editor.fill('断线期间的草稿');
+  const sentBeforeDisconnect = sent.length;
+  sockets.at(-1).close({code:1000,reason:'fixture reconnect'});
+  const reconnect = page.locator('.chat-connection-banner').getByRole('button',{name:'重新连接'});
+  await reconnect.waitFor();
+  await editor.press('Enter');
+  check(sent.length===sentBeforeDisconnect && await editor.inputValue()==='断线期间的草稿','offline Enter preserves the draft without submitting');
+  await reconnect.click();
+  await reconnect.waitFor({state:'hidden'});
+  check(await page.getByRole('button',{name:'发送消息',exact:true}).isEnabled(),'manual reconnect restores the composer');
   check(errors.length===0,`no React errors: ${errors.join('; ')}`);
   return {passed,errors,vectorEmojiCount,motionFrames:motion.length,publicSends:sent.filter(m=>m.channel==='public').length,privateSends:sent.filter(m=>m.channel!=='public').length,network:'All API and WebSocket traffic intercepted with synthetic fixtures'};
 }
