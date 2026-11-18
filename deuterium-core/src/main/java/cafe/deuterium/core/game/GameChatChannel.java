@@ -25,7 +25,7 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
     private final JavaPlugin plugin;private final Supplier<CoreConfig> config;private final GameThread game;
     private final GameTitles titles;
     private final cafe.deuterium.core.runtime.Sessions sessions;
-    private boolean keybindingsEnabled;
+    private volatile boolean keybindingsEnabled;
     private final ChatAccess chat;private final TeamChatAudience teams=new TeamChatAudience();
     private final ConcurrentMap<UUID,Peer> peers=new ConcurrentHashMap<>();
     private final ExecutorService io=new ThreadPoolExecutor(1,2,20,TimeUnit.SECONDS,new ArrayBlockingQueue<>(64),r->{Thread t=new Thread(r,"Deuterium-GameChat-IO");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
@@ -67,9 +67,13 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
         execute(()->{try{JsonObject session=post("/bridge/v1/game-chat/session",request);session.addProperty("type","session");session.addProperty("apiBase",apiBase().toString());game.run(()->{Player current=Bukkit.getPlayer(id);if(current!=null&&peers.get(id)==peer)deliver(current,session);});}
             catch(Exception e){game.run(()->{Player current=Bukkit.getPlayer(id);if(current!=null&&peers.get(id)==peer){JsonObject unavailable=new JsonObject();unavailable.addProperty("type","session-unavailable");unavailable.addProperty("message","云端媒体暂不可用，请确认 App 已绑定游戏账号");deliver(current,unavailable);}});}});
     }
+    public boolean keybindingsEnabled(){return keybindingsEnabled;}
     public void keybindingsAvailable(boolean enabled){
-        game.run(()->{
-            keybindingsEnabled=enabled;
+        // The first welcome often arrives while the server is still loading worlds.
+        // Retain the negotiated state immediately; notify players on the next available tick.
+        keybindingsEnabled=enabled;
+        Bukkit.getScheduler().runTask(plugin,()->{
+            if(keybindingsEnabled!=enabled)return;
             var hint=new JsonObject();
             hint.addProperty("type","keybindings-ready");
             hint.addProperty("enabled",enabled);
