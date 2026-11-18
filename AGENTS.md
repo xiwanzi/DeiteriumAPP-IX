@@ -1,3 +1,5 @@
+2026-11-18：**社区 Web 2.0.44 与配套 Go 已于 12:33 上线**（PR #143，合并 `e06912f58a37`）。商城、购物袋、聊天切换、钱包和个人页更新，个人页采用浅深色抽象背景。两个公网入口和 154 项正式构件浏览器检查通过，原业务数量、迁移及配置校验一致。维护 `.worktrees/storefront-discovery` / `xiwanzi/community-experience-v244`。见[上线记录](docs/deployment/community-web-2.0.44-live.md)。
+
 2026-11-18：**社区 Web 2.0.43 已于 03:11 上线**。桌面聊天在浏览器 100% 下对齐已确认的 125% 参考比例，手机保持单列与 16px 正文。PR #141 已合并，两个公网入口和 60 项正式站构件浏览器检查通过。见[上线记录](docs/deployment/web-chat-2.0.43-live.md)。
 
 2026-11-18：**社区 Web 2.0.42 已于 02:47 上线**。聊天界面三轮修改经 PR #139 合入主线，两个公网入口的静态构件及正式站加载的 57 项模拟交互检查通过。本次仅切换社区静态站点。维护 `.worktrees/web-chat-whatsapp`，见[上线记录](docs/deployment/web-chat-2.0.42-live.md)。
