@@ -101,6 +101,8 @@ public final class BridgeClient implements AutoCloseable {
                 if(!payload.has("features")||!payload.getAsJsonArray("features").asList().stream().anyMatch(v->v.isJsonPrimitive()&&v.getAsString().equals("core-v1")))throw new IllegalArgumentException("Backend does not support Core runtime v1");
                 welcomed = true; connecting = false; failures = 0; lastPong = System.currentTimeMillis(); lastPing = lastPong; lastState = 0; state = "CONNECTED";
                 presenceDirty.set(true);
+                endpoint.keybindingsAvailable(payload.has("chat") && payload.get("chat").getAsBoolean()
+                        && payload.getAsJsonArray("features").contains(new com.google.gson.JsonPrimitive("player-keybindings")));
                 endpoint.playerNamesChanged();
             }
             case "core.event.result" -> {

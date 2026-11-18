@@ -1,4 +1,4 @@
-import { Store, Gavel, Megaphone, ChartNoAxesCombined, Mail, Server, Sparkles, Users, Smartphone, Ticket, Monitor, ShieldCheck, Boxes, ScanEye } from "lucide-react";
+import { Store, Gavel, Megaphone, ChartNoAxesCombined, Mail, Server, Sparkles, Users, Smartphone, Ticket, Monitor, ShieldCheck, Boxes, ScanEye, Keyboard } from "lucide-react";
 
 export function adminNavigation(permissions = []) {
   const all = permissions.includes("platform.admin");
@@ -14,7 +14,7 @@ export function adminNavigation(permissions = []) {
     ...(all ? [["/admin?section=email", "邮件系统", Mail]] : []),
     ...(all ? [["/admin?section=ai", "小祥设置", Sparkles], ["/admin?section=accounts", "账号与权限", Users]] : []),
     ...(all ? [["/admin?section=whitelist", "白名单管理", ShieldCheck]] : []),
-    ...(all ? [["/admin?section=ysm", "模型管理", Boxes], ["/admin?section=titles", "头衔管理", ShieldCheck]] : []),
+    ...(all ? [["/admin?section=ysm", "模型管理", Boxes], ["/admin?section=titles", "头衔管理", ShieldCheck], ["/admin?section=keybindings", "玩家键位", Keyboard]] : []),
     ...(all ? [["/admin?section=launcher-icon", "应用图标", Smartphone]] : []),
     ...(all || permissions.includes("core.read") ? [["/admin?section=core", "Core 管理", Server]] : []),
   ];

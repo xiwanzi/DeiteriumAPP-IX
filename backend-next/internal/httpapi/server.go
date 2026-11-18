@@ -25,6 +25,7 @@ import (
 var ErrForbidden = errors.New("forbidden")
 
 type Server struct {
+	keySecret            []byte
 	OfficialUUIDResolver func(context.Context, string) (store.AdmissionProfile, error)
 	GameAvatarResolver   func(context.Context, string) ([]byte, error)
 	AdmissionResolver    func(context.Context, string) (store.AdmissionProfile, error)
@@ -50,6 +51,7 @@ type Server struct {
 func New(s *store.Store, c config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	server := &Server{Store: s, Config: c, Identity: identity.New(s), Hub: bridge.NewHub(), Core: bridge.NewRuntime(), ctx: ctx, cancel: cancel, capacity: newRequestCapacity(c.Concurrency)}
+	server.keySecret = []byte(identity.Secret())
 	server.CommerceCore = &commerceCoreAdapter{server: server}
 	server.profilePool()
 	server.Identity.GameNameResolver = func(ctx context.Context, name string) (store.AdmissionProfile, error) {
@@ -103,6 +105,7 @@ func (s *Server) Handler() http.Handler {
 	s.registerAssetsV2(mux)
 	s.registerChatMedia(mux)
 	s.registerGameChat(mux)
+	s.registerKeybindings(mux)
 	s.registerGameTitles(mux)
 	s.registerPlayerNames(mux)
 	s.registerSocialV2(mux)

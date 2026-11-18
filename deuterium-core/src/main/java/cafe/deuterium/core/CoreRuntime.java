@@ -126,8 +126,13 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         settings.set(next); chatEvents.register(); bridge.reconnect();
     }
     @Override public void appChat(JsonObject payload) throws Exception { ensureOpen(); chat.incoming(payload); }
-    @Override public void gameChat(JsonObject payload) { ensureOpen(); gameChat.receiveTeam(payload); }
+    @Override public void gameChat(JsonObject payload) {
+        ensureOpen();
+        if ("keybindings-changed".equals(cafe.deuterium.core.util.Json.string(payload,"type"))) gameChat.keybindingsChanged(payload);
+        else gameChat.receiveTeam(payload);
+    }
     @Override public void playerNamesChanged() { if(gameChat!=null)gameChat.refreshNames(); }
+    @Override public void keybindingsAvailable(boolean enabled) { if(gameChat!=null)gameChat.keybindingsAvailable(enabled); }
     @Override public JsonObject command(JsonObject payload) { ensureOpen(); return commands.execute(payload); }
     @Override public JsonObject presence() { return Json.tree(Map.of("players", sessions.snapshot())); }
     @Override public JsonObject status() {
