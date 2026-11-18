@@ -104,6 +104,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         if (ticks % 300 == 0) workers.submit(() -> { inbox.sweep(); return null; });
     }
     public CoreConfig config() { return settings.get(); }
+    public boolean keybindingsEnabled() { return gameChat.keybindingsEnabled(); }
     public PlayerDataService dataProvider() { return Bukkit.getServicesManager().load(PlayerDataService.class); }
     public PlayerDataService inventoryAccess() {
         PlayerDataService provider = dataProvider();
