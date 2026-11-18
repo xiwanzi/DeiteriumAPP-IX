@@ -581,6 +581,8 @@ func (s *Store) CatalogGetRecordV2(ctx context.Context, user, id, kind string, m
 }
 
 type CatalogFilterV2 struct {
+	InStock                                                                           bool
+	Subcategory                                                                       string
 	Kind, StoreID, BrandID, CategoryID, SellerRef, Query, State, Badge, CategoryGroup string
 	Management                                                                        bool
 	Limit                                                                             int
@@ -626,6 +628,9 @@ func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV
 			q += " AND available_stock>0"
 		}
 	}
+	if f.InStock {
+		q += " AND (available_stock IS NULL OR available_stock>0)"
+	}
 	if f.BrandID != "" {
 		q += " AND brand_ref=?"
 		args = append(args, f.BrandID)
@@ -642,6 +647,10 @@ func (s *Store) CatalogListV2(ctx context.Context, user string, f CatalogFilterV
 	if f.CategoryGroup != "" && f.Kind == "product" {
 		q += " AND category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c LEFT JOIN catalog_records_v2 p ON p.resource_id=JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId')) AND p.kind='category' AND p.state='ACTIVE' WHERE c.kind='category' AND c.state='ACTIVE' AND ((c.title=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId')),'') IN ('','null')) OR p.title=?))"
 		args = append(args, f.CategoryGroup, f.CategoryGroup)
+	}
+	if f.Subcategory != "" {
+		q += " AND category_ref IN (SELECT c.resource_id FROM catalog_records_v2 c WHERE c.kind='category' AND c.state='ACTIVE' AND c.title=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(c.body,'$.parentCategoryId')),'') NOT IN ('','null'))"
+		args = append(args, f.Subcategory)
 	}
 	if f.SellerRef != "" {
 		q += " AND owner_id IN (SELECT id FROM identities WHERE player_ref=?)"
