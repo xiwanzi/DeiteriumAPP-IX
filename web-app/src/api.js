@@ -229,8 +229,10 @@ export class DeuteriumClient {
   balance(refresh = false) {
     return this.request(`/api/v1/wallet/balance${refresh ? "/refresh" : ""}`, { method: refresh ? "POST" : "GET" });
   }
-  records(cursor) {
-    return this.request(`/api/v1/wallet/records?limit=20${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
+  records(cursor, filters = {}) {
+    const query = new URLSearchParams({ limit: "20", ...filters });
+    if (cursor) query.set("cursor", cursor);
+    return this.request(`/api/v1/wallet/records?${query}`);
   }
   recipients(query) {
     return this.request(`/api/v1/wallet/recipients/search?query=${encodeURIComponent(query)}&type=auto`);

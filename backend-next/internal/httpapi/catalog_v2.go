@@ -193,6 +193,7 @@ func (s *Server) registerCatalogV2(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/store/stores/{storeId}/homepage", s.catalogHomepageV2(false))
 	mux.HandleFunc("GET /api/v1/store/brands", s.catalogListV2("brand", false))
 	mux.HandleFunc("GET /api/v1/store/categories", s.catalogListV2("category", false))
+	mux.HandleFunc("GET /api/v1/store/recommendations", s.catalogRecommendations)
 	mux.HandleFunc("GET /api/v1/store/products", s.catalogListV2("product", false))
 	mux.HandleFunc("GET /api/v1/store/products/{productId}", s.catalogGetV2("product", false))
 	mux.HandleFunc("GET /api/v1/store/cart", s.catalogCartReadV2)
@@ -323,6 +324,23 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 			return
 		}
 		scope := r.URL.Path + "|" + f.StoreID + "|" + f.BrandID + "|" + f.CategoryID + "|" + f.SellerRef + "|" + f.Query + "|" + f.Badge + "|" + f.CategoryGroup + "|" + f.State + "|" + u.User.ID
+		if f.Subcategory = strings.TrimSpace(q.Get("subcategory")); f.Subcategory != "" {
+			if kind != "product" || management || f.CategoryGroup == "" || utf8.RuneCountInString(f.Subcategory) > 40 {
+				catalogFailV2(w, r, bridge.ErrProtocol)
+				return
+			}
+			scope += "|subcategory=" + f.Subcategory
+		}
+		if available := q.Get("inStock"); available != "" {
+			if kind != "product" || management || (available != "true" && available != "false") {
+				catalogFailV2(w, r, bridge.ErrProtocol)
+				return
+			}
+			f.InStock = available == "true"
+			if f.InStock {
+				scope += "|inStock"
+			}
+		}
 		f.Before, e = store.CatalogParseCursorV2(scope, q.Get("cursor"))
 		if e != nil {
 			catalogFailV2(w, r, e)
@@ -337,31 +355,51 @@ func (s *Server) catalogListV2(kind string, management bool) http.HandlerFunc {
 		if more {
 			rows = rows[:limit]
 		}
-		views, e := s.Store.CatalogPageViewsV2(r.Context(), u.User.ID, rows, management)
-		if e != nil {
-			catalogFailV2(w, r, e)
-			return
-		}
+		var cursor any
 		if kind == "product" && !management {
-			offers, err := s.Store.CatalogOfferPreviewsV220(r.Context(), u.User.ID, rows)
-			if err != nil {
-				catalogFailV2(w, r, err)
-				return
-			}
-			for _, raw := range views {
-				view := raw.(map[string]any)
-				if offer, ok := offers[view["productId"].(string)]; ok {
-					view["offerPreview"] = offer
-				}
-			}
 			w.Header().Set("Cache-Control", "private, no-store")
 		}
-		var cursor any
 		if more {
 			cursor = store.CatalogCursorV2(scope, rows[len(rows)-1].Sequence)
 		}
-		v2List(w, r, views, cursor, more)
+		s.writeCatalogPageV2(w, r, u.User.ID, rows, management, cursor, more)
 	}
+}
+
+func (s *Server) catalogRecommendations(w http.ResponseWriter, r *http.Request) {
+	u, ok := s.catalogAuthV2(w, r)
+	if !ok {
+		return
+	}
+	rows, err := s.Store.CatalogRecommendations(r.Context())
+	if err != nil {
+		catalogFailV2(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	s.writeCatalogPageV2(w, r, u.User.ID, rows, false, nil, false)
+}
+
+func (s *Server) writeCatalogPageV2(w http.ResponseWriter, r *http.Request, viewer string, rows []store.CatalogRecordV2, management bool, cursor any, more bool) {
+	views, e := s.Store.CatalogPageViewsV2(r.Context(), viewer, rows, management)
+	if e != nil {
+		catalogFailV2(w, r, e)
+		return
+	}
+	if len(rows) > 0 && rows[0].Kind == "product" && !management {
+		offers, err := s.Store.CatalogOfferPreviewsV220(r.Context(), viewer, rows)
+		if err != nil {
+			catalogFailV2(w, r, err)
+			return
+		}
+		for _, raw := range views {
+			view := raw.(map[string]any)
+			if offer, ok := offers[view["productId"].(string)]; ok {
+				view["offerPreview"] = offer
+			}
+		}
+	}
+	v2List(w, r, views, cursor, more)
 }
 func (s *Server) catalogContentWriteV2(kind string, create, republish bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

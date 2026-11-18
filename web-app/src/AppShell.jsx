@@ -1,5 +1,5 @@
 import launcherIcon from "./assets/launcher-icons/default.svg";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Store,
   Shapes,
@@ -22,6 +22,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Avatar, media } from "./components.jsx";
+import { ShoppingCartContext } from "./ShoppingCartContext.jsx";
 import { adminNavigation } from "./admin-navigation.js";
 export const navigation = [
   ["/", "商城", Store],
@@ -31,6 +32,15 @@ export const navigation = [
   ["/wallet", "钱包", WalletCards],
   ["/me", "我的", UserRound],
 ];
+function CartButton({ count, size, onClick, active }) {
+  const description = count === null ? undefined : count > 0 ? `购物袋中有 ${count} 件商品` : "购物袋为空";
+  return <button type="button" className="icon-button bag-icon" aria-label="打开购物袋" aria-description={description}
+    title={description ?? "打开购物袋"} aria-current={active ? "page" : undefined} onClick={onClick}>
+    <ShoppingBag size={size} />
+    {count > 0 && <span className="bag-count" aria-hidden="true">{count > 99 ? "99+" : count}</span>}
+  </button>;
+}
+
 export default function AppShell({
   user,
   path,
@@ -48,8 +58,11 @@ export default function AppShell({
   mode = "connected",
   basePath = "",
 }) {
+  const cart = useContext(ShoppingCartContext);
+  const bagCount = cart ? cart.count : cartCount;
   const [mobile, setMobile] = useState(false),
     chat = path === "/information";
+  const searchLabel = chat ? "搜索消息与会话" : ({"/wallet":"筛选账单","/cart":"搜索商城商品","/me":"搜索商城商品","/notification-settings":"搜索商城商品"}[path] || "搜索好物、委托");
   const managing = path === "/admin" || path === "/merchant";
   const supportOnly = user.permissions?.includes("support.manage") && !user.permissions?.includes("platform.admin");
   const links = managing ? adminNavigation(user.permissions) : navigation;
@@ -58,16 +71,41 @@ export default function AppShell({
   const support = path === "/admin" && activePath === "/admin?section=support";
   const [supportNavExpanded, setSupportNavExpanded] = useState(false);
   useEffect(() => { setSupportNavExpanded(false); }, [support]);
+  const pendingStoreSearch = useRef(false);
+  const openSearch = useCallback(() => {
+    if (["/cart","/me","/notification-settings"].includes(path)) {
+      pendingStoreSearch.current = true;
+      navigate("/");
+    } else onSearch?.();
+  }, [path, navigate, onSearch]);
   useEffect(() => {
     setMobile(false);
+    if (pendingStoreSearch.current && path === "/") window.dispatchEvent(new Event("deuterium:search"));
+    pendingStoreSearch.current = false;
   }, [path, search]);
   useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape") setMobile(false);
+      if (e.key === "/" && !e.defaultPrevented && !e.ctrlKey && !e.metaKey && !e.altKey &&
+          !e.target.closest?.("input,textarea,select,[contenteditable=true],dialog") && !document.querySelector("dialog[open]")) {
+        e.preventDefault();
+        openSearch();
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, []);
+  }, [openSearch]);
+  const content = useRef(null), previousChat = useRef(chat);
+  useLayoutEffect(() => {
+    if (previousChat.current === chat) return;
+    previousChat.current = chat;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const motion = content.current?.animate([
+      { opacity: .45, transform: "translateY(4px)" },
+      { opacity: 1, transform: "translateY(0)" },
+    ], { duration: 200, easing: "ease-out" });
+    return () => motion?.cancel();
+  }, [chat]);
   const link = (e, to) => {
     if (e.metaKey || e.ctrlKey) return;
     e.preventDefault();
@@ -75,7 +113,7 @@ export default function AppShell({
     setMobile(false);
   };
   return (
-    <div className={`app-shell ${chat ? "chat-shell" : ""} ${managing ? "management-shell" : ""} ${support ? `support-shell ${supportNavExpanded ? "nav-expanded" : "nav-collapsed"}` : ""}`}>
+    <div className={`app-shell ${chat ? "chat-shell" : path === "/" ? "store-shell" : ""} ${managing ? "management-shell" : ""} ${support ? `support-shell ${supportNavExpanded ? "nav-expanded" : "nav-collapsed"}` : ""}`}>
       <a className="skip-link" href="#main-content">
         跳到主要内容
       </a>
@@ -121,7 +159,7 @@ export default function AppShell({
           {chat && <div className="chat-rail-actions">
             <button className="icon-button" title={dark ? "切换浅色模式" : "切换深色模式"} aria-label={dark ? "切换浅色模式" : "切换深色模式"} onClick={toggleTheme}>{dark ? <Sun size={21} /> : <Moon size={21} />}</button>
             <button className="icon-button" title="打开通知" aria-label="打开通知" onClick={onNotifications}><Bell size={21} />{unread > 0 && <i className="notification-dot" />}</button>
-            {onCart && <button className="icon-button bag-icon" title="打开购物袋" aria-label="打开购物袋" onClick={onCart}><ShoppingBag size={21} />{cartCount > 0 && <b>{cartCount}</b>}</button>}
+            {onCart && <CartButton count={bagCount} size={21} onClick={onCart} />}
           </div>}
           <div className="world-card">
             <span className="world-dot" />
@@ -184,15 +222,16 @@ export default function AppShell({
                 {links.find((n) => n[0] === activePath)?.[1] || ({"/admin":"官方管理","/announcements":"社区公告","/notifications":"通知","/notification-settings":"通知设置","/merchant":"商店管理","/cart":"购物袋","/orders":"我的订单"}[path]) || "Deuterium"}
               </strong>
             </span>
+            {path === "/" && <div id="shop-feedback-host" className="shop-feedback-host" />}
           </div>
           <div className="topbar-actions">
             <button className="demo-badge" onClick={onAbout}>
               <span />
-              Deuterium · 2.0.43
+              Deuterium · 2.0.44
             </button>
-            {!managing && <button className="top-search" onClick={onSearch}>
+            {!managing && path !== "/" && <button className="top-search" onClick={openSearch} aria-label={searchLabel}>
               <Search size={17} />
-              <span>{chat ? "搜索消息与会话…" : "搜索好物、委托…"}</span>
+              <span>{searchLabel}…</span>
               <kbd>/</kbd>
             </button>}
             <button
@@ -210,19 +249,11 @@ export default function AppShell({
               <Bell size={19} />
               {unread > 0 && <i className="notification-dot" />}
             </button>
-            {onCart && (
-              <button
-                className="icon-button bag-icon"
-                aria-label="打开购物袋"
-                onClick={onCart}
-              >
-                <ShoppingBag size={19} />
-                {cartCount > 0 && <b>{cartCount}</b>}
-              </button>
-            )}
+            {onCart && <CartButton count={bagCount} size={19} active={path === "/cart"} onClick={onCart} />}
           </div>
         </header>
         <main
+          ref={content}
           id="main-content"
           tabIndex={-1}
           className={`main-content ${chat ? "chat-main" : ""}`}
@@ -237,7 +268,7 @@ export default function AppShell({
               让热爱，自在相连。
             </span>
             <span>
-              Web 2.0.43 <b>·</b> Deuterium ID
+              Web 2.0.44 <b>·</b> Deuterium ID
             </span>
           </footer>
         )}

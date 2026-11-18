@@ -37,7 +37,7 @@ async (page) => {
       socket.send(JSON.stringify({type:"chat.message",payload:{message:accepted}}));
     });
   });
-  await page.route("**/web-config.json", route => route.fulfill({json:{mode:"connected",version:"2.0.43",configured:true}}));
+  await page.route("**/web-config.json", route => route.fulfill({json:{mode:"connected",version:"2.0.44",configured:true}}));
   await page.route("**/api/v1/**", async route => {
     const request=route.request(), path=new URL(request.url()).pathname;
     const reply = data => route.fulfill({json:{data,page:{hasMore:false,nextCursor:null},serverTime:now.toISOString()}});
