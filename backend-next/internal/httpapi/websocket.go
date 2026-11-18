@@ -101,7 +101,7 @@ func (s *Server) coreSocket(w http.ResponseWriter, r *http.Request) {
 		_ = s.Store.DisconnectCore(cleanup, node.ID)
 		s.observePlayerNames(affected)
 	}()
-	if sendSocket(ctx, c, "core.welcome", hello.RequestID, map[string]any{"protocolVersion": 1, "serverId": node.ID, "chat": node.Chat, "itemPrefix": node.ItemPrefix, "heartbeatSeconds": 20, "maxFrameBytes": 32768, "features": []string{"core-v1", "commands", "catalog", "mailbox-v1", "presence"}}) != nil {
+	if sendSocket(ctx, c, "core.welcome", hello.RequestID, map[string]any{"protocolVersion": 1, "serverId": node.ID, "chat": node.Chat, "itemPrefix": node.ItemPrefix, "heartbeatSeconds": 20, "maxFrameBytes": 32768, "features": []string{"core-v1", "commands", "catalog", "mailbox-v1", "presence", "player-keybindings"}}) != nil {
 		return
 	}
 	events, unsubscribe := s.Hub.Watch(bridge.TopicPublic, bridge.TopicNames)

@@ -59,7 +59,13 @@ final class ChatClient {
                 case "location-result" -> sendTo(ChatMessage.str(p,"content"),ChatMessage.str(p,"scope"));
                 case "notice" -> notice(ChatMessage.str(p,"message"));
                 case "session-unavailable" -> {ChatStore.INSTANCE.status=ChatMessage.str(p,"message");ChatStore.INSTANCE.changed();}
-                case "hello" -> {node=ChatMessage.str(p,"serverId");ChatStore.INSTANCE.server=node;}
+                case "hello" -> {node=ChatMessage.str(p,"serverId");ChatStore.INSTANCE.server=node;if(p.has("keybindings") && p.get("keybindings").getAsBoolean())CloudKeybindings.INSTANCE.advertised();}
+                case "keybindings-session" -> CloudKeybindings.INSTANCE.session(p);
+                case "keybindings-changed" -> CloudKeybindings.INSTANCE.wake();
+                case "keybindings-ready" -> {
+                    if(p.get("enabled").getAsBoolean()){CloudKeybindings.INSTANCE.advertised();CloudKeybindings.INSTANCE.wake();}
+                    else CloudKeybindings.INSTANCE.disconnect();
+                }
             }
         }catch(Exception ignored){notice("聊天连接信息不可用，请稍后重试");}
     }
@@ -141,5 +147,5 @@ final class ChatClient {
         }
         return mc.screen!=null&&mc.screen.handleComponentClicked(style);
     }
-    void reset(){ChatTitles.reset();readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=nameCursor=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
+    void reset(){CloudKeybindings.INSTANCE.disconnect();ChatTitles.reset();readThrough.clear();epoch++;api=null;connection=null;polling=false;loaded=false;nextHello=nextPoll=nameCursor=0;node="";nativePending.clear();lateRich.clear();for(var future:mediaRequests.values())future.completeExceptionally(new java.io.IOException("游戏会话已断开"));mediaRequests.clear();io.getQueue().clear();media.clear();ChatAvatars.clear();ChatStore.INSTANCE.clear();ChatBackdrop.close();}
 }

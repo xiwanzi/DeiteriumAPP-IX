@@ -24,6 +24,8 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
     public static final String CHANNEL="deuterium:chat";
     private final JavaPlugin plugin;private final Supplier<CoreConfig> config;private final GameThread game;
     private final GameTitles titles;
+    private final cafe.deuterium.core.runtime.Sessions sessions;
+    private boolean keybindingsEnabled;
     private final ChatAccess chat;private final TeamChatAudience teams=new TeamChatAudience();
     private final ConcurrentMap<UUID,Peer> peers=new ConcurrentHashMap<>();
     private final ExecutorService io=new ThreadPoolExecutor(1,2,20,TimeUnit.SECONDS,new ArrayBlockingQueue<>(64),r->{Thread t=new Thread(r,"Deuterium-GameChat-IO");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
@@ -32,8 +34,9 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
     private final PlayerNameSync nameSync;
     private final org.bukkit.scheduler.BukkitTask shareTask;
     private record LocationShare(String scope,long expires){}
-    private static final class Peer { long lastHello,lastSend;final LinkedHashSet<String> requests=new LinkedHashSet<>(); }
+    private static final class Peer { long lastHello,lastSend,lastKeySession;final LinkedHashSet<String> requests=new LinkedHashSet<>(); }
     public GameChatChannel(JavaPlugin plugin,Supplier<CoreConfig> config,GameThread game,ChatAccess chat,cafe.deuterium.core.runtime.Sessions sessions,cafe.deuterium.core.storage.PlayerStore players){this.plugin=plugin;this.config=config;this.game=game;this.chat=chat;
+        this.sessions=sessions;
         Bukkit.getMessenger().registerIncomingPluginChannel(plugin,CHANNEL,this);Bukkit.getMessenger().registerOutgoingPluginChannel(plugin,CHANNEL);Bukkit.getPluginManager().registerEvents(this,plugin);
         titles=new GameTitles(plugin,config,sessions,(player,packet)->{if(supports(player))deliver(player,packet);});
         nameSync=new PlayerNameSync(players,after->{var request=new JsonObject();request.addProperty("after",after);return post("/bridge/v1/game-chat/player-names",request);},this::publishNames,PlayerNameSync::applyTeam,plugin.getLogger());
@@ -52,16 +55,53 @@ public final class GameChatChannel implements PluginMessageListener,Listener,Aut
         try{JsonObject p=Json.object(new String(bytes,StandardCharsets.UTF_8),8192);String type=Json.string(p,"type");
             if(type.equals("hello")){hello(player);return;}
             Peer peer=peers.get(player.getUniqueId());if(peer==null)return;
+            if(type.equals("keybindings-hello")){keySession(player,peer);return;}
             long now=System.currentTimeMillis();if(now-peer.lastSend<750){notice(player,"发送过于频繁，请稍后重试");return;}peer.lastSend=now;
             if(type.equals("titles-list")||type.equals("title-select"))titles.request(player,p);else if(type.equals("send"))send(player,peer,p);else if(type.equals("location"))location(player,p);else if(type.equals("media"))media(player,p);
         }catch(IllegalArgumentException|IllegalStateException e){notice(player,e.getMessage()==null?"消息格式不正确":e.getMessage());}
     }
     private void hello(Player player){
         Peer peer=peers.computeIfAbsent(player.getUniqueId(),id->new Peer());long now=System.currentTimeMillis();if(now-peer.lastHello<10000)return;peer.lastHello=now;
-        JsonObject hello=new JsonObject();hello.addProperty("type","hello");hello.addProperty("serverId",config.get().nodeId());deliver(player,hello);titles.hello(player);
+        JsonObject hello=new JsonObject();hello.addProperty("type","hello");hello.addProperty("serverId",config.get().nodeId());hello.addProperty("keybindings",keybindingsEnabled);deliver(player,hello);titles.hello(player);
         UUID id=player.getUniqueId();JsonObject request=new JsonObject();request.addProperty("playerUuid",id.toString());
         execute(()->{try{JsonObject session=post("/bridge/v1/game-chat/session",request);session.addProperty("type","session");session.addProperty("apiBase",apiBase().toString());game.run(()->{Player current=Bukkit.getPlayer(id);if(current!=null&&peers.get(id)==peer)deliver(current,session);});}
             catch(Exception e){game.run(()->{Player current=Bukkit.getPlayer(id);if(current!=null&&peers.get(id)==peer){JsonObject unavailable=new JsonObject();unavailable.addProperty("type","session-unavailable");unavailable.addProperty("message","云端媒体暂不可用，请确认 App 已绑定游戏账号");deliver(current,unavailable);}});}});
+    }
+    public void keybindingsAvailable(boolean enabled){
+        game.run(()->{
+            keybindingsEnabled=enabled;
+            var hint=new JsonObject();
+            hint.addProperty("type","keybindings-ready");
+            hint.addProperty("enabled",enabled);
+            for(Player player:Bukkit.getOnlinePlayers())if(supports(player))deliver(player,hint);
+        });
+    }
+    private void keySession(Player player,Peer peer){
+        UUID id=player.getUniqueId();
+        var session=sessions.get(id);
+        long now=System.currentTimeMillis();
+        if(!keybindingsEnabled || session==null || id.version()!=4 || now-peer.lastKeySession<5000)return;
+        peer.lastKeySession=now;
+        var request=new JsonObject();
+        request.addProperty("playerUuid",id.toString());
+        request.addProperty("sessionEpoch",session.sessionEpoch());
+        execute(()->{
+            try{
+                var reply=post("/bridge/v1/game-chat/keybindings/session",request);
+                reply.addProperty("type","keybindings-session");
+                reply.addProperty("apiBase",apiBase().toString());
+                game.run(()->{if(peers.get(id)==peer && sessions.current(id,session.sessionEpoch()))deliver(player,reply);});
+            }catch(Exception ignored){/* The client retries after join or a bridge reconnect. */}
+        });
+    }
+    public void keybindingsChanged(JsonObject message){
+        UUID id=UUID.fromString(Json.string(message,"playerUuid"));
+        String epoch=Json.string(message,"sessionEpoch");
+        game.run(()->{
+            Player player=Bukkit.getPlayer(id);
+            if(player==null || !supports(player) || !sessions.current(id,epoch))return;
+            var hint=new JsonObject();hint.addProperty("type","keybindings-changed");deliver(player,hint);
+        });
     }
     private void send(Player sender,Peer peer,JsonObject p){
         String channel=Json.string(p,"channel"),text=Checks.text(Json.string(p,"content"),1024,false).strip(),request=Checks.operationId(Json.string(p,"requestId"));
