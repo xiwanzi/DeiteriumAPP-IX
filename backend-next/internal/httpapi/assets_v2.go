@@ -34,7 +34,10 @@ func validateAssetInputV2(in assetUploadInputV2) bool {
 	if in.ContentType != "image/png" && in.ContentType != "image/jpeg" && in.ContentType != "image/webp" {
 		return false
 	}
-	expected := map[string]string{"AVATAR": "PROFILE", "STORE_MEDIA": "STORE", "MARKET_PHOTO": "MARKET_LISTING", "COMMISSION_COVER": "COMMISSION", "ANNOUNCEMENT_MEDIA": "ANNOUNCEMENT"}
+	expected := map[string]string{"AVATAR": "PROFILE", "STORE_MEDIA": "STORE", "MARKET_PHOTO": "MARKET_LISTING", "COMMISSION_COVER": "COMMISSION", "ANNOUNCEMENT_MEDIA": "ANNOUNCEMENT", "SUPPLY_ART": "SUPPLY"}
+	if in.Purpose == "SUPPLY_ART" && (in.SizeBytes > 8<<20 || in.ContentType == "image/webp") {
+		return false
+	}
 	if value, ok := expected[in.Purpose]; ok {
 		return in.BusinessType == value
 	}
@@ -113,6 +116,12 @@ func (s *Server) registerAssetsV2(mux *http.ServeMux) {
 			// Only platform admins can create stores. An avatar uploaded during
 			// creation stays owned/unbound until the store is saved successfully.
 			if _, err := s.admin(r, "platform.admin"); err != nil {
+				failError(w, r, err)
+				return
+			}
+		}
+		if in.Purpose == "SUPPLY_ART" {
+			if _, err = s.admin(r, "platform.admin"); err != nil {
 				failError(w, r, err)
 				return
 			}

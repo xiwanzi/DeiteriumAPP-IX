@@ -46,6 +46,7 @@ type Server struct {
 	loginProfiles        loginProfileRefresh
 	profiles             *profileCapacity
 	profileInit          sync.Once
+	supplyDone           chan struct{}
 }
 
 func New(s *store.Store, c config.Config) *Server {
@@ -86,10 +87,15 @@ func New(s *store.Store, c config.Config) *Server {
 	go server.supportInboxWorker()
 	server.initDesktopLauncher()
 	server.ysm = newYSMBridge(c)
+	server.supplyDone = make(chan struct{})
+	go server.supplyWorker()
 	return server
 }
 func (s *Server) Close() {
 	s.cancel()
+	if s.supplyDone != nil {
+		<-s.supplyDone
+	}
 	<-s.loginProfiles.done
 	s.Hub.Wake()
 	if s.ysm != nil {
@@ -107,6 +113,10 @@ func (s *Server) Handler() http.Handler {
 	s.registerGameChat(mux)
 	s.registerKeybindings(mux)
 	s.registerGameTitles(mux)
+	s.registerSupplyAdmin(mux)
+	s.registerSupplyInventory(mux)
+	s.registerSupplyArtwork(mux)
+	s.registerSupplyGame(mux)
 	s.registerPlayerNames(mux)
 	s.registerSocialV2(mux)
 	s.registerCatalogV2(mux)

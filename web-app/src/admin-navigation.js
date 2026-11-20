@@ -7,6 +7,7 @@ export function adminNavigation(permissions = []) {
     ...(all ? [["/admin?section=support", "工单系统", Ticket]] : []),
     ...(all ? [["/admin?section=image-review", "图片审核", ScanEye]] : []),
     ["/merchant", "商店管理", Store],
+    ...(all ? [["/admin?section=supply", "补给管理", Boxes]] : []),
     ...(all ? [["/admin?section=coupons", "优惠券", Ticket], ["/admin?section=desktop-launcher", "启动器", Monitor]] : []),
     ...(all || permissions.includes("intervention.manage") ? [["/admin?section=interventions", "平台介入", Gavel]] : []),
     ...(all || permissions.includes("announcements.manage") ? [["/admin?section=announcements", "公告管理", Megaphone]] : []),

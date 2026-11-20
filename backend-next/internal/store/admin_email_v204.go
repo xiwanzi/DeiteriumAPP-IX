@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/notify"
 )
 
@@ -177,12 +178,27 @@ func (s *Store) EmailStatusV204(ctx context.Context) (map[string]any, error) {
 	return map[string]any{"pending": pending, "retrying": failed, "events": events}, rows.Err()
 }
 func (s *Store) ClaimEmailV204(ctx context.Context) (EmailEventV204, error) {
-	tx, err := s.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return EmailEventV204{}, err
+	const maxAttempts = 4
+	for attempt := 1; ; attempt++ {
+		tx, err := s.DB.BeginTx(ctx, nil)
+		if err != nil {
+			return EmailEventV204{}, err
+		}
+		event, err := leaseNextEmailV204(ctx, tx)
+		if err == nil {
+			return event, tx.Commit()
+		}
+		tx.Rollback()
+		// Another worker can change the first eligible row before FOR UPDATE
+		// locks it. A new transaction must select its own eligible row.
+		var conflict *mysql.MySQLError
+		if attempt >= maxAttempts || !errors.As(err, &conflict) || conflict.Number != 1020 {
+			return event, err
+		}
 	}
-	defer tx.Rollback()
-	// The runtime has one email worker; ordinary row locking also supports MariaDB 10.5.
+}
+
+func leaseNextEmailV204(ctx context.Context, tx *sql.Tx) (EmailEventV204, error) {
 	event, err := scanEmailEventV204(tx.QueryRowContext(ctx, emailEventSelectV204+` WHERE ((status IN ('PENDING','RETRY') AND next_attempt_at<=UTC_TIMESTAMP(6)) OR (status='SENDING' AND lease_until<UTC_TIMESTAMP(6))) AND (application_id IS NULL OR EXISTS (SELECT 1 FROM admin_email_settings_v204 WHERE id=1 AND JSON_UNQUOTE(JSON_EXTRACT(settings_json,'$.admissionReviewEnabled'))='true')) ORDER BY created_at,event_id LIMIT 1 FOR UPDATE`))
 	if err != nil {
 		return event, err
@@ -192,8 +208,7 @@ func (s *Store) ClaimEmailV204(ctx context.Context) (EmailEventV204, error) {
 		return event, err
 	}
 	event.Attempts++
-	err = tx.Commit()
-	return event, err
+	return event, nil
 }
 func (s *Store) FinishEmailV204(ctx context.Context, event EmailEventV204, sendError error) error {
 	if sendError == nil {

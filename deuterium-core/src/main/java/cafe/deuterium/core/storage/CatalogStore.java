@@ -25,20 +25,32 @@ public final class CatalogStore {
             Sql.update(c, db.ignoreInsert() + " INTO dc_items(item_ref,latest_revision,catalog_version,archived,display_name,item_id) VALUES(?,0,0,false,?,?)", item.ref(), item.name(), item.itemId());
             ItemSummary head = head(c, item.ref(), true);
             if (head.archived()) throw new CoreFailure("ITEM_ARCHIVED", "物品已归档，请先恢复。");
-            long revision = Math.addExact(head.latestRevision(), 1), generation = Math.addExact(head.catalogVersion(), 1);
-            if (revision > Integer.MAX_VALUE || generation > Integer.MAX_VALUE) throw CoreFailure.invalid("物品版本达到上限。");
-            byte[] payload = item.payload();
-            ItemVersion result = new ItemVersion(item.ref(), revision, "bukkit-bytes-v1", payload, Checks.sha(payload),
-                    item.itemId(), item.name(), item.description(), item.maxQuantity(), item.servers(), item.requiredMods(), item.domain(), item.profile(), System.currentTimeMillis());
-            String metadata = Json.GSON.toJson(ItemMetadata.of(result));
-            Sql.update(c, "INSERT INTO dc_item_versions(item_ref,revision,metadata,payload,payload_sha,created_at) VALUES(?,?,?,?,?,?)",
-                    item.ref(), revision, metadata, payload, result.payloadSha256(), result.createdAt());
-            Sql.update(c, "UPDATE dc_items SET latest_revision=?,catalog_version=?,display_name=?,item_id=? WHERE item_ref=?", revision, generation, item.name(), item.itemId(), item.ref());
-            publishVersion(c, result);
-            publishHead(c, new ItemSummary(item.ref(), revision, generation, item.name(), item.itemId(), false));
-            Sql.audit(c, actor, "item.save", item.ref() + "@" + revision, "COMPLETED");
-            return result;
+            return append(c, item, head, actor);
         });
+    }
+    /** Creates one immutable first version. The caller supplies an operation-derived reference. */
+    public ItemVersion create(Captured item, String actor) {
+        return db.transaction(c -> {
+            int inserted = Sql.update(c, db.ignoreInsert() + " INTO dc_items(item_ref,latest_revision,catalog_version,archived,display_name,item_id) VALUES(?,0,0,false,?,?)", item.ref(), item.name(), item.itemId());
+            ItemSummary head = head(c, item.ref(), true);
+            if (inserted == 0) return version(c, item.ref(), 1);
+            return append(c, item, head, actor);
+        });
+    }
+    private ItemVersion append(Connection c, Captured item, ItemSummary head, String actor) throws Exception {
+        long revision = Math.addExact(head.latestRevision(), 1), generation = Math.addExact(head.catalogVersion(), 1);
+        if (revision > Integer.MAX_VALUE || generation > Integer.MAX_VALUE) throw CoreFailure.invalid("物品版本达到上限。");
+        byte[] payload = item.payload();
+        ItemVersion result = new ItemVersion(item.ref(), revision, "bukkit-bytes-v1", payload, Checks.sha(payload),
+                item.itemId(), item.name(), item.description(), item.maxQuantity(), item.servers(), item.requiredMods(), item.domain(), item.profile(), System.currentTimeMillis());
+        String metadata = Json.GSON.toJson(ItemMetadata.of(result));
+        Sql.update(c, "INSERT INTO dc_item_versions(item_ref,revision,metadata,payload,payload_sha,created_at) VALUES(?,?,?,?,?,?)",
+                item.ref(), revision, metadata, payload, result.payloadSha256(), result.createdAt());
+        Sql.update(c, "UPDATE dc_items SET latest_revision=?,catalog_version=?,display_name=?,item_id=? WHERE item_ref=?", revision, generation, item.name(), item.itemId(), item.ref());
+        publishVersion(c, result);
+        publishHead(c, new ItemSummary(item.ref(), revision, generation, item.name(), item.itemId(), false));
+        Sql.audit(c, actor, "item.save", item.ref() + "@" + revision, "COMPLETED");
+        return result;
     }
     public ItemVersion find(String ref, long revision) {
         return db.read(c -> {
@@ -48,16 +60,19 @@ public final class CatalogStore {
                 if (head.archived()) throw new CoreFailure("ITEM_ARCHIVED", "物品已归档，读取历史内容需明确指定版本。");
                 resolved = head.latestRevision();
             }
-            try (PreparedStatement s = Sql.statement(c, "SELECT metadata,payload,payload_sha,created_at FROM dc_item_versions WHERE item_ref=? AND revision=?", ref, resolved); ResultSet r = s.executeQuery()) {
-                if (!r.next()) throw new CoreFailure("ITEM_NOT_FOUND", "找不到物品或版本。");
-                byte[] payload = r.getBytes("payload");
-                if (!Checks.sha(payload).equals(r.getString("payload_sha"))) throw new CoreFailure("ITEM_CORRUPT", "物品快照校验失败，已阻止读取。");
-                ItemMetadata metadata = Json.GSON.fromJson(r.getString("metadata"), ItemMetadata.class);
-                if (!metadata.itemRef().equals(ref) || metadata.revision() != resolved || !metadata.payloadSha256().equals(r.getString("payload_sha")))
-                    throw new CoreFailure("ITEM_CORRUPT", "物品元数据与内容不一致。");
-                return metadata.withPayload(payload, r.getLong("created_at"));
-            }
+            return version(c, ref, resolved);
         });
+    }
+    private ItemVersion version(Connection c, String ref, long resolved) throws Exception {
+        try (PreparedStatement s = Sql.statement(c, "SELECT metadata,payload,payload_sha,created_at FROM dc_item_versions WHERE item_ref=? AND revision=?", ref, resolved); ResultSet r = s.executeQuery()) {
+            if (!r.next()) throw new CoreFailure("ITEM_NOT_FOUND", "找不到物品或版本。");
+            byte[] payload = r.getBytes("payload");
+            if (!Checks.sha(payload).equals(r.getString("payload_sha"))) throw new CoreFailure("ITEM_CORRUPT", "物品快照校验失败，已阻止读取。");
+            ItemMetadata metadata = Json.GSON.fromJson(r.getString("metadata"), ItemMetadata.class);
+            if (!metadata.itemRef().equals(ref) || metadata.revision() != resolved || !metadata.payloadSha256().equals(r.getString("payload_sha")))
+                throw new CoreFailure("ITEM_CORRUPT", "物品元数据与内容不一致。");
+            return metadata.withPayload(payload, r.getLong("created_at"));
+        }
     }
     public List<ItemSummary> search(String query, int page, boolean archived) {
         if (page < 1 || page > 100000 || query.length() > 96) throw CoreFailure.invalid("无效分页或关键词。");

@@ -8,6 +8,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"testing"
+
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
 )
 
 func TestGameAvatarPersistsForOfflinePlayersAndKeepsLastOnUpstreamFailure(t *testing.T) {
@@ -28,7 +30,7 @@ func TestGameAvatarPersistsForOfflinePlayersAndKeepsLastOnUpstreamFailure(t *tes
 	}
 	failing := func(context.Context, string) ([]byte, error) { calls++; return nil, errors.New("upstream offline") }
 	// A separate Store instance has no process cache; it must retrieve the persisted portrait.
-	copyStore := *f.store
+	copyStore := &store.Store{DB: f.store.DB}
 	out, err := copyStore.GameChatAvatar(context.Background(), "bob", failing)
 	if err != nil || !bytes.Equal(out, portrait) || calls != 1 {
 		t.Fatal(err, calls)
