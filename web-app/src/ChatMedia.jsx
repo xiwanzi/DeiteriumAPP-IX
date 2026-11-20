@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, LoaderCircle, BookmarkPlus, Paperclip, History, Star, Delete } from "lucide-react";
+import { Plus, X, LoaderCircle, BookmarkPlus, Paperclip, History, Star, Delete, Smile, Hand, Heart, Leaf, Utensils, Gamepad2 } from "lucide-react";
 import "./chat-media.css";
 import ChatAttachmentPreview from "./ChatAttachmentPreview.jsx";
+import ChatEmoji from "./ChatEmoji.jsx";
 import { EMOJI_GROUPS, CHAT_EMOJI, stickerRadius } from "./chat-expressions.js";
 export { CHAT_EMOJI } from "./chat-expressions.js";
 
@@ -50,8 +51,11 @@ export function ChatPictureButton({ service, reply, importing = false, disabled 
   </>;
 }
 
-export function ChatExpressionPanel({ service, state, open = true, onEmoji, onBackspace, onSticker, onPreview }) {
+const categoryIcons = [Smile, Hand, Heart, Leaf, Utensils, Gamepad2];
+
+export function ChatExpressionPanel({ service, state = { stickers: [], jobs: [], error: "" }, open = true, onEmoji, onBackspace, onSticker, onPreview }) {
   const [tab, setTab] = useState("emoji"), [category, setCategory] = useState(0), [manage, setManage] = useState(false), [error, setError] = useState("");
+  useEffect(() => { if (!service) setTab("emoji"); }, [service]);
   const [recent, setRecent] = useState(() => { try { return JSON.parse(localStorage.getItem("chat-recent-emoji") || "[]").filter(e => CHAT_EMOJI.includes(e)).slice(0, 24); } catch { return []; } });
   const selectEmoji = e => { if (onEmoji(e) === false) return; const next = [e, ...recent.filter(value => value !== e)].slice(0, 24); setRecent(next); try { localStorage.setItem("chat-recent-emoji", JSON.stringify(next)); } catch {} };
   const emojis = category === -1 ? recent : EMOJI_GROUPS[category].items;
@@ -61,10 +65,10 @@ export function ChatExpressionPanel({ service, state, open = true, onEmoji, onBa
         {tab === "emoji" ? <>
           <div className="chat-emoji-categories" role="tablist" aria-label="表情分类">
             <button type="button" role="tab" aria-label="最近使用" aria-selected={category === -1} onMouseDown={e => e.preventDefault()} onClick={() => setCategory(-1)}><History size={19} /></button>
-            {EMOJI_GROUPS.map((group, index) => <button type="button" role="tab" aria-label={group.name} aria-selected={category === index} key={group.name} onMouseDown={e => e.preventDefault()} onClick={() => setCategory(index)}>{group.symbol}</button>)}
+            {EMOJI_GROUPS.map((group, index) => { const Icon = categoryIcons[index]; return <button type="button" role="tab" aria-label={group.name} title={group.name} aria-selected={category === index} key={group.name} onMouseDown={e => e.preventDefault()} onClick={() => setCategory(index)}><Icon size={21} /></button>; })}
           </div>
-          <div className="chat-emoji-grid" key={category}>{emojis.map(e => <button type="button" key={e} onMouseDown={e => e.preventDefault()} onClick={() => selectEmoji(e)}>{e}</button>)}{!emojis.length && <span className="chat-expression-empty">用过的表情会出现在这里</span>}</div>
-        </> : <>
+          <div className="chat-emoji-grid" key={category}>{emojis.map(e => <button type="button" key={e} aria-label={e} title={e} onMouseDown={e => e.preventDefault()} onClick={() => selectEmoji(e)}><ChatEmoji emoji={e} /></button>)}{!emojis.length && <span className="chat-expression-empty">用过的表情会出现在这里</span>}</div>
+        </> : service && <>
           <div className="chat-sticker-heading"><Star size={18} /><span>我的贴纸</span><button type="button" onClick={() => setManage(!manage)}>{manage ? "完成" : "管理"}</button></div>
           <div className="chat-sticker-grid">{state.stickers.map(media => <div className="chat-sticker-cell" key={media.mediaId}><ChatMediaBubble service={service} media={media} panel onClick={(rect, thumb, source) => manage ? onPreview(media, rect, thumb, source) : onSticker(media)} onLongPress={(rect, thumb, source) => onPreview(media, rect, thumb, source)} />{manage && <button className="chat-sticker-delete" type="button" aria-label="删除贴纸" onClick={async () => { try { await service.deleteSticker(media); } catch (e) { setError(e.message); } }}><X size={17} /></button>}</div>)}<ChatPictureButton service={service} importing onError={setError} disabled={state.stickers.length >= 10 || state.jobs.some(j => j.importing && j.status !== "failed")} /></div>
           <p className="chat-expression-hint">{state.stickers.length >= 10 ? "贴纸已满，删除已有贴纸后可继续添加。" : "添加图片或 GIF · 长按预览"}</p>
@@ -73,9 +77,9 @@ export function ChatExpressionPanel({ service, state, open = true, onEmoji, onBa
       </div>
       {(error || state.error) && <p className="composer-error" role="alert">{error || state.error}</p>}
       <div className="chat-expression-footer">
-        <div className="chat-expression-tabs" role="tablist" aria-label="选择表情类型" style={{ "--tab": tab === "emoji" ? 0 : 1 }}>
+        <div className={`chat-expression-tabs ${service ? "" : "emoji-only"}`} role="tablist" aria-label="选择表情类型" style={{ "--tab": tab === "emoji" ? 0 : 1 }}>
           <button type="button" role="tab" aria-selected={tab === "emoji"} onMouseDown={e => e.preventDefault()} onClick={() => setTab("emoji")}>表情符号</button>
-          <button type="button" role="tab" aria-selected={tab === "sticker"} onMouseDown={e => e.preventDefault()} onClick={() => setTab("sticker")}>贴纸 <small>{state.stickers.length}/10</small></button>
+          {service && <button type="button" role="tab" aria-selected={tab === "sticker"} onMouseDown={e => e.preventDefault()} onClick={() => setTab("sticker")}>贴纸 <small>{state.stickers.length}/10</small></button>}
         </div>
         {tab === "emoji" && <button type="button" className="chat-expression-backspace" aria-label="删除表情" onMouseDown={e => e.preventDefault()} onClick={onBackspace}><Delete size={21} /></button>}
       </div>

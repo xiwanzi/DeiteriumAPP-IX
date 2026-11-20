@@ -421,6 +421,7 @@
   gap: 11px;
 }
 .auth-brand img {
+  border-radius: 24%;
   width: 38px;
   height: 38px;
 }
@@ -604,6 +605,7 @@
   margin-bottom: 29px;
 }
 .auth-emblem img {
+  border-radius: 24%;
   height: 100%;
   width: 100%;
 }
@@ -1572,17 +1574,6 @@
   font-size: 11px;
   margin-bottom: 20px;
 }
-.connected-profile {
-  max-width: 720px;
-  margin: auto;
-}
-.connected-profile .profile-card {
-  margin-top: 24px;
-}
-.connected-profile .button-row {
-  justify-content: space-between;
-  margin-top: 25px;
-}
 .foundation-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1616,15 +1607,17 @@
     padding-left: 32px;
     padding-right: 32px;
   }
-  .auth-form-wrap {
-    max-width: 400px;
-  }
   .auth-story-copy h2 {
     font-size: 65px;
   }
   .auth-story-copy > p {
     font-size: 16px;
   }
+}
+@media (min-width: 1024px) {
+  .auth-form-wrap { max-width: clamp(23.125rem, 29vw, 28rem); }
+  .auth-form-wrap > h1 { font-size: clamp(2.125rem, calc(1.5rem + 1vw), 2.625rem); }
+  .auth-intro, .auth-form input { font-size: clamp(.875rem, calc(.75rem + .25vw), 1rem); }
 }
 @media (max-width: 1200px) {
   .pc-chat {

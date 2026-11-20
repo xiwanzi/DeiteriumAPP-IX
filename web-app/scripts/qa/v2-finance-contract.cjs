@@ -46,7 +46,7 @@ async (page) => {
     if (path === "/api/v1/commissions/commission-one/confirm") { commission = { ...commission, fundsStatus: "SETTLING", pendingOperationId: "commission-settle", version: 6 }; operations.set("commission-settle", op("commission-settle", "SETTLEMENT", "COMMISSION", "commission-one", body.clientRequestId, commission.content.reward)); return json(route, { operation: operations.get("commission-settle"), commission: commissionView() }, 202); }
     return json(route, {}, 404);
   });
-  await page.goto(origin + "/"); await page.getByRole("button", { name: /授权测试商品/ }).click(); await page.getByRole("spinbutton", { name: "购买数量", exact: true }).fill("2"); await page.getByRole("button", { name: "立即购买", exact: true }).click(); await page.getByRole("button", { name: "查看最终报价", exact: true }).click();
+  await page.goto(origin + "/"); await page.getByRole("button", { name: /授权测试商品/ }).click(); await page.getByRole("spinbutton", { name: "购买数量", exact: true }).fill("2"); await page.getByRole("button", { name: "立即购买", exact: true }).click(); await page.getByRole("button", { name: "确认付款", exact: true }).waitFor();
   check(posts.filter((entry) => entry.path === "/api/v1/store/orders").length === 0, "quote review does not execute payment"); check(Boolean(quoteKeys[0]), "each quote intention sends an HTTP idempotency key");
   await page.getByRole("button", { name: "确认付款", exact: true }).click(); await page.getByRole("heading", { name: "正在核对处理结果", exact: true }).waitFor();
   check(await page.getByRole("heading", { name: "付款已确认", exact: true }).count() === 0, "lost payment response never shows a completed payment");

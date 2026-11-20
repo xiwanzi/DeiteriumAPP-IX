@@ -10,7 +10,7 @@ import java.time.*;
 /** Worker-only API operations. Session objects are immutable and never logged or persisted. */
 final class ChatApi {
     final URI base;final String token,owner,server;final Instant expiry;
-    private static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).followRedirects(HttpClient.Redirect.NEVER).build();
+    static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).followRedirects(HttpClient.Redirect.NEVER).build();
     ChatApi(JsonObject p) {
         base=URI.create(ChatMessage.str(p,"apiBase"));
         if(!safe(base)||base.getUserInfo()!=null||base.getQuery()!=null)throw new IllegalArgumentException("不安全的聊天服务地址");

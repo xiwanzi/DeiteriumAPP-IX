@@ -1,0 +1,6 @@
+Twemoji graphics v17.0.3
+Copyright Twitter, Inc. and other contributors.
+Source: https://github.com/jdecked/twemoji/tree/v17.0.3/assets/svg
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+See LICENSE-GRAPHICS.txt.
+This directory contains an unmodified subset of SVG artwork used by the Deuterium emoji picker.

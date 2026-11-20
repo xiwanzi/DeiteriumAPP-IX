@@ -17,6 +17,7 @@
   --hover: #f0f3f8;
   --glass: rgba(253, 253, 254, 0.85);
   --shadow: 0 8px 26px #1b28460a;
+  --shop-art-surface: #f0f1f3;
   --radius: 20px;
   --sage: #eaf3ec;
   --green: #347655;
@@ -24,6 +25,22 @@
 }
 * {
   box-sizing: border-box;
+}
+@media (min-width: 768px) {
+  :root {
+    font-size: clamp(100%, calc(62.5% + .78125vw), 125%);
+  }
+}
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .app-shell > .sidebar {
+    overflow-x: clip;
+    transition: width 280ms cubic-bezier(.22,.68,.18,1), padding 280ms cubic-bezier(.22,.68,.18,1), background-color 200ms;
+  }
+  .app-shell > .main-shell { transition: margin-left 280ms cubic-bezier(.22,.68,.18,1); }
+  .app-shell > .sidebar :is(.brand, nav a, .sidebar-about, .sidebar-profile) { white-space: nowrap; }
+  .app-shell > .sidebar nav a > svg { flex-shrink: 0; }
+  .app-shell:not(.chat-shell) > .sidebar nav a > span { animation: sidebar-label-in 240ms ease-out; }
+  @keyframes sidebar-label-in { from { opacity: 0; } to { opacity: 1; } }
 }
 body {
   margin: 0;
@@ -85,6 +102,23 @@ button {
 img {
   display: block;
   max-width: 100%;
+}
+.product-artwork {
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--shop-art-surface);
+  color: var(--muted);
+}
+.product-artwork img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
 }
 p {
   line-height: 1.7;
@@ -231,6 +265,7 @@ body:has(dialog[open]) {
   padding: 0 6px 0 4px;
 }
 .brand img {
+  border-radius: 24%;
   width: 40px;
   height: 40px;
 }
@@ -472,18 +507,27 @@ body:has(dialog[open]) {
   padding: 0 5px;
   border-radius: 4px;
 }
-.bag-icon b {
+.bag-icon .bag-count {
   position: absolute;
-  right: 0;
-  top: 0;
-  min-width: 15px;
-  height: 15px;
-  font-size: 9px;
-  background: var(--blue);
-  color: white;
-  border-radius: 20px;
+  inset: 0 -2px auto auto;
+  min-width: 17px;
+  height: 17px;
+  padding-inline: 4px;
+  font: 650 11px/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  background: #c43045;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--surface);
+  border-radius: 999px;
   display: grid;
   place-items: center;
+  pointer-events: none;
+}
+.bag-icon[aria-current="page"] { color: var(--blue); background: var(--blue-soft); }
+.chat-rail-actions .bag-count { box-shadow: 0 0 0 2px var(--chat-rail); }
+@media (prefers-reduced-motion: no-preference) {
+  .bag-count { animation: bag-count-in 160ms ease-out; }
+  @keyframes bag-count-in { from { transform: scale(.8); opacity: .5; } to { transform: none; opacity: 1; } }
 }
 .notification-dot {
   position: absolute;
@@ -2679,6 +2723,7 @@ tr:last-child td {
   color: white;
 }
 [data-theme="dark"] {
+  --shop-art-surface: #2a2e35;
   --bg: #15171b;
   --surface: #1e2127;
   --sidebar: #191c21;
@@ -2812,6 +2857,12 @@ tr:last-child td {
   .main-shell {
     margin-left: 240px;
   }
+}
+@media (min-width: 1024px) {
+  .sidebar nav a { font-size: clamp(.875rem, calc(.75rem + .25vw), 1.0625rem); }
+  .breadcrumb { font-size: clamp(.75rem, calc(.625rem + .25vw), .9375rem); }
+  .page-head h1 { font-size: clamp(2.125rem, calc(1.5rem + 1vw), 2.625rem); }
+  .page-head .subtitle { font-size: clamp(.875rem, calc(.75rem + .25vw), 1rem); }
 }
 @media (max-width: 1200px) {
   .sidebar {

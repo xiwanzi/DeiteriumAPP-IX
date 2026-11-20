@@ -52,6 +52,8 @@ func TestShopNavigationHierarchyBadgesAndMedia(t *testing.T) {
 	}
 	check(store.CatalogFilterV2{CategoryID: root.ID}, 1)
 	check(store.CatalogFilterV2{CategoryGroup: "家具家居"}, 1)
+	check(store.CatalogFilterV2{CategoryGroup: "家具家居", Subcategory: child.Body["name"].(string)}, 1)
+	check(store.CatalogFilterV2{CategoryGroup: "家具家居", Subcategory: "不属于此类"}, 0)
 	check(store.CatalogFilterV2{Query: "家具家居"}, 1)
 	check(store.CatalogFilterV2{Query: "基础物品"}, 1)
 	check(store.CatalogFilterV2{Badge: "新品推荐"}, 0)

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Original seamless line artwork for the Deuterium chat background. -->
+  <g transform="translate(32 34) rotate(-16 30 30)">
+    <path d="M3 25 61 4 42 59 29 36 3 25Z M29 36 61 4 M29 36 24 51 37 44"/>
+    <path d="M-8 39q-8 3-11 11m17-6q-6 4-8 10"/>
+  </g>
+  <g transform="translate(165 12) rotate(8 30 26)">
+    <path d="M7 40C-5 40-4 23 8 23 5 6 28-1 37 14 49 6 62 16 59 28 74 31 69 47 56 45Z"/>
+    <path d="m15 52-3 8m22-7-3 8m22-8-3 8"/>
+  </g>
+  <g transform="translate(319 29) rotate(22 26 24)">
+    <path d="M38 3A26 26 0 1 0 47 45C24 46 13 16 38 3Z"/>
+    <path d="m54 3 2 7 7 2-7 2-2 7-2-7-7-2 7-2Z M4 53l-3 5"/>
+  </g>
+  <g transform="translate(479 22) rotate(-12 32 32)">
+    <path d="m5 18 27-15 28 16v33L32 68 5 51Z M5 18l27 17 28-16M32 35v33M18 10l28 17v15l-8 4V32L12 17"/>
+  </g>
+  <g transform="translate(95 119) rotate(23 25 33)">
+    <path d="M7 67C16 46 28 25 44 5M26 35C8 34 1 20 6 7c17 3 26 12 20 28ZM29 31C31 12 46 10 57 12c-2 14-9 24-28 19ZM16 51C1 54-6 42-5 31c13 0 23 5 21 20ZM15 53c11-16 26-16 37-9-8 14-21 18-37 9Z"/>
+  </g>
+  <g transform="translate(236 109) rotate(-9 34 25)">
+    <path d="M12 4h44q12 0 12 12v23q0 12-12 12H31L14 63l3-12h-5Q0 51 0 39V16Q0 4 12 4Z"/>
+    <circle cx="20" cy="28" r="2"/><circle cx="34" cy="28" r="2"/><circle cx="48" cy="28" r="2"/>
+  </g>
+  <g transform="translate(391 145) rotate(14 36 24)">
+    <path d="M17 7h40c13 0 19 34 12 41-7 7-17-8-23-10H29c-7 2-17 17-24 10C-3 40 4 7 17 7Z M16 17v16M8 25h16"/>
+    <circle cx="54" cy="20" r="2.7"/><circle cx="62" cy="28" r="2.7"/>
+    <path d="M34 7V1q0-9 11-9"/>
+  </g>
+  <g transform="translate(520 110) rotate(27 20 30)">
+    <path d="m15 8 8 7-8 54-7-1Z M-1 10C20-7 42-4 52 15 32 6 16 9 2 19Z"/>
+    <path d="m41 37 5 2m-7 7 5 2"/>
+  </g>
+  <g transform="translate(16 236) rotate(-12 31 24)">
+    <path d="M30 6C19 0 8-1 0 2v49c10-3 21-1 30 5 9-6 20-8 31-5V2C51-1 39 0 30 6Z M30 6v50M7 14l16 3M7 23l16 3M7 32l16 3M38 16l15-3M38 25l15-3M38 34l15-3"/>
+  </g>
+  <g transform="translate(165 247) rotate(12 27 30)">
+    <path d="M26 23C6 8 9-9 21-6c8 2 9 12 7 23C36-4 52-2 53 11c0 9-11 13-20 14 23 3 29 15 20 23-7 6-19-2-24-12 3 22-7 34-17 27-8-6-2-20 7-28C-3 43-17 36-12 25c4-10 19-7 30-1"/>
+    <circle cx="26" cy="28" r="8"/>
+    <path d="M27 65q7 15 2 28m3-17q14-13 23-8-5 13-23 8"/>
+  </g>
+  <g transform="translate(294 236) rotate(28 22 36)">
+    <path d="M10 57C0 22 9 3 22-4c14 7 23 26 12 61Z M9 37-12 54l3 17 21-14M35 37l20 17-3 17-21-14M15 64q-4 17 7 27 11-10 7-27"/>
+    <circle cx="22" cy="25" r="8"/>
+  </g>
+  <g transform="translate(463 258) rotate(-12 36 24)">
+    <path d="m-6 50 30-48 26 34 14-21 27 35Z M13 20l11 5 7-11M59 24l6 8 6-5"/>
+    <path d="M0 62q21-7 43 0t42 0"/>
+    <circle cx="66" cy="-2" r="9"/>
+  </g>
+  <g transform="translate(72 369) rotate(12 23 24)">
+    <path d="m2 15 12-15h27l12 15-26 37Z M2 15h51M14 0l-2 15 15 37L40 15 1 0M12 15 27 0l13 15"/>
+  </g>
+  <g transform="translate(246 388) rotate(-16 30 30)">
+    <path d="M2 62V25L31 2l29 23v37Z M-6 29 31-2l36 31M24 62V40h16v22M9 33h8v10H9ZM45 33h8v10h-8Z M46 8V0h10v16"/>
+    <path d="M-7 70h77m-61 8h39"/>
+  </g>
+  <g transform="translate(399 377) rotate(14 29 28)">
+    <path d="M14 8V-3h29V8M2 9h53q7 0 7 7v37q0 7-7 7H2q-7 0-7-7V16q0-7 7-7Z"/>
+    <circle cx="29" cy="33" r="15"/><circle cx="29" cy="33" r="9"/>
+    <path d="M48 18h4M0 21h9"/>
+  </g>
+  <g transform="translate(528 385) rotate(-17 20 28)">
+    <path d="M22 63S-2 39-2 20a24 24 0 1 1 48 0c0 19-24 43-24 43Z"/>
+    <circle cx="22" cy="20" r="9"/>
+    <path d="M6 70q15 8 32 0"/>
+  </g>
+  <g transform="translate(10 501) rotate(-9 25 25)">
+    <path d="M7 9h37q8 0 8 8v31H-1V17q0-8 8-8Z M12 9 8-3m30 12 6-12M-8 25v12m67-12v12M13 48v10m24-10v10"/>
+    <circle cx="13" cy="27" r="4"/><circle cx="38" cy="27" r="4"/>
+    <path d="M17 38h17"/>
+  </g>
+  <g transform="translate(146 487) rotate(19 30 32)">
+    <path d="M31 59C15 56 3 37 4 19 5-7 55-7 57 18 59 35 47 55 31 59Z M31 59l-5 9h10Z M31 68q-11 16 1 28"/>
+    <path d="M16 13q-6 8-2 19"/>
+  </g>
+  <g transform="translate(334 513) rotate(-21 27 26)">
+    <path d="M28 51C-11 26-6 1 11 0c8 0 13 5 17 12C33 5 38 0 46 0c19 0 23 27-18 51Z"/>
+    <path d="M43 10q9-1 11 8"/>
+  </g>
+  <g transform="translate(481 510) rotate(15 25 26)">
+    <circle cx="26" cy="26" r="24"/>
+    <path d="m17 38 3-19 15-7-3 20Z M20 19l12 13M26-5v-6m0 74v-6M-5 26h-6m74 0h-6"/>
+  </g>
+  <!-- Small marks break up the larger motifs without creating a visible grid. -->
+  <path d="m126 64 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z m140-40 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z M416 71q7-13 14-2t15-1 M574 75l8 3m-3-7-3 11 M24 160q-9 16 4 20t-5 20 M193 157l7 7-7 7-7-7Z m151 4 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M459 115l-4 8m13-3-4 8 M102 235q13-14 18 0t18 0 M219 225l7 7m0-7-7 7 M362 325q9 12 17 0t17 0 M576 338l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M17 338l5 9-5 9-5-9Z M137 427q10-9 17 1t17 0 M198 376l-5 8m14-3-5 8 M344 447l6 5-6 5-6-5Z M467 466q8 15 16 1t16 2 M99 544l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M243 542q9-12 15 0t15 0 M414 565l8-5m-6-3 4 11 M567 572l4 4-4 4-4-4Z"/>
+  <g stroke-width="1.5"><circle cx="280" cy="78" r="3"/><circle cx="574" cy="215" r="3"/><circle cx="354" cy="116" r="2"/><circle cx="100" cy="306" r="3"/><circle cx="219" cy="327" r="2"/><circle cx="371" cy="388" r="3"/><circle cx="111" cy="467" r="2"/><circle cx="290" cy="488" r="3"/><circle cx="398" cy="490" r="2"/><circle cx="575" cy="461" r="2"/></g>
+</svg>

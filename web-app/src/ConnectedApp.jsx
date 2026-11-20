@@ -14,6 +14,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import AppShell from "./AppShell.jsx";
+import { ShoppingCartProvider } from "./ShoppingCartContext.jsx";
 import ConnectedWallet from "./ConnectedWallet.jsx";
 import RemoteCollection from "./RemoteCollection.jsx";
 import GameVerification, { SupportContact } from "./GameVerification.jsx";
@@ -81,7 +82,7 @@ export default function ConnectedApp() {
   useEffect(() => {
     let active = true;
     setOwnProfile(null);
-    if (session?.user.playerRef && session.user.gameVerified !== false) client.profile(session.user.playerRef).then((r) => { if (active) setOwnProfile(r.data); }).catch(() => {});
+    if (session?.user.playerRef && session.user.gameVerified !== false) client.profile(session.user.playerRef).then((r) => { if (active) setOwnProfile(old=>old?.playerRef===r.data.playerRef && old.version>r.data.version ? old : r.data); }).catch(() => {});
     return () => { active = false; };
   }, [client, session?.user.playerRef, session?.user.gameVerified]);
   function applySession(s) {
@@ -132,22 +133,6 @@ export default function ConnectedApp() {
           "/market": "市场",
           "/commissions": "委托",
         }[path] || "Deuterium") + " · Deuterium";
-  }, [path, session]);
-  useEffect(() => {
-    const key = (e) => {
-      if (
-        e.key === "/" &&
-        session &&
-        !e.target.closest("input,textarea,select,[contenteditable=true]")
-      ) {
-        e.preventDefault();
-        if (path === "/information")
-          window.dispatchEvent(new Event("deuterium:search"));
-        else setModal({ type: "capability" });
-      }
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
   }, [path, session]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -229,9 +214,8 @@ export default function ConnectedApp() {
   };
   const openUnavailable = () => setModal({ type: "capability" });
   return (
-    <>
+    <ShoppingCartProvider key={session.user.userId} client={client} playerRef={session.user.playerRef}>
       <AppShell
-        key={session.user.userId}
         user={user}
         path={path}
         search={search}
@@ -240,7 +224,7 @@ export default function ConnectedApp() {
         dark={dark}
         toggleTheme={() => setDark(!dark)}
         onSearch={() =>
-          path === "/information"
+          path === "/information" || path === "/" || path === "/wallet"
             ? window.dispatchEvent(new Event("deuterium:search"))
             : openUnavailable()
         }
@@ -266,9 +250,9 @@ export default function ConnectedApp() {
         ) : path === "/commissions" ? (
           <BusinessPages client={client} user={session.user} type="COMMISSION" />
         ) : path === "/me" ? (
-          <ConnectedProfile client={client} user={session.user} onLogout={logout} onPasswordChanged={()=>{client.clear();sessionRef.current=null;setSession(null);setNotice("密码已更改，请重新登录。");setModal(null)}} navigate={navigate} onProfileUpdated={setOwnProfile} />
+          <ConnectedProfile client={client} user={session.user} initialProfile={ownProfile?.playerRef===session.user.playerRef ? ownProfile : null} onLogout={logout} onPasswordChanged={()=>{client.clear();sessionRef.current=null;setSession(null);setNotice("密码已更改，请重新登录。");setModal(null)}} navigate={navigate} onProfileUpdated={setOwnProfile} />
         ) : path === "/notification-settings" ? (
-          <ConnectedNotificationSettings client={client} />
+          <ConnectedNotificationSettings client={client} onBack={()=>navigate("/me")} />
         ) : path === "/support" ? (
           <SupportContact client={client} user={session.user} />
         ) : path === "/admin" ? (
@@ -286,8 +270,9 @@ export default function ConnectedApp() {
       </AppShell>
       {modal?.type === "about" && (
         <Modal title="Deuterium Web" close={() => setModal(null)}>
-          <h2>2.0.41</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
+          <h2>2.0.45</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
           <p className="muted">账号、聊天和交易以服务器记录为准。</p>
+            <p className="muted">表情图形：<a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener noreferrer">Twemoji</a> · <a href="/media/emoji/LICENSE-GRAPHICS.txt" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
         </Modal>
       )}
       {modal?.type === "capability" && (
@@ -312,6 +297,6 @@ export default function ConnectedApp() {
           </div>
         </div>
       )}
-    </>
+    </ShoppingCartProvider>
   );
 }
