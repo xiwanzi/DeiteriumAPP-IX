@@ -22,7 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-var desktopApplicationPublicKey, _ = hex.DecodeString("31be634d801dc2469bb66ffa10c626710999ca4e61679c34269a8cc109634fe6")
+var desktopApplicationPublicKey, _ = hex.DecodeString("f3b2e0109aaae39d76f8c8e0c9ea37143f5a11b40305101d88fc4c168dbbcc9a")
 
 const desktopApplicationLimit int64 = 1024 * 1024 * 1024
 const desktopApplicationManifestLimit int64 = 8 * 1024 * 1024
