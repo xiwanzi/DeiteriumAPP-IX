@@ -94,9 +94,15 @@ public final class CatalogStore {
         });
     }
     public ItemSummary archive(String ref, boolean archived, String actor) {
+        return archive(ref, archived, actor, -1);
+    }
+    public ItemSummary archive(String ref, boolean archived, String actor, long expected) {
         return db.transaction(c -> {
             ItemSummary head = head(c, ref, true);
-            if (head.archived() == archived) return head;
+            if (head.archived() == archived && (expected < 0 || head.catalogVersion() == expected
+                    || head.catalogVersion() == expected + 1)) return head;
+            if (expected >= 0 && head.catalogVersion() != expected)
+                throw new CoreFailure("ITEM_CATALOG_CHANGED", "物品目录已变化，请刷新后重试。");
             long generation = Math.addExact(head.catalogVersion(), 1);
             if (generation > Integer.MAX_VALUE) throw CoreFailure.invalid("目录版本达到上限。");
             Sql.update(c, "UPDATE dc_items SET archived=?,catalog_version=? WHERE item_ref=?", archived, generation, ref);
@@ -104,6 +110,13 @@ public final class CatalogStore {
             publishHead(c, changed); Sql.audit(c, actor, archived ? "item.archive" : "item.restore", ref, "COMPLETED");
             return changed;
         });
+    }
+    public ItemSummary findHead(String ref) {
+        try { return db.read(c -> head(c, ref, false)); }
+        catch (CoreFailure missing) {
+            if (missing.code().equals("ITEM_NOT_FOUND")) return null;
+            throw missing;
+        }
     }
     public void republish() {
         String cursor = "";

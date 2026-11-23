@@ -7,6 +7,36 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SupplyChannelTest {
+    @Test void revealRequestsUseTheConnectionsIdentity() {
+        var session = new Sessions.PlayerSession(UUID.randomUUID(), "Actual", "current-epoch");
+        var packet = new JsonObject();
+        packet.addProperty("requestId", "req");
+        packet.addProperty("action", "draw");
+        packet.addProperty("awaitReveal", true);
+        assertTrue(SupplyChannel.bindRequest(packet, session).get("awaitReveal").getAsBoolean());
+
+        packet.addProperty("action", "reveal-complete");
+        packet.addProperty("playerUuid", UUID.randomUUID().toString());
+        packet.addProperty("sessionEpoch", "stale");
+        packet.addProperty("orderId", "sd_original");
+        var bound = SupplyChannel.bindRequest(packet, session);
+        assertFalse(bound.has("awaitReveal"));
+        assertEquals("sd_original", bound.get("orderId").getAsString());
+        assertEquals(session.playerUuid().toString(), bound.get("playerUuid").getAsString());
+        assertEquals(session.sessionEpoch(), bound.get("sessionEpoch").getAsString());
+    }
+
+    @Test void ticketCatalogCapabilityIsForwardedOnlyForState() {
+        var session = new Sessions.PlayerSession(UUID.randomUUID(), "Actual", "epoch");
+        var packet = new JsonObject();
+        packet.addProperty("requestId", "req");
+        packet.addProperty("action", "state");
+        packet.addProperty("ticketCatalog", true);
+        assertTrue(SupplyChannel.bindRequest(packet, session).get("ticketCatalog").getAsBoolean());
+        packet.addProperty("action", "draw");
+        assertFalse(SupplyChannel.bindRequest(packet, session).has("ticketCatalog"));
+    }
+
     @Test void clientCannotChoosePlayerSessionOrClaimOperatorPrivileges() {
         var actual = new Sessions.PlayerSession(UUID.randomUUID(), "Actual", "current-epoch");
         var packet = new JsonObject(); packet.addProperty("requestId", "req"); packet.addProperty("action", "draw");

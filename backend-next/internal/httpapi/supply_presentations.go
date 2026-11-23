@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
@@ -11,7 +12,14 @@ import (
 )
 
 func publicSupplyWeapon(r supply.Reward) map[string]any {
-	return map[string]any{"name": r.Name, "gunId": r.GunID, "stars": r.Stars, "modelKey": r.ModelKey, "detailArt": r.Art.Detail, "fallbackArt": r.Art.Fallback}
+	model := r.ModelKey
+	if model == "" {
+		key := strings.Replace(r.GunID, ":", "-", 1)
+		if supply.ValidID(key) {
+			model = key
+		}
+	}
+	return map[string]any{"name": r.Name, "gunId": r.GunID, "stars": r.Stars, "modelKey": model, "detailArt": r.Art.Detail, "fallbackArt": r.Art.Fallback}
 }
 
 func (s *Server) publicSupplyCatalog(ctx context.Context, pools []store.SupplyPool) (map[string]any, map[string]any, error) {
@@ -60,13 +68,24 @@ func (s *Server) publicSupplyCatalog(ctx context.Context, pools []store.SupplyPo
 				when = "结束于 " + d.EndsAt.In(time.FixedZone("UTC+8", 28800)).Format("01/02 15:04") + " (UTC+8)"
 			}
 			label := d.Name
+			if d.Labels != nil && d.Labels.Rail != "" {
+				label = d.Labels.Rail
+			}
 			if d.Kind == "LIMITED" {
 				label += " · " + scheme
 			}
-			pages[key] = map[string]any{"title": title, "label": label, "badge": badge, "tag": fmt.Sprintf("6 星概率 %s%%", strconv.FormatFloat(float64(rule.GoldPPM)/10000, 'f', -1, 64)), "time": when, "code": scheme, "featured": featured, "entries": entries, "poolId": pool.ID, "revision": pool.PublishedRevision, "scheme": scheme, "kind": d.Kind, "currency": currency, "scope": scope, "rule": rule, "art": d.Art, "description": d.Description, "startsAt": d.StartsAt, "endsAt": d.EndsAt, "open": d.Open(time.Now().UTC())}
+			pages[key] = map[string]any{"title": title, "label": label, "badge": badge, "tag": fmt.Sprintf("6 星概率 %s%%", strconv.FormatFloat(float64(rule.GoldPPM)/10000, 'f', -1, 64)), "time": when, "code": scheme, "featured": featured, "entries": entries, "poolId": pool.ID, "revision": pool.PublishedRevision, "scheme": scheme, "kind": d.Kind, "currency": currency, "ticketIcon": d.TicketArt, "scope": scope, "rule": rule, "art": d.Art, "description": d.Description, "startsAt": d.StartsAt, "endsAt": d.EndsAt, "open": d.Open(time.Now().UTC())}
 		}
 	}
 	return map[string]any{"weapons": weapons, "pools": pages, "order": order}, art, nil
+}
+
+func publicSupplyAccount(account store.SupplyAccount) map[string]any {
+	pity := map[string]int{}
+	for scope, progress := range account.Pity {
+		pity[scope] = progress.Count
+	}
+	return map[string]any{"version": account.Version, "standard": account.Standard, "limited": account.Limited, "balances": account.Balances, "pity": pity}
 }
 
 func publicSupplyOrder(order store.SupplyOrder) map[string]any {
@@ -96,11 +115,7 @@ func (s *Server) supplyPlayerOrder(ctx context.Context, id, uuid string) (map[st
 	if err != nil {
 		return nil, err
 	}
-	pity := map[string]int{}
-	for k, v := range account.Pity {
-		pity[k] = v.Count
-	}
-	out["account"] = map[string]any{"version": account.Version, "standard": account.Standard, "limited": account.Limited, "pity": pity}
+	out["account"] = publicSupplyAccount(account)
 	d, err := s.Store.SupplyPoolRevision(ctx, order.PoolID, order.Revision)
 	if err != nil {
 		return nil, err

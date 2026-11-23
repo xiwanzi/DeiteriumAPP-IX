@@ -47,10 +47,35 @@ type Definition struct {
 	VisibleAt    *time.Time      `json:"visibleAt"`
 	Sort         int             `json:"sort"`
 	Art          Artwork         `json:"art"`
+	TicketID     string          `json:"ticketId,omitempty"`
+	TicketArt    string          `json:"ticketArt,omitempty"`
 	EventGoldPPM int             `json:"eventGoldPpm"`
 	EventPity    int             `json:"eventPity"`
+	Labels       *PoolLabels     `json:"labels,omitempty"`
+	Sections     []PoolSection   `json:"sections,omitempty"`
 	Rewards      []Reward        `json:"rewards"`
 	Rules        map[string]Rule `json:"rules,omitempty"`
+}
+
+type PoolLabels struct {
+	Rail   string `json:"rail"`
+	Single string `json:"single"`
+	Ten    string `json:"ten"`
+}
+
+type PoolSection struct {
+	Title string `json:"title"`
+	Body  string `json:"body"`
+}
+
+const EditorArtworkPrefix = "gacha-art-"
+
+func EditorArtworkHash(id string) string {
+	value := strings.TrimPrefix(id, EditorArtworkPrefix)
+	if value != id && hash.MatchString(value) {
+		return value
+	}
+	return ""
 }
 
 var identifier = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$`)
@@ -58,7 +83,19 @@ var namespaced = regexp.MustCompile(`^[a-z0-9_.-]+:[a-z0-9_./-]+$`)
 var hash = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 func ValidID(value string) bool       { return identifier.MatchString(value) }
-func ValidCurrency(value string) bool { return value == "STANDARD" || value == "LIMITED" }
+func ValidCurrency(value string) bool { return ValidID(value) }
+
+func LegacyCurrency(value string) bool { return value == "STANDARD" || value == "LIMITED" }
+
+func (d Definition) Currency() string {
+	if d.TicketID != "" {
+		return d.TicketID
+	}
+	if d.Kind == "STANDARD" {
+		return "STANDARD"
+	}
+	return "LIMITED"
+}
 
 func (d Definition) Open(at time.Time) bool {
 	return (d.StartsAt == nil || !at.Before(*d.StartsAt)) && (d.EndsAt == nil || at.Before(*d.EndsAt))
@@ -115,11 +152,30 @@ func (d Definition) Validate(publishing bool) error {
 	if d.Kind != "STANDARD" && d.Kind != "LIMITED" && d.Kind != "EVENT" {
 		return errors.New("卡池类型无效")
 	}
+	if d.TicketID != "" && !ValidCurrency(d.TicketID) {
+		return errors.New("请选择有效的抽奖券")
+	}
 	if d.Sort < -100000 || d.Sort > 100000 || len(d.Rewards) > 100 {
 		return errors.New("排序或奖品数量超出范围")
 	}
+	if d.Labels != nil && (!validText(d.Labels.Rail, 0, 32) || !validText(d.Labels.Single, 0, 16) || !validText(d.Labels.Ten, 0, 16)) {
+		return errors.New("卡池列表或抽取按钮文案过长")
+	}
+	if len(d.Sections) > 32 {
+		return errors.New("补给详情最多允许 32 段")
+	}
+	for _, section := range d.Sections {
+		if !validText(section.Title, 1, 80) || !validText(section.Body, 1, 2000) {
+			return errors.New("请检查补给详情的标题和正文")
+		}
+	}
 	if err := d.Art.Validate(publishing); err != nil {
 		return err
+	}
+	if d.TicketArt != "" {
+		if err := (Artwork{Detail: d.TicketArt}).Validate(false); err != nil {
+			return err
+		}
 	}
 	if d.Kind == "STANDARD" {
 		if d.EndsAt != nil || d.SeriesID != "" {

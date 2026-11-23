@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -271,13 +272,14 @@ func (s *Store) SupplyDeliveryQueue(ctx context.Context, state string, limit int
 
 // Rotate polled rows without changing their delivery state, token or proof. A full batch of
 // unresolved saves or unavailable items must not starve later rewards indefinitely.
+// Finishing the rotation under ordinary row locks also supports MariaDB 10.5.
 func (s *Store) pollSupplyDeliveries(ctx context.Context, where string, args []any, limit int) ([]SupplyDelivery, error) {
-	tx, err := s.DB.BeginTx(ctx, nil)
+	tx, err := s.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, "SELECT "+supplyDeliveryColumns+" FROM supply_deliveries WHERE "+where+" ORDER BY updated_at,id LIMIT ? FOR UPDATE SKIP LOCKED", append(args, limit)...)
+	rows, err := tx.QueryContext(ctx, "SELECT "+supplyDeliveryColumns+" FROM supply_deliveries WHERE reveal_until IS NULL AND ("+where+") ORDER BY updated_at,id LIMIT ? FOR UPDATE", append(args, limit)...)
 	if err != nil {
 		return nil, err
 	}

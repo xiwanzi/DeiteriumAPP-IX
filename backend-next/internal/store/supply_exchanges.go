@@ -36,18 +36,20 @@ func (s *Store) CreateSupplyExchange(ctx context.Context, uuid, name string, in 
 		Action string
 		Input  SupplyExchangeRequest
 	}{"exchange", in}, uuid, name, func(tx *sql.Tx) (any, error) {
-		var settings SupplySettings
-		if err := tx.QueryRowContext(ctx, "SELECT version,standard_price,limited_price FROM supply_settings WHERE id=1 LOCK IN SHARE MODE").Scan(&settings.Version, &settings.StandardPrice, &settings.LimitedPrice); err != nil {
+		settings, err := scanSupplySettings(tx.QueryRowContext(ctx, supplySettingsQuery+" LOCK IN SHARE MODE"))
+		if err != nil {
 			return nil, err
 		}
 		if settings.Version != in.SettingsVersion {
 			return nil, catalogError(409, "SUPPLY_PRICE_CHANGED", "兑换价格已更新，请重新确认")
 		}
-		price := settings.StandardPrice
-		if in.Currency == "LIMITED" {
-			price = settings.LimitedPrice
+		tickets, err := supplyTickets(ctx, tx, settings)
+		if err != nil {
+			return nil, err
 		}
-		if price <= 0 {
+		ticket := tickets[in.Currency]
+		price := ticket.UnitPrice
+		if !ticket.Enabled || price <= 0 {
 			return nil, supplyFailure("SUPPLY_EXCHANGE_DISABLED", "该票券暂未开放信用点兑换")
 		}
 		balance, err := supplyBalance(ctx, tx, uuid, in.Currency)

@@ -19,6 +19,9 @@ func (s *Server) acceptCoreReceiptV2(ctx context.Context, node config.Node, op s
 	if op.Command == "items.capture" {
 		return s.acceptSupplyCaptureReceipt(ctx, node, op, data)
 	}
+	if op.Command == supplyEditorImport || op.Command == supplyEditorArchive {
+		return s.acceptSupplyEditorReceipt(ctx, node, op, data)
+	}
 	if op.Command == "wallet.transfer" {
 		var expected struct {
 			FromUUID string `json:"fromUuid"`

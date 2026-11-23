@@ -121,7 +121,8 @@ func (s *Store) RetryCore(ctx context.Context, id string) error {
 		return err
 	}
 	money := op.Command == "wallet.transfer" || strings.HasPrefix(op.Command, "wallet.escrow.")
-	if op.Command != "player.resolve" && op.Command != "wallet.balance" && op.Command != "mailbox.query" && op.Command != "mailbox.create" && op.Command != "mailbox.revoke" && op.Command != "items.capture" && !money {
+	itemWrite := op.Command == "items.capture" || op.Command == "items.editor_import" || op.Command == "items.editor_archive"
+	if op.Command != "player.resolve" && op.Command != "wallet.balance" && op.Command != "mailbox.query" && op.Command != "mailbox.create" && op.Command != "mailbox.revoke" && !itemWrite && !money {
 		return ErrConflict
 	}
 	if op.State == "SENT" || op.State == "PROCESSING" {
@@ -130,7 +131,7 @@ func (s *Store) RetryCore(ctx context.Context, id string) error {
 	if money && op.State != "UNKNOWN" && op.State != "QUEUED" {
 		return ErrConflict
 	}
-	if op.Command == "items.capture" && op.State != "UNKNOWN" && op.State != "QUEUED" {
+	if itemWrite && op.State != "UNKNOWN" && op.State != "QUEUED" {
 		return ErrConflict
 	}
 	_, err = s.DB.ExecContext(ctx, "UPDATE core_operations SET state='QUEUED',result=NULL,expires_at=DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 60 SECOND),updated_at=UTC_TIMESTAMP(6) WHERE operation_id=? AND state=?", id, op.State)

@@ -50,18 +50,18 @@ func (d Definition) Rule(scheme string) (Rule, string, string, error) {
 	switch d.Kind {
 	case "STANDARD":
 		if scheme == "80" {
-			return d.frozenRule(scheme, Rule{5000, 80, 80}), "standard", "STANDARD", nil
+			return d.frozenRule(scheme, Rule{5000, 80, 80}), "standard", d.Currency(), nil
 		}
 	case "LIMITED":
 		if scheme == "80" {
-			return d.frozenRule(scheme, Rule{5000, 80, 80}), "limited:80", "LIMITED", nil
+			return d.frozenRule(scheme, Rule{5000, 80, 80}), "limited:80", d.Currency(), nil
 		}
 		if scheme == "120" {
-			return d.frozenRule(scheme, Rule{12000, 100, 120}), "limited:120", "LIMITED", nil
+			return d.frozenRule(scheme, Rule{12000, 100, 120}), "limited:120", d.Currency(), nil
 		}
 	case "EVENT":
 		if scheme == "event" && d.SeriesID != "" {
-			return d.frozenRule(scheme, Rule{d.EventGoldPPM, d.EventPity, d.EventPity}), "event:" + d.SeriesID, "LIMITED", nil
+			return d.frozenRule(scheme, Rule{d.EventGoldPPM, d.EventPity, d.EventPity}), "event:" + d.SeriesID, d.Currency(), nil
 		}
 	}
 	return Rule{}, "", "", errors.New("抽取方案不属于当前卡池")

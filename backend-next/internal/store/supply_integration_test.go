@@ -319,3 +319,25 @@ func TestSupplyPriceChangeRequiresConfirmationAndSettlementIsIdempotent(t *testi
 		t.Fatal(a, err)
 	}
 }
+
+func TestSupplyTicketCatalogBackfillsAnExistingPublicationOnce(t *testing.T) {
+	s, _ := supplyFixture(t)
+	ctx := context.Background()
+	const migration = "048_supply_ticket_catalogs.sql"
+	if _, err := s.DB.ExecContext(ctx, "DELETE FROM schema_migrations_next WHERE version=?", migration); err != nil {
+		t.Fatal(err)
+	}
+	const previous = `{"tickets":[{"id":"STANDARD","name":"常驻补给券","price":100,"enabled":true},{"id":"LIMITED","name":"限定补给券","price":100,"enabled":true}],"pools":[]}`
+	if _, err := s.DB.ExecContext(ctx, "INSERT INTO supply_editor_publications VALUES(4,?,UTC_TIMESTAMP(6))", previous); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if err := s.Migrate(ctx); err != nil {
+			t.Fatal(err)
+		}
+		settings, err := s.SupplySettings(ctx)
+		if err != nil || settings.Version != 2 || settings.StandardPrice != 10000 || settings.LimitedPrice != 10000 {
+			t.Fatal(settings, err)
+		}
+	}
+}

@@ -77,15 +77,17 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
         mailbox = attachMailbox();
         initialized.add(mailbox);
         commands = new CommandDispatcher(settings::get, () -> mailbox, game, sessions, players, journal, economy,
-                new InventoryCatalogCapture(settings::get, sessions, this::inventoryAccess, game, codec, catalog));
+                new InventoryCatalogCapture(settings::get, sessions, this::inventoryAccess, game, codec, catalog),
+                new EditorItemCatalog(settings::get, game, codec, catalog));
         bridge = new BridgeClient(settings::get, outbox, this, workers, plugin.getLogger());
         playerEvents.onChange(bridge::presenceChanged);
         initialized.add(bridge);
         gameChat = new cafe.deuterium.core.game.GameChatChannel(plugin, settings::get, game, chat, sessions, players);
         chat.bindGameChat(gameChat); initialized.add(gameChat);
         supplyHttp = new cafe.deuterium.core.supply.SupplyHttp(settings::get); initialized.add(supplyHttp);
-        supplyChannel = new cafe.deuterium.core.supply.SupplyChannel(plugin, sessions, supplyHttp); initialized.add(supplyChannel);
         supplyDelivery = new cafe.deuterium.core.supply.SupplyDeliveryPump(plugin, this, supplyHttp); initialized.add(supplyDelivery);
+        supplyChannel = new cafe.deuterium.core.supply.SupplyChannel(plugin, sessions, supplyHttp,
+                supplyDelivery::requestPoll); initialized.add(supplyChannel);
         timer = Executors.newSingleThreadScheduledExecutor(task -> { Thread thread = new Thread(task, "DeuteriumCore-Timer"); thread.setDaemon(true); return thread; });
         initialized.add(timer::shutdownNow);
         timer.scheduleWithFixedDelay(this::tick, 0, 1, TimeUnit.SECONDS);
@@ -169,7 +171,7 @@ public final class CoreRuntime implements AutoCloseable, BridgeEndpoint, Listene
     public void ensureOpen() { if (closing.get()) throw new CoreFailure("CORE_STOPPED", "Core 已停用。"); }
     @Override public void close() {
         if (!closing.compareAndSet(false, true)) return;
-        supplyDelivery.close(); supplyChannel.close(); supplyHttp.close();
+        supplyChannel.close(); supplyDelivery.close(); supplyHttp.close();
         gameChat.close(); bridge.close(); timer.shutdownNow(); game.close(); localData.disable(); mailbox.close();
         HandlerList.unregisterAll(plugin);
         Bukkit.getServicesManager().unregisterAll(plugin); workers.close(); sessions.clear();

@@ -23,10 +23,11 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 /** Binds player requests to the actual connection before forwarding to the supply authority. */
 public final class SupplyChannel implements PluginMessageListener, AutoCloseable {
     public static final String CHANNEL = "deuterium:supply";
-    private static final Set<String> ACTIONS = Set.of("state", "draw", "exchange", "order", "exchange-status", "history", "ledger");
+    private static final Set<String> ACTIONS = Set.of("state", "draw", "reveal-complete", "exchange", "order", "exchange-status", "history", "ledger");
     private final JavaPlugin plugin;
     private final Sessions sessions;
     private final SupplyHttp http;
+    private final Runnable deliveryReady;
     private final Map<UUID, long[]> rates = new HashMap<>();
     private final Map<UUID, Integer> pending = new HashMap<>();
     private final ThreadPoolExecutor io = new ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS,
@@ -36,8 +37,9 @@ public final class SupplyChannel implements PluginMessageListener, AutoCloseable
     private final org.bukkit.scheduler.BukkitTask cleanup;
     private volatile boolean closed;
 
-    public SupplyChannel(JavaPlugin plugin, Sessions sessions, SupplyHttp http) {
+    public SupplyChannel(JavaPlugin plugin, Sessions sessions, SupplyHttp http, Runnable deliveryReady) {
         this.plugin = plugin; this.sessions = sessions; this.http = http;
+        this.deliveryReady = deliveryReady;
         Bukkit.getMessenger().registerIncomingPluginChannel(plugin, CHANNEL, this);
         Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, CHANNEL);
         cleanup = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -66,7 +68,11 @@ public final class SupplyChannel implements PluginMessageListener, AutoCloseable
             try {
                 io.execute(() -> {
                     JsonObject result = envelope(id);
-                    try { result.add("data", http.post(action, input)); result.addProperty("success", true); }
+                    try {
+                        result.add("data", http.post(action, input));
+                        result.addProperty("success", true);
+                        if ("reveal-complete".equals(action)) deliveryReady.run();
+                    }
                     catch (Exception failure) { failure(result, failure); }
                     main(() -> {
                         pending.computeIfPresent(uuid, (key, count) -> count <= 1 ? null : count - 1);
@@ -89,6 +95,16 @@ public final class SupplyChannel implements PluginMessageListener, AutoCloseable
         input.add("requestId", packet.get("requestId"));
         for (String key : Set.of("draw", "exchange", "orderId", "exchangeId", "filter")) {
             if (packet.has(key)) input.add(key, packet.get(key).deepCopy());
+        }
+        var ticketCatalog = packet.get("ticketCatalog");
+        if (ticketCatalog != null && ticketCatalog.isJsonPrimitive() && ticketCatalog.getAsJsonPrimitive().isBoolean()
+                && ticketCatalog.getAsBoolean() && "state".equals(Json.string(packet, "action"))) {
+            input.addProperty("ticketCatalog", true);
+        }
+        var awaitReveal = packet.get("awaitReveal");
+        if (awaitReveal != null && awaitReveal.isJsonPrimitive() && awaitReveal.getAsJsonPrimitive().isBoolean()
+                && awaitReveal.getAsBoolean() && "draw".equals(Json.string(packet, "action"))) {
+            input.addProperty("awaitReveal", true);
         }
         return input;
     }

@@ -47,6 +47,8 @@ type Server struct {
 	profiles             *profileCapacity
 	profileInit          sync.Once
 	supplyDone           chan struct{}
+	supplyExchangeRuns   sync.Map
+	supplyExchangeSlots  chan struct{}
 }
 
 func New(s *store.Store, c config.Config) *Server {
@@ -88,6 +90,7 @@ func New(s *store.Store, c config.Config) *Server {
 	server.initDesktopLauncher()
 	server.ysm = newYSMBridge(c)
 	server.supplyDone = make(chan struct{})
+	server.supplyExchangeSlots = make(chan struct{}, 4)
 	go server.supplyWorker()
 	return server
 }
@@ -115,6 +118,9 @@ func (s *Server) Handler() http.Handler {
 	s.registerGameTitles(mux)
 	s.registerSupplyAdmin(mux)
 	s.registerSupplyInventory(mux)
+	s.registerSupplyEditorItems(mux)
+	s.registerSupplyEditorArtwork(mux)
+	s.registerSupplyEditorPublication(mux)
 	s.registerSupplyArtwork(mux)
 	s.registerSupplyGame(mux)
 	s.registerPlayerNames(mux)

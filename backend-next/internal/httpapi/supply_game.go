@@ -3,23 +3,27 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/config"
 	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/store"
+	"github.com/xiwanzi/DeuteriumAPP/backend-next/internal/supply"
 )
 
 type supplyGameRequest struct {
-	PlayerUUID   string                       `json:"playerUuid"`
-	SessionEpoch string                       `json:"sessionEpoch"`
-	RequestID    string                       `json:"requestId"`
-	Draw         *store.SupplyDrawRequest     `json:"draw,omitempty"`
-	Exchange     *store.SupplyExchangeRequest `json:"exchange,omitempty"`
-	OrderID      string                       `json:"orderId,omitempty"`
-	ExchangeID   string                       `json:"exchangeId,omitempty"`
-	Filter       *store.SupplyFilter          `json:"filter,omitempty"`
+	PlayerUUID    string                       `json:"playerUuid"`
+	SessionEpoch  string                       `json:"sessionEpoch"`
+	RequestID     string                       `json:"requestId"`
+	Draw          *store.SupplyDrawRequest     `json:"draw,omitempty"`
+	Exchange      *store.SupplyExchangeRequest `json:"exchange,omitempty"`
+	OrderID       string                       `json:"orderId,omitempty"`
+	ExchangeID    string                       `json:"exchangeId,omitempty"`
+	Filter        *store.SupplyFilter          `json:"filter,omitempty"`
+	TicketCatalog bool                         `json:"ticketCatalog,omitempty"`
+	AwaitReveal   bool                         `json:"awaitReveal,omitempty"`
 }
 
 func (s *Server) supplyNode(r *http.Request) (config.Node, error) {
@@ -43,7 +47,7 @@ func (s *Server) supplyPlayer(node config.Node, uuid, epoch string) (store.CoreP
 }
 
 func (s *Server) registerSupplyGame(mux *http.ServeMux) {
-	for _, action := range []string{"state", "draw", "exchange", "order", "exchange-status", "history", "ledger"} {
+	for _, action := range []string{"state", "draw", "reveal-complete", "exchange", "order", "exchange-status", "history", "ledger"} {
 		mux.HandleFunc("POST /bridge/v1/supply/"+action, func(w http.ResponseWriter, r *http.Request) {
 			node, err := s.supplyNode(r)
 			if err != nil {
@@ -63,21 +67,33 @@ func (s *Server) registerSupplyGame(mux *http.ServeMux) {
 			var out any
 			switch action {
 			case "state":
-				out, err = s.supplyGameState(r.Context(), player)
+				out, err = s.supplyGameState(r.Context(), player, in.TicketCatalog)
 			case "draw":
 				if in.Draw == nil {
 					err = store.ErrSocialInvalid
 					break
 				}
+				in.Draw.AwaitReveal = in.AwaitReveal
 				var raw json.RawMessage
 				raw, err = s.Store.DrawSupply(r.Context(), player.PlayerUUID, player.GameID, *in.Draw)
 				if err == nil {
 					var order store.SupplyOrder
 					err = json.Unmarshal(raw, &order)
 					if err == nil {
-						out, err = s.supplyPlayerOrder(r.Context(), order.ID, player.PlayerUUID)
+						receipt, e := s.supplyPlayerOrder(r.Context(), order.ID, player.PlayerUUID)
+						if e == nil && in.AwaitReveal {
+							receipt["awaitReveal"] = true
+						}
+						out, err = receipt, e
 					}
 				}
+			case "reveal-complete":
+				if !supply.ValidID(in.OrderID) {
+					err = store.ErrSocialInvalid
+					break
+				}
+				err = s.Store.ReleaseSupplyReveal(r.Context(), in.OrderID, player.PlayerUUID)
+				out = map[string]bool{"released": true}
 			case "exchange":
 				if in.Exchange == nil {
 					err = store.ErrSocialInvalid
@@ -89,6 +105,11 @@ func (s *Server) registerSupplyGame(mux *http.ServeMux) {
 					var x store.SupplyExchange
 					err = json.Unmarshal(raw, &x)
 					if err == nil {
+						attempt, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+						if e := s.processSupplyExchange(attempt, x.ID, player.PlayerUUID); e != nil && attempt.Err() == nil {
+							slog.Warn("Supply exchange awaiting recovery", "exchange", x.ID, "error", e)
+						}
+						cancel()
 						out, err = s.supplyPlayerExchange(r.Context(), x.ID, player.PlayerUUID)
 					}
 				}
@@ -251,8 +272,8 @@ func (s *Server) registerSupplyDeliveryBridge(mux *http.ServeMux) {
 	})
 }
 
-func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIdentity) (map[string]any, error) {
-	pools, err := s.Store.SupplyPools(ctx, false)
+func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIdentity, supportsTicketCatalog bool) (map[string]any, error) {
+	published, err := s.Store.SupplyPlayerCatalog(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -260,17 +281,16 @@ func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIde
 	if err != nil {
 		return nil, err
 	}
-	settings, err := s.Store.SupplySettings(ctx)
-	if err != nil {
-		return nil, err
+	pools := make([]store.SupplyPool, 0, len(published.Pools))
+	for _, pool := range published.Pools {
+		currency := pool.Definition.Currency()
+		if published.Tickets[currency].Enabled && (supportsTicketCatalog || supply.LegacyCurrency(currency)) {
+			pools = append(pools, pool)
+		}
 	}
 	catalog, art, err := s.publicSupplyCatalog(ctx, pools)
 	if err != nil {
 		return nil, err
-	}
-	pity := map[string]int{}
-	for scope, p := range account.Pity {
-		pity[scope] = p.Count
 	}
 	var credits any
 	node, e := s.economyNode()
@@ -285,7 +305,8 @@ func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIde
 			}
 		}
 	}
-	return map[string]any{"protocol": 1, "serverTime": time.Now().UTC(), "catalog": catalog, "artwork": art, "account": map[string]any{"version": account.Version, "standard": account.Standard, "limited": account.Limited, "pity": pity}, "settings": settings, "credits": credits}, nil
+	return map[string]any{"protocol": 1, "serverTime": time.Now().UTC(), "catalog": catalog, "artwork": art,
+		"account": publicSupplyAccount(account), "settings": published.Settings, "tickets": published.Tickets, "credits": credits}, nil
 }
 
 func (s *Server) supplyPlayerExchange(ctx context.Context, id, uuid string) (map[string]any, error) {
@@ -305,10 +326,6 @@ func (s *Server) supplyPlayerExchange(ctx context.Context, id, uuid string) (map
 	if err != nil {
 		return nil, err
 	}
-	pity := map[string]int{}
-	for k, v := range account.Pity {
-		pity[k] = v.Count
-	}
-	out["account"] = map[string]any{"version": account.Version, "standard": account.Standard, "limited": account.Limited, "pity": pity}
+	out["account"] = publicSupplyAccount(account)
 	return out, nil
 }
