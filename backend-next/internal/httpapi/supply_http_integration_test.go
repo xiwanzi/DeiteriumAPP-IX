@@ -156,7 +156,7 @@ func (f *supplyHTTPFixture) coreReply(ctx context.Context, node config.Node, fra
 		copyJSON, _ := json.Marshal(result.Data)
 		var copyData map[string]any
 		json.Unmarshal(copyJSON, &copyData)
-		if copyData != nil {
+		if copyData != nil && strings.HasPrefix(request.Command, "wallet.") {
 			copyData["operationId"] = request.OperationID
 		}
 		data = copyData
@@ -428,6 +428,68 @@ func TestSupplyExchangeRecoversTheOriginalCommittedSettlement(t *testing.T) {
 	f.funds.mu.Unlock()
 	if reserves != 1 || settlements != 1 {
 		t.Fatal("recovery repeated a money operation", reserves, settlements)
+	}
+}
+
+func TestSupplyExpiredTenRollOrderCreatesOneMailWithTenAttachments(t *testing.T) {
+	f := newSupplyHTTPFixture(t, "")
+	ctx := context.Background()
+	p := f.pool(t, "邮件十连", "LIMITED", "printstream")
+	_, err := f.store.AdjustSupplyTickets(ctx, f.admin.ID, store.SupplyAdjustment{ClientRequestID: "fund_batch", PlayerUUID: f.player.ServerUUID, Currency: "LIMITED", Action: "add", Amount: 10, Reason: "test"}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := f.store.DrawSupply(ctx, f.player.ServerUUID, f.player.GameID, store.SupplyDrawRequest{ClientRequestID: "batch_mail", PoolID: p.ID, Revision: p.PublishedRevision, Scheme: "80", Quantity: 10, AwaitReveal: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var order store.SupplyOrder
+	if err = json.Unmarshal(raw, &order); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.store.DB.Exec("UPDATE supply_deliveries SET reveal_until=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 SECOND) WHERE order_id=?", order.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err = f.store.MailExpiredSupplyReveals(ctx); err != nil {
+		t.Fatal(err)
+	}
+	batches, err := f.store.SupplyOrderMail(ctx, order.ID)
+	if err != nil || len(batches) != 1 {
+		t.Fatal(batches, err)
+	}
+	b := batches[0]
+	payload, err := supplyMailPayload(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snapshot struct {
+		Attachments []struct {
+			ItemRef  string
+			Quantity int
+		}
+	}
+	if err = json.Unmarshal([]byte(payload["snapshotJson"].(string)), &snapshot); err != nil || len(snapshot.Attachments) != 10 {
+		t.Fatal(snapshot, err)
+	}
+	for i, item := range snapshot.Attachments {
+		if item.ItemRef != order.Rolls[i].Reward.ItemRef || item.Quantity != 1 {
+			t.Fatal("wrong attachment", i, item)
+		}
+	}
+	for range 2 {
+		if err = f.app.processSupplyMail(ctx, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	f.funds.mu.Lock()
+	creates := f.funds.calls["mailbox.create"]
+	f.funds.mu.Unlock()
+	if creates != 1 {
+		t.Fatalf("created %d mails for one order", creates)
+	}
+	var mailed int
+	if err = f.store.DB.QueryRow("SELECT COUNT(*) FROM supply_deliveries WHERE order_id=? AND state='MAIL' AND mail_operation=?", order.ID, b.ID).Scan(&mailed); err != nil || mailed != 10 {
+		t.Fatal(mailed, err)
 	}
 }
 

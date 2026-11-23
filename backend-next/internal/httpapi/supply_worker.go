@@ -64,16 +64,28 @@ func (s *Server) supplyWorker() {
 		}
 		mail, e := s.Store.SupplyDeliveryQueue(ctx, "MAIL_PENDING", 16)
 		if e == nil {
+			seen := make(map[string]bool)
 			for _, d := range mail {
+				if seen[d.OrderID] {
+					continue
+				}
+				seen[d.OrderID] = true
 				slots <- struct{}{}
 				wg.Add(1)
-				go func(d store.SupplyDelivery) {
+				go func(order string) {
 					defer wg.Done()
 					defer func() { <-slots }()
-					if e := s.processSupplyMail(ctx, d); e != nil && ctx.Err() == nil {
-						slog.Warn("Supply mail awaiting recovery", "delivery", d.ID, "error", e)
+					batches, err := s.Store.SupplyOrderMail(ctx, order)
+					if err != nil {
+						slog.Warn("Supply mail lookup failed", "order", order, "error", err)
+						return
 					}
-				}(d)
+					for _, batch := range batches {
+						if err := s.processSupplyMail(ctx, batch); err != nil && ctx.Err() == nil {
+							slog.Warn("Supply mail awaiting recovery", "order", order, "error", err)
+						}
+					}
+				}(d.OrderID)
 			}
 			wg.Wait()
 		}
@@ -185,22 +197,29 @@ func verifySupplyMoney(result CommerceCoreResultV2, x store.SupplyExchange) erro
 	return nil
 }
 
-func supplyMailPayload(d store.SupplyDelivery) (map[string]any, error) {
+func supplyMailPayload(batch store.SupplyMail) (map[string]any, error) {
+	d := batch.Items[0]
 	r := d.Reward
-	snapshot := map[string]any{"schemaVersion": 1, "orderId": d.OrderID, "recipientUuid": d.PlayerUUID, "inventoryDomain": r.InventoryDomain, "allowedServerIds": r.Servers, "attachments": []map[string]any{{"itemRef": r.ItemRef, "revision": r.ItemRevision, "quantity": 1, "payloadSha256": r.PayloadSHA256}}}
+	attachments := make([]map[string]any, 0, len(batch.Items))
+	for _, item := range batch.Items {
+		award := item.Reward
+		attachments = append(attachments, map[string]any{"itemRef": award.ItemRef, "revision": award.ItemRevision, "quantity": 1, "payloadSha256": award.PayloadSHA256})
+	}
+	snapshot := map[string]any{"schemaVersion": 1, "orderId": d.OrderID, "recipientUuid": d.PlayerUUID, "inventoryDomain": r.InventoryDomain, "allowedServerIds": batch.Servers, "attachments": attachments}
 	raw, err := json.Marshal(snapshot)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"source": "deuterium-commerce", "deliveryId": d.ID, "orderId": d.OrderID, "recipientUuid": d.PlayerUUID, "title": "武器补给奖励", "body": "本次抽取的奖励已送达。订单：" + d.OrderID, "sender": "武器补给", "snapshotJson": string(raw), "snapshotSha256": store.Digest(raw), "allowedServerIds": r.Servers, "inventoryDomain": r.InventoryDomain}, nil
+	return map[string]any{"source": "deuterium-commerce", "deliveryId": batch.ID, "orderId": d.OrderID, "recipientUuid": d.PlayerUUID, "title": "武器补给奖励", "body": "本次抽取的奖励已送达。订单：" + d.OrderID, "sender": "武器补给", "snapshotJson": string(raw), "snapshotSha256": store.Digest(raw), "allowedServerIds": batch.Servers, "inventoryDomain": r.InventoryDomain}, nil
 }
 
-func (s *Server) processSupplyMail(ctx context.Context, d store.SupplyDelivery) error {
-	payload, err := supplyMailPayload(d)
+func (s *Server) processSupplyMail(ctx context.Context, batch store.SupplyMail) error {
+	d := batch.Items[0]
+	payload, err := supplyMailPayload(batch)
 	if err != nil {
 		return err
 	}
-	result, err := s.CommerceCore.Execute(ctx, d.PlayerUUID, "mail_"+d.ID, "mailbox.create", payload)
+	result, err := s.CommerceCore.Execute(ctx, d.PlayerUUID, "mail_"+batch.ID, "mailbox.create", payload)
 	if err != nil {
 		if mark := s.Store.SupplyDeliveryError(ctx, d.ID, "邮箱服务暂不可用，等待恢复"); mark != nil {
 			return mark
@@ -211,12 +230,12 @@ func (s *Server) processSupplyMail(ctx context.Context, d store.SupplyDelivery) 
 		return s.Store.SupplyDeliveryError(ctx, d.ID, result.ErrorCode)
 	}
 	value, ok := result.Data["value"].(map[string]any)
-	if !ok || value["deliveryId"] != d.ID || value["orderId"] != d.OrderID || value["recipientUuid"] != d.PlayerUUID || value["snapshotSha256"] != payload["snapshotSha256"] {
+	if !ok || value["deliveryId"] != batch.ID || value["orderId"] != d.OrderID || value["recipientUuid"] != d.PlayerUUID || value["snapshotSha256"] != payload["snapshotSha256"] {
 		return s.Store.SupplyDeliveryError(ctx, d.ID, "邮箱回执与抽取订单不一致")
 	}
 	status, _ := value["status"].(string)
 	if status != "CREATED" && status != "CLAIMING" && status != "CLAIMED" {
 		return s.Store.SupplyDeliveryError(ctx, d.ID, "邮箱尚未确认交付")
 	}
-	return s.Store.CompleteSupplyMail(ctx, d.ID, value)
+	return s.Store.CompleteSupplyOrderMail(ctx, batch, value)
 }

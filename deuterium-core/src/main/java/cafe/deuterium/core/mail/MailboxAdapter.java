@@ -122,12 +122,15 @@ public final class MailboxAdapter implements CoreMailbox {
         long credits = snapshot.has("creditAmount") ? Json.integer(snapshot, "creditAmount") : 0L;
         if (credits < 0 || credits > 1000000000000L) throw CoreFailure.invalid("信用点数量超出范围。");
         if (attachments == null || (attachments.isEmpty() && credits == 0) || attachments.size() > 32) throw CoreFailure.invalid("请配置实物或信用点附件。");
+        boolean supplyRolls = credits == 0 && attachments.size() <= 10 && order.matches("sd_[0-9a-f]{32}")
+                && Json.string(payload, "deliveryId").matches("batch_" + order + "_(0[1-9]|10)");
         Set<String> seen = new HashSet<>(); List<MailboxItem> resolved = new ArrayList<>(); long totalBytes = 0;
         for (JsonElement value : attachments) {
             JsonObject attachment = value.getAsJsonObject(); Json.fields(attachment, "itemRef", "revision", "quantity", "payloadSha256");
             String ref = Checks.itemRef(Json.string(attachment, "itemRef"), config.get().namespace());
             long revision = Json.integer(attachment, "revision"), quantity = Json.integer(attachment, "quantity");
-            if (revision < 1 || revision > Integer.MAX_VALUE || quantity < 1 || quantity > 99999 || !seen.add(ref + "@" + revision))
+            if (revision < 1 || revision > Integer.MAX_VALUE || quantity < 1 || quantity > 99999
+                    || (supplyRolls ? quantity != 1 : !seen.add(ref + "@" + revision)))
                 throw CoreFailure.invalid("附件版本、数量或重复项不正确。");
             ItemVersion item = catalog.find(ref, revision);
             if (!item.payloadSha256().equals(hash(Json.string(attachment, "payloadSha256"))) || quantity > item.maxQuantity()

@@ -103,7 +103,7 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 		if err != nil {
 			return nil, err
 		}
-		result, err := tx.ExecContext(ctx, `INSERT INTO supply_orders(id,player_uuid,pool_id,pool_name,revision,scheme,currency,quantity,scope,rule_json,definition_json,result_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, order.ID, uuid, in.PoolID, d.Name, revision, in.Scheme, currency, in.Quantity, scope, ruleJSON, raw, rollJSON, now)
+		result, err := tx.ExecContext(ctx, `INSERT INTO supply_orders(id,player_uuid,pool_id,pool_name,revision,scheme,currency,quantity,scope,rule_json,definition_json,result_json,created_at,grouped_mail) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,1)`, order.ID, uuid, in.PoolID, d.Name, revision, in.Scheme, currency, in.Quantity, scope, ruleJSON, raw, rollJSON, now)
 		if err != nil {
 			return nil, err
 		}

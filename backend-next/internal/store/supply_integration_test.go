@@ -83,6 +83,76 @@ func supplyFund(t *testing.T, s *store.Store, actor string, amount int64) {
 	}
 }
 
+func TestSupplyMailWaitsForAllRollsAndConfirmsOnlyOverflowOnce(t *testing.T) {
+	s, actor := supplyFixture(t)
+	ctx := context.Background()
+	pool := supplyPublish(t, s, actor, "mail-batch", supplyDefinition("LIMITED"))
+	supplyFund(t, s, actor, 10)
+	raw, err := s.DrawSupply(ctx, supplyPlayer, "SupplyPlayer", store.SupplyDrawRequest{ClientRequestID: "ten-mail", PoolID: pool.ID, Revision: pool.PublishedRevision, Scheme: "80", Quantity: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var order store.SupplyOrder
+	if err = json.Unmarshal(raw, &order); err != nil {
+		t.Fatal(err)
+	}
+	update := func(query string, args ...any) {
+		t.Helper()
+		if _, e := s.DB.Exec(query, args...); e != nil {
+			t.Fatal(e)
+		}
+	}
+	read := func() []store.SupplyMail {
+		t.Helper()
+		m, e := s.SupplyOrderMail(ctx, order.ID)
+		if e != nil {
+			t.Fatal(e)
+		}
+		return m
+	}
+	update("UPDATE supply_deliveries SET state='MAIL_PENDING' WHERE order_id=? AND ordinal<>1", order.ID)
+	if m := read(); len(m) != 0 {
+		t.Fatal("partial batch sent", m)
+	}
+	update("UPDATE supply_deliveries SET state='REVIEW' WHERE order_id=? AND ordinal=1", order.ID)
+	if m := read(); len(m) != 0 {
+		t.Fatal("unconfirmed inventory was mailed", m)
+	}
+	update("UPDATE supply_deliveries SET state='MAIL_PENDING' WHERE order_id=?", order.ID)
+	m := read()
+	if len(m) != 1 || len(m[0].Items) != 10 {
+		t.Fatal("ten rolls must share a mail", m)
+	}
+	for i, d := range m[0].Items {
+		if d.Ordinal != i+1 {
+			t.Fatal("unstable attachment order")
+		}
+	}
+	update("UPDATE supply_orders SET grouped_mail=0 WHERE id=?", order.ID)
+	if old := read(); len(old) != 10 || old[0].ID != m[0].Items[0].ID {
+		t.Fatal("legacy receipt identity changed")
+	}
+	update("UPDATE supply_orders SET grouped_mail=1 WHERE id=?", order.ID)
+	update("UPDATE supply_deliveries SET state='INVENTORY' WHERE order_id=? AND ordinal<=3", order.ID)
+	m = read()
+	if len(m) != 1 || len(m[0].Items) != 7 || m[0].Items[0].Ordinal != 4 {
+		t.Fatal("incorrect overflow", m)
+	}
+	receipt := map[string]string{"deliveryId": m[0].ID}
+	for range 2 {
+		if err = s.CompleteSupplyOrderMail(ctx, m[0], receipt); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(read()) != 0 {
+		t.Fatal("committed mail still queued")
+	}
+	var delivered int
+	if err = s.DB.QueryRow("SELECT COUNT(*) FROM supply_deliveries WHERE order_id=? AND state='MAIL' AND mail_operation=?", order.ID, m[0].ID).Scan(&delivered); err != nil || delivered != 7 {
+		t.Fatal(delivered, err)
+	}
+}
+
 func TestSupplyDeliveryPollingReachesRewardsBeyondAnUnresolvedBatch(t *testing.T) {
 	s, actor := supplyFixture(t)
 	ctx := context.Background()
