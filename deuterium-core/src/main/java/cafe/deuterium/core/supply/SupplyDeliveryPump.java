@@ -35,20 +35,26 @@ public final class SupplyDeliveryPump implements AutoCloseable {
     private final Set<String> reported = ConcurrentHashMap.newKeySet();
     private final Map<String, JsonObject> finishes = new ConcurrentHashMap<>();
     private final AtomicBoolean polling = new AtomicBoolean();
+    private final AtomicBoolean pollRequested = new AtomicBoolean();
     private final org.bukkit.scheduler.BukkitTask timer;
     private volatile boolean closed;
 
     public SupplyDeliveryPump(JavaPlugin plugin, CoreRuntime runtime, SupplyHttp http) {
         this.plugin = plugin; this.runtime = runtime; this.http = http;
         inventory = new SupplyInventoryDelivery(runtime.sessions, runtime::inventoryAccess);
-        timer = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (closed || !polling.compareAndSet(false, true)) return;
-            try { workers.execute(this::poll); }
-            catch (RejectedExecutionException full) { polling.set(false); }
-        }, 40, 40);
+        timer = Bukkit.getScheduler().runTaskTimer(plugin, this::requestPoll, 40, 40);
+    }
+
+    public void requestPoll() {
+        if (closed) return;
+        pollRequested.set(true);
+        if (!polling.compareAndSet(false, true)) return;
+        try { workers.execute(this::poll); }
+        catch (RejectedExecutionException full) { polling.set(false); }
     }
 
     private void poll() {
+        pollRequested.set(false);
         try {
             for (var entry : finishes.entrySet()) schedule(entry.getKey(), () -> finish(entry.getKey(), entry.getValue()));
             JsonObject response = http.post("deliveries", new JsonObject());
@@ -58,7 +64,10 @@ public final class SupplyDeliveryPump implements AutoCloseable {
                 if (!finishes.containsKey(id)) schedule(id, () -> process(delivery));
             }
         } catch (Exception failure) { report("poll", failure); }
-        finally { polling.set(false); }
+        finally {
+            polling.set(false);
+            if (pollRequested.get()) requestPoll();
+        }
     }
 
     @FunctionalInterface private interface Job { void run() throws Exception; }

@@ -22,6 +22,16 @@ func (s *Server) supplyArtwork(ctx context.Context, pool store.SupplyPool, publi
 	out := map[string]any{}
 	builtin := builtinSupplyArt()
 	for _, id := range pool.Definition.AllArtwork() {
+		if digest := supply.EditorArtworkHash(id); digest != "" {
+			image, err := s.Store.SupplyEditorArtworkInfo(ctx, digest, published)
+			if err != nil {
+				return nil, err
+			}
+			out[id] = map[string]any{"assetId": id, "sha256": digest, "contentType": "image/png",
+				"url":   s.Config.PublicOrigin + publicSupplyEditorArtworkPath + digest,
+				"width": image.Width, "height": image.Height, "sizeBytes": image.SizeBytes}
+			continue
+		}
 		if strings.HasPrefix(id, "builtin-") {
 			if builtin[id] == nil {
 				return nil, store.ErrAssetUnavailable

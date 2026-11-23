@@ -18,7 +18,7 @@ func (s *Store) ClaimSupplyDelivery(ctx context.Context, id, node, uuid, epoch s
 		return SupplyDelivery{}, err
 	}
 	defer tx.Rollback()
-	d, err := scanSupplyDelivery(tx.QueryRowContext(ctx, "SELECT "+supplyDeliveryColumns+" FROM supply_deliveries WHERE id=? AND player_uuid=? FOR UPDATE", id, uuid))
+	d, err := scanSupplyDelivery(tx.QueryRowContext(ctx, "SELECT "+supplyDeliveryColumns+" FROM supply_deliveries WHERE id=? AND player_uuid=? AND reveal_until IS NULL FOR UPDATE", id, uuid))
 	if err != nil {
 		return d, socialMissing(err)
 	}
@@ -139,7 +139,26 @@ func (s *Store) FinishSupplyDelivery(ctx context.Context, node string, in Supply
 }
 
 func (s *Store) RouteOfflineSupplyDelivery(ctx context.Context, id string) error {
-	_, err := s.DB.ExecContext(ctx, "UPDATE supply_deliveries SET state='MAIL_PENDING',last_error='PLAYER_OFFLINE',updated_at=UTC_TIMESTAMP(6) WHERE id=? AND (state='PENDING' OR (state='PREPARING' AND lease_until<UTC_TIMESTAMP(6)))", id)
+	_, err := s.DB.ExecContext(ctx, "UPDATE supply_deliveries SET state='MAIL_PENDING',last_error='PLAYER_OFFLINE',updated_at=UTC_TIMESTAMP(6) WHERE id=? AND reveal_until IS NULL AND (state='PENDING' OR (state='PREPARING' AND lease_until<UTC_TIMESTAMP(6)))", id)
+	return err
+}
+
+// Acknowledging the rendered summary releases only the owner's existing undelivered rewards.
+func (s *Store) ReleaseSupplyReveal(ctx context.Context, orderID, uuid string) error {
+	var exists int
+	if err := s.DB.QueryRowContext(ctx, "SELECT 1 FROM supply_orders WHERE id=? AND player_uuid=?", orderID, uuid).Scan(&exists); err != nil {
+		return socialMissing(err)
+	}
+	_, err := s.DB.ExecContext(ctx, "UPDATE supply_deliveries SET reveal_until=NULL WHERE order_id=? AND player_uuid=? AND state='PENDING' AND reveal_until IS NOT NULL", orderID, uuid)
+	return err
+}
+
+// If the display was interrupted, move still-held rewards straight to mail.
+// Eligibility and its destination change atomically, so an inventory claim cannot win after the fallback.
+func (s *Store) MailExpiredSupplyReveals(ctx context.Context) error {
+	_, err := s.DB.ExecContext(ctx, `
+		UPDATE supply_deliveries SET state='MAIL_PENDING',reveal_until=NULL,last_error='REVEAL_EXPIRED',updated_at=UTC_TIMESTAMP(6)
+		WHERE state='PENDING' AND reveal_until<=UTC_TIMESTAMP(6) ORDER BY reveal_until,id LIMIT 32`)
 	return err
 }
 

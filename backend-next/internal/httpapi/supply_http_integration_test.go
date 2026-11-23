@@ -35,6 +35,8 @@ type supplyHTTPFixture struct {
 	receipts         map[string]map[string]any
 	captures         int
 	inventoryChanged bool
+	hideSettlement   bool
+	hiddenSettlement string
 }
 
 func newSupplyHTTPFixture(t *testing.T, origin string) *supplyHTTPFixture {
@@ -135,8 +137,11 @@ func (f *supplyHTTPFixture) coreReply(ctx context.Context, node config.Node, fra
 		id, _ := request.Payload["operationId"].(string)
 		f.mu.Lock()
 		receipt := f.receipts[id]
+		hidden := f.hideSettlement && f.hiddenSettlement == id
 		f.mu.Unlock()
-		if receipt == nil {
+		if hidden {
+			data = map[string]any{"state": "UNKNOWN", "result": nil}
+		} else if receipt == nil {
 			data = map[string]any{"state": "NOT_FOUND", "result": nil}
 		} else {
 			encoded, _ := json.Marshal(receipt)
@@ -159,6 +164,16 @@ func (f *supplyHTTPFixture) coreReply(ctx context.Context, node config.Node, fra
 	reply := map[string]any{"operationId": request.OperationID, "status": status, "data": data}
 	if replyError != nil {
 		reply["error"] = replyError
+	}
+	if request.Command == "wallet.escrow.settle" {
+		f.mu.Lock()
+		if f.hideSettlement {
+			f.hiddenSettlement = request.OperationID
+			f.receipts[request.OperationID] = reply
+			f.mu.Unlock()
+			return nil
+		}
+		f.mu.Unlock()
 	}
 	encoded, _ := json.Marshal(reply)
 	if err := f.app.acceptCoreReceiptV2(ctx, node, store.CoreOperation{ID: request.OperationID, Command: request.Command, Payload: mustJSON(request.Payload)}, status, mustJSON(data)); err != nil {
@@ -314,6 +329,108 @@ func TestSupplyExchangeWorkerCommitsCreditAndTicketsOnce(t *testing.T) {
 	}
 }
 
+func TestSupplyExchangeConcurrentRequestsReturnTheSameSettledReceipt(t *testing.T) {
+	f := newSupplyHTTPFixture(t, "")
+	ctx := context.Background()
+	if _, err := f.store.SaveSupplySettings(ctx, f.admin.ID, "prices", store.SupplySettings{
+		Version: 1, LimitedPrice: 10000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	request := supplyGameRequest{
+		PlayerUUID: f.player.ServerUUID, SessionEpoch: "supply-session",
+		Exchange: &store.SupplyExchangeRequest{ClientRequestID: "immediate_exchange", Currency: "LIMITED", Quantity: 3, SettingsVersion: 2},
+	}
+	path := "/bridge/v1/supply/exchange"
+	payload := mustJSON(request)
+	start := make(chan struct{})
+	results := make(chan *httptest.ResponseRecorder, 2)
+	for range 2 {
+		go func() {
+			<-start
+			req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(payload))
+			req.Header.Set("Authorization", "Bearer "+f.nodeToken)
+			req.Header.Set("X-Deuterium-Node-ID", "amiya")
+			req.Header.Set("Content-Type", "application/json")
+			res := httptest.NewRecorder()
+			f.http.Config.Handler.ServeHTTP(res, req)
+			results <- res
+		}()
+	}
+	started := time.Now()
+	close(start)
+	var orderID string
+	for range 2 {
+		res := <-results
+		var reply struct {
+			Data store.SupplyExchange `json:"data"`
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &reply); err != nil || res.Code != 200 ||
+			reply.Data.ID == "" || reply.Data.Status != "COMPLETED" || (orderID != "" && orderID != reply.Data.ID) {
+			t.Fatalf("concurrent exchange request did not return the same terminal receipt: %d %s", res.Code, res.Body)
+		}
+		orderID = reply.Data.ID
+	}
+	t.Logf("both exchange requests completed with simulated economy in %s", time.Since(started))
+	f.funds.mu.Lock()
+	held := *f.funds.ledger[orderID]
+	reserves, settlements := f.funds.calls["wallet.escrow.reserve"], f.funds.calls["wallet.escrow.settle"]
+	f.funds.mu.Unlock()
+	account, err := f.store.SupplyAccount(ctx, f.player.ServerUUID)
+	if err != nil || account.Limited != 3 || held.reserved != 30000 || held.settled != 30000 || reserves != 1 || settlements != 1 {
+		t.Fatal("expected one reservation, settlement and credit", account, held, reserves, settlements, err)
+	}
+}
+
+func TestSupplyExchangeRecoversTheOriginalCommittedSettlement(t *testing.T) {
+	f := newSupplyHTTPFixture(t, "")
+	ctx := context.Background()
+	if _, err := f.store.SaveSupplySettings(ctx, f.admin.ID, "prices", store.SupplySettings{
+		Version: 1, LimitedPrice: 10000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	f.hideSettlement = true
+	f.mu.Unlock()
+	path := "/bridge/v1/supply/exchange"
+	request := supplyGameRequest{
+		PlayerUUID: f.player.ServerUUID, SessionEpoch: "supply-session",
+		Exchange: &store.SupplyExchangeRequest{ClientRequestID: "delayed_settlement", Currency: "LIMITED", Quantity: 2, SettingsVersion: 2},
+	}
+	first := f.request(t, path, f.nodeToken, request, 200)["data"].(map[string]any)
+	if first["status"] != "RESERVED" || first["account"].(map[string]any)["limited"] != float64(0) {
+		t.Fatal("the exchange was credited before its settlement receipt", first)
+	}
+	f.mu.Lock()
+	hidden := f.hiddenSettlement
+	f.hideSettlement = false
+	f.mu.Unlock()
+	if hidden == "" {
+		t.Fatal("the first request did not reach the economy settlement")
+	}
+
+	deadline := time.Now().Add(4 * time.Second)
+	var recovered map[string]any
+	for time.Now().Before(deadline) {
+		recovered = f.request(t, path, f.nodeToken, request, 200)["data"].(map[string]any)
+		if recovered["status"] == "COMPLETED" {
+			break
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	if recovered["status"] != "COMPLETED" || recovered["id"] != first["id"] ||
+		recovered["account"].(map[string]any)["limited"] != float64(2) {
+		t.Fatal("the original settlement did not resume", first, recovered)
+	}
+	f.funds.mu.Lock()
+	reserves, settlements := f.funds.calls["wallet.escrow.reserve"], f.funds.calls["wallet.escrow.settle"]
+	f.funds.mu.Unlock()
+	if reserves != 1 || settlements != 1 {
+		t.Fatal("recovery repeated a money operation", reserves, settlements)
+	}
+}
+
 func TestSupplyDeliveryCannotSwitchToMailAfterUncertainInventory(t *testing.T) {
 	f := newSupplyHTTPFixture(t, "")
 	ctx := context.Background()
@@ -367,5 +484,98 @@ func TestSupplyDeliveryCannotSwitchToMailAfterUncertainInventory(t *testing.T) {
 	result.InventoryEpoch = "inventory-epoch"
 	if _, err = f.store.FinishSupplyDelivery(ctx, "amiya", result); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSupplyDeliveryWaitsForTheOwnersReveal(t *testing.T) {
+	f := newSupplyHTTPFixture(t, "")
+	ctx := context.Background()
+	pool := f.pool(t, "演出测试", "LIMITED", "printstream")
+	if _, err := f.store.AdjustSupplyTickets(ctx, f.admin.ID, store.SupplyAdjustment{
+		ClientRequestID: "reveal_fund", PlayerUUID: f.player.ServerUUID, Currency: "LIMITED",
+		Action: "add", Amount: 10, Reason: "integration",
+	}, true); err != nil {
+		t.Fatal(err)
+	}
+	request := supplyGameRequest{PlayerUUID: f.player.ServerUUID, SessionEpoch: "supply-session", AwaitReveal: true,
+		Draw: &store.SupplyDrawRequest{ClientRequestID: "reveal_draw", PoolID: pool.ID, Revision: pool.PublishedRevision, Scheme: "80", Quantity: 10}}
+	result := f.request(t, "/bridge/v1/supply/draw", f.nodeToken, request, 200)["data"].(map[string]any)
+	orderID := result["id"].(string)
+	if result["awaitReveal"] != true || len(result["rolls"].([]any)) != 10 {
+		t.Fatal("wanted a revealed outcome with delivery held", result)
+	}
+	list := func() []any {
+		return f.request(t, "/bridge/v1/supply/deliveries", f.nodeToken, map[string]any{}, 200)["data"].(map[string]any)["items"].([]any)
+	}
+	if len(list()) != 0 {
+		t.Fatal("the inventory queue pulled a reward before the client finished the reveal")
+	}
+	if _, err := f.store.ClaimSupplyDelivery(ctx, orderID+"_01", "amiya", f.player.ServerUUID, request.SessionEpoch); err == nil {
+		t.Fatal("a direct inventory claim bypassed the reveal")
+	}
+	if err := f.store.RouteOfflineSupplyDelivery(ctx, orderID+"_01"); err != nil {
+		t.Fatal(err)
+	}
+	delivery, err := f.store.SupplyDelivery(ctx, orderID+"_01")
+	if err != nil || delivery.State != "PENDING" {
+		t.Fatal("offline routing bypassed the reveal hold", delivery.State, err)
+	}
+	ack := supplyGameRequest{PlayerUUID: f.admin.ServerUUID, SessionEpoch: "admin-session", OrderID: orderID}
+	f.request(t, "/bridge/v1/supply/reveal-complete", f.nodeToken, ack, 404)
+	ack.PlayerUUID = f.player.ServerUUID
+	ack.SessionEpoch = "stale"
+	f.request(t, "/bridge/v1/supply/reveal-complete", f.nodeToken, ack, 401)
+	if len(list()) != 0 {
+		t.Fatal("an unrelated player or stale session released the order")
+	}
+
+	ack.SessionEpoch = request.SessionEpoch
+	for range 2 {
+		f.request(t, "/bridge/v1/supply/reveal-complete", f.nodeToken, ack, 200)
+	}
+	if items := list(); len(items) != 10 {
+		t.Fatal("the completion event must release the original ten rewards", len(items))
+	}
+	request.AwaitReveal = false
+	replay := f.request(t, "/bridge/v1/supply/draw", f.nodeToken, request, 200)["data"].(map[string]any)
+	if replay["id"] != orderID {
+		t.Fatal("the transport preference changed the draw fingerprint", replay)
+	}
+	var count, spent int
+	if err = f.store.DB.QueryRow("SELECT COUNT(*),SUM(amount) FROM supply_ledger WHERE business_id=? AND business_type='DRAW'", orderID).Scan(&count, &spent); err != nil || count != 1 || spent != -10 {
+		t.Fatal("the draw and reveal must make one debit", count, spent, err)
+	}
+}
+
+func TestSupplyInterruptedRevealRoutesToMailWithoutAnInventoryClaim(t *testing.T) {
+	f := newSupplyHTTPFixture(t, "")
+	ctx := context.Background()
+	pool := f.pool(t, "掉线测试", "LIMITED", "printstream")
+	if _, err := f.store.AdjustSupplyTickets(ctx, f.admin.ID, store.SupplyAdjustment{
+		ClientRequestID: "timeout_fund", PlayerUUID: f.player.ServerUUID, Currency: "LIMITED",
+		Action: "add", Amount: 1, Reason: "integration",
+	}, true); err != nil {
+		t.Fatal(err)
+	}
+	result := f.request(t, "/bridge/v1/supply/draw", f.nodeToken, supplyGameRequest{
+		PlayerUUID: f.player.ServerUUID, SessionEpoch: "supply-session", AwaitReveal: true,
+		Draw: &store.SupplyDrawRequest{ClientRequestID: "timeout_draw", PoolID: pool.ID, Revision: pool.PublishedRevision, Scheme: "80", Quantity: 1},
+	}, 200)["data"].(map[string]any)
+	orderID := result["id"].(string)
+	if _, err := f.store.DB.Exec("UPDATE supply_deliveries SET reveal_until=UTC_TIMESTAMP(6)-INTERVAL 1 SECOND WHERE order_id=? AND reveal_until IS NOT NULL", orderID); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.store.MailExpiredSupplyReveals(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.store.ReleaseSupplyReveal(ctx, orderID, f.player.ServerUUID); err != nil {
+		t.Fatal(err)
+	}
+	delivery, err := f.store.SupplyDelivery(ctx, orderID+"_01")
+	if err != nil || (delivery.State != "MAIL_PENDING" && delivery.State != "MAIL") || delivery.Token != "" {
+		t.Fatal("recovery or a delayed acknowledgement exposed an inventory item", delivery, err)
+	}
+	if items, err := f.store.PendingSupplyDeliveries(ctx, []string{f.player.ServerUUID}); err != nil || len(items) != 0 {
+		t.Fatal("the inventory worker saw an expired reveal", items, err)
 	}
 }

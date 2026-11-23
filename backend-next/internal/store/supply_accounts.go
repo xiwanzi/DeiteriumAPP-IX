@@ -17,6 +17,7 @@ type SupplyAccount struct {
 	GameID     string                 `json:"gameId"`
 	Standard   int64                  `json:"standard"`
 	Limited    int64                  `json:"limited"`
+	Balances   map[string]int64       `json:"balances"`
 	Version    int64                  `json:"version"`
 	Pity       map[string]supply.Pity `json:"pity"`
 }
@@ -90,7 +91,7 @@ func (s *Store) supplyMutate(ctx context.Context, actor, key string, input any, 
 }
 
 func supplyAccountTx(ctx context.Context, tx *sql.Tx, uuid string) (SupplyAccount, error) {
-	a := SupplyAccount{PlayerUUID: uuid, Pity: map[string]supply.Pity{}}
+	a := SupplyAccount{PlayerUUID: uuid, Pity: map[string]supply.Pity{}, Balances: map[string]int64{}}
 	err := tx.QueryRowContext(ctx, "SELECT game_id,standard_tickets,limited_tickets,version FROM supply_accounts WHERE player_uuid=?", uuid).Scan(&a.GameID, &a.Standard, &a.Limited, &a.Version)
 	if errors.Is(err, sql.ErrNoRows) {
 		return a, nil
@@ -110,6 +111,22 @@ func supplyAccountTx(ctx context.Context, tx *sql.Tx, uuid string) (SupplyAccoun
 			return a, err
 		}
 		a.Pity[scope] = p
+	}
+	if err = rows.Err(); err != nil {
+		return a, err
+	}
+	rows, err = tx.QueryContext(ctx, "SELECT currency,balance FROM supply_custom_ticket_balances WHERE player_uuid=?", uuid)
+	if err != nil {
+		return a, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var currency string
+		var balance int64
+		if err = rows.Scan(&currency, &balance); err != nil {
+			return a, err
+		}
+		a.Balances[currency] = balance
 	}
 	return a, rows.Err()
 }
@@ -132,11 +149,19 @@ func (s *Store) SupplyAccount(ctx context.Context, uuid string) (SupplyAccount, 
 
 func supplyBalance(ctx context.Context, tx *sql.Tx, uuid, currency string) (int64, error) {
 	var value int64
+	if !supply.ValidCurrency(currency) {
+		return 0, ErrSocialInvalid
+	}
+	if !supply.LegacyCurrency(currency) {
+		err := tx.QueryRowContext(ctx, "SELECT balance FROM supply_custom_ticket_balances WHERE player_uuid=? AND currency=?", uuid, currency).Scan(&value)
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return value, err
+	}
 	column := "standard_tickets"
 	if currency == "LIMITED" {
 		column = "limited_tickets"
-	} else if currency != "STANDARD" {
-		return 0, ErrSocialInvalid
 	}
 	err := tx.QueryRowContext(ctx, "SELECT "+column+" FROM supply_accounts WHERE player_uuid=?", uuid).Scan(&value)
 	return value, err
@@ -154,14 +179,27 @@ func supplyPost(ctx context.Context, tx *sql.Tx, uuid, currency string, amount i
 	if amount > supply.MaxBalance || amount < -supply.MaxBalance || after > supply.MaxBalance {
 		return supplyFailure("TICKETS_LIMIT", "票券数量超出上限")
 	}
+	if err = saveSupplyBalance(ctx, tx, uuid, currency, after); err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO supply_ledger(player_uuid,currency,amount,before_balance,after_balance,business_type,business_id,actor_id,reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`, uuid, currency, amount, before, after, kind, business, actor, reason)
+	return err
+}
+
+func saveSupplyBalance(ctx context.Context, tx *sql.Tx, uuid, currency string, balance int64) error {
+	if !supply.LegacyCurrency(currency) {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO supply_custom_ticket_balances(player_uuid,currency,balance)
+			VALUES(?,?,?) ON DUPLICATE KEY UPDATE balance=VALUES(balance)`, uuid, currency, balance); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, "UPDATE supply_accounts SET version=version+1,updated_at=UTC_TIMESTAMP(6) WHERE player_uuid=?", uuid)
+		return err
+	}
 	column := "standard_tickets"
 	if currency == "LIMITED" {
 		column = "limited_tickets"
 	}
-	if _, err = tx.ExecContext(ctx, "UPDATE supply_accounts SET "+column+"=?,version=version+1,updated_at=UTC_TIMESTAMP(6) WHERE player_uuid=?", after, uuid); err != nil {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO supply_ledger(player_uuid,currency,amount,before_balance,after_balance,business_type,business_id,actor_id,reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6))`, uuid, currency, amount, before, after, kind, business, actor, reason)
+	_, err := tx.ExecContext(ctx, "UPDATE supply_accounts SET "+column+"=?,version=version+1,updated_at=UTC_TIMESTAMP(6) WHERE player_uuid=?", balance, uuid)
 	return err
 }
 
@@ -176,6 +214,15 @@ func (s *Store) AdjustSupplyTickets(ctx context.Context, actor string, in Supply
 		if webAdmin {
 			if err := requirePlatformAdminTxV206(ctx, tx, actor); err != nil {
 				return nil, err
+			}
+		}
+		if !supply.LegacyCurrency(in.Currency) {
+			tickets, err := supplyTickets(ctx, tx, SupplySettings{})
+			if err != nil {
+				return nil, err
+			}
+			if _, ok := tickets[in.Currency]; !ok {
+				return nil, supplyFailure("SUPPLY_TICKET_UNKNOWN", "抽奖券未发布")
 			}
 		}
 		account, err := supplyAccountTx(ctx, tx, in.PlayerUUID)

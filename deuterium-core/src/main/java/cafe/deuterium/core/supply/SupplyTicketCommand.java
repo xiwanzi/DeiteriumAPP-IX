@@ -26,7 +26,7 @@ public final class SupplyTicketCommand implements CommandExecutor, TabCompleter 
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.isOp()) { sender.sendMessage("[补给] 仅 OP 可以管理票券"); return true; }
-        if (args.length < 2) { sender.sendMessage("/supplytickets balance|history <UUID/在线玩家>；add|take|remove|set <UUID/在线玩家> standard|limited <数量> <原因>"); return true; }
+        if (args.length < 2) { sender.sendMessage("/supplytickets balance|history <UUID/在线玩家>；add|take|remove|set <UUID/在线玩家> <券种 ID> <数量> <原因>"); return true; }
         String actor = sender instanceof Player p ? p.getUniqueId().toString() : "CONSOLE";
         if (!busy.add(actor)) { sender.sendMessage("[补给] 上一条请求仍在处理"); return true; }
         try {
@@ -43,8 +43,10 @@ public final class SupplyTicketCommand implements CommandExecutor, TabCompleter 
             if (action.equals("history")) body.addProperty("history", true);
             else if (!action.equals("balance")) {
                 if (!List.of("add", "take", "remove", "set").contains(action) || args.length < 5) throw CoreFailure.invalid("请填写券种、数量和调整原因");
-                String currency = args[2].toUpperCase(Locale.ROOT); long amount = Long.parseLong(args[3]);
-                if (!List.of("STANDARD", "LIMITED").contains(currency) || amount < 0 || amount > 1_000_000_000L) throw CoreFailure.invalid("券种或数量不正确");
+                String currency = args[2];
+                if (currency.equalsIgnoreCase("STANDARD") || currency.equalsIgnoreCase("LIMITED")) currency = currency.toUpperCase(Locale.ROOT);
+                long amount = Long.parseLong(args[3]);
+                if (!currency.matches("[A-Za-z0-9][A-Za-z0-9_-]{0,79}") || amount < 0 || amount > 1_000_000_000L) throw CoreFailure.invalid("券种或数量不正确");
                 JsonObject change = new JsonObject(); change.addProperty("clientRequestId", UUID.randomUUID().toString());
                 change.addProperty("playerUuid", target.toString()); change.addProperty("currency", currency); change.addProperty("action", action);
                 change.addProperty("amount", amount); change.addProperty("reason", String.join(" ", Arrays.copyOfRange(args, 4, args.length)));

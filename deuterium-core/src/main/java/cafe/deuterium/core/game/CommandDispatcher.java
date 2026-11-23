@@ -2,6 +2,7 @@ package cafe.deuterium.core.game;
 
 import cafe.deuterium.core.config.CoreConfig;
 import cafe.deuterium.core.items.InventoryCatalogCapture;
+import cafe.deuterium.core.items.EditorItemCatalog;
 import cafe.deuterium.core.mail.CoreMailbox;
 import cafe.deuterium.core.runtime.GameThread;
 import cafe.deuterium.core.runtime.Sessions;
@@ -20,6 +21,7 @@ import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public final class CommandDispatcher {
+    private static final Set<String> EDITOR_ITEMS = Set.of("items.editor_import", "items.editor_archive");
     private static final Set<String> TYPES = Set.of("player.resolve", "verification.deliver", "wallet.balance", "wallet.records", "wallet.transfer", "operation.query", "mailbox.create", "mailbox.query", "mailbox.revoke","wallet.escrow.reserve","wallet.escrow.bind","wallet.escrow.settle","wallet.escrow.refund","wallet.escrow.query", "items.inventory", "items.capture");
     private static final Set<String> READS = Set.of("player.resolve", "wallet.balance", "wallet.records", "operation.query", "mailbox.query","wallet.escrow.query", "items.inventory");
     private final Supplier<CoreConfig> config;
@@ -30,14 +32,21 @@ public final class CommandDispatcher {
     private final RpcJournal journal;
     private final EconomyAccess economy;
     private final InventoryCatalogCapture items;
+    private final EditorItemCatalog editorItems;
     public CommandDispatcher(Supplier<CoreConfig> config, Supplier<CoreMailbox> mailbox, GameThread game, Sessions sessions,
                              PlayerStore players, RpcJournal journal, EconomyAccess economy) {
         this(config, mailbox, game, sessions, players, journal, economy, null);
     }
     public CommandDispatcher(Supplier<CoreConfig> config, Supplier<CoreMailbox> mailbox, GameThread game, Sessions sessions,
                              PlayerStore players, RpcJournal journal, EconomyAccess economy, InventoryCatalogCapture items) {
+        this(config, mailbox, game, sessions, players, journal, economy, items, null);
+    }
+    public CommandDispatcher(Supplier<CoreConfig> config, Supplier<CoreMailbox> mailbox, GameThread game, Sessions sessions,
+                             PlayerStore players, RpcJournal journal, EconomyAccess economy, InventoryCatalogCapture items,
+                             EditorItemCatalog editorItems) {
         this.config = config; this.mailbox = mailbox; this.game = game; this.sessions = sessions; this.players = players; this.journal = journal; this.economy = economy;
         this.items = items;
+        this.editorItems = editorItems;
     }
     public JsonObject execute(JsonObject request) {
         String operation = ""; boolean started = false;
@@ -45,7 +54,7 @@ public final class CommandDispatcher {
             Json.fields(request, "operationId", "command", "expiresAt", "payload");
             operation = Checks.operationId(Json.string(request, "operationId"));
             String type = Json.string(request, "command");
-            if (!TYPES.contains(type)) throw new CoreFailure("COMMAND_NOT_ALLOWED", "不允许执行此远程操作。");
+            if (!TYPES.contains(type) && !EDITOR_ITEMS.contains(type)) throw new CoreFailure("COMMAND_NOT_ALLOWED", "不允许执行此远程操作。");
             long expiry = Instant.parse(Json.string(request, "expiresAt")).toEpochMilli();
             JsonObject payload = request.getAsJsonObject("payload"); if (payload == null) throw CoreFailure.invalid("缺少请求内容。");
             boolean read = READS.contains(type);
@@ -61,7 +70,8 @@ public final class CommandDispatcher {
                     throw new CoreFailure("COMMAND_EXPIRED", "请求已过期或有效期不正确。");
                 }
                 boolean committedEconomyReplay=type.startsWith("wallet.")&&config.get().economyEnabled()&&config.get().nodeId().equals(config.get().economyAuthority())&&economy.available();
-                RpcJournal.Entry entry = journal.begin(operation, type, fingerprint, type.startsWith("mailbox.")||committedEconomyReplay||type.equals("items.capture"));
+                RpcJournal.Entry entry = journal.begin(operation, type, fingerprint, type.startsWith("mailbox.")
+                        || committedEconomyReplay || type.equals("items.capture") || EDITOR_ITEMS.contains(type));
                 if (!entry.acquired()) {
                     if (entry.state().equals("COMPLETED") && type.startsWith("mailbox."))
                         return result(operation, "COMPLETED", invoke(operation, type, payload, expiry), null);
@@ -88,6 +98,10 @@ public final class CommandDispatcher {
         if (type.equals("items.inventory") || type.equals("items.capture")) {
             if (items == null) throw new CoreFailure("COMMAND_NOT_ALLOWED", "物品采集能力尚未就绪。");
             return items.execute(operation, type, payload, deadline);
+        }
+        if (EDITOR_ITEMS.contains(type)) {
+            if (editorItems == null) throw new CoreFailure("COMMAND_NOT_ALLOWED", "编辑器物品库尚未就绪。");
+            return type.equals("items.editor_import") ? editorItems.register(payload, deadline) : editorItems.archive(payload);
         }
         return switch (type) {
             case "operation.query" -> {

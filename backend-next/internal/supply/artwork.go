@@ -7,6 +7,7 @@ var ModelKeys = []string{"printstream", "scarlet", "gilded-rain", "perfect-freez
 // Bundled artwork names are capabilities, not arbitrary resource paths supplied by a browser.
 func BuiltinArtwork() map[string]string {
 	out := map[string]string{
+		"builtin-ticket":  "ticket.png",
 		"builtin-hero-up": "pool-up.png", "builtin-hero-vector": "pool-up-vector.png", "builtin-hero-standard": "pool-standard-1.png",
 		"builtin-rail-up": "rail-up.png", "builtin-rail-vector": "rail-up-vector.png", "builtin-rail-standard": "rail-standard-1.png",
 	}
@@ -33,6 +34,7 @@ func (d Definition) AllArtwork() []string {
 		}
 	}
 	appendArt(d.Art)
+	appendArt(Artwork{Detail: d.TicketArt})
 	for _, reward := range d.Rewards {
 		appendArt(reward.Art)
 	}

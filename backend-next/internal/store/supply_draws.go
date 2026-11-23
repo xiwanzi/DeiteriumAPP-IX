@@ -17,6 +17,8 @@ type SupplyDrawRequest struct {
 	Revision        int64  `json:"revision"`
 	Scheme          string `json:"scheme"`
 	Quantity        int    `json:"quantity"`
+	// Presentation support is per connection and does not change the persisted request fingerprint.
+	AwaitReveal bool `json:"-"`
 }
 
 type SupplyOrder struct {
@@ -70,6 +72,13 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 		if err != nil {
 			return nil, ErrSocialInvalid
 		}
+		tickets, err := supplyTickets(ctx, tx, SupplySettings{})
+		if err != nil {
+			return nil, err
+		}
+		if !tickets[currency].Enabled {
+			return nil, supplyFailure("SUPPLY_CLOSED", "卡池使用的抽奖券已停用")
+		}
 		if err = supplyPost(ctx, tx, uuid, currency, -int64(in.Quantity), "DRAW", in.ClientRequestID, uuid, d.Name); err != nil {
 			return nil, err
 		}
@@ -106,12 +115,17 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 		if _, err = tx.ExecContext(ctx, "UPDATE supply_ledger SET business_id=? WHERE player_uuid=? AND currency=? AND business_id=? AND business_type='DRAW'", order.ID, uuid, currency, in.ClientRequestID); err != nil {
 			return nil, err
 		}
+		var revealUntil *time.Time
+		if in.AwaitReveal {
+			deadline := now.Add(2 * time.Minute)
+			revealUntil = &deadline
+		}
 		for i, roll := range rolls {
 			rewardJSON, e := json.Marshal(roll.Reward)
 			if e != nil {
 				return nil, e
 			}
-			if _, err = tx.ExecContext(ctx, `INSERT INTO supply_deliveries(id,order_id,ordinal,player_uuid,reward_json,state,created_at,updated_at) VALUES(?,?,?,?,?,'PENDING',?,?)`, fmt.Sprintf("%s_%02d", order.ID, i+1), order.ID, i+1, uuid, rewardJSON, now, now); err != nil {
+			if _, err = tx.ExecContext(ctx, `INSERT INTO supply_deliveries(id,order_id,ordinal,player_uuid,reward_json,state,created_at,updated_at,reveal_until) VALUES(?,?,?,?,?,'PENDING',?,?,?)`, fmt.Sprintf("%s_%02d", order.ID, i+1), order.ID, i+1, uuid, rewardJSON, now, now, revealUntil); err != nil {
 				return nil, err
 			}
 		}

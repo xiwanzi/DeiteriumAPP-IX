@@ -4,6 +4,7 @@ import cafe.deuterium.core.CoreRuntime;
 import cafe.deuterium.core.api.*;
 import cafe.deuterium.core.config.CoreConfig;
 import cafe.deuterium.core.items.InventoryGrant;
+import cafe.deuterium.core.items.EditorItemCatalog;
 import cafe.deuterium.core.runtime.Sessions;
 import cafe.deuterium.core.storage.CatalogStore;
 import cafe.deuterium.core.storage.Sql;
@@ -71,6 +72,7 @@ public final class CoreCommand implements CommandExecutor, TabCompleter {
     }
     private void save(CommandSender sender, String[] args) throws Exception {
         String ref = ref(args, 1); if (!(sender instanceof Player player)) throw CoreFailure.invalid("save 需要玩家手持物品执行。");
+        if (EditorItemCatalog.isEditorReference(ref)) throw CoreFailure.invalid("该编号由抽卡编辑器管理。");
         String name = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
         CatalogStore.Captured captured;
         try (PlayerDataService.Lease lease = runtime.inventoryAccess().acquire(player, runtime.config().inventoryDomain(), UUID.randomUUID())) {

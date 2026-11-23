@@ -36,17 +36,18 @@ func (s *Server) supplyWorker() {
 		var wg sync.WaitGroup
 		slots := make(chan struct{}, 4)
 		for _, x := range exchanges {
-			slots <- struct{}{}
 			wg.Add(1)
 			go func(x store.SupplyExchange) {
 				defer wg.Done()
-				defer func() { <-slots }()
-				if e := s.processSupplyExchange(ctx, x); e != nil && ctx.Err() == nil {
+				if e := s.processSupplyExchange(ctx, x.ID, x.PlayerUUID); e != nil && ctx.Err() == nil {
 					slog.Warn("Supply exchange awaiting recovery", "exchange", x.ID, "error", e)
 				}
 			}(x)
 		}
 		wg.Wait()
+		if e := s.Store.MailExpiredSupplyReveals(ctx); e != nil && ctx.Err() == nil {
+			slog.Warn("Supply reveal recovery pending", "error", e)
+		}
 		for _, state := range []string{"PENDING", "PREPARING"} {
 			pending, e := s.Store.SupplyDeliveryQueue(ctx, state, 32)
 			if e != nil {
@@ -80,7 +81,47 @@ func (s *Server) supplyWorker() {
 	}
 }
 
-func (s *Server) processSupplyExchange(ctx context.Context, x store.SupplyExchange) error {
+// The request and the recovery scan share one attempt for each committed exchange.
+func (s *Server) processSupplyExchange(ctx context.Context, id, playerUUID string) error {
+	done := make(chan struct{})
+	if running, exists := s.supplyExchangeRuns.LoadOrStore(id, done); exists {
+		select {
+		case <-running.(chan struct{}):
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	defer func() {
+		s.supplyExchangeRuns.Delete(id)
+		close(done)
+	}()
+	select {
+	case s.supplyExchangeSlots <- struct{}{}:
+		defer func() { <-s.supplyExchangeSlots }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	x, err := s.Store.SupplyExchange(ctx, id, playerUUID)
+	if err != nil {
+		return err
+	}
+	if x.Status == "PENDING" {
+		if err = s.executeSupplyExchangeStep(ctx, x); err != nil {
+			return err
+		}
+		x, err = s.Store.SupplyExchange(ctx, id, playerUUID)
+		if err != nil {
+			return err
+		}
+	}
+	if x.Status == "RESERVED" {
+		return s.executeSupplyExchangeStep(ctx, x)
+	}
+	return nil
+}
+
+func (s *Server) executeSupplyExchangeStep(ctx context.Context, x store.SupplyExchange) error {
 	command := "wallet.escrow.reserve"
 	key := "reserve_" + x.ID
 	payload := map[string]any{"escrowRef": x.ID, "businessRef": x.ID, "amount": supplyMoney(x.TotalPrice), "currency": "CREDIT"}

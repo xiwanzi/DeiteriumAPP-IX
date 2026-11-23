@@ -31,6 +31,8 @@ type Node struct {
 }
 
 type Config struct {
+	SupplyEditorTokenSHA256     string      `json:"supplyEditorTokenSha256,omitempty"`
+	SupplyEditorNode            string      `json:"supplyEditorNode,omitempty"`
 	YSMIdentityTokenSHA256      string      `json:"ysmIdentityTokenSha256,omitempty"`
 	YSMAdminURL                 string      `json:"ysmAdminUrl,omitempty"`
 	YSMAdminOrigin              string      `json:"ysmAdminOrigin,omitempty"`
@@ -170,6 +172,20 @@ func (c Config) Validate() error {
 	}
 	if economyNodes > 1 {
 		return errors.New("only one Core economy authority is allowed")
+	}
+	if c.SupplyEditorNode != "" || c.SupplyEditorTokenSHA256 != "" {
+		hash, err := hex.DecodeString(c.SupplyEditorTokenSHA256)
+		if err != nil || len(hash) != 32 || strings.ToLower(c.SupplyEditorTokenSHA256) != c.SupplyEditorTokenSHA256 ||
+			hashes[c.SupplyEditorTokenSHA256] || c.SupplyEditorTokenSHA256 == c.YSMIdentityTokenSHA256 ||
+			c.SupplyEditorTokenSHA256 == c.AdmissionGatewayTokenSHA256 {
+			return errors.New("supply editor requires a dedicated SHA-256 credential")
+		}
+		for _, n := range c.Nodes {
+			if n.ID == c.SupplyEditorNode && n.ItemPrefix != "" && n.ClaimEnabled {
+				return nil
+			}
+		}
+		return errors.New("supply editor requires an item publishing and delivery node")
 	}
 	return nil
 }
