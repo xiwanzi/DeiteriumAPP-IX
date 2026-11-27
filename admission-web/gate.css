@@ -1,0 +1,699 @@
+/* Strict fail-closed administrator gate for Deuterium IX Admission Portal. */
+:root {
+  --gate-bg: #090b0e;
+  --gate-surface: #11151b;
+  --gate-surface-raised: #161b23;
+  --gate-border: rgba(214, 224, 234, 0.13);
+  --gate-border-strong: rgba(214, 224, 234, 0.24);
+  --gate-text: #eef1f4;
+  --gate-muted: #98a3ae;
+  --gate-dim: #66717c;
+  --gate-seal: #b83333;
+  --gate-seal-bright: #d44747;
+  --gate-seal-soft: rgba(184, 51, 51, 0.14);
+}
+
+/* Fail-closed visibility: never render admission chrome before admin verification succeeds. */
+body[data-gate="checking"] .sidebar,
+body[data-gate="checking"] .viewport,
+body[data-gate="denied"] .sidebar,
+body[data-gate="denied"] .viewport {
+  display: none !important;
+}
+
+body[data-gate="granted"] .access-gate {
+  display: none !important;
+}
+
+body[data-gate="checking"],
+body[data-gate="denied"] {
+  background: var(--gate-bg);
+  color: var(--gate-text);
+  overflow-x: hidden;
+}
+
+/* Full-viewport solemn barrier */
+.access-gate {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  isolation: isolate;
+  background: var(--gate-bg);
+  color: var(--gate-text);
+}
+
+.gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(184, 51, 51, 0.09) 0%, rgba(11, 14, 19, 0.2) 42%, rgba(7, 9, 12, 0.96) 100%),
+    url('assets/dsa-launch-minecraft-v5.png') center center / cover no-repeat;
+  filter: grayscale(1) brightness(0.18) contrast(1.18);
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+.gate-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(rgba(220, 230, 240, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220, 230, 240, 0.032) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 72% at 50% 45%, #000 32%, transparent 100%);
+  pointer-events: none;
+}
+
+.gate-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(8, 10, 13, 0.86) 0%, rgba(8, 10, 13, 0.35) 45%, rgba(8, 10, 13, 0.92) 100%);
+  pointer-events: none;
+}
+
+/* Top institutional classification bar */
+.gate-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 44px;
+  border-bottom: 1px solid rgba(214, 224, 234, 0.09);
+  background: rgba(9, 11, 14, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.gate-brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-decoration: none;
+  color: var(--gate-text);
+}
+
+.gate-brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+  filter: grayscale(0.25) brightness(0.95);
+}
+
+.gate-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gate-brand-text strong {
+  font: 700 15px/1.1 var(--wide);
+  letter-spacing: 0.8px;
+  color: var(--gate-text);
+}
+
+.gate-brand-text span {
+  font: 500 10px/1.2 var(--font);
+  letter-spacing: 2.2px;
+  color: var(--gate-muted);
+}
+
+.gate-classification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 11px/1 var(--mono);
+  letter-spacing: 1.2px;
+  color: #d6b6b6;
+  padding: 7px 12px;
+  border: 1px solid rgba(184, 51, 51, 0.42);
+  background: rgba(184, 51, 51, 0.11);
+  text-transform: uppercase;
+}
+
+.gate-classification i {
+  width: 7px;
+  height: 7px;
+  background: var(--gate-seal-bright);
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Center stage */
+.gate-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 26px 24px;
+}
+
+/* Checking state */
+.gate-checking {
+  width: min(460px, 100%);
+  background: rgba(17, 21, 27, 0.92);
+  border: 1px solid var(--gate-border);
+  padding: 36px 34px;
+  text-align: left;
+  position: relative;
+}
+
+.gate-checking::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gate-seal) 0%, rgba(214, 224, 234, 0.35) 45%, transparent 100%);
+}
+
+.gate-checking-code {
+  font: 10px/1.4 var(--mono);
+  letter-spacing: 1.4px;
+  color: var(--gate-dim);
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
+.gate-checking h1 {
+  all: unset;
+  display: block;
+  font: 700 20px/1.4 var(--font);
+  color: var(--gate-text);
+  letter-spacing: 0.4px;
+  margin: 0 0 10px;
+}
+
+.gate-checking p {
+  margin: 0 0 22px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--gate-muted);
+}
+
+.gate-progress {
+  height: 2px;
+  width: 100%;
+  background: rgba(214, 224, 234, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.gate-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(214, 224, 234, 0.72), transparent);
+  animation: gate-scan 1.45s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes gate-scan {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(280%); }
+}
+
+body[data-gate="checking"] .gate-denied {
+  display: none !important;
+}
+
+body[data-gate="denied"] .gate-checking {
+  display: none !important;
+}
+
+/* Solemn Denied Monolith */
+.gate-denied {
+  position: relative;
+  width: min(740px, 100%);
+  background: rgba(15, 19, 25, 0.94);
+  border: 1px solid var(--gate-border-strong);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.68),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+/* Authority crimson cap stripe */
+.gate-denied::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gate-seal-bright) 0%, var(--gate-seal) 38%, rgba(184, 51, 51, 0.28) 100%);
+}
+
+/* Architectural corner ticks */
+.gate-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border-color: rgba(238, 241, 244, 0.34);
+  border-style: solid;
+}
+.gate-corner-tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+.gate-corner-tr { top: 10px; right: 10px; border-width: 1px 1px 0 0; }
+.gate-corner-bl { bottom: 10px; left: 10px; border-width: 0 0 1px 1px; }
+.gate-corner-br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; }
+
+.gate-header {
+  position: relative;
+  padding: 30px 38px 24px;
+  border-bottom: 1px solid var(--gate-border);
+  overflow: hidden;
+}
+
+.gate-watermark {
+  position: absolute;
+  right: 26px;
+  top: 12px;
+  font: 700 116px/0.9 var(--wide);
+  letter-spacing: -4px;
+  color: rgba(238, 241, 244, 0.042);
+  user-select: none;
+  pointer-events: none;
+}
+
+.gate-seal-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.gate-seal-emblem {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(212, 71, 71, 0.46);
+  background: var(--gate-seal-soft);
+  color: #e66a6a;
+  flex-shrink: 0;
+}
+
+.gate-seal-emblem svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.gate-seal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gate-kicker {
+  font: 700 10px/1.2 var(--wide);
+  letter-spacing: 1.8px;
+  color: #df7777;
+  text-transform: uppercase;
+}
+
+.gate-protocol {
+  font: 11px/1.3 var(--mono);
+  letter-spacing: 0.6px;
+  color: var(--gate-dim);
+}
+
+.gate-title {
+  all: unset;
+  display: block;
+  font: 900 clamp(28px, 3.8vw, 38px)/1.22 var(--font);
+  letter-spacing: 1.5px;
+  color: #f4f6f8;
+  margin: 0 0 10px;
+}
+
+.gate-subtitle {
+  margin: 0;
+  font: 600 15px/1.65 var(--font);
+  color: #c2cbd3;
+  letter-spacing: 0.4px;
+}
+
+.gate-body {
+  padding: 24px 38px 26px;
+}
+
+.gate-summary {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--gate-muted);
+}
+
+/* Formal diagnostic ledger */
+.gate-ledger {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--gate-border);
+  background: rgba(9, 12, 16, 0.62);
+  margin: 0 0 18px;
+}
+
+.gate-ledger-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(214, 224, 234, 0.08);
+  min-width: 0;
+}
+
+.gate-ledger-item:nth-child(odd) {
+  border-right: 1px solid rgba(214, 224, 234, 0.08);
+}
+
+.gate-ledger-item:nth-last-child(-n+2) {
+  border-bottom: 0;
+}
+
+.gate-ledger-label {
+  display: block;
+  font: 10px/1.3 var(--mono);
+  letter-spacing: 0.9px;
+  color: var(--gate-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.gate-ledger-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 13px/1.5 var(--font);
+  color: #dde3e8;
+  overflow-wrap: anywhere;
+}
+
+.gate-ledger-value.mono {
+  font: 12px/1.5 var(--mono);
+  color: #b7c2cc;
+}
+
+.gate-dot-seal {
+  width: 7px;
+  height: 7px;
+  background: var(--gate-seal-bright);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Security policy callout */
+.gate-notice {
+  border: 1px solid rgba(184, 51, 51, 0.28);
+  border-left: 3px solid var(--gate-seal);
+  background: rgba(184, 51, 51, 0.075);
+  padding: 14px 18px;
+  margin: 0 0 22px;
+}
+
+.gate-notice-title {
+  display: block;
+  font: 700 12px/1.4 var(--font);
+  letter-spacing: 0.8px;
+  color: #e4b4b4;
+  margin-bottom: 6px;
+}
+
+.gate-notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.85;
+  color: #b8c2cb;
+}
+
+.gate-feedback {
+  margin: -10px 0 20px;
+  font: 12px/1.7 var(--font);
+  color: #d79a9a;
+}
+
+.gate-feedback:empty {
+  display: none;
+}
+
+/* Authoritative action bar */
+.gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.gate-btn-primary,
+.gate-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 48px;
+  padding: 0 20px;
+  text-decoration: none;
+  font: 600 13px/1 var(--font);
+  letter-spacing: 0.6px;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  cursor: pointer;
+}
+
+.gate-btn-primary {
+  flex: 1 1 230px;
+  background: #e9edf1;
+  color: #101419;
+  border: 1px solid #e9edf1;
+}
+
+.gate-btn-primary:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.gate-btn-primary:active {
+  background: #d5dce3;
+}
+
+.gate-btn-primary span:last-child {
+  font: 11px var(--mono);
+  opacity: 0.72;
+}
+
+.gate-btn-secondary {
+  flex: 0 1 auto;
+  background: rgba(255, 255, 255, 0.03);
+  color: #d6dde4;
+  border: 1px solid var(--gate-border-strong);
+}
+
+.gate-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(238, 241, 244, 0.44);
+  color: #ffffff;
+}
+
+.gate-btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.gate-btn-primary:focus-visible,
+.gate-btn-secondary:focus-visible,
+.gate-footer a:focus-visible {
+  outline: 2px solid #d44747;
+  outline-offset: 3px;
+}
+
+.gate-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 40px;
+  border-top: 1px solid var(--gate-border);
+  background: rgba(8, 10, 14, 0.76);
+  font: 10px/1.4 var(--mono);
+  letter-spacing: 0.8px;
+  color: var(--gate-dim);
+}
+
+.gate-card-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.gate-card-links a {
+  color: var(--gate-muted);
+  text-decoration: none;
+  font: 500 12px/1 var(--font);
+  letter-spacing: 0.3px;
+  transition: color 0.15s ease;
+}
+
+.gate-card-links a:hover {
+  color: #f4f6f8;
+}
+
+/* Bottom institutional footer */
+.gate-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 44px;
+  border-top: 1px solid rgba(214, 224, 234, 0.08);
+  background: rgba(9, 11, 14, 0.78);
+  font: 11px/1.5 var(--mono);
+  letter-spacing: 0.5px;
+  color: var(--gate-dim);
+}
+
+.gate-footer span:last-child {
+  font: 11px/1.5 var(--font);
+  letter-spacing: 1px;
+  color: #7d8791;
+}
+
+/* Admin granted lock status ribbon inside the unlocked admission portal */
+.admin-lock-banner {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 46px;
+  background: #12151a;
+  border-bottom: 1px solid rgba(212, 71, 71, 0.42);
+  color: #e2e7ec;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-lock-banner-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.admin-lock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px;
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: 0.8px;
+  color: #f3c4c4;
+  background: rgba(184, 51, 51, 0.24);
+  border: 1px solid rgba(212, 71, 71, 0.5);
+  text-transform: uppercase;
+}
+
+.admin-lock-pill i {
+  width: 6px;
+  height: 6px;
+  background: var(--gate-seal-bright);
+  display: block;
+}
+
+.admin-lock-identity {
+  color: #9ba7b4;
+  font-size: 12px;
+}
+
+.admin-lock-identity strong {
+  color: #f2f5f8;
+  font-weight: 600;
+}
+
+.admin-lock-link {
+  color: #d6dde4;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 5px 11px;
+  border: 1px solid rgba(214, 224, 234, 0.22);
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin-lock-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .gate-topbar {
+    padding: 16px 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .gate-stage {
+    padding: 24px 16px;
+  }
+  .gate-header {
+    padding: 26px 22px 22px;
+  }
+  .gate-watermark {
+    font-size: 62px;
+    right: 16px;
+    top: auto;
+    bottom: 14px;
+    color: rgba(238, 241, 244, 0.036);
+  }
+  .gate-body {
+    padding: 22px 22px 24px;
+  }
+  .gate-ledger {
+    grid-template-columns: 1fr;
+  }
+  .gate-ledger-item:nth-child(odd) {
+    border-right: 0;
+  }
+  .gate-ledger-item:nth-last-child(2) {
+    border-bottom: 1px solid rgba(214, 224, 234, 0.08);
+  }
+  .gate-actions {
+    flex-direction: column;
+  }
+  .gate-btn-primary,
+  .gate-btn-secondary {
+    width: 100%;
+    flex: none;
+  }
+  .gate-card-foot {
+    padding: 14px 22px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .gate-footer {
+    padding: 16px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .admin-lock-banner {
+    padding: 10px 20px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-progress::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.35;
+  }
+}

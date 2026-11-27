@@ -60,26 +60,34 @@ func admissionRaw(t *testing.T, f *socialFixtureV2, path string, in any, headers
 func TestAdmissionPublicReceiptIsolationAndReplay(t *testing.T) {
 	f := admissionFixture(t)
 	in := admissionInput()
+	// Locked admission endpoints reject anonymous and non-admin callers.
+	f.request(t, "", "GET", "/api/v1/admission/config", nil, 401)
+	f.request(t, "Bob", "GET", "/api/v1/admission/config", nil, 403)
+	f.request(t, "Alice", "GET", "/api/v1/admission/config", nil, 200)
+	f.request(t, "", "POST", "/api/v1/admission/applications", in, 401)
+	f.request(t, "Bob", "POST", "/api/v1/admission/applications", in, 403)
+	f.request(t, "", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": in.ReceiptToken}, 401)
+	f.request(t, "Bob", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": in.ReceiptToken}, 403)
 	in.CovenantAccepted = false
-	f.request(t, "", "POST", "/api/v1/admission/applications", in, 400)
+	f.request(t, "Alice", "POST", "/api/v1/admission/applications", in, 400)
 	in.CovenantAccepted = true
-	admissionRaw(t, f, "/api/v1/admission/applications", in, map[string]string{"Origin": "https://untrusted.invalid"}, 403)
-	result := socialDataV2(f.request(t, "", "POST", "/api/v1/admission/applications", in, 200))
+	admissionRaw(t, f, "/api/v1/admission/applications", in, map[string]string{"Origin": "https://untrusted.invalid", "Authorization": "Bearer " + f.tokens["Alice"]}, 403)
+	result := socialDataV2(f.request(t, "Alice", "POST", "/api/v1/admission/applications", in, 200))
 	if result["status"] != "PENDING" || result["accessAllowed"] != false {
 		t.Fatal("submission granted access")
 	}
-	replay := socialDataV2(f.request(t, "", "POST", "/api/v1/admission/applications", in, 200))
+	replay := socialDataV2(f.request(t, "Alice", "POST", "/api/v1/admission/applications", in, 200))
 	if result["applicationId"] != replay["applicationId"] {
 		t.Fatal("replayed request duplicated")
 	}
 	changed := in
 	changed.Message = "different"
-	f.request(t, "", "POST", "/api/v1/admission/applications", changed, 409)
+	f.request(t, "Alice", "POST", "/api/v1/admission/applications", changed, 409)
 	other := in
 	other.ReceiptToken = identity.Secret()
-	f.request(t, "", "POST", "/api/v1/admission/applications", other, 409)
-	f.request(t, "", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": other.ReceiptToken}, 404)
-	queried := socialDataV2(f.request(t, "", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": in.ReceiptToken}, 200))
+	f.request(t, "Alice", "POST", "/api/v1/admission/applications", other, 409)
+	f.request(t, "Alice", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": other.ReceiptToken}, 404)
+	queried := socialDataV2(f.request(t, "Alice", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": in.ReceiptToken}, 200))
 	if queried["applicationId"] != result["applicationId"] {
 		t.Fatal("wrong receipt")
 	}
@@ -98,7 +106,7 @@ func TestAdmissionPublicReceiptIsolationAndReplay(t *testing.T) {
 func TestAdmissionReviewGrantRevokeAndKickReceipt(t *testing.T) {
 	f := admissionFixture(t)
 	in := admissionInput()
-	created := socialDataV2(f.request(t, "", "POST", "/api/v1/admission/applications", in, 200))
+	created := socialDataV2(f.request(t, "Alice", "POST", "/api/v1/admission/applications", in, 200))
 	id := created["applicationId"].(string)
 	decision := store.AdmissionDecision{ClientRequestID: "approve-one", ExpectedVersion: 1, Decision: "APPROVE"}
 	path := "/api/v1/admin/whitelist/applications/" + id + "/review"
@@ -126,7 +134,7 @@ func TestAdmissionReviewGrantRevokeAndKickReceipt(t *testing.T) {
 	if err != nil || entry.Allowed || entry.Version != 2 {
 		t.Fatal("revocation did not take effect")
 	}
-	state := socialDataV2(f.request(t, "", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": in.ReceiptToken}, 200))
+	state := socialDataV2(f.request(t, "Alice", "POST", "/api/v1/admission/status", map[string]string{"receiptToken": in.ReceiptToken}, 200))
 	if state["status"] != "APPROVED" || state["accessStatus"] != "REVOKED" {
 		t.Fatal("lost application history", state)
 	}
@@ -152,7 +160,7 @@ func TestAdmissionReviewGrantRevokeAndKickReceipt(t *testing.T) {
 
 func TestAdmissionConcurrentReviewHasSingleDecision(t *testing.T) {
 	f := admissionFixture(t)
-	created := socialDataV2(f.request(t, "", "POST", "/api/v1/admission/applications", admissionInput(), 200))
+	created := socialDataV2(f.request(t, "Alice", "POST", "/api/v1/admission/applications", admissionInput(), 200))
 	path := "/api/v1/admin/whitelist/applications/" + created["applicationId"].(string) + "/review"
 	var wg sync.WaitGroup
 	statuses := make(chan int, 2)
