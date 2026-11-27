@@ -11,6 +11,10 @@ let submitting = false;
 let pendingSubmission = null;
 let currentReceipt = '';
 let serviceConfig = null;
+let activeAuth = null;
+let submissionInitialized = false;
+const OFFICIAL_ORIGIN = 'https://www.deuteriumix.com';
+const ADMIN_PERMISSION = 'platform.admin';
 const COVENANT_VERSION = '2026-09-12-v1';
 const PENDING_KEY = 'deuterium-admission-pending-v1';
 const RECEIPT_KEY = 'deuterium-admission-receipt-v1';
@@ -112,11 +116,28 @@ document.querySelector('#nav-register').addEventListener('click', () => {
 });
 
 async function api(path, payload) {
+  if (!activeAuth) throw Object.assign(new Error('需要管理员权限才能访问此功能。'), { status: 403, code: 'FORBIDDEN' });
   let response;
-  try { response = await fetch('/api/v1/admission/' + path, { method: payload === undefined ? 'GET' : 'POST', credentials: 'omit', cache: 'no-store', headers: payload === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' }, body: payload === undefined ? undefined : JSON.stringify(payload), signal: AbortSignal.timeout(15000) }); }
-  catch { throw Object.assign(new Error('暂时无法连接服务器，请稍后重试。'), { status: 0 }); }
+  const headers = payload === undefined
+    ? { Accept: 'application/json' }
+    : { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-Token': activeAuth.csrfToken };
+  try {
+    response = await fetch((activeAuth.apiOrigin || '') + '/api/v1/admission/' + path, {
+      method: payload === undefined ? 'GET' : 'POST',
+      credentials: activeAuth.apiOrigin ? 'include' : 'same-origin',
+      cache: 'no-store',
+      headers,
+      body: payload === undefined ? undefined : JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch { throw Object.assign(new Error('暂时无法连接服务器，请稍后重试。'), { status: 0 }); }
   let value;
   try { value = await response.json(); } catch { throw Object.assign(new Error('暂时无法确认服务器的处理结果，请稍后重试。'), { status: 0 }); }
+  if (response.status === 401 || response.status === 403) {
+    activeAuth = null;
+    renderDenied({ reason: response.status === 401 ? 'unauthenticated' : 'non_admin', feedback: '当前管理员会话已失效或权限已变更，页面已重新锁定。' });
+    throw Object.assign(new Error(value.error?.message || '管理员会话已失效，访问已被拒绝。'), { status: response.status, code: value.error?.code });
+  }
   if (!response.ok || value.error) throw Object.assign(new Error(value.error?.message || '请求未完成，请稍后重试。'), { status: response.status, code: value.error?.code });
   return value.data;
 }
@@ -212,7 +233,9 @@ document.querySelector('#query-application').addEventListener('click', () => {
   dialog.showModal(); document.querySelector('#query-token').focus();
 });
 
-(async function restoreSubmission() {
+async function restoreSubmission() {
+  if (submissionInitialized) return;
+  submissionInitialized = true;
   try {
     const saved = storage.read(PENDING_KEY, true);
     const pending = saved ? JSON.parse(saved) : null;
@@ -228,4 +251,164 @@ document.querySelector('#query-application').addEventListener('click', () => {
       catch { /* Keep the pending request for an identical retry. A missing result is not proof of failure. */ }
     }
   } catch { /* Submission reports service and storage errors without blocking the form. */ }
-})();
+}
+
+function formatAuditTime(date = new Date()) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function userLabel(user) {
+  return String(user?.gameId || user?.displayName || user?.email || user?.userId || '未知账号');
+}
+
+function hasAdminClearance(user) {
+  return Array.isArray(user?.permissions) && user.permissions.includes(ADMIN_PERMISSION);
+}
+
+async function fetchWebSession(origin) {
+  try {
+    const response = await fetch((origin || '') + '/api/v1/web/session', {
+      method: 'GET',
+      credentials: origin ? 'include' : 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (response.status === 401) return { state: 'unauthenticated', origin };
+    let payload;
+    try { payload = await response.json(); } catch { return { state: 'error', origin, status: response.status }; }
+    if (!response.ok || payload?.error) {
+      return { state: response.status === 401 ? 'unauthenticated' : 'error', origin, status: response.status };
+    }
+    const data = payload?.data;
+    if (!data?.user?.userId || !data?.csrfToken) return { state: 'error', origin, status: response.status };
+    return { state: 'authenticated', origin, session: data, isAdmin: hasAdminClearance(data.user) };
+  } catch {
+    return { state: 'error', origin, status: 0 };
+  }
+}
+
+function renderDenied({ reason = 'unauthenticated', user = null, feedback = '' } = {}) {
+  document.body.dataset.gate = 'denied';
+  document.title = '访问受限 · DEUTERIUM IX';
+  const theme = document.querySelector('meta[name="theme-color"]');
+  if (theme) theme.content = '#090b0e';
+  const sessionEl = document.querySelector('#gate-session-text');
+  const noticeTitle = document.querySelector('#gate-notice-title');
+  const noticeBody = document.querySelector('#gate-notice-body');
+  const loginLabel = document.querySelector('#gate-login-label');
+  const domainLink = document.querySelector('#gate-domain-link');
+  const feedbackEl = document.querySelector('#gate-feedback');
+  const timestampEl = document.querySelector('#gate-timestamp');
+  if (timestampEl) timestampEl.textContent = formatAuditTime();
+  if (domainLink) domainLink.hidden = location.hostname !== '47.103.99.34';
+  if (feedbackEl) feedbackEl.textContent = feedback || '';
+
+  if (reason === 'non_admin') {
+    const name = userLabel(user);
+    if (sessionEl) sessionEl.textContent = `已识别账号「${name}」（普通成员 · 无管理员权限）`;
+    if (noticeTitle) noticeTitle.textContent = '权限核验未通过';
+    if (noticeBody) noticeBody.textContent = `当前官网登录账号「${name}」未持有管理员权限（platform.admin），系统已拒绝其访问白名单申请页。如需继续操作，请先在 Deuterium IX 官网退出当前账号并切换至管理员账号登录。`;
+    if (loginLabel) loginLabel.textContent = '前往官网切换管理员账号';
+  } else if (reason === 'ip_unauthenticated') {
+    if (sessionEl) sessionEl.textContent = '未检测到当前入口的管理员会话';
+    if (noticeTitle) noticeTitle.textContent = '官网登录态域名说明';
+    if (noticeBody) noticeBody.textContent = 'Deuterium IX 官网登录态受严格同源 Cookie 保护，仅在 deuteriumix.com 域名下自动识别。若您已在官网登录管理员账号，请点击下方“切换官网域名入口”直接访问；尚未登录请先前往官网完成管理员登录。';
+    if (loginLabel) loginLabel.textContent = '前往官网登录';
+  } else if (reason === 'error') {
+    if (sessionEl) sessionEl.textContent = '安全核验服务暂不可用（已默认拒绝）';
+    if (noticeTitle) noticeTitle.textContent = '默认拒绝保护已触发';
+    if (noticeBody) noticeBody.textContent = '当前未能完成官网登录态与管理员权限校验。遵循安全最小暴露原则，页面已保持锁定状态。请确认网络连接正常后点击“重新核验权限”。';
+    if (loginLabel) loginLabel.textContent = '前往官网登录';
+  } else {
+    if (sessionEl) sessionEl.textContent = '未检测到有效的官网登录会话';
+    if (noticeTitle) noticeTitle.textContent = '准入说明';
+    if (noticeBody) noticeBody.textContent = '若您为普通玩家，请留意官方公告等待下一阶段通行申请开放。若您为项目管理员，请先在 Deuterium IX 官网登录具备管理员权限的账号，随后返回此页面重新核验。';
+    if (loginLabel) loginLabel.textContent = '前往官网登录';
+  }
+}
+
+function grantAccess(auth) {
+  activeAuth = auth;
+  document.body.dataset.gate = 'granted';
+  document.title = '通行许可申请 · DEUTERIUM IX';
+  const theme = document.querySelector('meta[name="theme-color"]');
+  if (theme) theme.content = '#eeeeee';
+  const banner = document.querySelector('#admin-lock-banner');
+  const identityEl = document.querySelector('#admin-lock-identity');
+  if (identityEl) {
+    identityEl.replaceChildren(
+      document.createTextNode('已核验管理员：'),
+      Object.assign(document.createElement('strong'), { textContent: userLabel(auth.user) }),
+      document.createTextNode(`（${auth.sourceLabel}）`)
+    );
+  }
+  if (banner) banner.hidden = false;
+  restoreSubmission();
+}
+
+let verifyingGate = false;
+async function verifyAdminAccess({ manual = false } = {}) {
+  if (verifyingGate) return;
+  verifyingGate = true;
+  const recheckBtn = document.querySelector('#gate-recheck');
+  const feedbackEl = document.querySelector('#gate-feedback');
+  if (recheckBtn) recheckBtn.disabled = true;
+  if (manual && feedbackEl) feedbackEl.textContent = '正在重新核验官网管理员会话…';
+
+  try {
+    const host = location.hostname;
+    if (host === 'chat.deuteriumix.com') {
+      const official = await fetchWebSession(OFFICIAL_ORIGIN);
+      if (official.state === 'authenticated') {
+        if (official.isAdmin) {
+          grantAccess({ apiOrigin: OFFICIAL_ORIGIN, csrfToken: official.session.csrfToken, user: official.session.user, sourceLabel: '官网登录态' });
+          return;
+        }
+        renderDenied({ reason: 'non_admin', user: official.session.user, feedback: manual ? '重新核验完成：当前官网登录账号仍非管理员，访问保持拒绝。' : '' });
+        return;
+      }
+      const self = await fetchWebSession('');
+      if (self.state === 'authenticated') {
+        if (self.isAdmin) {
+          grantAccess({ apiOrigin: '', csrfToken: self.session.csrfToken, user: self.session.user, sourceLabel: '管理后台登录态' });
+          return;
+        }
+        renderDenied({ reason: 'non_admin', user: self.session.user, feedback: manual ? '重新核验完成：当前登录账号非管理员，访问保持拒绝。' : '' });
+        return;
+      }
+      const reason = official.state === 'error' && self.state === 'error' ? 'error' : 'unauthenticated';
+      renderDenied({ reason, feedback: manual ? '重新核验完成：尚未检测到有效的管理员登录态。' : '' });
+      return;
+    }
+
+    const self = await fetchWebSession('');
+    if (self.state === 'authenticated') {
+      if (self.isAdmin) {
+        grantAccess({ apiOrigin: '', csrfToken: self.session.csrfToken, user: self.session.user, sourceLabel: host === 'www.deuteriumix.com' ? '官网登录态' : '管理员会话' });
+        return;
+      }
+      renderDenied({ reason: 'non_admin', user: self.session.user, feedback: manual ? '重新核验完成：当前登录账号不具备管理员权限，访问保持拒绝。' : '' });
+      return;
+    }
+    if (self.state === 'unauthenticated') {
+      const reason = host === '47.103.99.34' ? 'ip_unauthenticated' : 'unauthenticated';
+      renderDenied({ reason, feedback: manual ? '重新核验完成：尚未检测到有效的管理员登录态。' : '' });
+      return;
+    }
+    renderDenied({ reason: 'error', feedback: manual ? '重新核验失败：无法连接权限核验服务，已维持锁定。' : '' });
+  } finally {
+    verifyingGate = false;
+    if (recheckBtn) recheckBtn.disabled = false;
+  }
+}
+
+document.querySelector('#gate-recheck')?.addEventListener('click', () => verifyAdminAccess({ manual: true }));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && document.body.dataset.gate === 'denied') {
+    verifyAdminAccess({ manual: false });
+  }
+});
+
+verifyAdminAccess({ manual: false });

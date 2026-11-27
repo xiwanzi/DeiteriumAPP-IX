@@ -121,8 +121,19 @@ func (s *Server) publicAdmissionResult(ctx context.Context, a store.AdmissionApp
 	return map[string]any{"applicationId": a.ID, "gameId": a.GameID, "status": a.Status, "createdAt": a.CreatedAt, "reviewedAt": a.ReviewedAt, "reason": reason, "accessAllowed": access.Allowed, "accessStatus": access.Status}, nil
 }
 
+func (s *Server) requireAdmissionAdmin(w http.ResponseWriter, r *http.Request) bool {
+	if _, err := s.admin(r, "platform.admin"); err != nil {
+		failError(w, r, err)
+		return false
+	}
+	return true
+}
+
 func (s *Server) registerAdmission(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/admission/config", func(w http.ResponseWriter, r *http.Request) {
+		if !s.requireAdmissionAdmin(w, r) {
+			return
+		}
 		if s.Config.AdmissionPublicOrigin == "" {
 			failure(w, r, 503, "ADMISSION_CLOSED", "申请通道尚未开放。")
 			return
@@ -130,6 +141,9 @@ func (s *Server) registerAdmission(mux *http.ServeMux) {
 		v2Success(w, r, map[string]any{"covenantVersion": store.AdmissionCovenantVersion, "groupNumber": "490579956", "groupURL": "https://qm.qq.com/q/HROB9FDSYE", "defaultServer": "amiya", "publicOrigin": s.Config.AdmissionPublicOrigin, "applicationURL": s.Config.AdmissionURL()})
 	})
 	mux.HandleFunc("POST /api/v1/admission/applications", func(w http.ResponseWriter, r *http.Request) {
+		if !s.requireAdmissionAdmin(w, r) {
+			return
+		}
 		if !s.publicAdmissionOrigin(r) {
 			failError(w, r, ErrForbidden)
 			return
@@ -185,6 +199,9 @@ func (s *Server) registerAdmission(mux *http.ServeMux) {
 		v2Success(w, r, result)
 	})
 	mux.HandleFunc("POST /api/v1/admission/status", func(w http.ResponseWriter, r *http.Request) {
+		if !s.requireAdmissionAdmin(w, r) {
+			return
+		}
 		if !s.publicAdmissionOrigin(r) {
 			failError(w, r, ErrForbidden)
 			return

@@ -2,14 +2,125 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#eeeeee"><meta name="description" content="申请加入 Deuterium IX。请先加入服务器 QQ 群，填写正版玩家 ID 和 QQ 号码，并阅读文明游戏公约。">
-<title>通行许可申请 · DEUTERIUM IX</title>
+<meta name="theme-color" content="#090b0e"><meta name="description" content="Deuterium IX 通行许可申请通道当前已锁定，仅限授权管理员访问。">
+<title>访问受限 · DEUTERIUM IX</title>
 <link rel="icon" type="image/png" href="assets/deuterium-ix-emblem.png">
 <link rel="preload" href="assets/dsa-launch-minecraft-v5.png" as="image">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="community.css">
+<link rel="stylesheet" href="gate.css">
+<noscript><style>body[data-gate="checking"] .gate-checking{display:none!important}body[data-gate="checking"] .gate-denied{display:block!important}</style></noscript>
 </head>
-<body>
+<body data-gate="checking">
+<section id="access-gate" class="access-gate" aria-live="polite">
+  <div class="gate-backdrop" aria-hidden="true"></div>
+  <div class="gate-grid" aria-hidden="true"></div>
+  <div class="gate-vignette" aria-hidden="true"></div>
+
+  <header class="gate-topbar">
+    <a href="https://www.deuteriumix.com/" class="gate-brand" aria-label="返回 Deuterium IX 官网">
+      <img src="assets/deuterium-ix-emblem.png" alt="Deuterium IX">
+      <span class="gate-brand-text">
+        <strong>DEUTERIUM IX</strong>
+        <span>通行准入管控 · ACCESS CONTROL</span>
+      </span>
+    </a>
+    <div class="gate-classification"><i></i><span>RESTRICTED // HTTP 403</span></div>
+  </header>
+
+  <div class="gate-stage">
+    <div class="gate-checking" id="gate-checking" role="status">
+      <p class="gate-checking-code">SECURITY CLEARANCE CHECK // VERIFYING</p>
+      <h1>正在核验官网管理员权限</h1>
+      <p>系统正在校验当前浏览器的官网登录态与管理员授权，请稍候。</p>
+      <div class="gate-progress" aria-hidden="true"></div>
+    </div>
+
+    <article class="gate-denied" id="gate-denied" role="alertdialog" aria-labelledby="gate-title" aria-describedby="gate-summary">
+      <span class="gate-corner gate-corner-tl" aria-hidden="true"></span>
+      <span class="gate-corner gate-corner-tr" aria-hidden="true"></span>
+      <span class="gate-corner gate-corner-bl" aria-hidden="true"></span>
+      <span class="gate-corner gate-corner-br" aria-hidden="true"></span>
+
+      <div class="gate-header">
+        <span class="gate-watermark" aria-hidden="true">403</span>
+        <div class="gate-seal-row">
+          <div class="gate-seal-emblem" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.4 7.5 9.8 4.4-1.4 7.5-5.2 7.5-9.8V6L12 3Z"/>
+              <path d="M9.5 11.5v-1.2a2.5 2.5 0 0 1 5 0v1.2"/>
+              <rect x="8.5" y="11.5" width="7" height="5"/>
+            </svg>
+          </div>
+          <div class="gate-seal-meta">
+            <span class="gate-kicker">ACCESS DENIED // CLEARANCE REQUIRED</span>
+            <span class="gate-protocol" id="gate-protocol">DEUTERIUM IX · ADMISSION LOCKDOWN PROTOCOL</span>
+          </div>
+        </div>
+        <h1 class="gate-title" id="gate-title">访问已被拒绝</h1>
+        <p class="gate-subtitle" id="gate-subtitle">白名单通行申请通道当前已锁定</p>
+      </div>
+
+      <div class="gate-body">
+        <p class="gate-summary" id="gate-summary">根据服务器安全管控策略，通行许可申请页现已对外关闭。系统仅允许已登录且具备管理员权限的 Deuterium IX 官网账号访问此页面，所有未登录访客及非管理员账号请求均已被直接拦截。</p>
+
+        <div class="gate-ledger" aria-label="安全核验记录">
+          <div class="gate-ledger-item">
+            <span class="gate-ledger-label">ACCESS STATUS / 通道状态</span>
+            <span class="gate-ledger-value"><i class="gate-dot-seal" aria-hidden="true"></i><span id="gate-status-text">已锁定 · 仅限授权管理员</span></span>
+          </div>
+          <div class="gate-ledger-item">
+            <span class="gate-ledger-label">SESSION AUDIT / 会话核验</span>
+            <span class="gate-ledger-value" id="gate-session-text">未检测到有效的官网管理员登录态</span>
+          </div>
+          <div class="gate-ledger-item">
+            <span class="gate-ledger-label">ENFORCEMENT / 安全策略</span>
+            <span class="gate-ledger-value mono">FAIL-CLOSED · PLATFORM.ADMIN</span>
+          </div>
+          <div class="gate-ledger-item">
+            <span class="gate-ledger-label">TIMESTAMP / 核验时间</span>
+            <span class="gate-ledger-value mono" id="gate-timestamp">—</span>
+          </div>
+        </div>
+
+        <div class="gate-notice" id="gate-notice">
+          <strong class="gate-notice-title" id="gate-notice-title">准入说明</strong>
+          <p id="gate-notice-body">若您为普通玩家，请留意官方公告等待下一阶段通行申请开放。若您为项目管理员，请先在 Deuterium IX 官网登录具备管理员权限的账号，随后返回此页面重新核验。</p>
+        </div>
+
+        <p class="gate-feedback" id="gate-feedback" role="status"></p>
+
+        <div class="gate-actions">
+          <a class="gate-btn-primary" id="gate-login-link" href="https://www.deuteriumix.com/">
+            <span id="gate-login-label">前往官网登录</span>
+            <span>OFFICIAL PORTAL ↗</span>
+          </a>
+          <button type="button" class="gate-btn-secondary" id="gate-recheck">
+            <span>重新核验权限</span>
+            <span>VERIFY</span>
+          </button>
+          <a class="gate-btn-secondary" id="gate-domain-link" href="https://www.deuteriumix.com/admission/" hidden>
+            <span>切换官网域名入口</span>
+            <span>DOMAIN ↗</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="gate-card-foot">
+        <span>ERROR_CODE: ADMISSION_ADMIN_ONLY_403</span>
+        <nav class="gate-card-links" aria-label="快捷导航">
+          <a href="https://www.deuteriumix.com/">返回官网</a>
+          <a href="https://chat.deuteriumix.com/admin">管理后台</a>
+        </nav>
+      </div>
+    </article>
+  </div>
+
+  <footer class="gate-footer">
+    <span>DEUTERIUM IX · PERSONNEL ACCESS CONTROL SYSTEM</span>
+    <span>未经授权禁止访问</span>
+  </footer>
+</section>
 <svg class="svg-library" aria-hidden="true"><defs>
 <symbol id="icon-access" viewBox="0 0 32 32"><path d="m5 4 6 6-4 4-6-6Zm9 0 17 17-4 4L10 8ZM1 21 18 4l4 4L5 25Zm13 0 4-4 9 9-4 4ZM1 13l4-4 9 9-4 4Z"/></symbol>
 <symbol id="icon-file" viewBox="0 0 32 32"><path d="M5 2h17l6 6v22H5zm4 4v20h15V10h-6V6Zm3 8h9v3h-9zm0 6h9v3h-9Z"/></symbol>
@@ -23,6 +134,14 @@
   <div class="side-bottom"><div class="side-version">DEUTERIUM IX<br>RECONSTRUCTION PROGRAM</div><button class="side-source" type="button" data-dialog="covenant" aria-label="文明游戏公约"><svg><use href="#icon-file"/></svg><span>游戏公约</span></button><span class="side-code">// 09</span></div>
 </aside>
 <main class="viewport">
+  <div class="admin-lock-banner" id="admin-lock-banner" hidden>
+    <div class="admin-lock-banner-main">
+      <span class="admin-lock-pill"><i></i>ADMIN LOCK ACTIVE</span>
+      <span>白名单申请页当前已对外锁定，仅管理员可见。</span>
+      <span class="admin-lock-identity" id="admin-lock-identity"></span>
+    </div>
+    <a class="admin-lock-link" href="https://chat.deuteriumix.com/admin?section=whitelist">返回白名单管理 ↗</a>
+  </div>
   <div class="world" role="img" aria-label="DSA 方块风格火箭夜间发射场景"></div><div class="world-grade"></div><div class="world-dots" aria-hidden="true"></div>
   <header class="topline"><div class="project-name"><img class="version-emblem" src="assets/deuterium-ix-emblem.png" alt=""><span>DEUTERIUM IX<small>重构计划 · 开拓者招募</small></span></div><span class="topline-code">[ RECONSTRUCTION PROGRAM / 09 ]</span><a class="group-link topline-group" href="https://qm.qq.com/q/HROB9FDSYE" target="_blank" rel="noopener noreferrer"><span class="status-square"></span> 加入 QQ 群 <b>↗</b></a></header>
   <div class="layout">
