@@ -42,7 +42,7 @@ export default function AuthScreen({
   const cooldowns = useRef(new Map());
   const recipient = `${screen}:${screen === 'register' ? email.trim().toLowerCase() : account.trim().toLowerCase()}`;
   const recipientRef = useRef(recipient); recipientRef.current = recipient;
-  const noDelivery = new Set(['MINECRAFT_PLAYER_NOT_FOUND','MINECRAFT_LOOKUP_UNAVAILABLE','MAIL_NOT_READY','EMAIL_INVALID','GAME_ID_INVALID','ACCOUNT_ALREADY_EXISTS','FORBIDDEN','INVALID_REQUEST']);
+  const noDelivery = new Set(['MINECRAFT_PLAYER_NOT_FOUND','MINECRAFT_LOOKUP_UNAVAILABLE','MAIL_NOT_READY','EMAIL_INVALID','GAME_ID_INVALID','ACCOUNT_ALREADY_EXISTS','FORBIDDEN','INVALID_REQUEST','PLAYER_OFFLINE','PLUGIN_BRIDGE_UNAVAILABLE','SERVER_BUSY','NAME_LOOKUP_BUSY']);
   const [codeBusy, setCodeBusy] = useState(false), [resendAt, setResendAt] = useState(0), [remaining, setRemaining] = useState(0);
   const codeRequest = useRef(0);
   useEffect(() => {
