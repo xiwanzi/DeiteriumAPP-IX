@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Mail, Send, Settings2, RefreshCw, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { Mail, Send, Settings2, RefreshCw, ArrowUpRight, CheckCircle2, Search, X } from "lucide-react";
 import { Badge, Button, Field, PageHead, Tabs, Modal } from "./components.jsx";
 import EmailSettings from "./EmailSettings.jsx";
 import { id } from "./format.js";
@@ -38,7 +38,36 @@ function ComposeMail({client,enabled,onSent}){
   const send=async e=>{e.preventDefault();if(busy)return;setBusy(true);setMessage("");const body={recipient:to.trim(),subject:subject.trim(),body:text.trim(),channel:"ENTERPRISE"},fingerprint=JSON.stringify(body);if(pending.current?.fingerprint!==fingerprint)pending.current={fingerprint,body:{...body,clientRequestId:id()}};try{await client.request("/api/v1/admin/mail/send",{method:"POST",body:pending.current.body});setText("");setSubject("");guard.markSaved({to,subject:"",text:""});pending.current=null;setMessage("邮件已加入发送队列，可在发送记录中查看结果。");await onSent();}catch(e){setMessage(e.message)}finally{setBusy(false)}};
   return <form className="panel admin-form mail-compose" onSubmit={send}><h2>官方邮件</h2><p className="muted">通过企业邮箱发送。</p><Field label="收件邮箱" type="email" value={to} onChange={e=>setTo(e.target.value)} required maxLength={254}/><Field label="主题" value={subject} onChange={e=>setSubject(e.target.value)} required maxLength={120}/><Field label="正文"><textarea rows={12} value={text} onChange={e=>setText(e.target.value)} required maxLength={12000}/></Field>{!enabled&&<p className="notice-box">请先配置并启用企业邮箱通道。</p>}{message&&<p className="notice-box" role="status">{message}</p>}<Button type="submit" disabled={busy||!enabled}><Send size={16}/>{busy?"正在提交…":"发送邮件"}</Button></form>;
 }
-function MailLog({events,client,onRetried}){const [retrying,setRetrying]=useState(""),[error,setError]=useState("");const retry=async event=>{if(retrying)return;setRetrying(event.eventId);setError("");try{await client.request(`/api/v1/admin/mail/events/${event.eventId}/retry`,{method:"POST",body:{clientRequestId:id()}});await onRetried()}catch(e){setError(e.message)}finally{setRetrying("")}};return <section className="panel mail-log"><h2>最近发送</h2>{error&&<p className="auth-error" role="alert">{error}</p>}{events.length?<div className="table-wrap"><table><thead><tr><th>主题 / 收件人</th><th>通道</th><th>状态</th><th>时间</th></tr></thead><tbody>{events.map(e=><tr key={e.eventId}><td><strong>{e.subject}</strong><small>{e.recipient}</small>{e.lastError&&<small className="auth-error">{e.lastError}</small>}</td><td>{names[e.channel]}</td><td><Badge tone={e.status==="SENT"?"sage":e.status==="FAILED"?"red":"neutral"}>{deliveryLabels[e.status]||e.status}</Badge>{e.status==="FAILED"&&!e.kind?.startsWith("CODE_")&&<Button secondary disabled={Boolean(retrying)} onClick={()=>retry(e)}>重新发送</Button>}</td><td>{new Date(e.createdAt).toLocaleString("zh-CN")}</td></tr>)}</tbody></table></div>:<p className="muted">还没有邮件记录。</p>}</section>}
+function MailLog({events,client,onRetried}){
+  const [retrying,setRetrying]=useState(""),[error,setError]=useState(""),[statusFilter,setStatusFilter]=useState("ALL"),[query,setQuery]=useState("");
+  const retry=async event=>{if(retrying)return;setRetrying(event.eventId);setError("");try{await client.request(`/api/v1/admin/mail/events/${event.eventId}/retry`,{method:"POST",body:{clientRequestId:id()}});await onRetried()}catch(e){setError(e.message)}finally{setRetrying("")}};
+  const filtered=events.filter(e=>{
+    if(statusFilter==="SENT"&&e.status!=="SENT")return false;
+    if(statusFilter==="FAILED"&&!["FAILED","RETRY"].includes(e.status))return false;
+    if(statusFilter==="PENDING"&&!["PENDING","SENDING"].includes(e.status))return false;
+    const q=query.trim().toLowerCase();
+    if(!q)return true;
+    return `${e.subject||""} ${e.recipient||""} ${names[e.channel]||e.channel||""}`.toLowerCase().includes(q);
+  });
+  const failedCount=events.filter(e=>["FAILED","RETRY"].includes(e.status)).length;
+  return <section className="panel mail-log">
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:12}}>
+      <h2 style={{margin:0}}>最近发送 ({events.length})</h2>
+      <div className="adm-toolbar-left" style={{flex:"0 1 auto"}}>
+        <div className="adm-pill-group" role="group" aria-label="按发送状态筛选">
+          {[["ALL","全部"],["SENT","已接收"],["FAILED",`失败/重试 (${failedCount})`],["PENDING","等待中"]].map(([key,label])=><button key={key} type="button" className={statusFilter===key?"is-active":""} onClick={()=>setStatusFilter(key)}>{label}</button>)}
+        </div>
+        <label className="adm-search-box" style={{minWidth:180,height:34}}>
+          <Search size={14}/>
+          <input aria-label="搜索邮件记录" placeholder="搜主题或收件邮箱…" value={query} onChange={e=>setQuery(e.target.value)}/>
+          {query&&<button type="button" className="adm-search-clear" aria-label="清空" onClick={()=>setQuery("")}><X size={13}/></button>}
+        </label>
+      </div>
+    </div>
+    {error&&<p className="auth-error" role="alert">{error}</p>}
+    {filtered.length?<div className="table-wrap"><table><thead><tr><th>主题 / 收件人</th><th>通道</th><th>状态</th><th>时间</th></tr></thead><tbody>{filtered.map(e=><tr key={e.eventId}><td><strong>{e.subject}</strong><small>{e.recipient}</small>{e.lastError&&<small className="auth-error">{e.lastError}</small>}</td><td>{names[e.channel]||e.channel}</td><td><Badge tone={e.status==="SENT"?"sage":e.status==="FAILED"?"red":"neutral"}>{deliveryLabels[e.status]||e.status}</Badge>{e.status==="FAILED"&&!e.kind?.startsWith("CODE_")&&<Button secondary disabled={Boolean(retrying)} onClick={()=>retry(e)}>重新发送</Button>}</td><td>{new Date(e.createdAt).toLocaleString("zh-CN")}</td></tr>)}</tbody></table></div>:<p className="muted">{events.length?"没有符合筛选条件的邮件记录。":"还没有邮件记录。"}</p>}
+  </section>;
+}
 
 function NotificationTemplates({client,initial,enabled,onSaved}){
   const [review,setReview]=useState(initial.admissionReviewEnabled),[recipients,setRecipients]=useState((initial.recipients||[]).join("\n")),[version,setVersion]=useState(initial.version),[busy,setBusy]=useState(false),[message,setMessage]=useState(""),[preview,setPreview]=useState(null);const pending=useRef(null),previewRequest=useRef(0);const guard=useUnsavedChanges({review,recipients},busy);

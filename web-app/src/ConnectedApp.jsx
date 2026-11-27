@@ -1,6 +1,7 @@
 import { applyPlayerNames } from "./player-names.js";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { confirmNavigation } from "./unsaved-changes.js";
+import { DEFAULT_PINNED_PATHS } from "./admin-navigation.js";
 import {
   ShieldCheck,
   Server,
@@ -49,7 +50,30 @@ export default function ConnectedApp() {
     ),
     [modal, setModal] = useState(null),
     [notice, setNotice] = useState(""),
-    [requestedConversation, setRequestedConversation] = useState(null);
+    [requestedConversation, setRequestedConversation] = useState(null),
+    [paletteOpen, setPaletteOpen] = useState(false),
+    [adminSignals, setAdminSignals] = useState({}),
+    [refreshingSignals, setRefreshingSignals] = useState(false),
+    [pinnedPaths, setPinnedPaths] = useState(() => {
+      try {
+        const raw = localStorage.getItem("deuterium-admin-pins");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
+      return DEFAULT_PINNED_PATHS;
+    }),
+    [recentPaths, setRecentPaths] = useState(() => {
+      try {
+        const raw = localStorage.getItem("deuterium-admin-recents");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
+      return [];
+    });
   const sessionRef = useRef(null),
     clientRef = useRef(null);
   const currentUrl = useRef(location.href);
@@ -153,6 +177,72 @@ export default function ConnectedApp() {
       history.replaceState({}, "", "/verify"); currentUrl.current=location.href;setPath("/verify");setSearch("");
     }
   }, [session?.user.gameVerified,path,search]);
+  const managingRoute = path === "/admin" || path === "/merchant";
+  const permKey = (session?.user?.permissions || []).join(",");
+
+  const togglePin = useCallback((target) => {
+    setPinnedPaths((old) => {
+      const next = old.includes(target) ? old.filter((p) => p !== target) : [target, ...old].slice(0, 8);
+      try { localStorage.setItem("deuterium-admin-pins", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!managingRoute || !session?.user?.userId) return;
+    const currentTarget = path === "/merchant" ? "/merchant" : (new URLSearchParams(search).get("section") ? `/admin?section=${new URLSearchParams(search).get("section")}` : "");
+    if (!currentTarget || currentTarget === "/admin?section=overview") return;
+    setRecentPaths((old) => {
+      const next = [currentTarget, ...old.filter((p) => p !== currentTarget)].slice(0, 6);
+      try { localStorage.setItem("deuterium-admin-recents", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [managingRoute, session?.user?.userId, path, search]);
+
+  const refreshAdminSignals = useCallback(async () => {
+    if (!managingRoute || !sessionRef.current?.user?.userId) return;
+    const perms = sessionRef.current.user?.permissions || [];
+    const isAll = perms.includes("platform.admin");
+    setRefreshingSignals(true);
+    const jobs = [];
+    if (isAll || perms.includes("support.manage")) {
+      jobs.push(client.request("/api/v1/admin/support/tools").then((r) => ({ supportOpen: r.data?.counts?.OPEN ?? 0 })).catch(() => ({})));
+    }
+    if (isAll) {
+      jobs.push(client.request("/api/v1/admin/whitelist/summary").then((r) => ({
+        whitelistPending: r.data?.pending ?? 0,
+        whitelistActive: r.data?.active ?? 0,
+        onlinePlayers: r.data?.gateway?.online ? r.data.gateway.onlinePlayers : null,
+      })).catch(() => ({})));
+      jobs.push(client.request("/api/v1/admin/image-review?page=0").then((r) => ({ imageFlagged: r.data?.summary?.flagged ?? 0 })).catch(() => ({})));
+    }
+    if (isAll || perms.includes("intervention.manage")) {
+      jobs.push(client.request("/api/v1/admin/interventions/summary").then((r) => ({ interventionsPending: r.data?.pending ?? 0 })).catch(() => ({})));
+    }
+    if (isAll || perms.includes("core.read")) {
+      jobs.push(client.nodes().then((r) => {
+        const list = r.data?.nodes || [];
+        return { nodesTotal: list.length, nodesOnline: list.filter((n) => n.online).length };
+      }).catch(() => ({})));
+    }
+    try {
+      const results = await Promise.all(jobs);
+      const merged = Object.assign({}, ...results);
+      setAdminSignals((old) => ({ ...old, ...merged }));
+    } finally {
+      setRefreshingSignals(false);
+    }
+  }, [client, managingRoute, permKey]);
+
+  useEffect(() => {
+    if (!managingRoute || !session?.user?.userId) return;
+    refreshAdminSignals();
+    const timer = setInterval(() => {
+      if (!document.hidden) refreshAdminSignals();
+    }, 45000);
+    return () => clearInterval(timer);
+  }, [managingRoute, session?.user?.userId, refreshAdminSignals]);
+
   const logout = async () => {
     try {
       await client.logout();
@@ -231,6 +321,12 @@ export default function ConnectedApp() {
         onNotifications={() => navigate("/notifications")}
         onCart={() => navigate("/cart")}
         onAbout={() => setModal({ type: "about" })}
+        adminSignals={adminSignals}
+        pinnedPaths={pinnedPaths}
+        onTogglePin={togglePin}
+        recentPaths={recentPaths}
+        paletteOpen={paletteOpen}
+        setPaletteOpen={setPaletteOpen}
       >
         {path === "/information" ? (
           <ConnectedChat
@@ -256,7 +352,19 @@ export default function ConnectedApp() {
         ) : path === "/support" ? (
           <SupportContact client={client} user={session.user} />
         ) : path === "/admin" ? (
-          <OfficialAdmin client={client} user={session.user} navigate={navigate} search={search} />
+          <OfficialAdmin
+            client={client}
+            user={session.user}
+            navigate={navigate}
+            search={search}
+            adminSignals={adminSignals}
+            refreshingSignals={refreshingSignals}
+            onRefreshSignals={refreshAdminSignals}
+            pinnedPaths={pinnedPaths}
+            onTogglePin={togglePin}
+            recentPaths={recentPaths}
+            onOpenPalette={() => setPaletteOpen(true)}
+          />
         ) : path === "/merchant" ? (
           <CatalogManagement client={client} user={session.user} />
         ) : (
@@ -270,7 +378,7 @@ export default function ConnectedApp() {
       </AppShell>
       {modal?.type === "about" && (
         <Modal title="Deuterium Web" close={() => setModal(null)}>
-          <h2>2.0.45</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
+          <h2>2.0.46</h2><p className="description">属于我们的世界。与 App 共用 Deuterium ID，连接游戏中的朋友和每一份创造。</p>
           <p className="muted">账号、聊天和交易以服务器记录为准。</p>
             <p className="muted">表情图形：<a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener noreferrer">Twemoji</a> · <a href="/media/emoji/LICENSE-GRAPHICS.txt" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
         </Modal>

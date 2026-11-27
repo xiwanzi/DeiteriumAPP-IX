@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Plus, Search, Ticket, CalendarDays, Users, Send, FileText } from "lucide-react";
+import { Plus, Search, Ticket, CalendarDays, Users, Send, FileText, Copy } from "lucide-react";
 import { Badge, Button, Empty, Field, Modal, PageHead, Tabs, Toggle } from "./components.jsx";
 import SearchPicker from "./SearchPicker.jsx";
 import { CouponCard } from "./CouponWallet.jsx";
@@ -73,7 +73,7 @@ export default function CouponManagement({ client }) {
       <div className="coupon-row-summary"><Badge tone={couponStatus(coupon) === "进行中" ? "sage" : "neutral"}>{couponStatus(coupon)}</Badge><h3>{coupon.name}</h3><p>{coupon.type === "ITEM" ? "单品折扣券" : "整单优惠券"} · {coupon.stackWithProductDiscount ? "可叠加商品折扣" : "与商品折扣择优"}</p></div>
       <div className="coupon-row-benefit"><div className="coupon-row-value">{couponBenefit(coupon)}</div><small>{couponConditions(coupon)}</small></div>
       <div className="coupon-row-audience"><p>{coupon.audience === "ALL" ? "全体玩家 · 含新注册玩家" : `${coupon.playerRefs.length} 位指定玩家`}</p><small>{couponDate(coupon.startsAt)} — {couponDate(coupon.endsAt)}</small></div>
-      <div className="coupon-row-edit coupon-row-actions"><Button secondary disabled={busy} onClick={() => setEditor(coupon)}>编辑</Button>{!coupon.active && <button type="button" className="text-button danger-text" disabled={busy || deleting} onClick={() => { setDeleteError(""); setDeletion({ coupon, body: { clientRequestId: id(), expectedVersion: coupon.version } }); }}>删除</button>}</div>
+      <div className="coupon-row-edit coupon-row-actions"><Button secondary disabled={busy} onClick={() => setEditor(coupon)}>编辑</Button><Button secondary disabled={busy} title="复制为新草稿" aria-label={`复制 ${coupon.name} 为新草稿`} onClick={() => { setMessage(""); const { couponId, version, publicationState, active, ...rest } = coupon; setEditor({ ...rest, name: `${coupon.name} · 副本`.slice(0, 80), publicationState: "DRAFT", active: false }); }}><Copy size={14} />复制</Button>{!coupon.active && <button type="button" className="text-button danger-text" disabled={busy || deleting} onClick={() => { setDeleteError(""); setDeletion({ coupon, body: { clientRequestId: id(), expectedVersion: coupon.version } }); }}>删除</button>}</div>
     </article>)}</div>
     {!busy && !visible.length && <Empty title={filter === "草稿" ? "先准备好你的优惠" : "还没有匹配的优惠券"} text={filter === "草稿" ? "保存几张不同的优惠券草稿，再勾选它们，一次发放给玩家。" : "换个筛选条件，或新建一张优惠券草稿。"} />}
     {cursor && <div className="button-row"><Button secondary disabled={busy} onClick={() => load(true)}>加载更多优惠券</Button></div>}

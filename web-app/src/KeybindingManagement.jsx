@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Keyboard, RefreshCw, Search } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Keyboard, RefreshCw, Search, X } from "lucide-react";
 import { Button, Empty, Field, Modal, PageHead } from "./components.jsx";
 import {
   choices,
@@ -13,6 +13,45 @@ import "./keybindings.css";
 const base = "/api/v1/admin/keybindings";
 const date = (value) =>
   new Date(value).toLocaleString("zh-CN", { hour12: false });
+
+const CODE_TO_MC = {
+  Space: "key.keyboard.space",
+  Tab: "key.keyboard.tab",
+  Enter: "key.keyboard.enter",
+  Backspace: "key.keyboard.backspace",
+  Minus: "key.keyboard.minus",
+  Equal: "key.keyboard.equal",
+  BracketLeft: "key.keyboard.left.bracket",
+  BracketRight: "key.keyboard.right.bracket",
+  Backslash: "key.keyboard.backslash",
+  Semicolon: "key.keyboard.semicolon",
+  Quote: "key.keyboard.apostrophe",
+  Comma: "key.keyboard.comma",
+  Period: "key.keyboard.period",
+  Slash: "key.keyboard.slash",
+  Backquote: "key.keyboard.grave.accent",
+  ArrowUp: "key.keyboard.up",
+  ArrowDown: "key.keyboard.down",
+  ArrowLeft: "key.keyboard.left",
+  ArrowRight: "key.keyboard.right",
+  Home: "key.keyboard.home",
+  End: "key.keyboard.end",
+  PageUp: "key.keyboard.page.up",
+  PageDown: "key.keyboard.page.down",
+  Insert: "key.keyboard.insert",
+  Delete: "key.keyboard.delete",
+  CapsLock: "key.keyboard.caps.lock",
+};
+
+function mapDomEventToMcKey(e) {
+  const c = e.code || "";
+  if (/^Key([A-Z])$/.test(c)) return `key.keyboard.${c.slice(3).toLowerCase()}`;
+  if (/^Digit([0-9])$/.test(c)) return `key.keyboard.${c.slice(5)}`;
+  if (/^F([1-9]|1[0-2])$/.test(c)) return `key.keyboard.${c.toLowerCase()}`;
+  if (/^Numpad([0-9])$/.test(c)) return `key.keyboard.keypad.${c.slice(6)}`;
+  return CODE_TO_MC[c] || null;
+}
+
 function SearchBox({ label, value, change }) {
   return (
     <label className="keys-search">
@@ -24,16 +63,27 @@ function SearchBox({ label, value, change }) {
         value={value}
         onChange={(e) => change(e.target.value)}
       />
+      {value && (
+        <button
+          type="button"
+          className="adm-search-clear"
+          aria-label="清空搜索"
+          onClick={() => change("")}
+        >
+          <X size={14} />
+        </button>
+      )}
     </label>
   );
 }
+
 export default function KeybindingManagement({ client }) {
-  const [query, setQuery] = useState(""),
-    [offset, setOffset] = useState(0),
-    [page, setPage] = useState(null),
-    [selected, select] = useState(""),
-    [error, setError] = useState(""),
-    [refresh, reload] = useState(0);
+  const [query, setQuery] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [page, setPage] = useState(null);
+  const [selected, select] = useState("");
+  const [error, setError] = useState("");
+  const [refresh, reload] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     setError("");
@@ -68,7 +118,11 @@ export default function KeybindingManagement({ client }) {
   }, [client, query, offset, refresh]);
   return (
     <section className="keys-workspace">
-      <PageHead title="玩家键位" />
+      <PageHead
+        eyebrow="PLAYER KEYBINDINGS"
+        title="玩家键位"
+        subtitle="按分类快速定位玩家按键冲突，支持直接按下键盘录入目标按键。"
+      />
       <div className="keys-layout">
         <aside className="panel keys-players" aria-label="玩家列表">
           <SearchBox
@@ -139,13 +193,16 @@ export default function KeybindingManagement({ client }) {
     </section>
   );
 }
+
 function PlayerKeys({ uuid, client }) {
-  const [data, setData] = useState(null),
-    [error, setError] = useState(""),
-    [refresh, reload] = useState(0),
-    [query, setQuery] = useState(""),
-    [filter, setFilter] = useState("全部"),
-    [edit, setEdit] = useState(null);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [refresh, reload] = useState(0);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("全部");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [edit, setEdit] = useState(null);
+
   useEffect(() => {
     const controller = new AbortController();
     let timer, latest;
@@ -179,14 +236,23 @@ function PlayerKeys({ uuid, client }) {
       clearTimeout(timer);
     };
   }, [uuid, client, refresh]);
+
   const all = Object.entries(data?.rows || {});
+  const categories = useMemo(
+    () =>
+      [...new Set(all.map(([, r]) => r.category).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "zh"),
+      ),
+    [all],
+  );
   const search = query.trim().toLowerCase();
   const rows = all
     .filter(
       ([id, r]) =>
         (filter === "全部" || keyStatus(r) === filter) &&
-        [id, r.label, r.category, keyName(r.value), keyName(r.observed)].some(
-          (t) => t.toLowerCase().includes(search),
+        (categoryFilter === "ALL" || r.category === categoryFilter) &&
+        [id, r.label, r.category, keyName(r.value), keyName(r.observed)].some((t) =>
+          t.toLowerCase().includes(search),
         ),
     )
     .sort(
@@ -194,6 +260,14 @@ function PlayerKeys({ uuid, client }) {
         a[1].category.localeCompare(b[1].category, "zh") ||
         a[1].label.localeCompare(b[1].label, "zh"),
     );
+
+  const statusCounts = {
+    全部: all.length,
+    待生效: all.filter(([, r]) => keyStatus(r) === "待生效").length,
+    修改冲突: all.filter(([, r]) => keyStatus(r) === "修改冲突").length,
+    已生效: all.filter(([, r]) => keyStatus(r) === "已生效").length,
+  };
+
   return (
     <div className="panel keys-detail">
       <div className="keys-heading">
@@ -219,24 +293,39 @@ function PlayerKeys({ uuid, client }) {
           <p className="keys-meta">
             {data.online ? "在线" : "离线"} · 远程协助
             {data.allowRemote ? "已开启" : "已关闭"} · 最近同步{" "}
-            {date(data.syncedAt)}
+            {date(data.syncedAt)} · 共 {all.length} 项动作
           </p>
-          <div className="keys-tools">
-            <SearchBox label="搜索动作或按键" value={query} change={setQuery} />
-            <select
-              aria-label="筛选键位状态"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              {["全部", "待生效", "修改冲突", "已生效", "当前不可用"].map(
-                (s) => (
-                  <option key={s}>{s}</option>
-                ),
-              )}
-            </select>
+          <div className="adm-toolbar" style={{ marginBottom: 14 }}>
+            <div className="adm-toolbar-left">
+              <div className="adm-pill-group" role="group" aria-label="按同步状态筛选">
+                {["全部", "待生效", "修改冲突", "已生效"].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={filter === s ? "is-active" : ""}
+                    onClick={() => setFilter(s)}
+                  >
+                    {s} ({statusCounts[s] ?? 0})
+                  </button>
+                ))}
+              </div>
+              <select
+                aria-label="按模组分类筛选"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="ALL">全部模组/分类 ({categories.length})</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <SearchBox label="搜索动作或按键" value={query} change={setQuery} />
+            </div>
           </div>
           {rows.length === 0 ? (
-            <Empty title="没有匹配的键位" text="可以调整搜索词或状态筛选。" />
+            <Empty title="没有匹配的键位" text="可以调整搜索词、模组分类或状态筛选。" />
           ) : (
             <div className="keys-table">
               <table>
@@ -278,13 +367,13 @@ function PlayerKeys({ uuid, client }) {
                         </span>
                       </td>
                       <td>
-                        <button
-                          className="text-button"
+                        <Button
+                          secondary
                           aria-label={"修改 " + r.label}
                           onClick={() => setEdit({ id, row: r })}
                         >
                           修改
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -307,18 +396,44 @@ function PlayerKeys({ uuid, client }) {
     </div>
   );
 }
+
 function EditKey({ client, uuid, edit, data, close, refresh }) {
-  const { id, row } = edit,
-    [initial, modifier = ""] = row.value.split(":");
-  const [key, setKey] = useState(initial),
-    [mod, setMod] = useState(modifier),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+  const { id, row } = edit;
+  const [initial, modifier = ""] = row.value.split(":");
+  const [key, setKey] = useState(initial);
+  const [mod, setMod] = useState(modifier);
+  const [listening, setListening] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const [stale, setStale] = useState(false);
+
+  useEffect(() => {
+    if (!listening) return;
+    const onKeyDown = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Escape") {
+        setListening(false);
+        return;
+      }
+      // Ignore pure modifier presses until the actual key is pressed
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+      const mapped = mapDomEventToMcKey(e);
+      if (mapped) {
+        setKey(mapped);
+        setMod(e.ctrlKey ? "CONTROL" : e.shiftKey ? "SHIFT" : e.altKey ? "ALT" : "");
+        setListening(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [listening]);
+
   const value = key === unbound || !mod ? key : key + ":" + mod;
   const alternatives = [
     ...new Set([
       ...choices,
+      key,
       ...Object.values(data.rows).flatMap((r) => [
         r.value.split(":")[0],
         r.observed.split(":")[0],
@@ -359,27 +474,65 @@ function EditKey({ client, uuid, edit, data, close, refresh }) {
         <p>
           {data.gameId} · 当前 <kbd>{keyName(row.observed)}</kbd>
         </p>
-        <Field label="按键">
-          <select value={key} onChange={(e) => setKey(e.target.value)}>
-            {alternatives.map((k) => (
-              <option key={k} value={k}>
-                {keyName(k)}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="组合键">
-          <select
-            disabled={key === unbound}
-            value={mod}
-            onChange={(e) => setMod(e.target.value)}
-          >
-            <option value="">无</option>
-            <option value="CONTROL">Ctrl</option>
-            <option value="SHIFT">Shift</option>
-            <option value="ALT">Alt</option>
-          </select>
-        </Field>
+
+        <div className={`adm-key-capture ${listening ? "is-listening" : ""}`}>
+          <div>
+            <strong>{listening ? "请直接按下目标键盘按键（按 Esc 取消）…" : "快速按键录入"}</strong>
+            <small>
+              {listening
+                ? "支持组合键（如 Ctrl+K、Shift+R）"
+                : `当前已选：${keyName(value)}`}
+            </small>
+          </div>
+          <div className="adm-compact-row-actions">
+            <Button
+              secondary={!listening}
+              type="button"
+              disabled={busy}
+              onClick={() => setListening((v) => !v)}
+            >
+              <Keyboard size={15} />
+              {listening ? "正在监听…" : "按下键盘录入"}
+            </Button>
+            <Button
+              secondary
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setListening(false);
+                setKey(unbound);
+                setMod("");
+              }}
+            >
+              解绑
+            </Button>
+          </div>
+        </div>
+
+        <div className="form-grid">
+          <Field label="按键（或手动选择）">
+            <select value={key} onChange={(e) => setKey(e.target.value)}>
+              {alternatives.map((k) => (
+                <option key={k} value={k}>
+                  {keyName(k)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="组合键">
+            <select
+              disabled={key === unbound}
+              value={mod}
+              onChange={(e) => setMod(e.target.value)}
+            >
+              <option value="">无</option>
+              <option value="CONTROL">Ctrl</option>
+              <option value="SHIFT">Shift</option>
+              <option value="ALT">Alt</option>
+            </select>
+          </Field>
+        </div>
+
         {clashes.length > 0 && (
           <p className="keys-warning">
             可能与「{clashes.join("」、「")}」的按键冲突。
