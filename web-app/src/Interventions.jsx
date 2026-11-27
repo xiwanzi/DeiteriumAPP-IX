@@ -14,9 +14,20 @@ export default function InterventionManagement({ client, user }) {
   const load = async (more = false) => { const current = ++generation.current; setBusy(true); setError(""); try { const r = await client.request(`/api/v1/admin/interventions?limit=30${status ? `&status=${status}` : ""}${mine ? "&assignedToMe=true" : ""}${more && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`); if (current === generation.current) { setItems((old) => more ? [...old, ...r.data] : r.data); setCursor(r.page?.nextCursor); } } catch (e) { if (current === generation.current) setError(e.message); } finally { if (current === generation.current) setBusy(false); } };
   useEffect(() => { setItems([]); load(); return () => { generation.current++; }; }, [status, mine]);
   return <><PageHead eyebrow="PLATFORM SUPPORT" title="平台介入" subtitle="依据成交快照与当事人提交的资料处理争议。"><Button secondary disabled={busy} onClick={() => load()}>刷新</Button></PageHead>
-    <div className="filter-header"><Field label="案件状态"><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="">全部状态</option>{Object.entries(states).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></Field><label className="checkbox-row"><input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />只看由我处理的案件</label></div>
+    <div className="adm-toolbar">
+      <div className="adm-toolbar-left">
+        <div className="adm-pill-group" role="group" aria-label="按案件状态筛选">
+          {[["", "全部"], ...Object.entries(states)].map(([key, label]) => (
+            <button key={key || "all"} type="button" className={status === key ? "is-active" : ""} aria-pressed={status === key} onClick={() => setStatus(key)}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="adm-toolbar-right">
+        <label className="checkbox-row" style={{ margin: 0 }}><input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />只看由我处理</label>
+      </div>
+    </div>
     {error && <p className="notice-box" role="alert">{error}</p>}
-    <div className="foundation-grid">{items.map((item) => <button className="foundation-card" key={item.caseId} style={{ textAlign: "left", color: "inherit" }} onClick={() => setSelected(item.caseId)}><Badge>{states[item.status] || item.status}</Badge><h3>{item.applicant?.displayName} 与 {item.respondent?.displayName || "交易方"}</h3><p>{item.description}</p><small>{new Date(item.updatedAt).toLocaleString("zh-CN")}</small></button>)}</div>
+    <div className="foundation-grid">{items.map((item) => <button className="foundation-card" key={item.caseId} style={{ textAlign: "left", color: "inherit" }} onClick={() => setSelected(item.caseId)}><Badge tone={["SUBMITTED", "WAITING_EVIDENCE"].includes(item.status) ? "amber" : item.status === "RESOLVED" ? "sage" : item.status === "WITHDRAWN" ? "neutral" : "blue"}>{states[item.status] || item.status}</Badge><h3 style={{ marginTop: 12 }}>{item.applicant?.displayName} 与 {item.respondent?.displayName || "交易方"}</h3><p>{item.description}</p><small className="muted">{new Date(item.updatedAt).toLocaleString("zh-CN")}</small></button>)}</div>
     {!busy && !items.length && <Empty title="暂无介入案件" text="收到申请后会在这里显示。" />}{cursor && <Button secondary disabled={busy} onClick={() => load(true)}>加载更多</Button>}
     {selected && <Modal title="处理平台介入" close={() => setSelected(null)} wide><InterventionPanel client={client} user={user} reference={selected} admin onChanged={() => load()} /></Modal>}
   </>;

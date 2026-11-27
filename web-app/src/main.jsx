@@ -5,6 +5,7 @@ import './styles.css';
 import './v2.css';
 import './admin-v204.css';
 import './desktop-admin.css';
+import './admin-redesign.css';
 import './commerce-v209.css';
 import './launcher-embed.css';
 import './chat-workspace.css';
