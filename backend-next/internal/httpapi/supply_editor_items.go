@@ -50,6 +50,10 @@ func (s *Server) registerSupplyEditorItems(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+supplyEditorPath, s.supplyEditorItems)
 	mux.HandleFunc("POST "+supplyEditorPath, s.supplyEditorRegister)
 	mux.HandleFunc("POST "+supplyEditorPath+"/archive", s.supplyEditorRemove)
+	mux.HandleFunc("POST /api/v1/admin/supply/items/import", s.adminSupplyImportItem)
+	mux.HandleFunc("GET /api/v1/admin/supply/item-catalog", s.adminSupplyItemCatalog)
+	mux.HandleFunc("POST /api/v1/admin/supply/item-previews", s.adminSupplyItemPreviews)
+	mux.HandleFunc("GET /api/v1/admin/supply/item-compatible-guns", s.adminSupplyCompatibleGuns)
 }
 
 func (s *Server) supplyEditorNode(w http.ResponseWriter, r *http.Request) (config.Node, bool) {

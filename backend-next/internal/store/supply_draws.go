@@ -68,6 +68,9 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 		if !enabled || !d.Open(now) {
 			return nil, supplyFailure("SUPPLY_CLOSED", "卡池尚未开放、已结束或已暂停")
 		}
+		if !d.ItemsBound() {
+			return nil, supplyFailure("SUPPLY_ITEMS_UNBOUND", "该卡池尚有奖品未绑定游戏物品，请管理员在后台完成物品绑定后再抽取")
+		}
 		rule, scope, currency, err := d.Rule(in.Scheme)
 		if err != nil {
 			return nil, ErrSocialInvalid
@@ -120,12 +123,16 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 			deadline := now.Add(2 * time.Minute)
 			revealUntil = &deadline
 		}
+		initialState := "PENDING"
+		if d.EffectiveDeliveryMode() == "MAIL" {
+			initialState = "MAIL_PENDING"
+		}
 		for i, roll := range rolls {
 			rewardJSON, e := json.Marshal(roll.Reward)
 			if e != nil {
 				return nil, e
 			}
-			if _, err = tx.ExecContext(ctx, `INSERT INTO supply_deliveries(id,order_id,ordinal,player_uuid,reward_json,state,created_at,updated_at,reveal_until) VALUES(?,?,?,?,?,'PENDING',?,?,?)`, fmt.Sprintf("%s_%02d", order.ID, i+1), order.ID, i+1, uuid, rewardJSON, now, now, revealUntil); err != nil {
+			if _, err = tx.ExecContext(ctx, `INSERT INTO supply_deliveries(id,order_id,ordinal,player_uuid,reward_json,state,created_at,updated_at,reveal_until) VALUES(?,?,?,?,?,?,?,?,?)`, fmt.Sprintf("%s_%02d", order.ID, i+1), order.ID, i+1, uuid, rewardJSON, initialState, now, now, revealUntil); err != nil {
 				return nil, err
 			}
 		}

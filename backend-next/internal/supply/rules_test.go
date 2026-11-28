@@ -81,3 +81,27 @@ func TestPoolsShareSchemeScopesWhileEventsRemainSeparate(t *testing.T) {
 		t.Fatal(scope, currency, err)
 	}
 }
+
+func TestSamplePoolAllowsUnboundPublishWhileRegularPoolRequiresBoundItems(t *testing.T) {
+	d := Definition{
+		Name: "示例常驻", Title: "雨夜鸣金", Kind: "STANDARD",
+		Art: Artwork{Hero: "builtin-hero-standard", Rail: "builtin-rail-standard", Theme: "blue", HeroX: 0.5, HeroY: 0.5},
+		Rewards: []Reward{
+			{Key: "r6", Name: "六星枪", GunID: "deuterium_ix:db4_gilded_rain", DisplayID: "deuterium_ix:db4_skin", Stars: 6, Weight: 100},
+			{Key: "r4", Name: "四星枪", GunID: "tacz:ak47", Stars: 4, Weight: 100},
+		},
+	}
+	if d.ItemsBound() {
+		t.Fatal("expected unbound sample definition")
+	}
+	if err := d.Validate(true); err == nil {
+		t.Fatal("regular pool should reject publishing unbound items")
+	}
+	if err := d.ValidateForPool("sp_sample_standard", true); err != nil {
+		t.Fatalf("sample pool should allow publishing unbound items for preview/edit: %v", err)
+	}
+	d.Rewards[0].ItemRef = "deuterium:incomplete"
+	if err := d.ValidateForPool("sp_sample_standard", true); err == nil {
+		t.Fatal("partially filled itemRef on sample pool must still be rejected")
+	}
+}

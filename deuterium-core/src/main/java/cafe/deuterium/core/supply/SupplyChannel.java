@@ -101,6 +101,33 @@ public final class SupplyChannel implements PluginMessageListener, AutoCloseable
                 && ticketCatalog.getAsBoolean() && "state".equals(Json.string(packet, "action"))) {
             input.addProperty("ticketCatalog", true);
         }
+        if ("state".equals(Json.string(packet, "action"))) {
+            var presentation = packet.get("presentationVersion");
+            if (presentation != null && presentation.isJsonPrimitive() && presentation.getAsJsonPrimitive().isNumber()) {
+                int ver = presentation.getAsInt();
+                if (ver >= 1 && ver <= 1000) input.addProperty("presentationVersion", ver);
+            }
+            var digest = packet.get("knownTicketsDigest");
+            if (digest != null && digest.isJsonPrimitive() && digest.getAsJsonPrimitive().isString()) {
+                String value = digest.getAsString();
+                if (value.matches("[a-f0-9]{1,64}")) input.addProperty("knownTicketsDigest", value);
+            }
+            var known = packet.get("knownPools");
+            if (known != null && known.isJsonObject()) {
+                JsonObject filtered = new JsonObject();
+                int count = 0;
+                for (var entry : known.getAsJsonObject().entrySet()) {
+                    if (++count > 128) break;
+                    if (!entry.getKey().matches("[A-Za-z0-9][A-Za-z0-9_-]{0,79}")) continue;
+                    var val = entry.getValue();
+                    if (val != null && val.isJsonPrimitive() && val.getAsJsonPrimitive().isNumber()) {
+                        long rev = val.getAsLong();
+                        if (rev >= 1) filtered.addProperty(entry.getKey(), rev);
+                    }
+                }
+                if (!filtered.isEmpty()) input.add("knownPools", filtered);
+            }
+        }
         var awaitReveal = packet.get("awaitReveal");
         if (awaitReveal != null && awaitReveal.isJsonPrimitive() && awaitReveal.getAsJsonPrimitive().isBoolean()
                 && awaitReveal.getAsBoolean() && "draw".equals(Json.string(packet, "action"))) {

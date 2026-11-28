@@ -23,6 +23,7 @@ type Reward struct {
 	Key             string   `json:"key"`
 	Name            string   `json:"name"`
 	GunID           string   `json:"gunId"`
+	DisplayID       string   `json:"displayId,omitempty"`
 	ModelKey        string   `json:"modelKey"`
 	Stars           int      `json:"stars"`
 	Weight          int      `json:"weight"`
@@ -49,6 +50,7 @@ type Definition struct {
 	Art          Artwork         `json:"art"`
 	TicketID     string          `json:"ticketId,omitempty"`
 	TicketArt    string          `json:"ticketArt,omitempty"`
+	DeliveryMode string          `json:"deliveryMode,omitempty"`
 	EventGoldPPM int             `json:"eventGoldPpm"`
 	EventPity    int             `json:"eventPity"`
 	Labels       *PoolLabels     `json:"labels,omitempty"`
@@ -58,9 +60,11 @@ type Definition struct {
 }
 
 type PoolLabels struct {
-	Rail   string `json:"rail"`
-	Single string `json:"single"`
-	Ten    string `json:"ten"`
+	Rail          string `json:"rail"`
+	Single        string `json:"single"`
+	Ten           string `json:"ten"`
+	FeaturedTitle string `json:"featuredTitle,omitempty"`
+	FeaturedLead  string `json:"featuredLead,omitempty"`
 }
 
 type PoolSection struct {
@@ -86,6 +90,32 @@ func ValidID(value string) bool       { return identifier.MatchString(value) }
 func ValidCurrency(value string) bool { return ValidID(value) }
 
 func LegacyCurrency(value string) bool { return value == "STANDARD" || value == "LIMITED" }
+
+func SamplePoolID(id string) bool { return strings.HasPrefix(id, "sp_sample_") }
+
+func (r Reward) ItemBound() bool {
+	return namespaced.MatchString(r.ItemRef) && r.ItemRevision >= 1 && hash.MatchString(r.PayloadSHA256) &&
+		r.InventoryDomain != "" && len(r.Servers) > 0 && len(r.Servers) <= 32
+}
+
+func (d Definition) ItemsBound() bool {
+	if len(d.Rewards) == 0 {
+		return false
+	}
+	for _, r := range d.Rewards {
+		if !r.ItemBound() {
+			return false
+		}
+	}
+	return true
+}
+
+func (d Definition) EffectiveDeliveryMode() string {
+	if d.DeliveryMode == "MAIL" {
+		return "MAIL"
+	}
+	return "INVENTORY"
+}
 
 func (d Definition) Currency() string {
 	if d.TicketID != "" {
@@ -146,11 +176,24 @@ func (a Artwork) Validate(required bool) error {
 }
 
 func (d Definition) Validate(publishing bool) error {
+	return d.validate(publishing, false)
+}
+
+// ValidateForPool permits seeded sample pools to be published for live preview/editing
+// while individual rewards are still awaiting game item library binding.
+func (d Definition) ValidateForPool(poolID string, publishing bool) error {
+	return d.validate(publishing, SamplePoolID(poolID))
+}
+
+func (d Definition) validate(publishing, allowUnboundSample bool) error {
 	if !validText(d.Name, 1, 64) || !validText(d.Title, 1, 12) || !validText(d.Subtitle, 0, 120) || !validText(d.Description, 0, 4000) {
 		return errors.New("请填写名称和标题，并检查文案长度")
 	}
 	if d.Kind != "STANDARD" && d.Kind != "LIMITED" && d.Kind != "EVENT" {
 		return errors.New("卡池类型无效")
+	}
+	if d.DeliveryMode != "" && d.DeliveryMode != "INVENTORY" && d.DeliveryMode != "MAIL" {
+		return errors.New("发奖方式无效，仅支持背包或邮箱")
 	}
 	if d.TicketID != "" && !ValidCurrency(d.TicketID) {
 		return errors.New("请选择有效的抽奖券")
@@ -158,8 +201,8 @@ func (d Definition) Validate(publishing bool) error {
 	if d.Sort < -100000 || d.Sort > 100000 || len(d.Rewards) > 100 {
 		return errors.New("排序或奖品数量超出范围")
 	}
-	if d.Labels != nil && (!validText(d.Labels.Rail, 0, 32) || !validText(d.Labels.Single, 0, 16) || !validText(d.Labels.Ten, 0, 16)) {
-		return errors.New("卡池列表或抽取按钮文案过长")
+	if d.Labels != nil && (!validText(d.Labels.Rail, 0, 32) || !validText(d.Labels.Single, 0, 16) || !validText(d.Labels.Ten, 0, 16) || !validText(d.Labels.FeaturedTitle, 0, 40) || !validText(d.Labels.FeaturedLead, 0, 240)) {
+		return errors.New("卡池列表、主推文案或按钮文案过长")
 	}
 	if len(d.Sections) > 32 {
 		return errors.New("补给详情最多允许 32 段")
@@ -206,7 +249,7 @@ func (d Definition) Validate(publishing bool) error {
 			return errors.New("奖品名称、品质、权重或重复编号不正确")
 		}
 		seen[r.Key] = true
-		if r.ModelKey != "" && !ValidID(r.ModelKey) || r.GunID != "" && !namespaced.MatchString(r.GunID) {
+		if r.ModelKey != "" && !ValidID(r.ModelKey) || r.GunID != "" && !namespaced.MatchString(r.GunID) || r.DisplayID != "" && !namespaced.MatchString(r.DisplayID) {
 			return errors.New("武器展示资源标识无效")
 		}
 		if err := r.Art.Validate(false); err != nil {
@@ -223,7 +266,7 @@ func (d Definition) Validate(publishing bool) error {
 				return errors.New("UP 奖品必须是最高品质")
 			}
 		}
-		if publishing && (!namespaced.MatchString(r.ItemRef) || r.ItemRevision < 1 || !hash.MatchString(r.PayloadSHA256) || r.InventoryDomain == "" || len(r.Servers) == 0 || len(r.Servers) > 32) {
+		if publishing && (!allowUnboundSample || r.ItemRef != "") && !r.ItemBound() {
 			return errors.New("发布前请选择有效的物品库版本和交付范围")
 		}
 	}

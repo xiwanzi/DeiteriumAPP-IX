@@ -18,6 +18,7 @@ type SupplyPool struct {
 	Version           int64             `json:"version"`
 	PublishedRevision int64             `json:"publishedRevision"`
 	Enabled           bool              `json:"enabled"`
+	KindEditable      bool              `json:"kindEditable"`
 	Definition        supply.Definition `json:"definition"`
 	UpdatedAt         time.Time         `json:"updatedAt"`
 }
@@ -36,12 +37,34 @@ func scanSupplyPool(row interface{ Scan(...any) error }) (SupplyPool, error) {
 	err := row.Scan(&p.ID, &p.Version, &p.PublishedRevision, &p.Enabled, &raw, &p.UpdatedAt)
 	if err == nil {
 		err = json.Unmarshal([]byte(raw), &p.Definition)
+		p.KindEditable = true
 	}
 	return p, err
 }
 
 func (s *Store) SupplyPools(ctx context.Context, admin bool) ([]SupplyPool, error) {
-	return supplyPools(ctx, s.DB, admin)
+	items, err := supplyPools(ctx, s.DB, admin)
+	if err != nil || !admin || len(items) == 0 {
+		return items, err
+	}
+	rows, err := s.DB.QueryContext(ctx, "SELECT DISTINCT pool_id FROM supply_orders")
+	if err != nil {
+		return items, nil
+	}
+	defer rows.Close()
+	drawn := map[string]bool{}
+	for rows.Next() {
+		var id string
+		if rows.Scan(&id) == nil {
+			drawn[id] = true
+		}
+	}
+	for i := range items {
+		if drawn[items[i].ID] {
+			items[i].KindEditable = false
+		}
+	}
+	return items, nil
 }
 
 func supplyPools(ctx context.Context, reader interface {
@@ -161,7 +184,22 @@ func (s *Store) changeSupplyPoolTx(ctx context.Context, tx *sql.Tx, actor, id, e
 			}
 		}
 		if !creating && (d.Kind != p.Definition.Kind || d.SeriesID != p.Definition.SeriesID) {
-			return SupplyPool{}, supplyFailure("POOL_KIND_IMMUTABLE", "卡池类型和活动身份创建后不能改变")
+			var orderCount int
+			if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM supply_orders WHERE pool_id=?", p.ID).Scan(&orderCount); err != nil {
+				return SupplyPool{}, err
+			}
+			isEventRerun := p.Definition.Kind == "EVENT" && p.Definition.SeriesID != "" && p.Definition.SeriesID != p.ID
+			if orderCount > 0 || isEventRerun {
+				return SupplyPool{}, supplyFailure("POOL_KIND_IMMUTABLE", "已有抽卡记录的卡池或活动复刻不能更改卡池类型")
+			}
+			if d.Kind == "EVENT" {
+				d.SeriesID = p.ID
+			} else {
+				d.SeriesID = ""
+			}
+			if d.Kind == "STANDARD" {
+				d.EndsAt = nil
+			}
 		}
 		if err := d.Validate(false); err != nil {
 			return SupplyPool{}, supplyFailure("SUPPLY_INVALID", err.Error())
@@ -172,10 +210,10 @@ func (s *Store) changeSupplyPoolTx(ctx context.Context, tx *sql.Tx, actor, id, e
 		p.Definition = d
 	}
 	if in.Action == "publish" {
-		if err := p.Definition.Validate(true); err != nil {
+		if err := p.Definition.ValidateForPool(p.ID, true); err != nil {
 			return SupplyPool{}, supplyFailure("SUPPLY_INVALID", err.Error())
 		}
-		if err := validateSupplyRewards(ctx, tx, p.Definition.Rewards); err != nil {
+		if err := validateSupplyRewards(ctx, tx, p.ID, p.Definition.Rewards); err != nil {
 			return SupplyPool{}, err
 		}
 		if p.Definition.Kind == "EVENT" {
@@ -243,7 +281,7 @@ func (s *Store) changeSupplyPoolTx(ctx context.Context, tx *sql.Tx, actor, id, e
 	if creating {
 		_, err = tx.ExecContext(ctx, `INSERT INTO supply_pools(id,kind,series_id,draft_json,version,published_revision,enabled,created_at,updated_at) VALUES(?,?,?,?,?,?,?,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))`, p.ID, p.Definition.Kind, p.Definition.SeriesID, raw, p.Version, p.PublishedRevision, p.Enabled)
 	} else {
-		_, err = tx.ExecContext(ctx, "UPDATE supply_pools SET draft_json=?,version=?,published_revision=?,enabled=?,updated_at=UTC_TIMESTAMP(6) WHERE id=?", raw, p.Version, p.PublishedRevision, p.Enabled, p.ID)
+		_, err = tx.ExecContext(ctx, "UPDATE supply_pools SET kind=?,series_id=?,draft_json=?,version=?,published_revision=?,enabled=?,updated_at=UTC_TIMESTAMP(6) WHERE id=?", p.Definition.Kind, p.Definition.SeriesID, raw, p.Version, p.PublishedRevision, p.Enabled, p.ID)
 	}
 	if err != nil {
 		return SupplyPool{}, err
@@ -259,8 +297,11 @@ func (s *Store) changeSupplyPoolTx(ctx context.Context, tx *sql.Tx, actor, id, e
 	return p, nil
 }
 
-func validateSupplyRewards(ctx context.Context, tx *sql.Tx, rewards []supply.Reward) error {
+func validateSupplyRewards(ctx context.Context, tx *sql.Tx, poolID string, rewards []supply.Reward) error {
 	for _, r := range rewards {
+		if supply.SamplePoolID(poolID) && r.ItemRef == "" {
+			continue
+		}
 		var raw string
 		var archived bool
 		if err := tx.QueryRowContext(ctx, `SELECT v.metadata,COALESCE(h.archived,FALSE) FROM item_versions v LEFT JOIN core_catalog_heads h ON h.item_ref=v.item_ref WHERE v.item_ref=? AND v.revision=?`, r.ItemRef, r.ItemRevision).Scan(&raw, &archived); err != nil {

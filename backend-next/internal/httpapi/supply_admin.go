@@ -83,6 +83,31 @@ func (s *Server) registerSupplyAdmin(mux *http.ServeMux) {
 		}
 		v2Success(w, r, out)
 	})
+	mux.HandleFunc("GET /api/v1/admin/supply/tickets", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := s.admin(r, "platform.admin"); err != nil {
+			failError(w, r, err)
+			return
+		}
+		published, err := s.Store.SupplyPlayerCatalog(r.Context())
+		if err != nil {
+			catalogFailV2(w, r, err)
+			return
+		}
+		v2Success(w, r, map[string]any{"items": published.Tickets})
+	})
+	mux.HandleFunc("POST /api/v1/admin/supply/samples/seed", func(w http.ResponseWriter, r *http.Request) {
+		actor, err := s.admin(r, "platform.admin")
+		if err != nil {
+			failError(w, r, err)
+			return
+		}
+		created, err := s.Store.SeedSampleSupplyPools(r.Context(), actor.ID)
+		if err != nil {
+			catalogFailV2(w, r, err)
+			return
+		}
+		v2Success(w, r, map[string]any{"created": created})
+	})
 	mux.HandleFunc("POST /api/v1/admin/supply/settings", func(w http.ResponseWriter, r *http.Request) {
 		actor, err := s.admin(r, "platform.admin")
 		if err != nil {

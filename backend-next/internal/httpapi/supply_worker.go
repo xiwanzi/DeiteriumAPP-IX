@@ -75,16 +75,7 @@ func (s *Server) supplyWorker() {
 				go func(order string) {
 					defer wg.Done()
 					defer func() { <-slots }()
-					batches, err := s.Store.SupplyOrderMail(ctx, order)
-					if err != nil {
-						slog.Warn("Supply mail lookup failed", "order", order, "error", err)
-						return
-					}
-					for _, batch := range batches {
-						if err := s.processSupplyMail(ctx, batch); err != nil && ctx.Err() == nil {
-							slog.Warn("Supply mail awaiting recovery", "order", order, "error", err)
-						}
-					}
+					s.processSupplyOrderMail(ctx, order)
 				}(d.OrderID)
 			}
 			wg.Wait()
@@ -197,6 +188,23 @@ func verifySupplyMoney(result CommerceCoreResultV2, x store.SupplyExchange) erro
 	return nil
 }
 
+func (s *Server) processSupplyOrderMail(ctx context.Context, order string) {
+	if _, loaded := s.supplyMailRuns.LoadOrStore(order, struct{}{}); loaded {
+		return
+	}
+	defer s.supplyMailRuns.Delete(order)
+	batches, err := s.Store.SupplyOrderMail(ctx, order)
+	if err != nil {
+		slog.Warn("Supply mail lookup failed", "order", order, "error", err)
+		return
+	}
+	for _, batch := range batches {
+		if err := s.processSupplyMail(ctx, batch); err != nil && ctx.Err() == nil {
+			slog.Warn("Supply mail awaiting recovery", "order", order, "error", err)
+		}
+	}
+}
+
 func supplyMailPayload(batch store.SupplyMail) (map[string]any, error) {
 	d := batch.Items[0]
 	r := d.Reward
@@ -210,7 +218,11 @@ func supplyMailPayload(batch store.SupplyMail) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"source": "deuterium-commerce", "deliveryId": batch.ID, "orderId": d.OrderID, "recipientUuid": d.PlayerUUID, "title": "武器补给奖励", "body": "本次抽取的奖励已送达。订单：" + d.OrderID, "sender": "武器补给", "snapshotJson": string(raw), "snapshotSha256": store.Digest(raw), "allowedServerIds": batch.Servers, "inventoryDomain": r.InventoryDomain}, nil
+	body := "本次抽取的奖励已送达。订单：" + d.OrderID
+	if len(batch.Items) > 1 {
+		body = fmt.Sprintf("本次抽取共获得 %d 件奖励，已合并发送至本邮件。订单：%s", len(batch.Items), d.OrderID)
+	}
+	return map[string]any{"source": "deuterium-commerce", "deliveryId": batch.ID, "orderId": d.OrderID, "recipientUuid": d.PlayerUUID, "title": "武器补给奖励", "body": body, "sender": "武器补给", "snapshotJson": string(raw), "snapshotSha256": store.Digest(raw), "allowedServerIds": batch.Servers, "inventoryDomain": r.InventoryDomain}, nil
 }
 
 func (s *Server) processSupplyMail(ctx context.Context, batch store.SupplyMail) error {

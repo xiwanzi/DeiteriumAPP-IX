@@ -14,16 +14,19 @@ import (
 )
 
 type supplyGameRequest struct {
-	PlayerUUID    string                       `json:"playerUuid"`
-	SessionEpoch  string                       `json:"sessionEpoch"`
-	RequestID     string                       `json:"requestId"`
-	Draw          *store.SupplyDrawRequest     `json:"draw,omitempty"`
-	Exchange      *store.SupplyExchangeRequest `json:"exchange,omitempty"`
-	OrderID       string                       `json:"orderId,omitempty"`
-	ExchangeID    string                       `json:"exchangeId,omitempty"`
-	Filter        *store.SupplyFilter          `json:"filter,omitempty"`
-	TicketCatalog bool                         `json:"ticketCatalog,omitempty"`
-	AwaitReveal   bool                         `json:"awaitReveal,omitempty"`
+	PlayerUUID          string                       `json:"playerUuid"`
+	SessionEpoch        string                       `json:"sessionEpoch"`
+	RequestID           string                       `json:"requestId"`
+	Draw                *store.SupplyDrawRequest     `json:"draw,omitempty"`
+	Exchange            *store.SupplyExchangeRequest `json:"exchange,omitempty"`
+	OrderID             string                       `json:"orderId,omitempty"`
+	ExchangeID          string                       `json:"exchangeId,omitempty"`
+	Filter              *store.SupplyFilter          `json:"filter,omitempty"`
+	TicketCatalog       bool                         `json:"ticketCatalog,omitempty"`
+	AwaitReveal         bool                         `json:"awaitReveal,omitempty"`
+	PresentationVersion int                          `json:"presentationVersion,omitempty"`
+	KnownPools          map[string]int64             `json:"knownPools,omitempty"`
+	KnownTicketsDigest  string                       `json:"knownTicketsDigest,omitempty"`
 }
 
 func (s *Server) supplyNode(r *http.Request) (config.Node, error) {
@@ -67,7 +70,7 @@ func (s *Server) registerSupplyGame(mux *http.ServeMux) {
 			var out any
 			switch action {
 			case "state":
-				out, err = s.supplyGameState(r.Context(), player, in.TicketCatalog)
+				out, err = s.supplyGameState(r.Context(), player, in)
 			case "draw":
 				if in.Draw == nil {
 					err = store.ErrSocialInvalid
@@ -93,6 +96,14 @@ func (s *Server) registerSupplyGame(mux *http.ServeMux) {
 					break
 				}
 				err = s.Store.ReleaseSupplyReveal(r.Context(), in.OrderID, player.PlayerUUID)
+				if err == nil {
+					orderID := in.OrderID
+					go func() {
+						ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+						defer cancel()
+						s.processSupplyOrderMail(ctx, orderID)
+					}()
+				}
 				out = map[string]bool{"released": true}
 			case "exchange":
 				if in.Exchange == nil {
@@ -272,7 +283,7 @@ func (s *Server) registerSupplyDeliveryBridge(mux *http.ServeMux) {
 	})
 }
 
-func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIdentity, supportsTicketCatalog bool) (map[string]any, error) {
+func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIdentity, req supplyGameRequest) (map[string]any, error) {
 	published, err := s.Store.SupplyPlayerCatalog(ctx)
 	if err != nil {
 		return nil, err
@@ -284,11 +295,11 @@ func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIde
 	pools := make([]store.SupplyPool, 0, len(published.Pools))
 	for _, pool := range published.Pools {
 		currency := pool.Definition.Currency()
-		if published.Tickets[currency].Enabled && (supportsTicketCatalog || supply.LegacyCurrency(currency)) {
+		if published.Tickets[currency].Enabled && (req.TicketCatalog || supply.LegacyCurrency(currency)) {
 			pools = append(pools, pool)
 		}
 	}
-	catalog, art, err := s.publicSupplyCatalog(ctx, pools)
+	catalog, art, deltaMode, err := s.publicSupplyCatalogDelta(ctx, pools, req.KnownPools, req.PresentationVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -305,8 +316,25 @@ func (s *Server) supplyGameState(ctx context.Context, player store.CorePlayerIde
 			}
 		}
 	}
-	return map[string]any{"protocol": 1, "serverTime": time.Now().UTC(), "catalog": catalog, "artwork": art,
-		"account": publicSupplyAccount(account), "settings": published.Settings, "tickets": published.Tickets, "credits": credits}, nil
+	ticketsJSON, _ := json.Marshal(published.Tickets)
+	ticketsDigest := store.Digest(ticketsJSON)[:16]
+	out := map[string]any{
+		"protocol":            1,
+		"presentationVersion": supplyPresentationVersion,
+		"serverTime":          time.Now().UTC(),
+		"catalog":             catalog,
+		"artwork":             art,
+		"account":             publicSupplyAccount(account),
+		"settings":            published.Settings,
+		"ticketsDigest":       ticketsDigest,
+		"credits":             credits,
+	}
+	if deltaMode && req.KnownTicketsDigest == ticketsDigest {
+		out["ticketsUnchanged"] = true
+	} else {
+		out["tickets"] = published.Tickets
+	}
+	return out, nil
 }
 
 func (s *Server) supplyPlayerExchange(ctx context.Context, id, uuid string) (map[string]any, error) {

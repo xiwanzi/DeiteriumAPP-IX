@@ -32,9 +32,23 @@ class SupplyChannelTest {
         packet.addProperty("requestId", "req");
         packet.addProperty("action", "state");
         packet.addProperty("ticketCatalog", true);
-        assertTrue(SupplyChannel.bindRequest(packet, session).get("ticketCatalog").getAsBoolean());
+        packet.addProperty("presentationVersion", 2);
+        packet.addProperty("knownTicketsDigest", "0123456789abcdef");
+        var known = new JsonObject();
+        known.addProperty("sp_sample_up_191", 3);
+        known.addProperty("invalid key!", 2);
+        packet.add("knownPools", known);
+        var bound = SupplyChannel.bindRequest(packet, session);
+        assertTrue(bound.get("ticketCatalog").getAsBoolean());
+        assertEquals(2, bound.get("presentationVersion").getAsInt());
+        assertEquals("0123456789abcdef", bound.get("knownTicketsDigest").getAsString());
+        assertEquals(3, bound.getAsJsonObject("knownPools").get("sp_sample_up_191").getAsLong());
+        assertFalse(bound.getAsJsonObject("knownPools").has("invalid key!"));
         packet.addProperty("action", "draw");
-        assertFalse(SupplyChannel.bindRequest(packet, session).has("ticketCatalog"));
+        var drawBound = SupplyChannel.bindRequest(packet, session);
+        assertFalse(drawBound.has("ticketCatalog"));
+        assertFalse(drawBound.has("knownPools"));
+        assertFalse(drawBound.has("presentationVersion"));
     }
 
     @Test void clientCannotChoosePlayerSessionOrClaimOperatorPrivileges() {

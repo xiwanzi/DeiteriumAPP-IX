@@ -72,10 +72,20 @@ function SupplyCropEditor({ client, file, role, close, onSaved }) {
 
 export function SupplyArtPreview({ definition: d, assets, scheme = "80" }) {
   const hero = assets[d.art?.hero], rail = assets[d.art?.rail];
+  const heroX = Number.isFinite(Number(d.art?.heroX)) ? Number(d.art.heroX) * 100 : 50;
+  const heroY = Number.isFinite(Number(d.art?.heroY)) ? Number(d.art.heroY) * 100 : 50;
+  const defaultRail = d.kind === "STANDARD" ? "常驻" : d.kind === "EVENT" ? "活动" : "限定";
+  const railLabel = d.labels?.rail?.trim() || defaultRail;
+  const featured = (d.rewards || []).filter(r => r.stars === 6).slice(0, 2);
   return <div className={`supply-preview theme-${d.art?.theme || "violet"}`} aria-label={`${scheme} 方案构图预览`}>
-    {hero?.url && <img className="supply-preview-hero" src={hero.url} alt="" />}
-    <aside><small>D9 · ARMORY</small><strong>枪械补给</strong>{rail?.url && <img src={rail.url} alt="卡池封面" />}<span>{d.name || "卡池名称"} {d.kind === "LIMITED" ? scheme : ""}</span><small>补给详情</small></aside>
-    <div className="supply-preview-copy"><h3>「{d.title || "页面标题"}」</h3><span>{d.subtitle || "本期武器补给"}</span><p>{ruleText(d.kind, scheme, d)}</p></div>
-    <div className="supply-preview-actions"><span>单次补给 · 1 券</span><span>十次补给 · 10 券</span></div>
+    {hero?.url && <img className="supply-preview-hero" style={{ objectPosition: `${heroX}% ${heroY}%` }} src={hero.url} alt="" />}
+    <aside><small>D9 · ARMORY</small><strong>枪械补给</strong>{rail?.url && <img src={rail.url} alt="卡池封面" />}<span>{railLabel}{d.kind === "LIMITED" ? ` · ${scheme}` : ""}</span><small>补给详情</small></aside>
+    <div className="supply-preview-copy">
+      <h3>「{d.title || "页面标题"}」</h3>
+      <span>{d.subtitle || "本期武器补给"}</span>
+      <p>{ruleText(d.kind, scheme, d)}</p>
+      {featured.length > 0 && <div className="supply-preview-featured">{featured.map(r => <em key={r.key}>{r.name}</em>)}</div>}
+    </div>
+    <div className="supply-preview-actions"><span>抽取一次 · 1 券</span><span>抽取十次 · 10 券</span></div>
   </div>;
 }

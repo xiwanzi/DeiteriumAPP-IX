@@ -49,7 +49,7 @@ func run(args []string) error {
 		return errors.New("unexpected arguments")
 	}
 	switch args[0] {
-	case "serve", "migrate", "export-legacy", "import-legacy", "import-whitelist", "grant-permission", "asset-gc-preview":
+	case "serve", "migrate", "export-legacy", "import-legacy", "import-whitelist", "grant-permission", "asset-gc-preview", "seed-supply-samples":
 	default:
 		return errors.New("unknown command")
 	}
@@ -148,6 +148,12 @@ func run(args []string) error {
 		}
 		slog.Info("permission granted")
 		return nil
+	case "seed-supply-samples":
+		created, err := db.SeedSampleSupplyPools(ctx, "cli:seed-supply-samples")
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(os.Stdout).Encode(map[string]any{"created": created})
 	case "serve":
 		c, err := config.Load(*configPath)
 		if err != nil {
@@ -155,6 +161,15 @@ func run(args []string) error {
 		}
 		if db.Ready(ctx) != nil {
 			return errors.New("database schema is not ready; run migrate first")
+		}
+		if c.SeedSupplySamples {
+			created, seedErr := db.SeedSampleSupplyPools(ctx, "startup:seed-supply-samples")
+			if seedErr != nil {
+				return fmt.Errorf("seed supply samples: %w", seedErr)
+			}
+			if len(created) > 0 {
+				slog.Info("seeded default sample supply pools", "created", created)
+			}
 		}
 		// The first release is intentionally one application instance per database.
 		lease, err := db.DB.Conn(ctx)
