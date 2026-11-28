@@ -10,7 +10,7 @@ export function unboundRewardCount(d) { return (d?.rewards || []).filter(r => !i
 export function newPool(kind = "LIMITED") {
   return { id: "", version: 0, publishedRevision: 0, enabled: false, definition: {
     name: "", title: "", subtitle: "", description: "", kind, seriesId: "", startsAt: null, endsAt: null, visibleAt: null, sort: 0,
-    ticketId: kind === "STANDARD" ? "STANDARD" : "LIMITED", ticketArt: "builtin-ticket",
+    ticketId: kind === "STANDARD" ? "STANDARD" : "LIMITED", ticketArt: "builtin-ticket", deliveryMode: "INVENTORY",
     labels: { rail: "", featuredTitle: "", featuredLead: "" }, sections: [],
     art: { hero: "", rail: "", detail: "", fallback: "", theme: "violet", heroX: .5, heroY: .5 },
     eventGoldPpm: kind === "EVENT" ? 5000 : 0, eventPity: kind === "EVENT" ? 80 : 0, rewards: [],

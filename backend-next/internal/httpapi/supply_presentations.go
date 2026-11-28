@@ -103,7 +103,7 @@ func (s *Server) publicSupplyCatalogDelta(ctx context.Context, pools []store.Sup
 				"tag": fmt.Sprintf("6 星概率 %s%%", strconv.FormatFloat(float64(rule.GoldPPM)/10000, 'f', -1, 64)),
 				"time": when, "code": scheme, "featured": featured, "entries": entries,
 				"poolId": pool.ID, "revision": pool.PublishedRevision, "scheme": scheme,
-				"kind": d.Kind, "currency": currency, "ticketIcon": d.TicketArt,
+				"kind": d.Kind, "currency": currency, "ticketIcon": d.TicketArt, "deliveryMode": d.EffectiveDeliveryMode(),
 				"scope": scope, "rule": rule, "art": d.Art,
 				"subtitle": d.Subtitle, "description": d.Description,
 				"startsAt": d.StartsAt, "endsAt": d.EndsAt,

@@ -149,7 +149,7 @@ func (s *Store) ReleaseSupplyReveal(ctx context.Context, orderID, uuid string) e
 	if err := s.DB.QueryRowContext(ctx, "SELECT 1 FROM supply_orders WHERE id=? AND player_uuid=?", orderID, uuid).Scan(&exists); err != nil {
 		return socialMissing(err)
 	}
-	_, err := s.DB.ExecContext(ctx, "UPDATE supply_deliveries SET reveal_until=NULL WHERE order_id=? AND player_uuid=? AND state='PENDING' AND reveal_until IS NOT NULL", orderID, uuid)
+	_, err := s.DB.ExecContext(ctx, "UPDATE supply_deliveries SET reveal_until=NULL,updated_at=UTC_TIMESTAMP(6) WHERE order_id=? AND player_uuid=? AND state IN ('PENDING','MAIL_PENDING') AND reveal_until IS NOT NULL", orderID, uuid)
 	return err
 }
 
@@ -157,8 +157,8 @@ func (s *Store) ReleaseSupplyReveal(ctx context.Context, orderID, uuid string) e
 // Eligibility and its destination change atomically, so an inventory claim cannot win after the fallback.
 func (s *Store) MailExpiredSupplyReveals(ctx context.Context) error {
 	_, err := s.DB.ExecContext(ctx, `
-		UPDATE supply_deliveries SET state='MAIL_PENDING',reveal_until=NULL,last_error='REVEAL_EXPIRED',updated_at=UTC_TIMESTAMP(6)
-		WHERE state='PENDING' AND reveal_until<=UTC_TIMESTAMP(6) ORDER BY reveal_until,id LIMIT 32`)
+		UPDATE supply_deliveries SET state='MAIL_PENDING',reveal_until=NULL,last_error=CASE WHEN state='PENDING' THEN 'REVEAL_EXPIRED' ELSE last_error END,updated_at=UTC_TIMESTAMP(6)
+		WHERE state IN ('PENDING','MAIL_PENDING') AND reveal_until<=UTC_TIMESTAMP(6) ORDER BY reveal_until,id LIMIT 32`)
 	return err
 }
 

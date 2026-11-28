@@ -96,6 +96,14 @@ func (s *Server) registerSupplyGame(mux *http.ServeMux) {
 					break
 				}
 				err = s.Store.ReleaseSupplyReveal(r.Context(), in.OrderID, player.PlayerUUID)
+				if err == nil {
+					orderID := in.OrderID
+					go func() {
+						ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+						defer cancel()
+						s.processSupplyOrderMail(ctx, orderID)
+					}()
+				}
 				out = map[string]bool{"released": true}
 			case "exchange":
 				if in.Exchange == nil {

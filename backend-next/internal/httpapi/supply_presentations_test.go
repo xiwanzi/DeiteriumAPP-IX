@@ -15,6 +15,7 @@ func TestPublicSupplyCatalogDeltaSkipsUnchangedPoolsAndIncludesNewFields(t *test
 	samples := store.SampleSupplyPools(time.Now().UTC())
 	samples[0].Definition.Labels.FeaturedTitle = "限定主推测试"
 	samples[0].Definition.Labels.FeaturedLead = "本池概率 {goldProb}"
+	samples[0].Definition.DeliveryMode = "MAIL"
 	pools := make([]store.SupplyPool, 0, len(samples))
 	for _, sample := range samples {
 		pools = append(pools, store.SupplyPool{
@@ -40,8 +41,11 @@ func TestPublicSupplyCatalogDeltaSkipsUnchangedPoolsAndIncludesNewFields(t *test
 	if std80["label"] != "常驻" {
 		t.Fatalf("unexpected standard rail label: %v", std80["label"])
 	}
-	if up80["featuredTitle"] != "限定主推测试" || up80["featuredLead"] != "本池概率 {goldProb}" {
-		t.Fatalf("missing featured copy fields: %+v", up80)
+	if up80["featuredTitle"] != "限定主推测试" || up80["featuredLead"] != "本池概率 {goldProb}" || up80["deliveryMode"] != "MAIL" {
+		t.Fatalf("missing featured copy or deliveryMode fields: %+v", up80)
+	}
+	if std80["deliveryMode"] != "INVENTORY" {
+		t.Fatalf("expected default deliveryMode INVENTORY: %+v", std80["deliveryMode"])
 	}
 	if up80["subtitle"] == "" || up80["itemsBound"].(bool) || len(up80["sections"].([]supply.PoolSection)) == 0 {
 		t.Fatalf("missing new presentation fields: %+v", up80)

@@ -50,6 +50,7 @@ type Definition struct {
 	Art          Artwork         `json:"art"`
 	TicketID     string          `json:"ticketId,omitempty"`
 	TicketArt    string          `json:"ticketArt,omitempty"`
+	DeliveryMode string          `json:"deliveryMode,omitempty"`
 	EventGoldPPM int             `json:"eventGoldPpm"`
 	EventPity    int             `json:"eventPity"`
 	Labels       *PoolLabels     `json:"labels,omitempty"`
@@ -107,6 +108,13 @@ func (d Definition) ItemsBound() bool {
 		}
 	}
 	return true
+}
+
+func (d Definition) EffectiveDeliveryMode() string {
+	if d.DeliveryMode == "MAIL" {
+		return "MAIL"
+	}
+	return "INVENTORY"
 }
 
 func (d Definition) Currency() string {
@@ -183,6 +191,9 @@ func (d Definition) validate(publishing, allowUnboundSample bool) error {
 	}
 	if d.Kind != "STANDARD" && d.Kind != "LIMITED" && d.Kind != "EVENT" {
 		return errors.New("卡池类型无效")
+	}
+	if d.DeliveryMode != "" && d.DeliveryMode != "INVENTORY" && d.DeliveryMode != "MAIL" {
+		return errors.New("发奖方式无效，仅支持背包或邮箱")
 	}
 	if d.TicketID != "" && !ValidCurrency(d.TicketID) {
 		return errors.New("请选择有效的抽奖券")

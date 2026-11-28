@@ -123,12 +123,16 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 			deadline := now.Add(2 * time.Minute)
 			revealUntil = &deadline
 		}
+		initialState := "PENDING"
+		if d.EffectiveDeliveryMode() == "MAIL" {
+			initialState = "MAIL_PENDING"
+		}
 		for i, roll := range rolls {
 			rewardJSON, e := json.Marshal(roll.Reward)
 			if e != nil {
 				return nil, e
 			}
-			if _, err = tx.ExecContext(ctx, `INSERT INTO supply_deliveries(id,order_id,ordinal,player_uuid,reward_json,state,created_at,updated_at,reveal_until) VALUES(?,?,?,?,?,'PENDING',?,?,?)`, fmt.Sprintf("%s_%02d", order.ID, i+1), order.ID, i+1, uuid, rewardJSON, now, now, revealUntil); err != nil {
+			if _, err = tx.ExecContext(ctx, `INSERT INTO supply_deliveries(id,order_id,ordinal,player_uuid,reward_json,state,created_at,updated_at,reveal_until) VALUES(?,?,?,?,?,?,?,?,?)`, fmt.Sprintf("%s_%02d", order.ID, i+1), order.ID, i+1, uuid, rewardJSON, initialState, now, now, revealUntil); err != nil {
 				return nil, err
 			}
 		}

@@ -401,6 +401,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
   padding: 11px 16px;
   background: var(--adm-surface-subtle, #f8f9fb);
   border-bottom: 1px solid var(--adm-border, #e5e8ef);
@@ -409,6 +410,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+.supply-tier-head > small {
+  white-space: nowrap;
+  color: var(--adm-muted, #5d6776);
 }
 .supply-tier-empty {
   padding: 14px 16px;
@@ -428,7 +434,6 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  flex-wrap: wrap;
   transition: background 0.14s;
 }
 .supply-reward-line:hover {
@@ -438,13 +443,15 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
-  min-width: 220px;
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow: hidden;
   text-align: left;
   padding: 4px 0;
 }
 .supply-reward-info {
   min-width: 0;
+  flex: 1;
 }
 .supply-reward-info strong {
   display: flex;
@@ -453,19 +460,31 @@
   font-size: 14px;
   font-weight: 620;
   color: var(--adm-text, #1c2026);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.supply-reward-info small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .supply-reward-inline {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 .supply-inline-ctrl {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 12px;
   color: var(--adm-muted, #5d6776);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .supply-inline-ctrl select,
 .supply-inline-ctrl input {
@@ -474,16 +493,38 @@
   padding: 2px 8px;
   font-size: 12.5px;
   border-radius: 7px;
+  box-sizing: border-box;
+}
+.supply-inline-ctrl select {
+  width: 66px;
 }
 .supply-inline-ctrl input {
   width: 78px;
+  text-align: center;
 }
 .supply-inline-prob {
-  width: 82px;
+  width: 76px;
+  flex-shrink: 0;
   text-align: right;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--adm-muted, #5d6776);
+}
+.supply-bind-btn {
+  min-width: 104px;
+  justify-content: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+@media (max-width: 1080px) {
+  .supply-reward-line {
+    flex-wrap: wrap;
+  }
+  .supply-reward-inline {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
 }
 .supply-prob-bar {
   height: 5px;

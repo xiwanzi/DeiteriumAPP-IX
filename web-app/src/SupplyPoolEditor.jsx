@@ -122,11 +122,15 @@ export default function SupplyPoolEditor({
         : d.kind === "EVENT"
           ? "活动池每抽 6 星概率 {goldProb}，最多 {maxPity} 抽必得当期 6 星 UP；同活动复刻沿用进度。\n当前使用「{ticketName}」，单抽消耗 1 张、十连消耗 10 张；兑换单价：{price}。"
           : "每抽 6 星概率 {goldProb}，最多 {maxPity} 抽必得当期 6 星 UP（限定 120 方案在 {minPity}～{maxPity} 抽间随机确定保底）；同方案跨期共享保底进度。\n当前使用「{ticketName}」，单抽消耗 1 张、十连消耗 10 张；兑换单价：{price}。";
+    const deliveryBody =
+      d.deliveryMode === "MAIL"
+        ? "单抽或十连的全部奖励将按抽取订单合并为一封邮件寄送至游戏邮箱；可在上方「补给记录」查看跨服历史抽取记录。"
+        : "每件奖励优先进入当前背包，空间不足或玩家离线时自动按抽取订单合并寄送至游戏邮箱；可在上方「补给记录」查看跨服历史抽取记录。";
     const defaults = [
       { title: "抽取规则与保底", body: ruleBody },
       {
         title: "奖励交付与记录",
-        body: "每件奖励优先进入当前背包，空间不足或玩家离线时自动按抽取订单合并寄送至游戏邮箱；可在上方「补给记录」查看跨服历史抽取记录。",
+        body: deliveryBody,
       },
     ];
     if ((d.sections || []).length > 0 && !window.confirm("用默认规则与交付说明覆盖当前自定义分段？")) return;
@@ -404,6 +408,15 @@ export default function SupplyPoolEditor({
                         {asset.altText || asset.assetId}
                       </option>
                     ))}
+                  </select>
+                </Field>
+                <Field label="发奖方式">
+                  <select
+                    value={d.deliveryMode === "MAIL" ? "MAIL" : "INVENTORY"}
+                    onChange={(e) => patch({ deliveryMode: e.target.value })}
+                  >
+                    <option value="INVENTORY">优先背包（满或离线时十连合寄一封邮件）</option>
+                    <option value="MAIL">直接发往邮箱（单抽/十连合并为一封邮件）</option>
                   </select>
                 </Field>
               </div>
@@ -768,6 +781,7 @@ export default function SupplyPoolEditor({
                                 <Button
                                   type="button"
                                   secondary
+                                  className="supply-bind-btn"
                                   onClick={() => {
                                     setBindTarget({ index, name: reward.name });
                                     setPickerMode("creative");

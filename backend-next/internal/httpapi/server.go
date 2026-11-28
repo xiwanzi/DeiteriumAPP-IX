@@ -52,6 +52,7 @@ type Server struct {
 	supplyDone           chan struct{}
 	supplyExchangeRuns   sync.Map
 	supplyExchangeSlots  chan struct{}
+	supplyMailRuns       sync.Map
 }
 
 func New(s *store.Store, c config.Config) *Server {
