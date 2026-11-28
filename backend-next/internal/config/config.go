@@ -33,6 +33,8 @@ type Node struct {
 type Config struct {
 	SupplyEditorTokenSHA256     string      `json:"supplyEditorTokenSha256,omitempty"`
 	SupplyEditorNode            string      `json:"supplyEditorNode,omitempty"`
+	ItemCatalogURL              string      `json:"itemCatalogUrl,omitempty"`
+	ItemCatalogToken            string      `json:"-"`
 	YSMIdentityTokenSHA256      string      `json:"ysmIdentityTokenSha256,omitempty"`
 	YSMAdminURL                 string      `json:"ysmAdminUrl,omitempty"`
 	YSMAdminOrigin              string      `json:"ysmAdminOrigin,omitempty"`
@@ -46,6 +48,8 @@ type Config struct {
 	PublicOrigin                string      `json:"publicOrigin"`
 	AdditionalPublicOrigins     []string    `json:"additionalPublicOrigins,omitempty"`
 	Development                 bool        `json:"development"`
+	SeedSupplySamples           bool        `json:"seedSupplySamples,omitempty"`
+	StaticWebDir                string      `json:"staticWebDir,omitempty"`
 	TrustedProxyCIDRs           []string    `json:"trustedProxyCidrs"`
 	Nodes                       []Node      `json:"nodes"`
 }
@@ -73,6 +77,7 @@ func Load(path string) (Config, error) {
 		}
 	}
 	c.DMEventToken = os.Getenv("DEUTERIUM_DM_EVENT_TOKEN")
+	c.ItemCatalogToken = strings.TrimSpace(os.Getenv("DEUTERIUM_ITEM_CATALOG_TOKEN"))
 	return c, c.Validate()
 }
 
@@ -180,12 +185,23 @@ func (c Config) Validate() error {
 			c.SupplyEditorTokenSHA256 == c.AdmissionGatewayTokenSHA256 {
 			return errors.New("supply editor requires a dedicated SHA-256 credential")
 		}
+		found := false
 		for _, n := range c.Nodes {
 			if n.ID == c.SupplyEditorNode && n.ItemPrefix != "" && n.ClaimEnabled {
-				return nil
+				found = true
+				break
 			}
 		}
-		return errors.New("supply editor requires an item publishing and delivery node")
+		if !found {
+			return errors.New("supply editor requires an item publishing and delivery node")
+		}
+	}
+	if c.ItemCatalogURL != "" {
+		u, err := url.Parse(c.ItemCatalogURL)
+		if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" ||
+			(u.Scheme != "https" && !(u.Scheme == "http" && loopback(u.Hostname()))) {
+			return errors.New("itemCatalogUrl must use HTTPS or loopback HTTP")
+		}
 	}
 	return nil
 }

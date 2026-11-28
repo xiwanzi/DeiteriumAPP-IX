@@ -12,7 +12,11 @@ func BuiltinArtwork() map[string]string {
 		"builtin-rail-up": "rail-up.png", "builtin-rail-vector": "rail-up-vector.png", "builtin-rail-standard": "rail-standard-1.png",
 	}
 	for _, key := range ModelKeys {
-		out["builtin-detail-"+key] = "weapons/" + key + ".png"
+		detailFile := "weapons/" + key + ".png"
+		if key == "printstream" {
+			detailFile = "detail/printstream.png"
+		}
+		out["builtin-detail-"+key] = detailFile
 		folder := "fallback/"
 		if strings.HasPrefix(key, "tacz-") {
 			folder = "weapons/"

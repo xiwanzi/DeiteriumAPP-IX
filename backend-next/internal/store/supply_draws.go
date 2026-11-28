@@ -68,6 +68,9 @@ func (s *Store) drawSupply(ctx context.Context, uuid, name string, in SupplyDraw
 		if !enabled || !d.Open(now) {
 			return nil, supplyFailure("SUPPLY_CLOSED", "卡池尚未开放、已结束或已暂停")
 		}
+		if !d.ItemsBound() {
+			return nil, supplyFailure("SUPPLY_ITEMS_UNBOUND", "该卡池尚有奖品未绑定游戏物品，请管理员在后台完成物品绑定后再抽取")
+		}
 		rule, scope, currency, err := d.Rule(in.Scheme)
 		if err != nil {
 			return nil, ErrSocialInvalid

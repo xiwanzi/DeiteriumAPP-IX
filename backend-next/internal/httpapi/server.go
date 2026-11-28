@@ -10,6 +10,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -169,6 +172,20 @@ func (s *Server) Handler() http.Handler {
 	s.accountRoutes(mux)
 	s.walletRoutes(mux)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if s.Config.StaticWebDir != "" && (r.Method == http.MethodGet || r.Method == http.MethodHead) &&
+			!strings.HasPrefix(r.URL.Path, "/api/") && !strings.HasPrefix(r.URL.Path, "/bridge/") && !strings.HasPrefix(r.URL.Path, "/internal/") {
+			clean := path.Clean("/" + r.URL.Path)
+			candidate := filepath.Join(s.Config.StaticWebDir, filepath.FromSlash(strings.TrimPrefix(clean, "/")))
+			if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+				http.ServeFile(w, r, candidate)
+				return
+			}
+			index := filepath.Join(s.Config.StaticWebDir, "index.html")
+			if _, err := os.Stat(index); err == nil {
+				http.ServeFile(w, r, index)
+				return
+			}
+		}
 		failure(w, r, 404, "NOT_FOUND", "接口不存在或尚未实现。")
 	})
 	limited := s.capacity.wrap(mux)
